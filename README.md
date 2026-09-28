@@ -29,6 +29,10 @@ my-learning/
 │   └── game-learning/         # 游戏运行机制分析、反汇编与内存逆向笔记
 ├── 🐙 GitHub/                 # 开源探索与项目研读
 │   └── project-notes/         # 优质开源项目架构剖析与最佳实践
+├── 📈 Stock/                    # 股票与金融投资
+│   ├── Knowledge/             # 金融理论、财报分析与投资体系
+│   ├── Notes/                 # 交易复盘、行业调研与日常心得
+│   └── Resources/             # 投研工具、数据源与研报资源
 ├── 📅 Daily-Learning/         # 每日学习随笔、技术碎记与踩坑记录
 ├── .gitignore                 # 敏感信息与临时文件过滤规则
 └── README.md                  # 仓库主索引与维护说明
@@ -45,6 +49,7 @@ my-learning/
 | **📷 摄影创作 (Photography)** | 索尼 A6400 / 小米 15 Ultra 器材使用、色彩与拍摄实战 | [`Photography/`](./Photography/README.md) |
 | **🔍 逆向分析 (Reverse)** | 游戏逆向分析、调试逆向、数据结构分析与安全研究 | [`Reverse/`](./Reverse/README.md) |
 | **🐙 开源学习 (GitHub)** | GitHub 优质项目源码研读、架构设计解析与选型思考 | [`GitHub/`](./GitHub/README.md) |
+| **📈 股票投资 (Stock)** | 投资知识体系、财报分析、交易复盘与投研数据工具 | [`Stock/`](./Stock/README.md) |
 | **📅 日常沉淀 (Daily-Learning)** | 每日技术随手记、即时解决方案与跨领域知识积累 | [`Daily-Learning/`](./Daily-Learning/README.md) |
 
 ---
