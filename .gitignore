@@ -1,0 +1,70 @@
+# Prerequisites & Environments
+.env
+.env.*
+!.env.example
+*.env
+*.local
+
+# Secrets, Tokens, Keys & Credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.kdbx
+id_rsa*
+id_ed25519*
+*token*
+*secret*
+*credential*
+*.password
+auth.json
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDEs and Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Logs and Databases
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Build Artifacts & Dependencies (Python / Node / C++ / etc.)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+node_modules/
+dist/
+build/
+target/
+bin/
+obj/
+
+# Large Binary Files & Cache
+*.tar
+*.gz
+*.rar
+*.7z
+*.iso
+.cache/
