@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_RecdevPla" Id="{916655f9-1639-4c0b-b491-6202d333aa14}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_RecdevPla//正、负极片纠偏平台自动功能块
+VAR_IN_OUT
+	Step0: INT;//程序步
+	RecdevStart:BOOL;//启动条件	
+	RecdevDone:BOOL;//纠偏完成
+END_VAR
+VAR_INPUT
+	RecdevAgree:BOOL;//纠偏允许
+	AxisX1_NO : INT; //X1轴号
+	AxisX2_NO : INT;//X2轴号
+	AxisY_NO  : INT;//Y轴号
+	CCD_X1:REAL;//CCD拍照X轴方向的纠偏值
+	CCD_X2:REAL;//CCD拍照Y轴方的纠偏值
+	CCD_Y:REAL;//CCD拍照旋转方向的纠偏值	
+END_VAR
+
+VAR_OUTPUT
+END_VAR
+VAR
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+//极片纠偏自动功能
+CASE Step0 of
+		0://等待纠偏启动
+			IF RecdevStart THEN
+				Step0:=10;
+			END_IF
+		10://根据CCD计算纠偏位移
+			arrAxisPar[AxisX1_NO].arrTargetPoint[2]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+CCD_X1;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[2]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+CCD_X2;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[2]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+CCD_Y;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+			Step0:=20;	
+		20://启动极片纠偏
+		IF RecdevAgree THEN
+				IF arrAxisCtrl[AxisX1_NO].Status.Homed AND arrAxisCtrl[AxisX1_NO].Status.NoMoving AND NOT arrAxisCtrl[AxisX1_NO].Status.Error THEN
+							IF arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[2] THEN
+								arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=0;
+							ELSE
+								arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=2;
+							END_IF
+				END_IF
+				IF arrAxisCtrl[AxisX2_NO].Status.Homed AND arrAxisCtrl[AxisX2_NO].Status.NoMoving AND NOT arrAxisCtrl[AxisX2_NO].Status.Error THEN
+							IF arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[2] THEN
+								arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=0;
+							ELSE
+								arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=2;
+							END_IF
+				END_IF	
+				IF arrAxisCtrl[AxisY_NO].Status.Homed AND arrAxisCtrl[AxisY_NO].Status.NoMoving AND NOT arrAxisCtrl[AxisY_NO].Status.Error THEN
+							IF arrAxisCtrl[AxisY_NO].Cmd.arrbRealPoint[2] THEN
+								arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=0;
+							ELSE
+								arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=2;
+							END_IF
+				END_IF
+				IF  arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[2]  AND 	arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[2] AND  arrAxisCtrl[AxisY_NO].Cmd.arrbRealPoint[2] THEN
+					RecdevDone:=TRUE;//置位纠偏完成
+					RecdevStart:=FALSE;//复纠偏启动
+					Step0:=0;
+				END_IF	
+		END_IF		
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_RecdevPla">
+      <LineId Id="22" Count="2" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="26" Count="1" />
+      <LineId Id="29" Count="2" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="37" Count="1" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="42" Count="4" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="48" Count="5" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="55" Count="5" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="28" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

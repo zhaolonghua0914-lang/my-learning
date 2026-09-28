@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="P3Temperature" Id="{5b1b6b8d-5ba8-44ac-b380-efda05d370dd}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+   
+    
+   
+
+END_VAR
+
+
+VAR_GLOBAL PERSISTENT
+	TempPVs                          AT %I* :  ARRAY[1..MaxTemp]  OF  TempInShow;//显示温控输入
+	arrTempCtrl                         : ARRAY[1..MaxTemp]  OF  STTempCtrl;
+	arrTempPar		                	:ARRAY[1..MaxTemp] OF   ST_ParTemperature;	(*轴的PTP控制接口*)
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	  MaxTemp			             	:UINT:=104;		(**温控数量*)
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

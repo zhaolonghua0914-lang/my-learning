@@ -1,0 +1,266 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_Electric_CY" Id="{286bb371-788f-4b33-a67d-c43d67a90a70}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Electric_CY
+VAR_INPUT
+    bServON   :BOOL;   
+    bHome      :BOOL;   
+    bReset      :BOOL;   
+    bStop         :BOOL;   
+    bJog_P         :BOOL;   
+    bJog_N        :BOOL;   
+    
+   Pos_Start    :BOOL;   
+   fTagetPos    :REAL;
+
+   fVel:           REAL;
+   fAcc        :REAL;  
+   fDec        :REAL;  
+   Delay_Time  :TIME;
+
+
+
+
+END_VAR
+VAR_OUTPUT
+     bPowerOn       :BOOL;
+     bHomed         :BOOL; 
+     Pos_Done       :BOOL;   //定位完成
+     Home_Alm      :BOOL;  //回零超时报警
+     Pos_Alm         :BOOL; //定位超时报警
+
+END_VAR
+
+VAR_IN_OUT
+    stJXCE   :ST_JXCE;
+
+END_VAR
+
+
+
+
+VAR
+
+
+
+
+
+   rtHome    :Tc2_Standard.R_TRIG;
+   tonHome   :Tc2_Standard.TON;
+   rtPosStart    :Tc2_Standard.R_TRIG;
+
+   tonPos   :Tc2_Standard.TON;
+  tonPos2   :Tc2_Standard.TON;
+  tonPos3   :Tc2_Standard.TON;
+	bHomeIng: BOOL;
+	Z_Pos: DINT;
+	Z_Vel: UINT;
+	Z_Acc: UINT;
+	Z_Dec: UINT;
+	bPosing: BOOL;
+
+
+ //  iGoPos                :INT;   
+//   iRealPos              :INT;
+//   arrTagatPos         :ARRAY[1..5] OF REAL;  //目标点位
+
+
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+(****使能****)
+   stJXCE.out_Control.9:= bServON;
+   bPowerOn:=stJXCE.out_Control.9;
+  
+(****回零****)
+rtHome(CLK:=bHome , Q=> );
+ IF rtHome.Q AND  NOT  stJXCE.in_Status.8   THEN
+    bHomeIng:=TRUE;
+     bHomed:=FALSE;
+END_IF
+
+tonHome(IN:=bHomeIng , PT:=Delay_Time , Q=> , ET=> );
+IF tonHome.Q THEN
+    Home_Alm:=TRUE;
+    bHomeIng:=FALSE;
+END_IF
+
+IF bReset AND Home_Alm THEN
+     Home_Alm:=FALSE;
+     bHomeIng:=FALSE;
+    bHomed:=FALSE;
+END_IF
+stJXCE.out_Control.12:=bHomeIng;
+
+IF bHomeIng AND stJXCE.in_Status.10 AND stJXCE.in_Status.11 THEN
+    bHomed:=TRUE;
+    bHomeIng:=FALSE;
+END_IF
+
+(********点动******)
+stJXCE.out_Control.14:=bJog_P;
+stJXCE.out_Control.13:=bJog_N;
+
+
+
+(**********上使能后，速度，位置，加速度，减速度使能一直开启，定位默认为绝对模式**********)
+stJXCE.out_Function.5:=stJXCE.out_Function.6:=stJXCE.out_Function.7:=stJXCE.out_Function.8:=stJXCE.in_Status.9;
+IF stJXCE.in_Status.9 THEN
+   stJXCE.out_Mode:=1;
+	Z_Pos:=REAL_TO_DINT(fTagetPos*100);//HMI上位置单位为mm，电缸的位置单位为0.01mm
+	stJXCE.out_Cmd_Pos:=Z_Pos;
+	Z_Vel:=REAL_TO_UINT(fVel);//HMI上速度单位为mm/s，电缸的位置单位为mm/s
+	Z_Acc:=REAL_TO_UINT(fAcc);//HMI上加速度单位为mm/s^2，电缸的加速度单位为mm/s^2
+	Z_Dec:=REAL_TO_UINT(fDec);
+	IF ABS( stJXCE.in_Act_Pos -stJXCE.out_Cmd_Pos) <=1 AND stJXCE.in_Status.11      THEN
+		Pos_Done:=TRUE;
+	ELSE
+		Pos_Done:=FALSE;
+	END_IF
+END_IF
+
+
+rtPosStart(CLK:=Pos_Start  , Q=> );
+IF rtPosStart.Q THEN
+	IF    stJXCE.in_Status.9  AND  stJXCE.in_Status.10  AND stJXCE.out_Start=0   THEN
+		 stJXCE.out_Cmd_Pos:=Z_Pos;
+  	    stJXCE.out_Cmd_Vel:=Z_Vel;
+		 stJXCE.out_Cmd_Acc:=Z_Acc;
+		 stJXCE.out_Cmd_Dec:=Z_Dec;
+		 stJXCE.out_Start:=1;
+		  bPosing:=TRUE;
+		  Pos_Alm:=FALSE;
+	END_IF
+	
+	IF  NOT  stJXCE.in_Status.9  OR NOT  stJXCE.in_Status.10 THEN
+	       Pos_Alm:=TRUE;
+	END_IF
+
+END_IF
+
+tonPos(IN:=stJXCE.out_Start<>0 , PT:=T#500MS , Q=> , ET=> );
+IF tonPos.Q THEN
+    stJXCE.out_Start:=0;
+END_IF 
+
+tonPos2(IN:=bPosing , PT:=Delay_Time , Q=> , ET=> );
+IF tonPos2.Q THEN
+		  bPosing:=FALSE;
+		  Pos_Alm:=TRUE;
+END_IF
+
+
+IF bReset AND Pos_Alm THEN
+		  bPosing:=FALSE;
+		  Pos_Alm:=FALSE;
+END_IF
+
+tonPos3(IN:=bPosing , PT:=T#100MS , Q=> , ET=> );
+IF tonPos3.Q  AND  stJXCE.in_Status.11   THEN
+     bPosing:=FALSE;
+    stJXCE.out_Start:=0;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(***复位*)
+//stJXCE.out_Control.11:=( bReset AND stJXCE.in_Latest_Alm<>0 )   OR  bStop ;
+
+stJXCE.out_Control.11:=( bReset AND stJXCE.in_Latest_Alm<>0 )   OR  bStop ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Electric_CY">
+      <LineId Id="35" Count="4" />
+      <LineId Id="247" Count="0" />
+      <LineId Id="40" Count="2" />
+      <LineId Id="62" Count="1" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="43" Count="1" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="73" Count="2" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="76" Count="3" />
+      <LineId Id="112" Count="5" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="143" Count="8" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="132" Count="0" />
+      <LineId Id="118" Count="2" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="195" Count="0" />
+      <LineId Id="161" Count="1" />
+      <LineId Id="164" Count="2" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="170" Count="0" />
+      <LineId Id="169" Count="0" />
+      <LineId Id="128" Count="3" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="177" Count="1" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="89" Count="3" />
+      <LineId Id="184" Count="1" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="311" Count="14" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="193" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="191" Count="1" />
+      <LineId Id="95" Count="15" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

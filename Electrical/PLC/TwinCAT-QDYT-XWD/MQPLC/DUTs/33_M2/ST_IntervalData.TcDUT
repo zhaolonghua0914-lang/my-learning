@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_IntervalData" Id="{5832fe88-b709-49d7-bd19-1b2b51b649cb}">
+    <Declaration><![CDATA[TYPE ST_IntervalData ://极耳间距数据（裁断前）
+STRUCT
+	fTabIntervalM:					REAL;//倒角前CCD测出的极耳间距(相当于一个片宽)
+	//fCen_RealWidthM_L:                REAL;//冲R角时左肩宽实时基准值
+	//fCen_RealWidthM_R:                REAL;//冲R角时右肩宽实时基准值
+	bTabInteFr_M:BOOL;//模具前，1=极耳间距前进方向(靠近裁切)肩宽NG
+	bTabInteBe_M:BOOL;//模具前，1=极耳间距非前进方向(远离裁切)肩宽NG
+	fTabIntervalC:                 REAL;//裁断前CCD测出的极耳间距(相当于一个片宽)
+	//fCen_RealWidthC_L:                REAL;//裁断时左肩宽实时基准值
+	//fCen_RealWidthC_R:                REAL;//裁断时右肩宽实时基准值
+	bTabInteFr_C:BOOL;//模具前，1=极耳间距前进方向(靠近裁切)肩宽NG
+	bTabInteBe_C:BOOL;//模具前，1=极耳间距非前进方向(远离裁切)肩宽NG	
+	bBlueNG:                  BOOL;//1=蓝胶NG
+	bLineScanNG:                  BOOL;//1=线扫NG
+	bIntervalFail_M:                 BOOL;//true=极耳间距NG，倒角前CCD
+	bIntervalFail_C:                 BOOL;//true=极耳间距NG，裁切前CCD
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_Par" Id="{e5b3145b-f523-4637-80de-3b8a5480179f}">
+    <Declaration><![CDATA[VAR_GLOBAL    //参数
+         parMachine            : ST_ParMachine;   //机械参数常量
+         parTableNo          :  ST_ParTableNo;// 凸轮表号
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+	 //  parProduct                : ST_ParProduct;   //工艺参数
+       parFilterAD              :ARRAY[1..MaxAINo] OF ST_ParFilterAD;
+       parDA                     :ARRAY[1..44] OF INT;   //模拟量输出
+	   DT_FingerprintKey:ST_FingerprintKey; //指纹解锁
+	   
+	   DT1_Timedata: FB_DTData;
+	   DT2_Timedata:  FB_DTData;
+	   DT3_Timedata:  FB_DTData;	   
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+//VAR_GLOBAL	
+//	  iModeEN             : IModeEN;//功能屏蔽
+	 	 P2M1_Par            : Parameters;
+	 	 P2M2_Par            : Parameters;
+	 	 P2M3_Par            : Parameters;
+	 	 P2User1_Par        : User1_Par;
+	  
+	  	bDataValid:BOOL;//数据有效标志位
+END_VAR
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_BeltData1" Id="{887d08b6-d6d9-40b0-9451-5e650152f457}">
+    <Declaration><![CDATA[TYPE ST_BeltData1 ://皮带NG数据
+STRUCT
+	
+  bHavePole   :BOOL;  //是否有极片
+
+  iPanoramaNG:INT;//尺寸检测状态  1:OK  2:NG   3:无极片    0:无效
+  
+  iLineScanUpNG:INT;//线扫上  1:OK  2:NG  0:无效
+  
+  iLineScanDownNG:INT;//线扫下  1:OK  2:NG     0:无效
+  
+  iYellowNG: INT;//黄标NG  0:OK   1:NG 
+  
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

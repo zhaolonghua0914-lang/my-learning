@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Sampling" Id="{9fb660dd-7ae2-4bf8-83e1-86b57cb64c78}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Sampling
+
+
+
+VAR_INPUT
+	S_start  :BOOL;//采集触发条件
+	S_amount :UINT:=3;//采集次数
+	S_site   :REAL ;//采集地址
+	S_time   :REAL;//采集时间间隔
+END_VAR
+
+VAR_IN_OUT
+	S_finish :BOOL;//采集完成	
+END_VAR
+
+VAR_OUTPUT
+	Result_mean :REAL;//平均值
+END_VAR
+
+
+
+
+VAR
+	a :UINT:=1;
+	Sam_sum :REAL;//采样总值
+	Sam_max :REAL;//采样最大值
+	Sam_min :REAL;//采样最小值
+	Cache_data :ARRAY[1..36000] OF  REAL;
+	Sam_step :UINT;
+	Sam_ton :Tc2_Standard.TON;
+	S_time1 :TIME;
+	Out_max :REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[S_time1:=REAL_TO_TIME(S_time*1000);
+Sam_ton(PT:=S_time1);
+
+IF S_amount>36000 THEN
+	S_amount:=36000;
+END_IF
+
+
+
+CASE Sam_step OF
+0:
+IF 	S_start AND NOT S_finish THEN
+	Result_mean:=0;
+	a:=1;
+	Sam_sum:=0;
+	MEMSET(ADR(Cache_data),0,SIZEOF(Cache_data));
+	Sam_step:=10;
+END_IF
+
+10:
+IF a=(S_amount+1) THEN
+	Sam_step:=500;
+	ELSIF a<(S_amount+1) THEN
+	Sam_step:=100;
+END_IF
+
+100:
+Cache_data[a]:=S_site;
+Sam_ton.IN:=TRUE;
+Sam_step:=105;
+
+105:
+IF a=1 THEN
+Sam_max:=Cache_data[a];	
+Sam_min:=Cache_data[a];
+Sam_step:=110;	
+ELSE
+Sam_step:=110;
+END_IF
+
+
+110:
+IF Sam_ton.Q THEN
+	Sam_step:=120;
+	Sam_ton.IN:=FALSE;
+END_IF
+
+120:
+IF Sam_max<Cache_data[a] THEN
+	Sam_max:=Cache_data[a];
+	Sam_step:=130;
+	ELSE
+	Sam_step:=130;
+END_IF
+
+130:
+
+IF Sam_min>Cache_data[a] THEN
+	Sam_min:=Cache_data[a];
+	Sam_step:=140;
+	ELSE
+	Sam_step:=140;
+END_IF
+
+
+140:
+Sam_sum:=Sam_sum+Cache_data[a];
+a:=a+1;
+Sam_step:=150;
+
+150:
+Sam_step:=10;
+
+500:
+Sam_sum:=(Sam_sum-Sam_max-Sam_min);
+Sam_step:=510;
+
+510:
+Result_mean:=Sam_sum/(a-3);
+S_finish:=TRUE;
+Sam_step:=0;
+
+
+
+
+
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="Sampling">
+      <LineId Id="43" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="154" Count="1" />
+      <LineId Id="149" Count="1" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="111" Count="1" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="27" Count="1" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="31" Count="1" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="75" Count="1" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="175" Count="0" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="87" Count="1" />
+      <LineId Id="90" Count="2" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="97" Count="4" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="57" Count="3" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="102" Count="1" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="107" Count="2" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="22" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

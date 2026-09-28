@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDComRectify_I" Id="{b199d021-a919-48d8-ac71-2a18720e7375}">
+    <Declaration><![CDATA[TYPE ST_CCDComRectify_I :
+STRUCT
+	
+	NG_Code:INT;     //  NG代码
+	RectifyX1:REAL;  //纠偏平台X1方向纠偏量
+	RectifyX2:REAL;  //纠偏平台X2方向纠偏量
+	RectifyY:REAL;  //纠偏平台Y方向纠偏量
+	RectifyResult:INT;//纠偏结果（1:OK ,2:NG,3:无料 4:纠偏结果NG）
+	Offset_X: REAL;//OH闭环计算偏移值X
+	Offset_Y: REAL;//OH闭环计算偏移值Y
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

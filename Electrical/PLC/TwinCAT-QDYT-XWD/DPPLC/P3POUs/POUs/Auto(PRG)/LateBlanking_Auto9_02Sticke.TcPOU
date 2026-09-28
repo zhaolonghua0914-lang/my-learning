@@ -1,0 +1,508 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto9_02Sticke" Id="{73202f54-3a13-4d6d-972d-d67b4820ba5a}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Auto9_02Sticke
+VAR
+	i3: INT;
+  ceshi: BOOL;
+  P3Auto9_TON :ARRAY[1..9] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[P3Auto9_TON[1](PT:=T#1000MS);
+P3Auto9_TON[2](PT:=T#200MS);
+P3Auto9_TON[3](PT:=T#200MS);
+IF LateBlanking_init_start[8] OR P3_SystemRUN.iMode=1 THEN
+	 ceshi:=FALSE;
+END_IF
+(*
+IF P3User2_Par.Shield[22] THEN
+	Step38:=0;
+END_IF
+*)
+
+IF (P3_SystemRUN.iMode=1 OR ceshi) AND LateBlanking_init_OK[8] AND NOT  P3_Error[42] THEN
+CASE Step38 OF
+
+1://
+IF NOT P3User2_Par.Shield[22] THEN
+	Step38:=10;
+ELSE
+	Step38:=1000;
+END_IF
+
+
+10://气缸回初始位
+  IF NOT SingleStep[8] THEN
+    arrCyCtrl[P3CYNo.P3CellPush].Cmd.bOFF:=	TRUE;//电芯压紧气缸缩回	
+	   IF  arrCyCtrl[P3CYNo.P3CellPush].Status.OFFState  THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+		 Step38:=12;	
+	   END_IF
+   END_IF	
+ 
+12://电芯平移气缸缩回
+   IF NOT SingleStep[8] THEN
+    arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.bOFF:=	TRUE;//电芯平移气缸缩回
+	   IF  arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState  THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+		 Step38:=15;	
+	   END_IF
+   END_IF	
+15: 
+   IF NOT SingleStep[8] THEN
+	IF arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState AND  arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState THEN
+		 Step38:=20;
+	ELSE
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.bOFF:=	TRUE;//电芯旋转气缸回0°
+	arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.bON:=	TRUE;//电芯旋转定位气缸缩回
+	END_IF
+	
+	IF  arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState AND arrCyCtrl[P3CYNo.P3CellPushSpin].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+		 Step38:=17;	
+	   END_IF
+   END_IF	
+  
+17://电芯旋转定位气缸伸出 
+   IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.bOFF:=	TRUE;//电芯旋转定位气缸缩回
+	   IF arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+		 Step38:=20;	
+	   END_IF
+   END_IF	
+
+20://贴胶平移轴回初始位
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[8] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.NoMoving AND
+         LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND
+        (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+        (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+			arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.iGoSetPos :=8;
+		END_IF	
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[8] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=30;
+	    END_IF
+	END_IF		
+
+30://判断有无电芯
+ IF NOT P3Senser.P3_CacheSensor AND NOT CellMemory[CellNo.BlankingPlatform].Cell THEN
+	  Uppercorepermit:=TRUE;
+	  Step38:=40;
+END_IF
+
+40://贴等待放电芯完成
+  IF NOT  Uppercorepermit THEN
+	  Step38:=50;
+  END_IF
+50:IF P3Senser.P3_CacheSensor THEN
+	Step38:=400;
+END_IF
+ 		
+400://电芯平移气缸伸出
+IF NOT SingleStep[8] THEN
+	IF arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState THEN
+	 arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.bON:=TRUE;//电芯平移气缸伸出
+	IF arrCyCtrl[P3CYNo.P3CellAdvance].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=410;
+	END_IF	
+	END_IF	   		   
+END_IF
+410://电芯压紧气缸伸出
+IF NOT SingleStep[8] THEN
+	 arrCyCtrl[P3CYNo.P3CellPush].Cmd.bON:=TRUE;//电芯压紧气缸伸出
+	IF arrCyCtrl[P3CYNo.P3CellPush].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=500;
+	END_IF		   		   
+END_IF	
+500://判断要贴哪道胶,侧贴胶平移，侧贴胶旋转到相对应的位置
+IF NOT SingleStep[8] THEN
+	 IF  NOT StickerDoneNo1[1] THEN//贴长边胶1
+		 i3:=1;	
+           IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=510;
+(*
+     ELSIF NOT StickerDoneNo1[2] THEN//贴长边胶2-------------取消
+		 i3:=2;	
+           IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=510;
+*)
+      ELSIF NOT StickerDoneNo1[3] THEN//贴长边胶3
+		 i3:=3;	
+           IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=510;
+      ELSIF NOT StickerDoneNo1[4] THEN//贴长边胶4
+		 i3:=4;	
+           IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=502;
+      ELSIF NOT StickerDoneNo1[5] THEN//贴长边胶5
+		 i3:=5;	
+           IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=510;		
+      ELSIF NOT StickerDoneNo1[6] THEN//贴长边胶6
+		 i3:=6;	
+           IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=510;	   
+     END_IF	
+END_IF
+502://贴胶平台换向流程
+IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.bON:=TRUE;//电芯旋转定位气缸缩回
+	IF arrCyCtrl[P3CYNo.P3CellPushSpin].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=503;
+	END_IF
+END_IF	 
+503:	
+IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.bON:=TRUE;//电芯旋转气缸旋转去180°
+	IF arrCyCtrl[P3CYNo.P3CellSpin].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=504;
+	END_IF
+END_IF	
+504:
+IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.bOFF:=TRUE;//电芯旋转定位气缸伸出
+	IF arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=510;
+	END_IF		
+END_IF	
+510://贴胶平移移动至贴胶位	 
+     IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[i3] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.NoMoving AND
+         arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+         ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+         ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+			arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.iGoSetPos :=i3;
+		END_IF	
+		
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[i3] THEN
+			arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.iGoSetPos :=0;
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=520;
+	    END_IF
+	END_IF		
+
+520://判断备胶是否完成
+arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.fOverride:=100;
+    IF StickerStandbyDone THEN 
+		IF i3<=3 THEN
+	    Step38:=530; 
+		ELSIF i3>3 THEN
+		Step38:=535; 				
+		END_IF
+  	END_IF
+
+530://贴胶头去非极耳贴胶位
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[3] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error 
+			AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+			AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[i3]	AND	arrCyCtrl[P3CYNo.P3TapePush].Status.OFFState 
+			AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState	AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1 THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=3;
+		END_IF
+		IF LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[3]-LIMIT(15,arrAxisPar[P3AxisNo.P3_TapeAdvance].fVelocity_of_Abs*0.12,40)) THEN
+		arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.fOverride:=5;
+		END_IF
+		IF LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[3]-5) THEN
+		    arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bOFF :=TRUE; //真空关闭
+		END_IF		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[3] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF	
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=0;	
+			Step38:=540;
+	    END_IF
+	END_IF	
+	
+535://贴胶头去极耳贴胶位
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[5] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error 
+			AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+			AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[i3]	AND	arrCyCtrl[P3CYNo.P3TapePush].Status.OFFState 
+			AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState	AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1 THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=5;
+		END_IF		
+		IF LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[5]-LIMIT(15,arrAxisPar[P3AxisNo.P3_TapeAdvance].fVelocity_of_Abs*0.12,40)) THEN
+		arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.fOverride:=5;
+		END_IF	
+		IF LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[5]-5) THEN
+		    arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bOFF :=TRUE; //真空关闭
+		END_IF
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[5] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=0;			
+			Step38:=540;
+	    END_IF
+	END_IF	
+
+540://贴胶头夹紧气缸伸出	
+	arrCyCtrl[P3CYNo.P3TapePush].Cmd.bON:=TRUE;//贴胶头夹紧气缸伸出
+	P3Auto9_TON[3].IN:=FALSE;
+	IF arrCyCtrl[P3CYNo.P3TapePush].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF
+			P3Auto9_TON[3].IN:=TRUE;
+			IF P3Auto9_TON[3].Q THEN
+			P3Auto9_TON[3].IN:=FALSE;
+			Step38:=550;	
+			END_IF
+           
+	END_IF
+
+550://贴胶真空关闭		
+	 arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bOFF :=TRUE;
+	  IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=570;
+
+570://贴胶头夹紧气缸缩回
+	arrCyCtrl[P3CYNo.P3TapePush].Cmd.bOFF:=TRUE;//贴胶头夹紧气缸缩回
+	IF arrCyCtrl[P3CYNo.P3TapePush].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.fOverride:=100;
+           Step38:=580;
+	END_IF		   
+
+580://贴胶头去初始位
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND
+          arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState  AND arrCyCtrl[P3CYNo.P3TapePush].Status.OFFState 
+          AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=1;
+		END_IF	
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=590;
+		   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=0;
+	    END_IF
+	END_IF	
+
+590://复位备胶完成信号
+    StickerStandbyDone:=FALSE;
+	StickerDoneNo1[i3]:=TRUE;//标记对应的位置贴胶完成	  
+    IF  i3>=6 THEN 
+		stickGlueDone:=TRUE;
+		  Step38:=1000;
+	END_IF
+	
+	IF  i3<6 THEN 
+		   Step38:=500;
+	END_IF
+		   
+1000://贴胶完成贴胶平移去下料位	 
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[7] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.NoMoving AND
+         LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+        ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+        ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+			arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.iGoSetPos :=7;
+		END_IF	
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[7] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=1002;
+		   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.iGoSetPos :=0;
+	    END_IF
+	END_IF				   
+
+1002://贴胶平台换向流程
+ IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.bON:=TRUE;//电芯旋转定位气缸缩回
+	IF arrCyCtrl[P3CYNo.P3CellPushSpin].Status.ONState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=1003;
+	END_IF	 
+	END_IF
+1003:	
+ IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.bOFF:=TRUE;//电芯旋转气缸旋转去0°
+	IF arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=1004;
+	END_IF	
+	END_IF
+1004:
+ IF NOT SingleStep[8] THEN
+	arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.bOFF:=TRUE;//电芯旋转定位气缸伸出
+	IF arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=1010;
+	END_IF		
+	END_IF	   
+1010://电芯压紧气缸缩回
+ IF NOT SingleStep[8] THEN
+	 arrCyCtrl[P3CYNo.P3CellPush].Cmd.bOFF:=TRUE;//电芯压紧气缸缩回	
+	IF arrCyCtrl[P3CYNo.P3CellPush].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=1020;
+	END_IF		   		   
+END_IF
+1020://电芯平移气缸缩回
+ IF NOT SingleStep[8] THEN
+	 arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.bOFF:=TRUE;//电芯平移气缸缩回
+	IF arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState THEN
+		 IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step38:=1030;
+		   Bottomsignal:=TRUE;
+	END_IF		   		   
+END_IF
+1030://贴胶完成发下料信号
+ 	
+   IF Bottomsignal THEN
+	   Step38:=1035; 
+   END_IF
+
+1035:
+	IF NOT Bottomsignal THEN
+	   Step38:=1040; 
+   END_IF   
+   
+1040://等待取料完成
+   	IF   NOT P3Senser.P3_CacheSensor THEN
+	   P3Auto9_TON[1].IN:=TRUE;
+	   	IF NOT P3Auto9_TON[1].Q THEN
+	  	Step38:=1;
+		stickGlueDone:=FALSE;   
+		StickerDoneNo1[1]:=FALSE;//已贴胶的道数复位
+		StickerDoneNo1[2]:=FALSE;//已贴胶的道数复位
+		StickerDoneNo1[3]:=FALSE;//已贴胶的道数复位 
+		StickerDoneNo1[4]:=FALSE;//已贴胶的道数复位 
+		StickerDoneNo1[5]:=FALSE;//已贴胶的道数复位 
+		StickerDoneNo1[6]:=FALSE;//已贴胶的道数复位 
+		P3Auto9_TON[1].IN:=FALSE;
+		END_IF
+	ELSE
+		P3Auto9_TON[1].IN:=FALSE;
+   END_IF	   
+END_CASE
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlanking_Auto9_02Sticke">
+      <LineId Id="5024" Count="488" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CCDComOverhang" Id="{4d65da3c-419d-4e66-ba6b-f2ebead9f3dc}">
+    <Declaration><![CDATA[TYPE ST_CCDComOverhang :
+STRUCT
+	Start:ST_CCDOverhang_O;  //软触发
+	Finish:ST_CCDOverhang_I;  //检测结果
+	bRectifyDone:BOOL;  //取图完成
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

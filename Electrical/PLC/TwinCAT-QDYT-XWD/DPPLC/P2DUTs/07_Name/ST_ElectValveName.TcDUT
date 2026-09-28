@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ElectValveName" Id="{405bd448-9bf5-4f58-81b8-2b57351f80f0}">
+    <Declaration><![CDATA[TYPE ST_ElectValveName :
+STRUCT
+AnBeltVacuum	:INT;		//		正极模切送料分段皮带1取料处真空
+AnBeltVacuumBark	:INT;		//		正极模切送料分段皮带1取料处破真空
+CaMQBeltVacuum	:INT;		//		负极模切送料分段皮带1取料处真空
+CaMQBeltVacuumBark	:INT;		//		负极模切送料分段皮带1取料处破真空
+AnCarryingVacuum	:INT;		//		正极送片搬运升降真空
+AnCarryingVacuumBark	:INT;		//		正极送片搬运升降破真空
+AndeviationVacuum	:INT;		//		正极纠偏平台真空
+AndeviationIonizedWind	:INT;		//		正极纠偏平台除尘风刀
+AndeviationVacuumBark	:INT;		//		正极纠偏平台破真空
+AnDTCarryingVacuum	:INT;		//		正极叠片搬运升降真空
+AnDTCarryingJRVacuum	:INT;		//	正极叠片搬运升降极耳真空---ON有输出时破真空，没有输出时开真空
+AnDTCarryingVacuumBark	:INT;		//		正极叠片搬运升降破真空
+CaCarryingVacuum1	:INT;		//		负极送片搬运升降1真空
+CaCarryingVacuumBark1	:INT;		//		负极送片搬运升降1破真空
+CaLoadUpBeltVacuum	:INT;		//		负极送片皮带末端真空
+CaLoadUpBeltVacuumBark	:INT;		//		负极送片皮带末端破真空
+CaCarryingVacuum2	:INT;		//		负极送片搬运升降2真空---ON有输出时破真空，没有输出时开真空
+CaCarryingVacuumBark2	:INT;		//		负极送片搬运升降2破真空
+CadeviationVacuum	:INT;		//		负极纠偏平台真空
+CadeviationVacuumBark	:INT;		//		负极纠偏平台破真空
+CadeviationIonizedWind	:INT;		//		负极纠偏平台除尘风刀
+CaDTCarryingVacuum	:INT;		//		负极叠片搬运升降真空---ON有输出时破真空，没有输出时开真空
+CaDTCarryingJRVacuum	:INT;		//	负极叠片搬运升降极耳真空---ON有输出时破真空，没有输出时开真空
+CaDTCarryingVacuumBark	:INT;		//		负极叠片搬运升降破真空
+PoleTapeDustRemoval	:INT;		//		隔膜接带平台除尘
+PoleTapeVacuum	:INT;		//		隔膜接带平台真空
+BlueGlueVacuum1	:INT;		//		备胶组件蓝胶真空1
+BlueGlueVacuum2	:INT;		//		备胶组件蓝胶真空2
+codeGlueVacuum1	:INT;		//		备胶组件二维码胶真空1
+codeGlueVacuum2	:INT;		//		备胶组件二维码胶真空2
+PastesGlueVacuum	:INT;		//		备胶组件贴胶头真空
+DTVacuum	:INT;		//		叠片台真空
+PoleSplintVacuum_D	:INT;		//		夹膜下夹板真空
+WJ_blow:INT;//尾卷夹电芯吹气
+WJShortvacuum:INT;//短卷针张开真空
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

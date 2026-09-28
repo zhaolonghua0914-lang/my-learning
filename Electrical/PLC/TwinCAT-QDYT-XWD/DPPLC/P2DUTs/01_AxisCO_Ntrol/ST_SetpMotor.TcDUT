@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_SetpMotor" Id="{1e677ad4-1d68-45ce-856e-d9b796c99e14}">
+    <Declaration><![CDATA[TYPE ST_SetpMotor :
+STRUCT
+	bJog_Up			:BOOL;		
+	bJog_Down			:BOOL;	 
+	bHome			:BOOL;	 
+	bGoWorkPos			:BOOL;	 
+	bLeaveWorkPos			:BOOL;	 
+	HomeDone    :BOOL;  
+	WorkPosDone :BOOL;
+	
+	
+	
+	biSensor  :BOOL;   //对射关电
+	biUpSensor  :BOOL;   
+	biRefSensor  :BOOL;   
+	biMiddle2Sensor  :BOOL;   //步进中位感应 无用
+	biDownSensor  :BOOL;  
+	biBoxSensor  :BOOL;   //料盒到位感应
+	bHave			:BOOL;//有料感应
+	
+	bo_Up			:BOOL;		
+	bo_Down			:BOOL;	    
+
+	bPoleFull: BOOL;  //极片料满
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

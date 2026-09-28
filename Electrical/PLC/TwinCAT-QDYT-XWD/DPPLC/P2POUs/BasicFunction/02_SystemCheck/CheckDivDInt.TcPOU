@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CheckDivDInt" Id="{bb9a9605-53b2-4696-92b3-06028cf56227}" SpecialFunc="CheckDivInt32">
+    <Declaration><![CDATA[// 隐含生成代码：不要编辑
+FUNCTION CheckDivDInt : DINT
+VAR_INPUT
+	divisor:DINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 隐含生成代码：这里只是对代码实现的建议
+{noflow}
+IF divisor = 0 THEN
+	CheckDivDInt:=1;
+ELSE
+	CheckDivDInt:=divisor;
+END_IF;
+{flow}]]></ST>
+    </Implementation>
+    <LineIds Name="CheckDivDInt">
+      <LineId Id="7" Count="6" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

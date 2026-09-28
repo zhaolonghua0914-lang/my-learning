@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_Parameter" Id="{1f99081f-050e-4ae1-bb2d-e6675639d844}">
+    <Declaration><![CDATA[TYPE ST_Parameter :
+STRUCT
+	FanEn:BOOL;//风速仪屏蔽
+	MaFanEn:BOOL;//风机平板
+	AnPar: ST_ParProduct;   //正极工艺参数
+	CaPar: ST_ParProduct;   //负极工艺参数
+	parPublic:ST_PARpublic;//公共工艺参数
+	
+	parFilterAD            :ARRAY[1..MaxAINo] OF ST_ParFilterAD;
+	parFilterDA            :ARRAY[1..2] OF ST_ParFilterDA;
+	
+	parDA                   :ARRAY[1..8] OF INT;   //模拟量输出
+	iModeEN :                     IModeEN;//功能屏蔽
+
+	  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////断电保持中转变量////////////////////////////////////////////////////////////////////// 
+	   	   
+	 PoleData:ST_Data;	   
+	   
+	aAnDay_date: Day_date; //正极产能；
+	aCaDay_date: Day_date; //负极产能；
+	cCn_An:REAL;
+	cCn_Ca:REAL;
+		 
+ 	 YL_GVL2: ARRAY [1..60] OF DINT ;//内部预留；//  1、正极R角已经切的次数;  2、正极R角设置清废报警次数；3、负极R角已经切的次数;  4、负极R角设置清废报警次数；
+	
+(*产能统计*)	
+	HMI_AnTodayNGClass_AM		:ARRAY[1..30 ] 	OF REAL;(*当天白班各类NG数量ARRAY[1..30 ]-----正极*)
+	HMI_AnTodayNGClass_PM		:ARRAY[1..30 ] 	OF REAL;(*当天夜班各类NG数量ARRAY[1..30 ]-----正极*)
+	HMI_AnTodayNG_AM:REAL;(*当天白班生产NG总数-----正极*)
+	HMI_AnTodayNG_PM:REAL;(*当天夜班生产NG总数-----正极*)
+	
+	HMI_CaTodayNGClass_AM		:ARRAY[1..30 ] 	OF REAL;(*当天白班各类NG数量ARRAY[1..30 ]-----负极*)
+	HMI_CaTodayNGClass_PM		:ARRAY[1..30 ] 	OF REAL;(*当天夜班各类NG数量ARRAY[1..30 ]-----负极*)
+	HMI_CaTodayNG_AM:REAL;(*当天白班生产NG总数-----负极*)
+	HMI_CaTodayNG_PM:REAL;(*当天夜班生产NG总数-----负极*)
+	
+	  iTargetTorque	                    	:ARRAY[1..2]OF INT;			                     (*单位为0.1%*) //最大为100
+
+	CleanTimeHMIHour1:INT;//白班第一次清洁时间Hour\
+	CleanTimeHMIMin1:INT;//白班第一次清洁时间Min
+	CleanTimeHMIHour2:INT;//白班第二次清洁时间Hour
+	CleanTimeHMIMin2:INT;//白班第二次清洁时间Min
+	CleanTimeHMIHour3:INT;//夜班第一次清洁时间Hour
+	CleanTimeHMIMin3:INT;//夜班第一次清洁时间Min
+	CleanTimeHMIHour4:INT;//夜班第二次清洁时间Hour
+	CleanTimeHMIMin4:INT;//夜班第二次清洁时间Ming
+	CibangTimeHMIHour1:INT;//正极磁棒校验到期时间Hour
+	CibangTimeHMIDay1:INT;//正极磁棒校验到期时间日
+	CibangTimeHMIHour2:INT;//负极磁棒校验到期时间Hour
+	CibangTimeHMIDay2:INT;//负极磁棒校验到期时间日	
+	BrushTimeHMIHour1:INT;//正极毛刷清洁时间Hour
+	BrushTimeHMIDay1:INT;//正极毛刷清洁时间Day
+	BrushTimeHMIHour2:INT;//负极毛刷清洁时间Hour
+	BrushTimeHMIDay2:INT;//负极毛刷清洁时间Day
+
+(*****************************************************极耳基准20240101SJ*********************************************************************)	  
+
+	bCompSel:BOOL;//补偿方案选择		
+	
+(***************************************************线扫20240219***********************************************************************)
+	iLineScanSel:BOOL;//线扫结果控制模式
+	
+	  
+(***************************************************4l连续黄标尾料检测***********************************************************************)
+	fYellowMackLength1           :REAL;// 相邻黄标后边距离	
+	  
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

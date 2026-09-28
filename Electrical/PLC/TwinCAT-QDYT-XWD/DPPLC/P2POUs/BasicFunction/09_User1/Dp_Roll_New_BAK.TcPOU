@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Dp_Roll_New_BAK" Id="{ffe6b0ea-ae72-4856-bebc-cc64fd3a0297}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Dp_Roll_New_BAK
+VAR_IN_OUT
+	AxisM:AXIS_REF;//旋转虚轴
+	Axis_P:AXIS_REF;//平移轴
+	Axis_S:AXIS_REF;//升降轴
+	JuanRao_PY:ARRAY[0..MaxNo] OF sMC_CAM_REF;
+	JuanRao_SJ:ARRAY[0..MaxNo] OF sMC_CAM_REF;
+END_VAR
+VAR_INPUT
+	Enable:BOOL;
+	Width:REAL;//电芯宽度
+	Thick:REAL;//电芯厚度
+	r1:REAL;//电芯转角-圆角半径
+END_VAR
+VAR_OUTPUT
+	Enabling:BOOL;
+	Done:BOOL;
+	Busy:BOOL;
+	Alm:BOOL;
+END_VAR
+VAR
+	Enable_R: R_TRIG;
+	Enable_F: F_TRIG;
+	TON1: TON;
+	P_Off: BOOL;
+	// 初始倒角圆心坐标X0
+	Circle_X0: LREAL;
+	// 初始倒角圆心坐标Y0
+	Circle_Y0: LREAL;
+	// 初始切点坐标X0
+	QieDian_X0: LREAL;
+	// 初始切点坐标Y0
+	QieDian_Y0: LREAL;
+	// 初始倒角圆心负角度
+	Circle_Angle0: LREAL;
+	// 初始倒角圆心负角度的右侧角度
+	MidAngle: LREAL;
+	// 90度左侧倒角圆切点到中心的角度
+	QieDian_Angle90: LREAL;
+	// 初始切点到中心的上角度
+	QieDian_AngleUp: LREAL;
+	// 初始切点到中心的下角度
+	QieDian_AngleDn: LREAL;
+	// 初始圆角切点至中心距离
+	Circle_Line0: LREAL;
+	// 初始圆角切点至中心距离
+	QieDian_Line0: LREAL;
+	i: INT;
+	// 实时倒角圆心坐标x1
+	C_X: LREAL;
+	// 实时倒角圆心坐标y1
+	C_Y: LREAL;
+	// 实时倒角圆心坐标x2
+	Q_X: LREAL;
+	// 实时切点圆心坐标x
+	Q_Y: LREAL;
+	// 圆弧对应的角度
+	Arc_Angle: LREAL;
+	// 圆弧对应的弧长
+	Arc_Len: LREAL;
+	New3_Scale_FB: ARRAY[1..4] OF New3_Scale;
+	// 升降轴运动长度/mm
+	AxisYmm: LREAL;
+	// 平移轴运动长度/mm
+	AxisXmm: LREAL;
+	OUT1: LREAL;
+	// 90度后切点的角度
+	QieDian_Angle: LREAL;
+END_VAR
+VAR CONSTANT
+	MaxNo: INT := 360;//凸轮数据索引常量
+	Pai: LREAL := 3.1415926535;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Enable_R(CLK:=Enable);Enable_F(CLK:=Enable);
+Enabling:=Enable;
+//Pai:=3.1415926535;
+(*前提条件：XY坐标系，电芯旋转中心坐标为(0,0)，电芯模型四个角为圆角，半径r1*)
+IF Enable_F.Q THEN
+	TON1(IN:=P_Off,PT:=T#100ms);
+	Busy:=FALSE;Alm:=FALSE;
+	Done:=FALSE;
+END_IF;
+IF Enable_R.Q  AND (NOT Busy) AND (NOT Alm)THEN
+	Busy:=TRUE;Alm:=FALSE;Done:=FALSE;
+END_IF;
+IF Enable AND Busy THEN		
+	IF Thick*0.5-r1<0 THEN
+		Alm:=TRUE;(*圆角半径尺寸错误*)
+		RETURN;
+	END_IF;
+	Circle_X0:=-Width*0.5+r1;			(*初始离切点最近的圆心坐标，该点在中心左侧，负数*)
+	Circle_Y0:=Thick*0.5-r1;				(*初始离切点最近的圆心坐标，该点在中心上方，正数*)
+
+	QieDian_X0:=-Width*0.5+r1;		(*初始切点坐标，该点在中心左侧，负数*)
+	QieDian_Y0:=Thick*0.5;				(*初始切点坐标，该点在中心上方，正数*)	
+
+	Circle_Angle0:=(180*ATAN(Circle_Y0/Circle_X0))/Pai;  (*负角度*)
+	MidAngle:=180+Circle_Angle0;     (*-X轴角度是180°*)		
+
+	QieDian_Angle90:=(180*ATAN(-Circle_Y0/(Width*0.5)))/Pai;		(*负角度*)
+
+	QieDian_AngleUp:=(180*ATAN(QieDian_Y0/QieDian_X0))/Pai;	(*负角度*)
+	QieDian_AngleDn:=(180*ATAN(-QieDian_Y0/QieDian_X0))/Pai;	(*正角度*)		
+	
+	Circle_Line0:=SQRT(Circle_X0*Circle_X0+Circle_Y0*Circle_Y0);
+	QieDian_Line0:=SQRT(QieDian_X0*QieDian_X0+QieDian_Y0*QieDian_Y0);
+
+	JuanRao_PY[0].Phase:=0;JuanRao_PY[0].Distance:=0;	
+	JuanRao_SJ[0].Phase:=0;JuanRao_SJ[0].Distance:=0;
+
+	FOR i:=1 TO 360 BY 1 DO
+		MidAngle:=MidAngle-0.5;
+		IF (i<=180) THEN
+			C_X:=Circle_Line0*COS((MidAngle)*Pai/180);							(*初始倒角圆心运动中的X坐标*)
+			C_Y:=Circle_Line0*SIN((MidAngle)*Pai/180);							(*初始倒角圆心运动中的Y坐标*)
+			Q_X:=QieDian_Line0*COS((180+QieDian_AngleUp-INT_TO_REAL(i)/2)*Pai/180);				(*初始切点运动中的X坐标*)
+			Q_Y:=QieDian_Line0*SIN((180+QieDian_AngleUp-INT_TO_REAL(i)/2)*Pai/180);				(*初始切点运动中的Y坐标*)
+			Arc_Angle:=90-(180*ATAN((Q_Y-C_Y)/(Q_X-C_X)))/Pai;		(*圆弧对应的夹角:=90-两圆心的夹角*)
+			Arc_Len:=Arc_Angle*Pai*r1/180;											(*由圆弧的夹角求出弧长*)		
+			New3_Scale_FB[1](X:=INT_TO_REAL(i) , Sall:= Width*0.5-Thick*0.5, T:=180 , OUT=>AxisYmm );
+			AxisXmm:=C_X-Circle_X0+Arc_Len;
+			IF i=180 THEN
+				QieDian_Line0:=SQRT(Circle_Y0*Circle_Y0+Width*0.5*Width*0.5);  (*切点变了*)
+			END_IF;
+		ELSE 			
+			C_X:=Circle_Line0*COS((MidAngle-2*Circle_Angle0)*Pai/180);(*注意切点从前倒角变成后倒角*)
+			C_Y:=Circle_Line0*SIN((MidAngle-2*Circle_Angle0)*Pai/180);
+			QieDian_Angle:=180-INT_TO_REAL(i)/2-QieDian_Angle90;
+			Q_X:=QieDian_Line0*COS(QieDian_Angle*Pai/180);
+			Q_Y:=QieDian_Line0*SIN(QieDian_Angle*Pai/180);
+			Arc_Angle:=90-(180*ATAN((Q_Y-C_Y)/(Q_X-C_X)))/Pai;
+			Arc_Len:=Arc_Angle*Pai*r1/180;
+			New3_Scale_FB[3](X:=INT_TO_REAL(i)-180 , Sall:=Width*0.5-(Thick*0.5), T:=180 , OUT=>OUT1 );
+			AxisYmm:=Width*0.5-(Thick*0.5)-OUT1;
+			AxisXmm:=C_X-QieDian_X0+Arc_Len+(Thick-2*r1+Pai*r1*0.5);(*水平位置*)
+		END_IF;	
+		JuanRao_PY[i].Phase:=INT_TO_REAL(i)/2;	JuanRao_PY[i].Distance:=LREAL_TO_REAL(AxisXmm);				
+		JuanRao_SJ[i].Phase:=INT_TO_REAL(i)/2;		JuanRao_SJ[i].Distance:=LREAL_TO_REAL(AxisYmm);		
+		IF  i=360 THEN 
+			JuanRao_SJ[i].Distance:=0;
+		END_IF;
+	END_FOR;
+	Done:=TRUE;Busy:=FALSE;	
+(*
+	TON1(IN:=Busy,PT:=T#100ms);
+	MC_CamIn_ROLL[1](Master:=AxisM, Slave:=Axis_P, CamTable:=JuanRao_PY, Execute:=TON1.Q, Periodic:=TRUE,StartMode:=_mcRelativePosition,StartPosition:=AxisM.Act.Pos,SlaveOffset:=0);
+	MC_CamIn_ROLL[2](Master:=AxisM, Slave:=Axis_S, CamTable:=JuanRao_SJ, Execute:=TON1.Q, Periodic:=TRUE,StartMode:=_mcRelativePosition,StartPosition:=AxisM.Act.Pos,SlaveOffset:=0);
+	IF TON1.Q THEN
+		Done:=TRUE;Busy:=FALSE;	
+	END_IF;
+*)	
+END_IF;]]></ST>
+    </Implementation>
+    <LineIds Name="Dp_Roll_New_BAK">
+      <LineId Id="98" Count="18" />
+      <LineId Id="291" Count="0" />
+      <LineId Id="117" Count="1" />
+      <LineId Id="292" Count="0" />
+      <LineId Id="119" Count="1" />
+      <LineId Id="288" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="289" Count="0" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="290" Count="0" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="294" Count="0" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="293" Count="0" />
+      <LineId Id="128" Count="8" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="138" Count="11" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="151" Count="17" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

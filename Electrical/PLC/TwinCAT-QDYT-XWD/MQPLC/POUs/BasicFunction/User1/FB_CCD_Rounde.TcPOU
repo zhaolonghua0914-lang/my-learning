@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_CCD_Rounde" Id="{1e8223a0-9f8f-45f5-8feb-d9af0d2d10e8}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CCD_Rounde
+VAR_INPUT
+	//JzData:REAL;//HMI输入传感器基准值；
+	KK:BOOL;//启动开关；
+	CCD_Enable: BOOL;//CCD记录启动
+	CWW: BOOL;	// 补偿方向选择
+	IntervalNum:UINT:=7;//检测机构到执行机构间隔数
+	KI_Riao: REAL;		// 补偿系数
+	Databace_R3: REAL:=5.5;//R3角工艺杆基准值
+	Databace_R4: REAL:=5.5;//R3角工艺杆基准值
+	CCD_RoundedSize_R3: REAL;//R3角测量值
+	CCD_RoundedSize_R4: REAL;//R4角测量值
+	Limt_Max:REAL:=0.1;//补偿上限
+	Limt_Min:REAL:=-0.1;//补偿下限
+END_VAR
+VAR_OUTPUT
+		ResultData: REAL;//CCD计算返回结果
+END_VAR
+VAR_IN_OUT
+	JzData:REAL;//HMI输入传感器基准值；
+END_VAR
+
+
+VAR
+	STEP0: INT;	
+	arrRoundedSize_R3: ARRAY[0..10] OF REAL;//R3数据记录数组
+	arrRoundedSize_R4: ARRAY[0..10] OF REAL;//R4数据记录数组
+	rCCD_Data: R_TRIG;
+	Temp: UINT;
+	SumData: REAL;//平均基准值；
+	ResultData_1: REAL;
+	K1:INT;
+	K4:REAL;
+	kKs: REAL;// 基准偏差值
+	JzData2:REAL;
+END_VAR
+
+VAR CONSTANT
+	//Num: UINT:=10;//采集次数
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF KK THEN //开关；
+
+rCCD_Data(CLK:=CCD_Enable , Q=> );//CCD记录数据开始
+CASE STEP0 OF
+	
+0://启动CCD拍照，记录R角纵深的数据
+			MEMSET(ADR(arrRoundedSize_R3),0,SIZEOF(arrRoundedSize_R3)); 
+			MEMSET(ADR(arrRoundedSize_R4),0,SIZEOF(arrRoundedSize_R4)); 
+			JzData2:=0;
+			kKs:=0;			
+			SumData:=0;
+			Temp:=0;                                                                                                                                                                                                                                                                                                                                                                                             
+			K4:=0;
+			FOR K1:=1 TO 10BY 1 DO 	
+				arrRoundedSize_R3[K1]:=0;
+				arrRoundedSize_R4[K1]:=0;
+			END_FOR
+			STEP0:=10;
+10://尺寸检测OK,开始记录CCD  R角数据
+				IF rCCD_Data.Q AND  CCD_RoundedSize_R4>=Databace_R4-1.2 AND  CCD_RoundedSize_R4<Databace_R4+1.2 THEN//+-1.2 采集的数据范围，这里可以比红线再外一些，可以包括NG数据，但是那种很明显尺寸太大或者太小的数据就不要；
+					Temp:=Temp+1;
+					IF Temp<=10  THEN//采集10个数据；
+						arrRoundedSize_R3[Temp]:=CCD_RoundedSize_R3;//非极耳则的R角数据
+						arrRoundedSize_R4[Temp]:=CCD_RoundedSize_R4;//极耳则的R角数据
+					ELSE
+						STEP0:=20;
+					END_IF
+				END_IF				
+						
+20://求平均值；
+			SumData:=(arrRoundedSize_R4[1]+arrRoundedSize_R4[2]+arrRoundedSize_R4[3]+arrRoundedSize_R4[4]+arrRoundedSize_R4[5]+arrRoundedSize_R4[6]+arrRoundedSize_R4[7]+arrRoundedSize_R4[8]+arrRoundedSize_R4[9])/9;
+				IF SumData>=1 THEN//不为零；																															
+					STEP0:=30;					
+				END_IF
+
+30://判断是否需要校准曲线；
+kKs:=SumData-Databace_R4;//kKs:=SumData-5.5;
+	IF kKs<=0.08 AND  kKs>=-0.08  THEN//曲线与基准值重合；不校准；
+		STEP0:=0;
+	END_IF
+	
+	IF kKs>0.08 OR kKs<-0.08  THEN//曲线需要校准；
+		STEP0:=33;
+	END_IF
+
+33://纠偏系数分级；
+IF kKs>=0.8 OR kKs<=-0.8 THEN
+	K4:=JzData-(kKs*0.8);
+END_IF
+
+IF kKs>=0.4 AND kKs<0.8 OR kKs<=-0.4 AND kKs>-0.8 THEN
+	K4:=JzData-(kKs*0.6);
+END_IF
+
+IF  kKs<0.4 AND kKs>-0.4 THEN
+	K4:=JzData-(kKs*0.4);
+END_IF
+	STEP0:=37;	
+	
+37:
+IF K4<=Databace_R4+1.0 AND K4>=Databace_R4-1.0 THEN//计算出的基准值不在范围内则该周期不进行调整基准值；或者给一个固定值5.3和2.2；
+	JzData2:=K4;
+	STEP0:=39;	
+ELSE
+//	STEP0:=50;//给固定值；
+	STEP0:=0;//不校准或者报警；
+END_IF
+(*
+50:
+	IF K4>Databace_R3 THEN
+		JzData2:=4.0;
+	END_IF
+
+	IF K4<2.0  THEN
+		JzData2:=3.0 ;
+	END_IF
+STEP0:=39;
+	*)
+39://输入最新的基准值；
+IF JzData2<>0 THEN
+		JzData:=JzData2;
+		STEP0:=0;	
+END_IF	
+
+END_CASE
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_CCD_Rounde">
+      <LineId Id="497" Count="84" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

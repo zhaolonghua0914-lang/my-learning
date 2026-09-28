@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_User3" Id="{14e1fe1a-67d9-4039-be20-6681e8e027f3}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+
+
+(***方法***)
+            stMethod                                 :ST_Method;
+
+            bAllTenReady                              :BOOL;
+            bAllGearReady                            :BOOL;
+            bAllHomeReady                          :BOOL;
+
+
+            bAnCamInReady                           :BOOL;
+            bCaCamInReady                           :BOOL;
+
+(***条件***)
+           bAllTenOk                                   :BOOL;
+           bHomeOk                                   :BOOL;        
+           bAllGearOK                                :BOOL;
+           bAllTempOK                               :BOOL;
+           bAllRecOK                                  :BOOL;
+           bAllCreatTableOK                        :BOOL;
+           bAllCamOK                                 :BOOL;
+
+(**报警**)
+         CuterCountAlarm                              :ARRAY[1..8]  OF BOOL;              //切刀计数报警
+         arrCYOnAlarm                                :ARRAY[1..MaxCy]  OF BOOL;              //气缸ON报警
+         arrCYOFFAlarm                              :ARRAY[1..MaxCy]  OF BOOL;              //气缸OFF报警
+         bAnCYHaveAlarm                              :BOOL;                                              //正极气缸有报警
+		bCaCYHaveAlarm                              :BOOL;                                              //负极气缸有报警
+		
+         arrAxisAlarm                                  :ARRAY[1..MaxAxes]  OF BOOL;            //轴报警
+         bAnAxisHaveAlarm                              :BOOL;                                             //正极轴有报警
+		 bCaAxisHaveAlarm                              :BOOL;                                             //负极轴有报警
+		
+          bAnTenHaveAlarm                            :BOOL;                                           //正极张力有报警
+          bCaTenHaveAlarm                            :BOOL;                                           //负极张力有报警
+		  
+          
+          bAnRecHaveAlarm                            :BOOL;                                          //正极纠偏有报警
+          bCaRecHaveAlarm                            :BOOL;                                          //负极纠偏有报警
+		         
+         bAnCreatTableHaveAlarm                    :BOOL;										//正极创建凸轮有报警
+         bCaCreatTableHaveAlarm                    :BOOL;										//负极创建凸轮有报警
+		 
+         bAnCamHaveAlarm                             :BOOL;										//正极凸轮耦合有报警
+         bCaCamHaveAlarm                             :BOOL;										//负极凸轮耦合有报警
+		 
+         bAnGearHaveAlarm                             :BOOL;										//正极齿轮耦合有报警
+         bCaGearHaveAlarm                             :BOOL;										//负极齿轮耦合有报警
+		 
+         bAnFlowHaveAlarm                             :BOOL;										//正极流程有报警
+         bCaFlowHaveAlarm                             :BOOL;										//负极流程有报警
+
+         bAnHaveLightWarn                             :BOOL;										//正极有轻型警告(提示)
+         bCaHaveLightWarn                            :BOOL;										//负极有轻型警告(提示)	
+
+		b_lifetime									:BOOL;										//寿命已到	 
+
+		 AnAlarm:ST_AlarmWarn;
+		 CaAlarm:ST_AlarmWarn;
+		 
+		 bAnDoorALM                                :BOOL;                                             //正极门禁先报警
+		 bCaDoorALM                                :BOOL;                                             //负极门禁先报警
+		 breadALM                                :BOOL;                                             //上电后模切参数读取失败
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

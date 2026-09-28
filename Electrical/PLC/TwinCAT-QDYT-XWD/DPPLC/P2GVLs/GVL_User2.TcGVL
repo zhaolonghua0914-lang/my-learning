@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="GVL_User2" Id="{697069c8-c844-42e8-904b-372a1d504105}">
+    <Declaration><![CDATA[VAR_GLOBAL
+(***P2M1*)
+           stCarryingLineCam1_An                      :ST_Cam;
+           stCarryingLineCam2_An                       :ST_Cam;
+		   stCarryingLineCam3_An                      :ST_Cam;
+           stCarryingLineCam4_An                       :ST_Cam;
+		   stCarryingLineCam5_An                      :ST_Cam;
+           stCarryingLineCam6_An                       :ST_Cam;		   
+           sCarryingUpdown1_An                        :ST_Cam;
+           sCarryingUpdown2_An                      :ST_Cam;
+           sCarryingUpdown3_An                     :ST_Cam;
+           sCarryingUpdown4_An                     :ST_Cam;
+
+	       stCarryingLineCam1_Ca                    :ST_Cam;
+           stCarryingLineCam2_Ca                      :ST_Cam;
+		   stCarryingLineCam3_Ca                      :ST_Cam;
+           stCarryingLineCam4_Ca                       :ST_Cam;	   
+           sCarryingUpdown1_Ca                        :ST_Cam;
+           sCarryingUpdown2_Ca                      :ST_Cam;
+           sCarryingUpdown3_Ca                     :ST_Cam;
+           sCarryingUpdown4_Ca                     :ST_Cam;	   
+		   sPreneedleUpdown_Left   					:ST_Cam;	 
+		   sPreneedleLine_Left   					:ST_Cam;	
+
+		   sPreneedleUpdown_Right   					:ST_Cam;	 
+		   sPreneedleLine_Right  					:ST_Cam;			   
+		   
+		   
+		   sSEPTATLine1  						:ST_Cam;	
+		   sSEPTATLine2							:ST_Cam;			   
+		   
+           stP2M1UnwindingTen                        :ST_Tension;
+
+
+
+
+
+
+
+
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

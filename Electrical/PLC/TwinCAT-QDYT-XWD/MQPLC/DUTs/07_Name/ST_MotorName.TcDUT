@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_MotorName" Id="{03e87768-02d6-421f-bdb2-9498981f05d6}">
+    <Declaration><![CDATA[TYPE ST_MotorName ://毛刷马达名称
+STRUCT
+	DDR_Dust:INT;//主驱辊除尘毛刷
+	CuterBeltDust:INT;//裁切输送皮带除尘
+	NGReverseBeltDust	:INT;//踢废倒装皮带除尘
+	DedustBeltDust	:INT;//极片上表面除尘皮带除尘
+	DedustReverseBeltDust	:INT;//极片下表面除尘倒装皮带除尘
+
+   PoleBrushDust_U        :INT;     //极片上表面毛刷除尘**)
+   PoleBrushDust_D        :INT;     //极片下表面毛刷除尘**)
+   FeduanbeltDust1		  :INT;  //分段皮带1毛刷
+   FeduanbeltDust2		  :INT;  //分段皮带2毛刷
+   FeduanbeltDust3		  :INT;  //分段皮带3毛刷
+   
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

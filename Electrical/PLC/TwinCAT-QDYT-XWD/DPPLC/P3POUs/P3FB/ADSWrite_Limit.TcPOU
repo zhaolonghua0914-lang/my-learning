@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="ADSWrite_Limit" Id="{78a1da17-d0dc-4356-91a3-9ec2ee1157d4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK ADSWrite_Limit
+VAR_INPUT
+	IDXGRP_W:UDINT;//ADS组别索引
+	IDXOFFS_W:UDINT;//ADS补偿索引
+	IDXOFFSLimit_W:UDINT;//ADS软限位开关补偿索引
+	bSetButton:BOOL;(*ADS软限位值写入*)
+	bSetLimitButton:BOOL;(*ADS软限位开关*)
+	fSavePositionBias:LREAL;
+	AxisNo:UINT;
+	ADSMark:BOOL;//
+END_VAR
+VAR_IN_OUT
+	
+END_VAR
+VAR_OUTPUT
+	bWriteAlarm:BOOL;//
+	fSaveBias:LREAL;
+END_VAR
+VAR
+	Step_W_Date :UINT;
+	fbADSwrite: ADSWRITE;(*ADS写功能块定义*)
+	fbADSRead: ADSRead;//ADS写入功能块
+	rADSWrite: R_TRIG;(*ADS写完成上升沿*)
+	rADSRead: R_TRIG;(*ADS写完成上升沿*)
+	rSetButton:R_TRIG;(*ADS写变量的上升沿*)
+	R_SetLimitButton: R_TRIG;//软限位开关出发上升沿
+	F_SetLimitButton: F_TRIG;//软限位开关出发下降沿
+	R_ADSMark:R_TRIG;
+	bFirstCycle:BOOL;//首次上电
+	WriteNGcount:INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[R_ADSMark(CLK:=ADSMark , Q=> );
+IF R_ADSMark.Q THEN
+	bFirstCycle:=TRUE;//首次上电
+END_IF
+CASE Step_W_Date OF
+0:
+	rSetButton(CLK:=bSetButton , Q=> );
+	R_SetLimitButton(CLK:=bSetLimitButton , Q=> );
+	F_SetLimitButton(CLK:=bSetLimitButton , Q=> );
+	WriteNGcount:=0;
+	IF rSetButton.Q OR bFirstCycle THEN
+		bSetButton:=FALSE;
+		bWriteAlarm:=FALSE;//
+		Step_W_Date:=50;
+	ELSIF R_SetLimitButton.Q OR F_SetLimitButton.Q THEN
+			bWriteAlarm:=FALSE;//
+		Step_W_Date:=450;
+	END_IF
+50:
+	//arrAxisCtrl[AxisNo].Cmd.bEnable:=FALSE;
+	Step_W_Date:=100;
+100:
+	fbADSwrite.LEN:=8;
+	fbADSwrite.SRCADDR:=ADR(fSavePositionBias);
+	fbADSwrite.IDXOFFS:=IDXOFFS_W;
+	Step_W_Date:=150;
+150:
+	fbADSwrite.WRITE:=TRUE;
+	rADSWrite(CLK:=NOT fbADSwrite.BUSY , Q=> );
+	IF rADSWrite.Q THEN
+		fbADSwrite.WRITE:=FALSE;
+		Step_W_Date:=200;
+	ELSIF fbADSwrite.ERR THEN
+		bWriteAlarm:=TRUE;
+		Step_W_Date:=0;
+	END_IF
+	
+200:
+	fbADSRead.LEN:=8;
+	fbADSRead.DESTADDR:=ADR(fSaveBias);
+	fbADSRead.IDXOFFS:=IDXOFFS_W;
+	Step_W_Date:=250;
+	
+250:
+	fbADSRead.READ:=TRUE;
+	rADSRead(CLK:=NOT fbADSRead.BUSY , Q=> );
+	IF rADSRead.Q THEN
+		fbADSRead.READ:=FALSE;
+		Step_W_Date:=300;
+	END_IF
+	
+300:
+	IF fSaveBias=fSavePositionBias THEN
+		Step_W_Date:=400;
+	ELSE
+		WriteNGcount:=WriteNGcount+1;
+		Step_W_Date:=350;	
+	END_IF
+350:
+	IF  WriteNGcount<=1 THEN
+		Step_W_Date:=50;
+	ELSE
+		Step_W_Date:=400;
+	END_IF
+400:
+	IF bFirstCycle THEN
+		Step_W_Date:=450;
+	ELSE
+		Step_W_Date:=0;
+	END_IF
+	
+	
+450://软限位开关
+	bFirstCycle:=FALSE;//首次上电
+	//arrAxisCtrl[AxisNo].Cmd.bEnable:=FALSE;
+	Step_W_Date:=500;
+500:
+	fbADSwrite.LEN:=2;
+	fbADSwrite.SRCADDR:=ADR(bSetLimitButton);
+	fbADSwrite.IDXOFFS:=IDXOFFSLimit_W;
+	Step_W_Date:=550;
+550:
+	fbADSwrite.WRITE:=TRUE;
+	rADSWrite(CLK:=NOT fbADSwrite.BUSY , Q=> );
+	IF rADSWrite.Q THEN
+		fbADSwrite.WRITE:=FALSE;
+		Step_W_Date:=600;
+	ELSIF fbADSwrite.ERR THEN
+		bWriteAlarm:=TRUE;
+		Step_W_Date:=0;
+	END_IF
+
+600:
+	IF NOT  bFirstCycle THEN
+ 		Step_W_Date:=0;
+	END_IF
+	
+END_CASE
+ 	
+
+
+
+
+
+fbADSwrite(
+	NETID:='' , 
+	PORT:=501 , 
+	IDXGRP:=IDXGRP_W, 
+	IDXOFFS:=, 
+	LEN:= , 
+	SRCADDR:=, 
+	WRITE:= , 
+	TMOUT:=T#500MS , 
+	BUSY=> , 
+	ERR=> , 
+	ERRID=>
+);
+ 
+fbADSRead(
+	NETID:= , 
+	PORT:=501 , 
+	IDXGRP:= IDXGRP_W, 
+	IDXOFFS:= , 
+	LEN:= , 
+	DESTADDR:= , 
+	READ:= , 
+	TMOUT:=T#500MS , 
+	BUSY=> , 
+	ERR=> , 
+	ERRID=> );
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ]]></ST>
+    </Implementation>
+    <LineIds Name="ADSWrite_Limit">
+      <LineId Id="3" Count="96" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="187" Count="3" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="107" Count="47" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

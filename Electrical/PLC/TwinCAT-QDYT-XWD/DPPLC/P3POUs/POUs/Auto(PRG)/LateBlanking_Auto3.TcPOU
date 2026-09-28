@@ -1,0 +1,2266 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto3" Id="{dc769acc-bc1b-45d6-bdda-7efb7574bd68}" SpecialFunc="None">
+    <Declaration><![CDATA[//烤箱下料至热压及冷压上料至烤箱
+PROGRAM LateBlanking_Auto3
+VAR
+	i :INT:=1;
+	i1 :INT;
+	i2 :INT;
+	i3 :INT;
+	a :INT:=0;
+	b:INT:=0;
+	J :INT:=0;
+	K :INT:=0;
+	M :INT:=0;
+	N :INT:=0;
+	H :INT:=1;
+	G :INT;
+	Z :INT;
+	M_MOD :REAL;
+	Oven_Time_1: Oven_Time;
+	AQ12: BOOL;
+	aq13: BOOL;
+	Auxiliary :ARRAY[1..2] OF BOOL;//辅助功能
+	Oven_status: INT;//电芯是否满料
+	SingleStep_3 : R_TRIG;
+	Oven_Time :TIME;
+	N_OFFState_4 :Tc2_Standard.TON;
+	K_OFFState_4 :Tc2_Standard.TON;
+	//stTime		:TIMESTRUCT;
+	NT_GetTime1: NT_GetTime;
+	strTime: STRING;
+	wHour1	:UDINT;
+	wHour	:UDINT;
+	wMinute	:UDINT;	
+	wSecond	:UDINT;
+	S_Miao :UDINT;
+	Shift_Time1	:UDINT;
+	Shift_Time2	:UDINT;
+	alarm_Oven :ARRAY[1..10] OF Tc2_Standard.TON;
+	Cell_WZ :INT;
+	OvenMoveClip_ton :ARRAY[1..10] OF Tc2_Standard.TON;
+
+	ScanStep:UINT;//扫码自动步 
+	ScanStart:BOOL;//扫码开始--扫码流程
+	ScanFinish:BOOL;//扫码完成--扫码流程
+	
+	StickStep:UINT;//贴胶自动步
+	StickStart:BOOL;//贴胶允许
+	StickFinish:BOOL;//贴胶完成
+	
+	ScanCodeFB						: CS_CodeTcp;//二维码胶扫码
+	MesCodeFB						: CS_CodeTcp;//Mes上传扫码(第二次扫码，确认二维码胶条码和电芯绑定的条码是否一致)
+	ScanAgainTON:TON;
+	iNgCount:INT;
+	MESAgainTON :ARRAY[1..2] OF TON;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ACT_Scan();
+P3_Oven_Time();
+
+alarm_Oven[1](PT:=T#300MS);
+alarm_Oven[2](PT:=T#300MS);
+alarm_Oven[3](PT:=T#300MS);
+alarm_Oven[4](PT:=T#5S);
+alarm_Oven[5](PT:=T#5S);
+alarm_Oven[6](PT:=T#5S);
+OvenMoveClip_ton[1](PT:=T#1S);
+OvenMoveClip_ton[2](PT:=T#1S);
+MESAgainTON[1](PT:=T#3S);
+MESAgainTON[2](PT:=T#3S);
+ScanAgainTON(PT:=T#2S);
+ScanAgainTON.IN:=(ScanStep=700 AND NOT Scan_finish);
+Oven_POS1:=(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46])
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biHomeSwitch ;//烤箱进退初始位
+P3_Error[93]:=(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46])
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biHomeSwitch ;//烤箱进退初始位感应器不亮报警
+
+//烤箱门全部关闭,烤箱平移及升降、进退安全条件
+IF  arrCyCtrl[P3_Oven[1]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[2]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[3]].Io.DIOFFSwitch AND 
+	arrCyCtrl[P3_Oven[4]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[5]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[6]].Io.DIOFFSwitch AND 
+	arrCyCtrl[P3_Oven[7]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[8]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[9]].Io.DIOFFSwitch AND 
+	arrCyCtrl[P3_Oven[10]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[11]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[12]].Io.DIOFFSwitch AND 
+	arrCyCtrl[P3_Oven[13]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[14]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[15]].Io.DIOFFSwitch AND 
+	arrCyCtrl[P3_Oven[16]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[17]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[18]].Io.DIOFFSwitch AND 
+	arrCyCtrl[P3_Oven[19]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[20]].Io.DIOFFSwitch AND arrCyCtrl[P3_Oven[21]].Io.DIOFFSwitch THEN
+ 	 	Oven_CYOFF_condition:=TRUE;
+	ELSE
+		Oven_CYOFF_condition:=FALSE;
+END_IF
+
+//烤箱门前面打开,烤箱平移及升降、进退安全条件
+IF  arrCyCtrl[P3_Oven[1]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[2]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[3]].Io.DIONSwitch OR 
+	arrCyCtrl[P3_Oven[4]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[5]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[6]].Io.DIONSwitch OR 
+	arrCyCtrl[P3_Oven[7]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[8]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[9]].Io.DIONSwitch OR 
+	arrCyCtrl[P3_Oven[10]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[11]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[12]].Io.DIONSwitch OR 
+	arrCyCtrl[P3_Oven[13]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[14]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[15]].Io.DIONSwitch OR 
+	arrCyCtrl[P3_Oven[16]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[17]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[18]].Io.DIONSwitch OR 
+	arrCyCtrl[P3_Oven[19]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[20]].Io.DIONSwitch OR arrCyCtrl[P3_Oven[21]].Io.DIONSwitch OR
+	NOT arrCyCtrl[P3_Oven[1]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[2]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[3]].Io.DIOFFSwitch OR  
+    NOT arrCyCtrl[P3_Oven[4]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[5]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[6]].Io.DIOFFSwitch OR      
+    NOT arrCyCtrl[P3_Oven[7]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[8]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[9]].Io.DIOFFSwitch OR 
+    NOT arrCyCtrl[P3_Oven[10]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[11]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[12]].Io.DIOFFSwitch OR
+    NOT arrCyCtrl[P3_Oven[13]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[14]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[15]].Io.DIOFFSwitch OR 
+    NOT arrCyCtrl[P3_Oven[16]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[17]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[18]].Io.DIOFFSwitch OR 
+    NOT arrCyCtrl[P3_Oven[19]].Io.DIOFFSwitch OR    NOT  arrCyCtrl[P3_Oven[20]].Io.DIOFFSwitch OR  NOT  arrCyCtrl[P3_Oven[21]].Io.DIOFFSwitch THEN        
+ 	 	Oven_CYON_condition:=TRUE;
+	ELSE
+		Oven_CYON_condition:=FALSE;
+END_IF
+
+IF  arrCyCtrl[P3_Oven[1]].Status.Error1 OR arrCyCtrl[P3_Oven[1]].Status.Error2 OR arrCyCtrl[P3_Oven[2]].Status.Error1 OR arrCyCtrl[P3_Oven[2]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[3]].Status.Error1 OR arrCyCtrl[P3_Oven[3]].Status.Error2 OR arrCyCtrl[P3_Oven[4]].Status.Error1 OR arrCyCtrl[P3_Oven[4]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[5]].Status.Error1 OR arrCyCtrl[P3_Oven[5]].Status.Error2 OR arrCyCtrl[P3_Oven[6]].Status.Error1 OR arrCyCtrl[P3_Oven[6]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[7]].Status.Error1 OR arrCyCtrl[P3_Oven[7]].Status.Error2 OR arrCyCtrl[P3_Oven[8]].Status.Error1 OR arrCyCtrl[P3_Oven[8]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[9]].Status.Error1 OR arrCyCtrl[P3_Oven[9]].Status.Error2 OR arrCyCtrl[P3_Oven[10]].Status.Error1 OR arrCyCtrl[P3_Oven[10]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[11]].Status.Error1 OR arrCyCtrl[P3_Oven[11]].Status.Error2 OR arrCyCtrl[P3_Oven[12]].Status.Error1 OR arrCyCtrl[P3_Oven[12]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[13]].Status.Error1 OR arrCyCtrl[P3_Oven[13]].Status.Error2 OR arrCyCtrl[P3_Oven[14]].Status.Error1 OR arrCyCtrl[P3_Oven[14]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[15]].Status.Error1 OR arrCyCtrl[P3_Oven[15]].Status.Error2 OR arrCyCtrl[P3_Oven[16]].Status.Error1 OR arrCyCtrl[P3_Oven[16]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[17]].Status.Error1 OR arrCyCtrl[P3_Oven[17]].Status.Error2 OR arrCyCtrl[P3_Oven[18]].Status.Error1 OR arrCyCtrl[P3_Oven[18]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[19]].Status.Error1 OR arrCyCtrl[P3_Oven[19]].Status.Error2 OR arrCyCtrl[P3_Oven[20]].Status.Error1 OR arrCyCtrl[P3_Oven[20]].Status.Error2 OR
+	arrCyCtrl[P3_Oven[21]].Status.Error1 OR arrCyCtrl[P3_Oven[21]].Status.Error2 THEN
+	Oven_CY_STOP:=TRUE;
+	ELSE
+	Oven_CY_STOP:=FALSE;
+
+END_IF
+
+
+IF P3_SystemRUN.iMode=3 AND Step32<=10 THEN
+	Oven_PB_condition:=TRUE;
+ELSE
+	Oven_PB_condition:=FALSE;	
+END_IF
+
+
+
+NT_GetTime1(
+	NETID:='' ,
+	START:=Pulse._1s.RT ,
+	TMOUT:= ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> ,
+	TIMESTR=>stTime );
+	
+strTime:=CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT( CONCAT(CONCAT( WORD_TO_STRING(stTime.wYear),'-'), WORD_TO_STRING(stTime.wMonth)),'-'),WORD_TO_STRING(stTime.wDay)),
+             ' '),WORD_TO_STRING(stTime.wHour)),':'),WORD_TO_STRING(stTime.wMinute)),':'),WORD_TO_STRING(stTime.wSecond));
+	
+Puttime:=	strTime;
+Outtime:=	strTime;	 
+	
+wMinute:=WORD_TO_UDINT(stTime.wMinute);	
+wSecond:=WORD_TO_UDINT(stTime.wSecond);			 
+wHour1:=WORD_TO_UDINT(stTime.wHour);			 
+IF 	wHour1=0 THEN
+	wHour:=24;
+	ELSE
+	wHour:=	wHour1;	
+END_IF	 
+			 
+S_Miao:=wHour*60*60+wMinute*60+wSecond;	
+		 
+P3_Oven_Time();
+N_OFFState_4(PT:=T#200MS);
+K_OFFState_4(PT:=T#3S);
+
+WeighLine_1:=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1]+5;
+Oven_Time:=UDINT_TO_TIME(P3Par.Oven_Shijian*60000);
+
+
+SingleStep_3 (CLK:=P3_Start[3]OR (NOT StepModel[3]) , Q=>);
+IF  SingleStep_3.Q  THEN
+	SingleStep[3]:=FALSE;
+END_IF
+
+i:=i+1;
+IF i<1 OR i>42 THEN
+	i:=1;
+END_IF
+
+//判断烤箱状态
+Auxiliary[1]:=FALSE;
+Auxiliary[2]:=FALSE;
+FOR i:=1 TO 42 DO 
+     Auxiliary[1]:=Auxiliary[1] OR (P3User2_Par.Oven_cell[i] AND NOT P3User2_Par.Oven_cell_Shield[i]);
+	  Auxiliary[2]:=Auxiliary[2] OR (NOT P3User2_Par.Oven_cell[i] AND NOT P3User2_Par.Oven_cell_Shield[i]);
+END_FOR
+IF NOT Auxiliary[1] AND Auxiliary[2] THEN
+	Oven_status:=1;//烤箱空电芯
+ELSIF Auxiliary[1] AND Auxiliary[2] THEN
+	Oven_status:=2;//烤箱有电芯
+ELSIF Auxiliary[1] AND NOT Auxiliary[2] THEN
+	Oven_status:=3;//烤箱满电芯
+END_IF;
+
+
+//测试
+fDataMax:=P3User2_Par.Oven_Finish_Time[1];
+FOR i:=1 TO 42 DO
+	IF fDataMax<=P3User2_Par.Oven_Finish_Time[i] AND P3User2_Par.Oven_finish[i] AND P3User2_Par.Oven_cell[i] AND  NOT P3User2_Par.Oven_cell_Shield[i]  THEN
+		fDataMax:=P3User2_Par.Oven_Finish_Time[i];
+		Cell_WZ:=i;
+	END_IF
+END_FOR
+
+
+
+
+
+
+
+
+IF P3_SystemRUN.iMode=1  AND LateBlanking_init_OK[3]  THEN
+CASE Step32 OF
+1://气缸和轴回初始状态
+IF NOT SingleStep[3] THEN
+	
+	N_OFFState_4.IN:=FALSE;	
+	K_OFFState_4.IN:=FALSE;	
+	Cell_WZ:=0;
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;//烤箱上料夹气缸张开
+	
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND NOT Oven_CYON_condition AND Oven_CYOFF_condition THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;//P3_M2烤箱上料夹进退电机回初始位
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志	
+	END_IF
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND Oven_POS1
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving AND NOT Oven_CYON_condition AND Oven_CYOFF_condition THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	//P3_M2烤箱上料夹升降电机回初始位
+	END_IF
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] 
+		AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving AND NOT Oven_CYON_condition  AND Oven_POS1 AND Oven_CYOFF_condition THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=43;	//P3_M2烤箱上料夹搬运电机回初始位
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志
+	END_IF
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND Oven_POS1 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+		AND arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2 AND Oven_POS1 THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=10;	
+	END_IF
+END_IF
+
+10:
+a:=0;
+b:=0;
+J:=0;
+M:=0;
+M_MOD:=-1;
+FOR i:=1 TO 42 BY 1 DO
+IF (Oven_status=2 OR Oven_status=3) AND PermitHotPressRack AND P3User2_Par.Oven_finish[i] AND  NOT P3User2_Par.Oven_cell_Shield[i] AND Cell_WZ<>0 THEN
+	Step32:=20;//判断烤箱有没有电芯、是否有烤箱烘烤完成信号和允许热压信号，准备去取热压
+ELSIF (Oven_status=1 OR Oven_status=2) AND Cold_Press_Finish THEN
+	Step32:=1020;//判断烤箱有没有空电芯位、是否有冷压完成信号	
+END_IF
+END_FOR
+
+
+///////////////////烤箱下料至热压
+20:
+b:=b+1;
+IF b>42 OR b<1 THEN
+	b:=1;
+END_IF
+IF  P3User2_Par.Oven_finish[b] AND NOT P3User2_Par.Oven_cell_Shield[b]  AND P3User2_Par.Oven_cell[b] THEN
+M:=Cell_WZ;//找出低位烘烤时间完成的电芯
+P3User2_Par.W:=M+12;
+Step32:=30;
+END_IF	
+
+
+30://找出 M 电芯所在的气缸 N
+M_MOD:= M MOD 2;
+IF M_MOD>0 THEN
+N:=REAL_TO_INT(TRUNC(M/2)+1);
+END_IF
+IF M_MOD=0 THEN
+N:=REAL_TO_INT(TRUNC(M/2));
+END_IF
+Step32:=35;	
+
+35://三个烤箱对射感应有信号则跳至40步
+IF P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3 THEN
+	Step32:=40;
+	G:=N MOD 3;	
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch1 THEN
+	P3_Error[17]	:=TRUE;//烤箱1对射感应器报警
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch2 THEN
+	P3_Error[18]	:=TRUE;//烤箱2对射感应器报警
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch3 THEN
+	P3_Error[19]	:=TRUE;//烤箱3对射感应器报警
+END_IF
+
+40://烤箱气缸 N 打开
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3_Oven[N]].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=45;
+	END_IF
+END_IF
+
+
+45://P3_M2烤箱上料夹进退电机回初始位
+IF NOT SingleStep[3] THEN
+	
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;	
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=50;	
+	END_IF
+END_IF
+
+50://P3_M2烤箱上料夹升降电机回初始位
+IF NOT SingleStep[3] THEN
+	
+	
+	IF   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_POS1 AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=53;	
+	END_IF
+END_IF
+
+53:
+IF (M=6 OR M=12 OR M=18 OR M=24 OR M=30 OR M=36 OR M=42 ) 
+	AND  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)<=WeighLine_1 //称重上料平移在安全位置
+	AND PermitHotPressRack AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving THEN
+		Step32:=55;	//有允许热压信号，称重上料夹旋转在称重位，跳至55步
+ELSIF M<>6 AND M<>12 AND M<>18 AND M<>24 AND M<>30 AND M<>36 AND M<>42 THEN
+		Step32:=55;	
+END_IF
+
+
+
+
+
+55://P3_M2烤箱上料夹搬运电机去烘烤M位
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 AND Oven_POS1 AND PermitHotPressRack AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[M] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving AND ((G=1 AND  P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3)
+		OR (G=2 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch3) OR (G=0 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2)) THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=M;	
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[M] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=60;	
+	END_IF
+END_IF
+
+IF (G=2 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (G=0 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (G=1 AND  P3Senser.P3_Ovendoorswitch1)  THEN
+	IF NOT alarm_Oven[1].Q THEN
+		alarm_Oven[1].IN:=TRUE;
+	ELSE
+		P3_Error[17]:=TRUE;//烤箱1对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[1].IN:=FALSE;
+	
+END_IF
+
+IF (G=0 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (G=1 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (G=2 AND  P3Senser.P3_Ovendoorswitch2)  THEN
+	IF NOT alarm_Oven[2].Q THEN
+		alarm_Oven[2].IN:=TRUE;
+	ELSE
+		P3_Error[18]:=TRUE;//烤箱2对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[2].IN:=FALSE;
+END_IF
+
+IF (G=1 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (G=2 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (G=0 AND  P3Senser.P3_Ovendoorswitch3)   THEN
+	IF NOT alarm_Oven[3].Q THEN
+		alarm_Oven[3].IN:=TRUE;
+	ELSE
+		P3_Error[19]:=TRUE;//烤箱3对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[3].IN:=FALSE;
+END_IF
+
+
+60://P3_M2烤箱上料夹升降电机去烘烤M位
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 AND PermitHotPressRack AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[M] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=M;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[M] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=63;	
+	END_IF
+END_IF
+
+63://烤箱上料夹升降放料位与辅助位换算
+	IF NOT SingleStep[3] THEN(*XFP0510*)
+		IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 AND PermitHotPressRack AND
+			  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled 
+			  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+					arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].fVelocity_of_Rel := 20   ;
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.fPosition_of_Rel :=-Oven_par[2] ;
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bMoveRel :=  TRUE ;
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF	
+			Step32:=64;	
+		END_IF
+	END_IF
+64:
+	IF NOT SingleStep[3] THEN(*XFP0510*)
+		IF arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].arrTargetPoint[M]-arrAxis[P3AxisNo.P3_M2_OvenUpDown].NcToPlc.ActPos >=(Oven_par[2]-0.1)  
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF	
+			Step32:=65;	
+		END_IF
+	END_IF
+
+65://烤箱上料夹气缸张开
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	step32:=70;
+	END_IF
+END_IF
+
+70://P3_M2烤箱上料夹进退电机去烘烤M位
+IF NOT SingleStep[3] THEN
+	
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[M] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND PermitHotPressRack
+		AND arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 AND arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOFFSwitch 
+        AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[M] 
+		AND (arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].arrTargetPoint[M]-arrAxis[P3AxisNo.P3_M2_OvenUpDown].NcToPlc.ActPos >=(Oven_par[2]-0.1)) THEN(*XFP0510*)
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=M;
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[M] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=75;
+	OvenMoveClip_ton[1].IN:=FALSE;	
+	END_IF
+END_IF
+
+75://烤箱上料夹升降放烤箱位与辅助位换算
+	IF NOT SingleStep[3] THEN
+		IF  arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 AND
+			  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled 
+			  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+					arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].fVelocity_of_Rel := 20   ;
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.fPosition_of_Rel :=Oven_par[2] ;(*XFP0510*)
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bMoveRel :=  TRUE ;					
+			Step32:=76;	
+		END_IF
+	END_IF
+
+76:(*XFP0506*)
+		IF arrAxis[P3AxisNo.P3_M2_OvenUpDown].NcToPlc.ActPos - arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].arrTargetPoint[M] >=(0-0.1) AND 
+			arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[M]
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+				IF  StepModel[3] THEN
+					SingleStep[3]:=TRUE;
+				ELSE
+					SingleStep[3]:=FALSE;
+				END_IF	
+				Step32:=80;	
+		END_IF
+
+80://烤箱上料夹气缸夹紧
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bON:=TRUE;
+	OvenMoveClip_ton[1].IN:=TRUE;//烤箱上料夹夹紧延时
+	IF 	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bON	 AND  OvenMoveClip_ton[1].Q(*arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error1*) THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	step32:=85;
+	OvenMoveClip_ton[1].IN:=FALSE;	
+	END_IF
+END_IF
+
+85://烤箱上料夹升降放烤箱位与辅助位换算
+	IF NOT SingleStep[3] THEN
+		IF  arrCyCtrl[P3_Oven[N]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[N]].Status.Error1 AND
+			  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled 
+			  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+					arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].fVelocity_of_Rel := 20   ;
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.fPosition_of_Rel :=Oven_par[2] ;(*XFP0510*)
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bMoveRel :=  TRUE ;					
+			Step32:=86;	
+		END_IF
+	END_IF
+
+86:(*XFP0506*)
+		IF arrAxis[P3AxisNo.P3_M2_OvenUpDown].NcToPlc.ActPos - arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].arrTargetPoint[M] >=(Oven_par[2]-0.1)
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+				IF  StepModel[3] THEN
+					SingleStep[3]:=TRUE;
+				ELSE
+					SingleStep[3]:=FALSE;
+				END_IF	
+				Step32:=90;	
+		END_IF
+
+
+
+90://P3_M2烤箱上料夹进退电机回初始位
+CellMemory[P3User2_Par.W].OvenTemp_PVTime:=P3Press.T_Residue[J];
+IF NOT SingleStep[3] THEN
+	
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志	
+	END_IF
+	
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND P3Senser.P3_Kxslgy THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=95;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND NOT P3Senser.P3_Kxslgy THEN
+	P3_Error[34]:=TRUE;//烤箱下料至热压上料时，未检测到电芯报警
+	END_IF
+END_IF
+
+95://记忆从烤箱转移到烤箱上料夹子
+CellMemory[CellNo.OvenMoveClip2]:=CellMemory[P3User2_Par.W];
+MEMSET(ADR(CellMemory[P3User2_Par.W]),0,SIZEOF(CellMemory[P3User2_Par.W]));
+Shift_Time1:=S_Miao;
+P3User2_Par.Oven_cell[M]:=FALSE;//复位该位置有电芯信号
+P3User2_Par.Oven_finish[M]:=FALSE;//复位该位置有烘烤时间完成信号
+Step32:=100;	
+
+100://P3_M2烤箱上料夹升降电机回初始位
+IF NOT SingleStep[3] THEN
+	
+	
+	IF   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_POS1 AND PermitHotPressRack AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	//烤箱上料夹升降去初始位
+	END_IF
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=105;	
+	END_IF
+END_IF
+
+
+105://P3_M2烤箱上料夹搬运电机去热压位条件
+IF NOT SingleStep[3] THEN
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+	AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND PermitHotPressRack AND Oven_POS1 AND 
+	 	LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)<=WeighLine_1 //称重上料平移在安全位置
+		AND PermitHotPressRack AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] 
+		AND  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[45] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+		AND ((G=1 AND  P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3)
+		OR (G=2 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch3) OR (G=0 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2)) THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=45;//烤箱上料夹搬运去热压位
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[45] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=110;	
+	END_IF
+END_IF
+
+IF (G=2 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (G=0 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (G=1 AND  P3Senser.P3_Ovendoorswitch1)  THEN
+	IF NOT alarm_Oven[1].Q THEN
+		alarm_Oven[1].IN:=TRUE;
+	ELSE
+		P3_Error[17]:=TRUE;//烤箱1对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[1].IN:=FALSE;
+	
+END_IF
+
+IF (G=0 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (G=1 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (G=2 AND  P3Senser.P3_Ovendoorswitch2)  THEN
+	IF NOT alarm_Oven[2].Q THEN
+		alarm_Oven[2].IN:=TRUE;
+	ELSE
+		P3_Error[18]:=TRUE;//烤箱2对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[2].IN:=FALSE;
+END_IF
+
+IF (G=1 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (G=2 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (G=0 AND P3Senser.P3_Ovendoorswitch3)   THEN
+	IF NOT alarm_Oven[3].Q THEN
+		alarm_Oven[3].IN:=TRUE;
+	ELSE
+		P3_Error[19]:=TRUE;//烤箱3对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[3].IN:=FALSE;
+END_IF
+
+
+
+
+
+
+110://烤箱门N关闭
+IF NOT SingleStep[3] THEN	
+	arrCyCtrl[P3_Oven[N]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[1]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[2]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[3]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[4]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[5]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[6]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[7]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[8]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[9]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[10]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[11]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[12]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[13]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[14]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[15]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[16]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[17]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[18]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[19]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[20]].Cmd.bOFF:=TRUE;	
+	arrCyCtrl[P3_Oven[21]].Cmd.bOFF:=TRUE;
+	N_OFFState_4.IN:=TRUE;
+	IF N_OFFState_4.Q THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=115;
+	END_IF
+END_IF
+
+115://上位机校对数据开始
+	IF P3User2_Par.Shield[5] THEN
+		Cold_start:=FALSE;
+		Cold_finish:=FALSE;
+		Step32:=118;
+	ELSE
+		Cold_start:=TRUE;
+		Step32:=118;
+	END_IF
+
+
+118://上位机校对数据完成
+	MESAgainTON[1].IN:=TRUE;
+	IF  Cold_finish OR P3User2_Par.Shield[5]THEN
+		Cold_start:=FALSE;
+		Cold_finish:=FALSE;
+		MESAgainTON[1].IN:=FALSE;
+		Step32:=120;
+	ELSIF MESAgainTON[1].Q AND NOT P3_Error[4] AND NOT Cold_start AND NOT Cold_finish THEN
+		Step32:=115;
+		MESAgainTON[1].IN:=FALSE;
+	END_IF	
+
+
+
+120://判断是否有热压允许上料信号
+N_OFFState_4.IN:=FALSE;
+IF PermitHotPressRack AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+	Step32:=130;
+END_IF
+
+
+
+
+130://P3_M2烤箱上料夹升降电机去热压位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_POS1 AND PermitHotPressRack AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[45] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=45;	//烤箱上料夹升降电机去热压位
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[45] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=140;	
+	END_IF
+END_IF
+
+140://P3_M2烤箱上料夹进退电机去热压位条件
+IF NOT SingleStep[3] THEN
+	
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[45]
+	AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[45] 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed  
+	AND PermitHotPressRack
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+	AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1]
+	AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1](*AND arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOnSwitch *)THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=45;//烤箱上料夹进退电机去热压位
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[45] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=145;	
+	END_IF
+END_IF
+
+145://P3_M2烤箱上料升降去热压辅助位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[48] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=48;	//烤箱上料升降去热压辅助位
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[48] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=150;	
+	END_IF
+END_IF
+
+
+
+
+150://烤箱上料夹气缸张开
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	step32:=160;
+	END_IF
+END_IF
+
+160://P3_M2烤箱上料夹进退电机回初始位
+IF NOT SingleStep[3] THEN
+	
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving  AND arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOFFSwitch THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] (* AND Oven_POS1 *) AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+			IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  (*AND Oven_POS1 *) AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND P3Senser.P3_Kxslgy THEN
+				P3_Error[36]:=TRUE;//热压上料后烤箱夹检测到电芯报警
+			END_IF
+	Step32:=170;	
+	END_IF
+END_IF
+
+170://记忆从烤箱上料夹子转移到热压工位
+Shift_Time2:=S_Miao;
+CellMemory[CellNo.Hotpress]:=CellMemory[CellNo.OvenMoveClip2];
+MEMSET(ADR(CellMemory[CellNo.OvenMoveClip2]),0,SIZEOF(CellMemory[CellNo.OvenMoveClip2]));
+Permit_Hot_Press:=TRUE;	
+Permit_ShortTest:=TRUE;
+IF  I606[8] OR I609[16]  THEN
+	//P3_Error[50]:=TRUE;//热压上料后电芯错位报警
+END_IF
+Step32:=175;
+
+175:
+CellMemory[CellNo.Hotpress].OvenShift_Time:=ABS(Shift_Time2-Shift_Time1);
+Step32:=176;
+
+
+
+176:
+IF  CellMemory[CellNo.Hotpress].OvenShift_Time>=P3User2_Par.Oven_Time_S THEN
+	CellMemory[CellNo.Hotpress].OvenShift_NG_T:=TRUE;
+	Step32:=180;
+	ELSE
+	CellMemory[CellNo.Hotpress].OvenShift_NG_T:=FALSE;
+	Step32:=180;	
+END_IF
+
+
+
+180://P3_M2烤箱上料夹升降电机回初始位
+IF NOT SingleStep[3] THEN
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] (*AND Oven_POS1*) AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=190;
+	END_IF	
+END_IF
+
+190: 
+IF Oven_CYOFF_condition  AND P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3 THEN
+	Step32:=1;
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch1 THEN
+	P3_Error[17]	:=TRUE;//烤箱1对射感应器报警
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch2 THEN
+	P3_Error[18]	:=TRUE;//烤箱2对射感应器报警
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch3 THEN
+	P3_Error[19]	:=TRUE;//烤箱3对射感应器报警
+END_IF
+
+
+
+
+
+
+
+///////////////////冷压上料至烤箱
+1020://P3_M2烤箱上料夹搬运电机去冷压位条件
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;//烤箱上料夹气缸张开
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_POS1 AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[44]
+		 AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=44;//烤箱上料夹搬运电机去冷压位
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[44] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1030;	
+	END_IF
+END_IF
+
+1030://冷压工位在初始状态
+IF NOT SingleStep[3] THEN
+IF Cold_Press_Finish 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving 
+AND CellMemory[CellNo.Coldpress].Cell
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1040;	
+END_IF
+END_IF
+
+1040://P3_M2烤箱上料夹升降电机去冷压位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] 
+	AND Oven_POS1 
+	AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[44] 
+	AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=44;	//烤箱上料夹升降电机去冷压位
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[44] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1045;	
+	END_IF
+END_IF
+
+1045://烤箱上料夹气缸张开
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	step32:=1050;
+	END_IF
+END_IF
+
+
+
+1050://P3_M2烤箱上料夹进退电机去冷压位条件
+IF NOT SingleStep[3] THEN
+	
+	IF (*arrCyCtrl[P3CYNo.P3ColdPressTensed].Status.ONState  NOT arrCyCtrl[P3CYNo.P3ColdPressTensed].Status.Error1 AND*)
+		 NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[44] 
+	AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving  
+	AND arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOFFSwitch 
+	AND Cold_Press_Finish
+	AND CellMemory[CellNo.Coldpress].Cell 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1]
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1]THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=44;//烤箱上料夹进退电机去冷压位
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[44] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1060;
+	OvenMoveClip_ton[2].IN:=FALSE;
+	END_IF
+END_IF
+
+1060://烤箱上料夹气缸夹紧
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bON:=TRUE;
+	OvenMoveClip_ton[2].IN:=TRUE;//烤箱上料夹夹紧延时
+	IF arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bON AND OvenMoveClip_ton[2].Q (*arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error1*) THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	step32:=1065;
+	OvenMoveClip_ton[2].IN:=FALSE;
+	END_IF
+END_IF
+
+
+1065://烤箱上料夹升降去冷压辅助位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[49] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=49;	//烤箱上料夹升降去冷压辅助位
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[49] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1068;	
+	END_IF
+END_IF
+1068://P3_M2烤箱上料夹进退电机去扫码位
+IF NOT SingleStep[3] THEN	
+		IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+			arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=46;
+			OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+		END_IF
+		IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]  AND Oven_POS1  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+			OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+			IF  StepModel[3] THEN
+					SingleStep[3]:=TRUE;
+			ELSE
+					SingleStep[3]:=FALSE;
+			END_IF	
+			IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]  AND Oven_POS1  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+				AND NOT P3Senser.P3_Kxslgy THEN
+					P3_Error[35]:=TRUE;//冷压下料至烤箱上料时，未检测到电芯报警
+			END_IF
+		
+		Step32:=1070;	
+		END_IF
+END_IF
+
+1070://记忆从冷压转移到烤箱夹子记忆
+	Cold_Press_Finish:=FALSE;
+	CellMemory[CellNo.OvenMoveClip1]:=CellMemory[CellNo.Coldpress];
+	MEMSET(ADR(CellMemory[CellNo.Coldpress]),0,SIZEOF(CellMemory[CellNo.Coldpress]));
+	Step32:=1071;
+
+1071://贴二维码胶
+		IDStickStart:=TRUE;//二维码贴胶开始
+		IDStickFinish:=FALSE;//二维码贴胶完成
+		Step32:=1072;	
+1072:
+		IF IDStickFinish THEN
+			Step32:=1075;	
+		END_IF
+1075:
+		IDStickStart:=FALSE;//二维码贴胶开始
+		IDStickFinish:=FALSE;//二维码贴胶完成	
+		Step32:=1076;
+
+1076://mes首次上传
+	IF  NOT P3User2_Par.Shield[5] THEN
+		PC_start1 :=TRUE;//上位机上传数据开始1
+		PC_finish1 :=FALSE;//上位机上传数据完成1		
+		Step32:=1077;	
+	ELSE
+		PC_start1 :=FALSE;//上位机上传数据开始1
+		PC_finish1 :=FALSE;//上位机上传数据完成1
+		Step32:=1080;	
+	END_IF
+1077:
+	IF PC_finish1 OR P3User2_Par.Shield[5] THEN
+		PC_start1 :=FALSE;//上位机上传数据开始1
+		PC_finish1 :=FALSE;//上位机上传数据完成		
+		Step32:=1080;	
+	END_IF
+	
+1080:
+		ScanStart:=TRUE;//扫码开始
+		ScanFinish:=FALSE;//扫码完成	
+		Step32:=1082;	
+
+1082:
+	IF ScanFinish OR  P3User2_Par.Shield[4] THEN//扫码完成	
+		Step32:=1083;	
+	END_IF
+1083:
+	ScanStart:=FALSE;//扫码开始
+	ScanFinish:=FALSE;//扫码完成	
+	Step32:=1090;	
+
+
+	
+	
+1090://P3_M2烤箱上料夹进退电机去初始位
+	IF NOT SingleStep[3] THEN
+		
+		IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+			arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+			OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+			OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF	
+				 IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND NOT P3Senser.P3_Kxslgy THEN
+					 P3_Error[35]:=TRUE;//冷压下料至烤箱上料时，未检测到电芯报警
+				 END_IF
+		
+		Step32:=1100;	
+		END_IF
+	END_IF
+
+
+
+
+(*1090://电芯NG有扫码NG直接跳过上烤箱
+a:=0;
+IF CellMemory[CellNo.OvenMoveClip1].ScanCode=2 OR B_OVEN THEN
+	Step32:=2000;
+	ELSE
+	Step32:=1100;	
+END_IF*)
+
+1100:
+a:=a+1;
+IF a>42 OR a<1 THEN
+	a:=1;
+END_IF
+IF  NOT P3User2_Par.Oven_cell[a] AND NOT P3User2_Par.Oven_cell_Shield[a] THEN
+J:=a;//找出低位空电芯位
+P3User2_Par.V:=J+12;
+Step32:=1110;
+END_IF	
+
+1110:
+M_MOD:= J MOD 2;
+IF M_MOD>0 THEN
+K:=REAL_TO_INT(TRUNC(J/2)+1);
+END_IF
+IF M_MOD=0 THEN
+K:=REAL_TO_INT(TRUNC(J/2));
+END_IF
+Step32:=1115;
+
+
+1115:
+IF (J=6 OR J=12 OR J=18 OR J=24 OR J=30 OR J=36 OR J=42 ) 
+	AND  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)<=WeighLine_1 //称重上料平移在安全位置
+	(*AND PermitHotPressRack*) AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed AND CellMemory[CellNo.OvenMoveClip1].Cell THEN
+		Step32:=1120;	
+ELSIF J<>6 AND J<>12 AND J<>18 AND J<>24 AND J<>30 AND J<>36 AND J<>42 THEN
+		Step32:=1120;	
+END_IF
+
+
+
+1120://P3_M2烤箱上料夹升降电机去初始位
+IF NOT SingleStep[3] THEN
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND  Oven_POS1 AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+		AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving AND Oven_CYOFF_condition THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+		Step32:=1130;
+		Z:=K MOD 3;		
+	END_IF
+END_IF
+
+
+
+1130://没有烤箱对射感应器报警
+IF P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3 THEN
+	Step32:=1132;
+	Z:=K MOD 3;		
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch1 THEN
+	P3_Error[17]	:=TRUE;//烤箱1对射感应器报警
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch2 THEN
+	P3_Error[18]	:=TRUE;//烤箱2对射感应器报警
+END_IF
+IF NOT P3Senser.P3_Ovendoorswitch3 THEN
+	P3_Error[19]	:=TRUE;//烤箱3对射感应器报警
+END_IF
+
+
+
+1132://烤箱气缸 N 打开
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3_Oven[K]].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3_Oven[K]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[K]].Status.Error1 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	step32:=1135;
+	END_IF
+END_IF
+
+
+
+
+1135://P3_M2烤箱上料夹搬运电机去烘烤J位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrCyCtrl[P3_Oven[K]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[K]].Status.Error1 AND Oven_POS1 AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[J] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving AND  CellMemory[CellNo.OvenMoveClip1].Cell 
+		AND ((Z=1 AND  P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3)
+		OR (Z=2 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch3) OR (Z=0 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2))  THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=J;//烤箱上料夹搬运电机去烘烤J位
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[J] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1140;	
+	END_IF
+END_IF
+IF (Z=2 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (Z=0 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (Z=1 AND P3Senser.P3_Ovendoorswitch1) THEN
+	IF NOT alarm_Oven[1].Q THEN
+		alarm_Oven[1].IN:=TRUE;
+	ELSE
+		P3_Error[17]:=TRUE;//烤箱1对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[1].IN:=FALSE;
+	
+END_IF
+
+IF (Z=0 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (Z=1 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (Z=2 AND P3Senser.P3_Ovendoorswitch2) THEN
+	IF NOT alarm_Oven[2].Q THEN
+		alarm_Oven[2].IN:=TRUE;
+	ELSE
+		P3_Error[18]:=TRUE;//烤箱2对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[2].IN:=FALSE;
+END_IF
+
+IF (Z=1 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (Z=2 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (Z=0 AND P3Senser.P3_Ovendoorswitch3) THEN
+	IF NOT alarm_Oven[3].Q THEN
+		alarm_Oven[3].IN:=TRUE;
+	ELSE
+		P3_Error[19]:=TRUE;//烤箱3对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[3].IN:=FALSE;
+END_IF
+
+
+1140://P3_M2烤箱上料夹升降电机去烘烤J位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrCyCtrl[P3_Oven[K]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[K]].Status.Error1 AND Oven_POS1 AND  CellMemory[CellNo.OvenMoveClip1].Cell AND 
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[J] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving AND   CellMemory[CellNo.OvenMoveClip1].Cell THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=J;	//烤箱上料夹升降电机去烘烤J位
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[J] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=1150;	
+	END_IF
+END_IF
+
+
+
+
+1150://P3_M2烤箱上料夹进退电机去烘烤J位条件
+IF NOT SingleStep[3] THEN
+	
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[J] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving AND   CellMemory[CellNo.OvenMoveClip1].Cell
+         AND arrCyCtrl[P3_Oven[K]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[K]].Status.Error1  AND NOT  arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOnSwitch  
+         AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[J] AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[J] THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=J;//烤箱上料夹进退电机去烘烤J位
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[J] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1155;	
+	END_IF
+END_IF
+
+
+1155://烤箱上料夹升降运行位置与放烤箱辅助位换算
+	IF NOT SingleStep[3] THEN
+		IF  arrCyCtrl[P3_Oven[K]].Io.DIOnSwitch AND NOT arrCyCtrl[P3_Oven[K]].Status.Error1  AND
+			  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled 
+			  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+					arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].fVelocity_of_Rel := 20   ;
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.fPosition_of_Rel :=-Oven_par[1] ;
+					arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bMoveRel :=  TRUE ;
+					
+		END_IF
+		
+		IF arrAxisParV2[P3AxisNo.P3_M2_OvenUpDown].arrTargetPoint[J]-arrAxis[P3AxisNo.P3_M2_OvenUpDown].NcToPlc.SetPos  >=(Oven_par[1]-0.1)  AND arrAxisCtrlV2[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			Step32:=1160;	
+		END_IF
+	END_IF
+
+
+
+1160://烤箱上料夹气缸松开
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	step32:=1170;
+	END_IF
+END_IF
+
+1170://P3_M2烤箱上料夹进退电机去初始位
+
+IF NOT SingleStep[3] THEN
+	
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving  AND arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOFFSwitch THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+		OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  
+	AND Oven_POS1 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+	AND NOT P3Senser.P3_Kxslgy THEN
+		OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1175;	
+	END_IF
+END_IF
+
+1175://记忆从烤箱上料夹子转移烤箱J
+P3User2_Par.Oven_cell[J]:=TRUE;
+CellMemory[P3User2_Par.V]:=CellMemory[CellNo.OvenMoveClip1];
+MEMSET(ADR(CellMemory[CellNo.OvenMoveClip1]),0,SIZEOF(CellMemory[CellNo.OvenMoveClip1]));
+Step32:=1178;
+
+1178://烤箱温度上下限为设定值+-5
+CellMemory[P3User2_Par.V].OvenTemp_SV:=arrTempPar[1].fTempSet;
+CellMemory[P3User2_Par.V].OvenTemp_PV:=arrTempCtrl[1].Tem_fPV;
+CellMemory[P3User2_Par.V].OvenTemp_H:=arrTempPar[1].fTempSet+5;
+CellMemory[P3User2_Par.V].OvenTemp_L:=arrTempPar[1].fTempSet-5;
+CellMemory[P3User2_Par.V].OvenTemp_Time:=P3Par.Oven_Shijian*60;
+CellMemory[P3User2_Par.V].OvenTemp_NO:=J;
+//CellMemory[P3User2_Par.V].OvenTemp_PVTime:=P3Press.T_Residue[J];
+Step32:=1180;
+
+1180://P3_M2烤箱上料夹升降电机去初始位
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND  Oven_POS1 AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=1185;	
+	END_IF
+END_IF
+
+1185://烤箱上料夹搬运去初始位
+IF NOT SingleStep[3] THEN
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_POS1 AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+		AND ((Z=1 AND  P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3)
+		OR (Z=2 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch3) OR (Z=0 AND  P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2)) THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1190;	
+	END_IF
+END_IF
+
+IF (Z=2 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (Z=0 AND NOT  P3Senser.P3_Ovendoorswitch1) OR (Z=1 AND P3Senser.P3_Ovendoorswitch1) THEN
+	IF NOT alarm_Oven[1].Q THEN
+		alarm_Oven[1].IN:=TRUE;
+	ELSE
+		P3_Error[17]:=TRUE;//烤箱1对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[1].IN:=FALSE;
+	
+END_IF
+
+IF (Z=0 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (Z=1 AND NOT  P3Senser.P3_Ovendoorswitch2) OR (Z=2 AND P3Senser.P3_Ovendoorswitch2) THEN
+	IF NOT alarm_Oven[2].Q THEN
+		alarm_Oven[2].IN:=TRUE;
+	ELSE
+		P3_Error[18]:=TRUE;//烤箱2对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[2].IN:=FALSE;
+END_IF
+
+IF (Z=1 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (Z=2 AND NOT  P3Senser.P3_Ovendoorswitch3) OR (Z=0 AND P3Senser.P3_Ovendoorswitch3) THEN
+	IF NOT alarm_Oven[3].Q THEN
+		alarm_Oven[3].IN:=TRUE;
+	ELSE
+		P3_Error[19]:=TRUE;//烤箱3对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[3].IN:=FALSE;
+END_IF
+
+
+
+
+1190://烤箱气缸 N 关闭
+IF NOT SingleStep[3] THEN
+	
+	arrCyCtrl[P3_Oven[K]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[1]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[2]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[3]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[4]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[5]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[6]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[7]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[8]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[9]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[10]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[11]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[12]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[13]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[14]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[15]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[16]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[17]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[18]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[19]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[20]].Cmd.bOFF:=TRUE;	
+	arrCyCtrl[P3_Oven[21]].Cmd.bOFF:=TRUE;
+	K_OFFState_4.IN:=TRUE;
+	IF  Oven_CYOFF_condition AND P3Senser.P3_Ovendoorswitch1 AND P3Senser.P3_Ovendoorswitch2 AND P3Senser.P3_Ovendoorswitch3 THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF
+	step32:=1;
+	END_IF
+END_IF
+
+IF NOT P3Senser.P3_Ovendoorswitch1  THEN
+	IF NOT alarm_Oven[4].Q THEN
+		alarm_Oven[4].IN:=TRUE;
+	ELSE
+		P3_Error[17]:=TRUE;//烤箱1对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[4].IN:=FALSE;
+END_IF
+
+IF NOT P3Senser.P3_Ovendoorswitch2   THEN
+	IF NOT alarm_Oven[5].Q THEN
+		alarm_Oven[5].IN:=TRUE;
+	ELSE
+		P3_Error[18]:=TRUE;//烤箱2对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[5].IN:=FALSE;
+END_IF
+
+IF NOT P3Senser.P3_Ovendoorswitch3   THEN
+	IF NOT alarm_Oven[6].Q THEN
+		alarm_Oven[6].IN:=TRUE;
+	ELSE
+		P3_Error[19]:=TRUE;//烤箱3对射感应器报警
+	END_IF
+ELSE
+	    alarm_Oven[6].IN:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+/////////////////////////////处理冷压出来的电芯是扫码NG的电芯，应跳过上烤箱
+(*2000://判断是否有热压允许上料信号
+IF PermitHotPressRack THEN
+	step32:=2025;
+	ELSE
+	step32:=2010;	
+END_IF
+
+2010://P3_M2烤箱上料夹搬运电机回初始位
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed
+        AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=2020;	
+	END_IF
+END_IF
+
+2020:
+IF PermitHotPressRack AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+	step32:=2025;
+	END_IF
+
+	
+2025://P3_M2烤箱上料夹升降电机去热压位
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND 
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=2030;	
+	END_IF
+END_IF
+	
+	
+2030://P3_M2烤箱上料夹搬运电机去热压位
+IF NOT SingleStep[3] THEN
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND PermitHotPressRack AND
+        arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving AND 
+	 	LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)<=WeighLine_1  AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed//称重上料平移在安全位置
+		AND  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[45] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=45;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[45] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=2050;	
+	END_IF
+END_IF
+
+
+
+2050://P3_M2烤箱上料夹升降电机去热压位
+IF NOT SingleStep[3] THEN
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND 
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[45] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=45;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[45] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=2060;	
+	END_IF
+END_IF
+
+2060://P3_M2烤箱上料夹进退电机去热压位
+IF NOT SingleStep[3] THEN
+	
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[45] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=45;
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[45] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=2065;	
+	END_IF
+END_IF
+
+2065://P3_M2烤箱上料夹升降电机去热压位
+IF NOT SingleStep[3] THEN
+  
+	IF	NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[47] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=47;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[47] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF		
+	Step32:=2070;	
+	END_IF
+END_IF
+
+
+
+
+
+
+2070://烤箱上料夹气缸张开
+IF NOT SingleStep[3] THEN
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;
+IF arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2 THEN
+IF  StepModel[3] THEN
+SingleStep[3]:=TRUE;
+ELSE
+SingleStep[3]:=FALSE;
+END_IF		
+step32:=2080;
+END_IF
+END_IF
+
+2080://P3_M2烤箱上料夹进退电机回初始位
+IF NOT SingleStep[3] THEN
+IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+END_IF
+IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+IF  StepModel[3] THEN
+SingleStep[3]:=TRUE;
+ELSE
+SingleStep[3]:=FALSE;
+END_IF		
+Step32:=2090;	
+END_IF
+END_IF
+
+2090://记忆从烤箱上料夹子转移到热压工位
+CellMemory[CellNo.Hotpress]:=CellMemory[CellNo.OvenMoveClip1];
+MEMSET(ADR(CellMemory[CellNo.OvenMoveClip1]),0,SIZEOF(CellMemory[CellNo.OvenMoveClip1]));
+Step32:=2100;
+
+2100://该电芯是扫码NG直接跳过热压
+IF NOT B_OVEN THEN
+Hot_Press_Finish:=TRUE;
+Step32:=2110;
+ELSE
+Permit_Hot_Press:=TRUE;
+Permit_ShortTest:=TRUE;
+Step32:=2110;
+END_IF
+
+2110://P3_M2烤箱上料夹升降电机回初始位
+IF NOT SingleStep[3] THEN
+	
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND 
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving  THEN
+		IF  StepModel[3] THEN
+			SingleStep[3]:=TRUE;
+		ELSE
+			SingleStep[3]:=FALSE;
+		END_IF	
+	Step32:=1;	
+	END_IF
+END_IF
+*)
+END_CASE
+END_IF
+
+IF (step32=1135 OR step32=1140) AND NOT arrCyCtrl[P3_Oven[K]].Status.ONState THEN
+	tip_8[K]:=TRUE; //烤箱上料时，对应烤箱门未打开
+ELSE
+    tip_8[K]:=FALSE;	
+END_IF	
+
+IF step32>=55 AND step32<=70  AND NOT arrCyCtrl[P3_Oven[N]].Status.ONState THEN
+	tip_9[N]:=TRUE; //烤箱下料时，对应烤箱门未打开
+ELSE
+    tip_9[N]:=FALSE;	
+END_IF	
+
+IF  Step32>=40 AND  Step32<=105 THEN
+			FOR i1:=1 TO 21 BY 1 DO 
+					IF NOT  arrCyCtrl[P3_Oven[ i1]].Io.DIOFFSwitch AND    i1<>N THEN
+						P3_Error[47]:=TRUE;//烤箱下料时，除对应下料烤箱以外有门未关
+						tip_10[i1]:=TRUE; //烤箱下料时，有烤箱门未关闭
+					END_IF
+		   END_FOR
+END_IF
+
+IF  Step32>=1132 AND  Step32<=1185 THEN
+			FOR i2:=1 TO 21 BY 1 DO 
+					IF NOT  arrCyCtrl[P3_Oven[ i2]].Io.DIOFFSwitch AND    i2<>k THEN
+						P3_Error[46]:=TRUE;//烤箱上料时，除对应下料烤箱以外有门未关
+						tip_10[i2]:=TRUE; //烤箱上料时，有烤箱门未关闭
+					END_IF
+		   END_FOR
+END_IF
+
+IF  Step32=1 THEN
+			FOR i3:=1 TO 21 BY 1 DO 
+					IF NOT  arrCyCtrl[P3_Oven[ i3]].Io.DIOFFSwitch THEN
+						P3_Error[48]:=TRUE;//烤箱上料搬运运动时，有门未关
+					END_IF
+		   END_FOR
+END_IF
+
+
+IF  Step32>=80 AND  Step32<=150 THEN
+	IF NOT P3Senser.P3_Kxslgy THEN
+		P3_Error[34]:=TRUE;//烤箱下料至热压上料时，未检测到电芯报警
+	END_IF
+END_IF
+
+IF  Step32>=1060 AND  Step32<=1155 THEN
+	IF NOT  P3Senser.P3_Kxslgy THEN
+		P3_Error[35]:=TRUE;//冷压下料至烤箱上料时，未检测到电芯报警
+	END_IF
+END_IF
+
+IF Step32=1170 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND   P3Senser.P3_Kxslgy THEN
+	P3_Error[87]:=TRUE;//在烤箱下料完成后，检测到夹爪有电芯报警
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="ACT_Scan" Id="{64afb04a-81d5-4922-bb82-fc217ebd6865}">
+      <Implementation>
+        <ST><![CDATA[
+//	ScanStart:BOOL;//扫码开始
+//	ScanFinish:BOOL;//扫码完成	
+CASE ScanStep OF
+0:
+		Scan_start:=FALSE;//扫码开始--扫码枪
+		Scan_finish:=FALSE;//扫码完成--扫码枪
+		IF ScanStart THEN//扫码开始
+				ScanStep:=50;
+		END_IF
+50:
+		ScanStart:=FALSE;//扫码开始--扫码流程
+		ScanFinish:=FALSE;//扫码完成	--扫码流程		
+		ScanStep:=100;	
+100:
+		IF P3User2_Par.Shield[4] OR  P3User2_Par.Shield[23] THEN //扫码屏蔽
+				ScanStep:=750;	
+		ELSE
+				ScanStep:=200;	
+		END_IF
+
+200://烤箱上料夹进退走扫码位
+IF NOT SingleStep[3] THEN
+		IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=46;
+				OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+			END_IF	
+		IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]	 THEN
+				OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=0;
+				ScanStep:=300;
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF
+		END_IF
+END_IF
+300://烤箱上料夹升降走扫码位
+IF NOT SingleStep[3] THEN
+		IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]	AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46] 
+			AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=46;
+		END_IF	
+		IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46]	 THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=0;
+				ScanStep:=400;	
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF
+		END_IF
+END_IF
+400://烤箱上料夹搬运走扫码位
+IF NOT SingleStep[3] THEN
+		IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46]
+			AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[46]	AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error 
+			AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=46;
+		END_IF	
+		IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[46]	THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=0;
+				ScanStep:=500;	
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF
+		END_IF
+END_IF
+	
+500:
+IF NOT SingleStep[3] THEN
+		IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[46] THEN
+				ScanStep:=600;	
+			IF  StepModel[3] THEN
+				SingleStep[3]:=TRUE;
+			ELSE
+				SingleStep[3]:=FALSE;
+			END_IF
+		END_IF
+END_IF
+600://扫码开始
+		Scan_start:=TRUE;//扫码开始
+		Scan_finish:=FALSE;//扫码完成
+		ScanStep:=700;	
+700:
+		IF Scan_finish THEN//扫码完成
+			ScanStep:=750;	
+		ELSIF ScanAgainTON.Q THEN
+			ScanStep:=600;
+		END_IF
+750:
+		Scan_start:=FALSE;//扫码开始
+		Scan_finish:=FALSE;//扫码完成
+		ScanStep:=1100;	
+
+1100:
+		ScanFinish:=TRUE;//扫码完成	--扫码流程	
+		ScanStep:=1200;	
+1200:
+		IF NOT ScanFinish THEN
+				ScanStep:=0;	
+		END_IF
+		
+END_CASE
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P3_Oven_Time" Id="{833c28ce-bf82-4ee5-a722-f5e1c9d36ce8}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"T_Residue"</v>
+                              <v n="Type">"ARRAY [1..42] OF UDINT"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">18L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"Oven_Time"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"Oven_Time_1"</v>
+                            <v n="Type">"Oven_Time"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">61L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">true</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"P3User2_Par.Oven_cell"</v>
+                                <v n="Type">"ARRAY [1..42] OF BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">5L</v>
+                              </o>
+                              <v n="Id">4L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"P3User2_Par.Oven_finish"</v>
+                                <v n="Type">"ARRAY [1..42] OF BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">7L</v>
+                              </o>
+                              <v n="Id">6L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"Oven_Time"</v>
+                                <v n="Type">"TIME"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">9L</v>
+                              </o>
+                              <v n="Id">8L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"P3_T_achieve"</v>
+                                <v n="Type">"ARRAY [1..42] OF BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">11L</v>
+                              </o>
+                              <v n="Id">10L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"P3User2_Par.Oven_cell_Shield"</v>
+                                <v n="Type">"ARRAY [1..42] OF BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">15L</v>
+                              </o>
+                              <v n="Id">14L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"P3User2_Par.Oven_Finish_Time"</v>
+                                <v n="Type">"ARRAY [1..42] OF UDINT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">64L</v>
+                              </o>
+                              <v n="Id">63L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Oven_Cell</v>
+                              <v>Oven_Finish</v>
+                              <v>Oven_shijian</v>
+                              <v>T_achieve</v>
+                              <v>Ovencell_Shield</v>
+                              <v>Oven_JS</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>ARRAY [1..42] OF BOOL[REF]</v>
+                              <v>ARRAY [1..42] OF BOOL[REF]</v>
+                              <v>TIME[REF]</v>
+                              <v>ARRAY [1..42] OF BOOL[REF]</v>
+                              <v>ARRAY [1..42] OF BOOL[REF]</v>
+                              <v>ARRAY [1..42] OF UINT[REF]</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Residue_T</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>ARRAY [1..42] OF UDINT</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">62L</v>
+                        </o>
+                        <v n="Id">19L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" />
+                    <l2 n="Connectors" />
+                    <v n="Id">60L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Auto3">
+      <LineId Id="28031" Count="1808" />
+      <LineId Id="3772" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto3.ACT_Scan">
+      <LineId Id="308" Count="92" />
+      <LineId Id="416" Count="1" />
+      <LineId Id="401" Count="14" />
+      <LineId Id="3" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

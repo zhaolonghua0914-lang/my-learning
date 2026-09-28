@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="IO" Id="{1e5d8152-f73b-4956-a799-ddda4f554484}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	
+//////////////////////////叠片交互////////////////////////////////
+AnMQ_MES1	                  AT %Q*    	:ST_BeltData; //叠台1  MES交互
+CaMQ_MES1	                  AT %Q*    	:ST_BeltData; //叠台1  MES交互
+AnMQ_MES2	                  AT %Q*    	:ST_BeltData; //叠台2  MES交互
+CaMQ_MES2	                  AT %Q*    	:ST_BeltData; //叠台2 MES交互
+AnMQ_MES3	                  AT %Q*    	:ST_BeltData; //叠台3  MES交互
+CaMQ_MES3	                  AT %Q*    	:ST_BeltData; //叠台3  MES交互
+
+//模切、叠台条码交互
+	DT_To_MQ_MES AT %I*:ST_DT_To_MQ_MES;
+	MQ_To_DT_MES AT %Q*:ST_MQ_To_DT_MES;
+//预留数据交互
+YL_Q        			AT %Q*:ARRAY[1..50] OF BOOL ; //1、气压不足报警;
+YL_I     				AT %I*:ARRAY[1..50] OF BOOL ; //预留输入；
+YL_INT1     		AT %Q*:ARRAY[1..50] OF INT  ; //预留输入INT；
+YL_INT2     		AT %I*:ARRAY[1..50] OF INT  ; //预留输出INT；
+YL_GVL  :ARRAY [1..60] OF BOOL;//内部预留；
+
+//////////////////////////叠片交互////////////////////////////////
+D_Pro    AT %I*: DToM_Process;//只读 叠片生产过程信号
+D_Sys    AT %I*: DToM_System;//只读 叠片系统信号
+M_Pro    AT %Q*: MToD_Process;//只写 模切生产过程信号
+M_Sys    AT %Q*: MToD_System;//只写 模切系统信号
+MTD_Mes1	 AT %Q*: MTD_Mes1;	//发送模切数据XFP20240315
+DTM_Mes1	 AT %I*: DTM_Mes1;	//接收叠台数据XFP20240315
+
+I30101	 AT %I*:BOOL ; //1号叠台:正极模切送料分段皮带1有料感应
+I30107	 AT %I*:BOOL ; //1号叠台:负极模切送料分段皮带1有料感应
+I40101	 AT %I*:BOOL ; //2号叠台:正极模切送料分段皮带2有料感应
+I40107	 AT %I*:BOOL ; //2号叠台:负极模切送料分段皮带2有料感应
+I50101	 AT %I*:BOOL ; //3号叠台:正极模切送料分段皮带3有料感应
+I50107	 AT %I*:BOOL ; //3号叠台:负极模切送料分段皮带3有料感应
+
+Q30103	 AT %Q*:BOOL;//正极模切分段皮带1除尘毛刷正转
+Q30104	 AT %Q*:BOOL;//正极模切分段皮带1除尘毛刷反转
+Q30201	 AT %Q*:BOOL;//负极模切分段皮带1除尘毛刷正转
+Q30202	 AT %Q*:BOOL;//负极模切分段皮带1除尘毛刷反转
+
+Q40103	 AT %Q*:BOOL;//正极模切分段皮带2除尘毛刷正转
+Q40104	 AT %Q*:BOOL;//正极模切分段皮带2除尘毛刷反转
+Q40201	 AT %Q*:BOOL;//负极模切分段皮带2除尘毛刷正转
+Q40202	 AT %Q*:BOOL;//负极模切分段皮带2除尘毛刷反转
+
+Q50103	 AT %Q*:BOOL;//正极模切分段皮带3除尘毛刷正转
+Q50104	 AT %Q*:BOOL;//正极模切分段皮带3除尘毛刷反转
+Q50201	 AT %Q*:BOOL;//负极模切分段皮带3除尘毛刷正转
+Q50202	 AT %Q*:BOOL;//负极模切分段皮带3除尘毛刷反转
+
+
+/////////////////////////正极模切/////////////////////
+I101      AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I102		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I103		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I104		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I105		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I106		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I107		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I108		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I109		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+
+Q101		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q102		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q103		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q104		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q105		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q106		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q107		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q108		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q109		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+
+AI101	AT %I*:ARRAY[0..3]    OF INT;  //模拟量输入
+AI102	AT %I*:ARRAY[0..3]    OF INT;  //模拟量输入
+
+AO101  AT %Q*:ARRAY[0..3]   OF INT;  //模拟量输出
+
+/////////////////////////负极模切/////////////////////
+I201      AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I202		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I203		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I204		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I205		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I206		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I207		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I208		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+I209		AT %I*:ARRAY[1..16] OF BOOL ;  	//输入模块
+
+Q201		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q202		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q203		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q204		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q205		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q206		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q207		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q208		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+Q209		AT %Q*:ARRAY[1..16] OF BOOL ;  	//输出模块
+
+AI201	AT %I*:ARRAY[0..3]    OF INT;  //模拟量输入
+AI202	AT %I*:ARRAY[0..3]    OF INT;  //模拟量输入
+
+AO201  AT %Q*:ARRAY[0..3]   OF INT;  //模拟量输出
+	
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   AnBtn                  :ST_MoQieButton;//正极
+   CaBtn                  :ST_MoQieButton;//负极
+   AnSenser             :ST_MoQieSenser;//正极
+   CaSenser             :ST_MoQieSenser;//负极
+
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	MaxAINo				:INT:=24;		(*ai通道数量*)
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

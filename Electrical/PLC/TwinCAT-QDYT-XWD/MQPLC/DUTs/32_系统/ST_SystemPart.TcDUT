@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_SystemPart" Id="{fcc14b4c-e7da-495d-b3b7-be91646ef4b5}">
+    <Declaration><![CDATA[TYPE ST_SystemPart ://系统功能块UDT
+STRUCT
+(***btn***)
+	 btnStart                      :BOOL;  //面板启动
+     btnStop                      :BOOL;  //面板停止
+	 btnReset                     :BOOL;  //面板复位
+     btnAuto                      :BOOL;//面板true=自动；false=手动
+	 btnEstop                    :BOOL;//面板急停	 
+	 
+	 boStartLight                     :BOOL;           (***面板启动按钮灯***)
+	 boResetLight                     :BOOL;           (***面板复位按钮灯***)
+	 boStopLight                     :BOOL;           (***面板停止按钮灯***)
+(***HMI*) 
+	 hmiTenAll                    :BOOL;  //一键张力耦合
+	 hmiDisTenAll                    :BOOL;  //一键张力解耦
+	 hmiCamAll                    :BOOL;  //一键凸轮耦合
+	 hmiDisCamAll                    :BOOL;  //一键凸轮解耦
+	 hmiGoHome					:BOOL;//一键初始化(回原)
+	 hmiClearBelt                 :BOOL;//一键清皮带(清除皮带上的料)
+	 
+	 hmiMQDriverOnce          :BOOL;  //模切驱动一片
+	 hmiMQCutOnce             :BOOL;  //模切裁切一片 
+	 
+	 
+(**Status**)
+	 Homed						:BOOL;//初始化完成
+	 Homeing					:BOOL;//初始化进行中
+     Autoing                     :BOOL;   //自动运行中
+	 Manuling                   :BOOL;  //手动运行中
+	 Stoping                     :BOOL;   //停止中
+	 Alarming                   :BOOL;   //报警中
+	 bErrorStop                :BOOL;//报警停机
+
+     bAutoCondition1         :BOOL;//自动准备好(初步)
+	 bAutoCondition2         :BOOL;//自动准备好(张力凸轮OK)
+     bStopFinished            :BOOL;
+	 bAutoTen                  :BOOL;//自动允许气缸/张力/凸轮动作
+	 bAutoMain                  :BOOL;//自动允许主轴动作
+(***INIT***)
+	hmiInit                        :BOOL;
+    bInit                        :BOOL;
+    bInitDone                :BOOL;
+	bIniting                   :BOOL;
+	
+//条码校验OK	
+	PolePieceNumberOK1   : BOOL;   //左料卷料号OK
+	PolePieceNumberOK2   : BOOL;   //右料卷料号OK
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

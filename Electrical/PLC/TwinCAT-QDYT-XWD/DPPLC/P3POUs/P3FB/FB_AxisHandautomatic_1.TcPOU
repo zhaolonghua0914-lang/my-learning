@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_AxisHandautomatic_1" Id="{6e9e61b9-0e80-48e4-b7a9-5e2a92667f7f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_AxisHandautomatic_1
+VAR_INPUT
+    Notmoing:BOOL;//主轴停止中
+	Run:BOOL;//自动
+	i:INT;
+	j: INT;
+	Reset:BOOL;//手自动对比复位
+END_VAR
+
+VAR_OUTPUT
+error :BOOL ;
+END_VAR
+
+VAR
+	step:INT ;
+	rRun : R_TRIG;
+	fRun: F_TRIG;
+
+	Pause_CMD:ARRAY[1..185] OF LREAL ; //手自动对比位置
+	Handautomark:BOOL;//手自动对比标志
+	K: INT;
+	K1: INT;
+
+END_VAR
+
+VAR_IN_OUT
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+rRun(CLK:= Run , Q=> );
+fRun(CLK:= Run , Q=> );
+
+
+		IF fRun.Q THEN
+			step:=100; 
+		END_IF
+		
+	CASE step OF	
+		100:
+		   IF Notmoing THEN
+			 step:=110;  
+		   END_IF
+	    110:    
+	        Handautomark:=TRUE;
+			FOR K:=i TO ((i+j)-1) DO 
+				IF   K<>166 AND K<>167 AND K<>168  THEN
+			          Pause_CMD[K]:=arrAxisCtrl[K].Status.fActPos;
+				END_IF	  
+			END_FOR
+			Pause_CMD[166]:=arrAxisCtrlV2[166].Status.fActPos;
+			Pause_CMD[167]:=arrAxisCtrlV2[167].Status.fActPos;
+			Pause_CMD[168]:=arrAxisCtrlV2[168].Status.fActPos;
+			
+	        step:=120;    
+	END_CASE
+		
+
+	   IF rRun.Q AND Handautomark THEN
+				FOR K:=i TO ((i+j)-1) DO 
+						IF  ABS(Pause_CMD[K]-arrAxisCtrl[K].Status.fActPos)>=0.2 AND K<>166 AND K<>167 AND K<>168  THEN
+						Axis_error[k]:=TRUE;
+						END_IF
+			
+						IF  ABS(Pause_CMD[166]-arrAxisCtrlV2[166].Status.fActPos)>0.2  THEN
+						Axis_error[166]:=TRUE;
+						END_IF
+
+						IF  ABS(Pause_CMD[167]-arrAxisCtrlV2[167].Status.fActPos)>0.2  THEN
+						Axis_error[167]:=TRUE;
+						END_IF
+
+						IF  ABS(Pause_CMD[168]-arrAxisCtrlV2[168].Status.fActPos)>0.2  THEN
+						Axis_error[168]:=TRUE;
+						END_IF
+			
+						IF Axis_error[k]   THEN
+							error:=TRUE;
+						END_IF
+				END_FOR
+				    Handautomark:=FALSE;
+		END_IF
+		
+		IF stSysState.btnReset OR  stSysState.hmiReset  THEN
+			   error:=FALSE;
+			   FOR K1:=1 TO 185 DO 
+				       Axis_error [K1]:=FALSE;
+			   END_FOR
+		END_IF
+		
+		IF Reset THEN
+			 Handautomark:=FALSE;
+		END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_AxisHandautomatic_1">
+      <LineId Id="283" Count="1" />
+      <LineId Id="305" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="378" Count="1" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="384" Count="0" />
+      <LineId Id="391" Count="0" />
+      <LineId Id="387" Count="0" />
+      <LineId Id="465" Count="1" />
+      <LineId Id="468" Count="0" />
+      <LineId Id="473" Count="2" />
+      <LineId Id="470" Count="0" />
+      <LineId Id="476" Count="1" />
+      <LineId Id="520" Count="0" />
+      <LineId Id="478" Count="0" />
+      <LineId Id="523" Count="0" />
+      <LineId Id="522" Count="0" />
+      <LineId Id="505" Count="2" />
+      <LineId Id="471" Count="1" />
+      <LineId Id="469" Count="0" />
+      <LineId Id="467" Count="0" />
+      <LineId Id="380" Count="0" />
+      <LineId Id="393" Count="0" />
+      <LineId Id="395" Count="2" />
+      <LineId Id="399" Count="0" />
+      <LineId Id="433" Count="0" />
+      <LineId Id="510" Count="1" />
+      <LineId Id="509" Count="0" />
+      <LineId Id="512" Count="0" />
+      <LineId Id="515" Count="1" />
+      <LineId Id="513" Count="1" />
+      <LineId Id="518" Count="1" />
+      <LineId Id="517" Count="0" />
+      <LineId Id="508" Count="0" />
+      <LineId Id="434" Count="2" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="438" Count="0" />
+      <LineId Id="386" Count="0" />
+      <LineId Id="400" Count="1" />
+      <LineId Id="437" Count="0" />
+      <LineId Id="402" Count="0" />
+      <LineId Id="404" Count="1" />
+      <LineId Id="403" Count="0" />
+      <LineId Id="551" Count="0" />
+      <LineId Id="553" Count="1" />
+      <LineId Id="552" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

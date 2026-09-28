@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Timedata" Id="{99fa1a42-358b-4851-b100-ec3537a6281b}">
+    <Declaration><![CDATA[TYPE ST_Timedata :
+STRUCT
+	
+	RunTime:ARRAY[0..25] OF UINT;//运行时间
+    WaitTime:ARRAY[0..25] OF UINT;//待机时间
+    AlmTime:ARRAY[0..25] OF UINT;//报警时间 	
+    OverhangNGTime:ARRAY[0..25] OF UINT;//t剔对齐度时间 	
+    GMchangeTime:ARRAY[0..25] OF UINT;//隔膜更换时间 	
+	
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

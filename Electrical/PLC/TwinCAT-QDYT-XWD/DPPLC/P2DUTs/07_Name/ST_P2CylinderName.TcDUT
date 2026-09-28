@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P2CylinderName" Id="{507ba333-1e69-4700-80d3-660de3167be2}">
+    <Declaration><![CDATA[TYPE ST_P2CylinderName :   //2#部分气缸
+STRUCT
+P2M1_AnScrapbinCy	:INT:=1;		//1号叠台		正极片NG收纳盒
+P2M1_CaScrapbinCy	:INT:=2;		//1号叠台		负极片NG收纳盒
+P2M1_CaScrapbinUDCy	:INT:=3;		//1号叠台		负极片NG收纳盒升降
+P2M1_StackpreCy	:INT:=4;		//1号叠台		叠台压刀气缸
+P2M1_PreDiaph	:INT:=5;		//1号叠台		压隔膜气缸
+P2M1_PoleInflationCy	:INT:=6;		//1号叠台		隔膜放卷气胀轴
+P2M1_PoleTapeSplicerLCy	:INT:=7;		//1号叠台		隔膜接带左压板气缸
+P2M1_PoleTapeSplicerRCy	:INT:=8;		//1号叠台		隔膜接带右压板气缸
+P2M1_PoleTapeCy	:INT:=9;		//1号叠台		隔膜夹紧气缸
+P2M1_PoleHotCutterCy	:INT:=10;		//1号叠台		隔膜热切升降
+P2M1_PoleSplintCy_U	:INT:=11;		//1号叠台		夹膜上夹板
+P2M1_PoleSplintCy_D	:INT:=12;		//1号叠台		夹膜下夹板
+P2M1_TailCurlSplintCy	:INT:=13;		//1号叠台		尾卷夹爪开合
+P2M1_CurlingSplintCy_L	:INT:=14;		//1号叠台		长卷针夹开合
+P2M1_CurlingSplintCy_S	:INT:=15;		//1号叠台		短卷针夹开合
+P2M1_TailCurlLineCy	:INT:=16;		//1号叠台		尾卷压辊平移缸
+P2M1_TailCurlUpdownCy	:INT:=17;		//1号叠台		尾卷压辊升降缸
+P2M1_StandbyGlueCy	:INT:=18;		//1号叠台		备胶气缸
+P2M1_CodeStandbyGlueCy	:INT:=19;		//1号叠台		备二维码胶气缸
+P2M1_GlueClampsCy	:INT:=20;		//1号叠台		贴胶夹爪气缸
+P2M1_GluePressCy	:INT:=21;		//1号叠台		压胶气缸
+P2M1_CodeGluePressCy	:INT:=22;		//1号叠台		压二维码胶气缸
+P2M1_GlueCutCy	:INT:=23;		//1号叠台		切胶气缸
+P2M1_codeGlueCutCy	:INT:=24;		//1号叠台		切二维码胶气缸
+P2M1_PullGluePoleCy	:INT:=25;		//1号叠台		拉胶杆抱紧
+P2M1_PullGlueCy	:INT:=26;		//1号叠台		拉胶气缸
+P2M1_GlueNGCy	:INT:=27;		//1号叠台		踢废胶气缸
+P2M1_PullGlueModelCy	:INT:=28;		//1号叠台		贴胶治具气缸
+
+P2M2_AnScrapbinCy	:INT:=29;		//2号叠台		正极片NG收纳盒
+P2M2_CaScrapbinCy	:INT:=30;		//2号叠台		负极片NG收纳盒
+P2M2_StackpreCy	:INT:=31;		//2号叠台		叠台压刀气缸
+P2M2_PreDiaphCy	:INT:=32;		//2号叠台		压隔膜气缸
+P2M2_PoleTapeCy	:INT:=33;		//2号叠台		隔膜夹紧气缸
+P2M2_PoleInflationCy	:INT:=34;		//2号叠台		隔膜放卷气胀轴
+P2M2_PoleTapeSplicerLCy	:INT:=35;		//2号叠台		隔膜接带左压板气缸
+P2M2_PoleTapeSplicerRCy	:INT:=36;		//2号叠台		隔膜接带右压板气缸
+P2M2_CaScrapbinUDCy	:INT:=37;		//2号叠台		负极片NG收纳盒升降
+P2M2_PoleHotCutterCy	:INT:=38;		//2号叠台		隔膜热切升降
+P2M2_PoleSplintCy_U	:INT:=39;		//2号叠台		夹膜上夹板
+P2M2_PoleSplintCy_D	:INT:=40;		//2号叠台		夹膜下夹板
+P2M2_TailCurlSplintCy	:INT:=41;		//2号叠台		尾卷夹爪开合
+P2M2_CurlingSplintCy_L	:INT:=42;		//2号叠台		长卷针夹开合
+P2M2_CurlingSplintCy_S	:INT:=43;		//2号叠台		短卷针夹开合
+P2M2_TailCurlLineCy	:INT:=44;		//2号叠台		尾卷压辊平移缸
+P2M2_TailCurlUpdownCy	:INT:=45;		//2号叠台		尾卷压辊升降缸
+P2M2_StandbyGlueCy	:INT:=46;		//2号叠台		备胶气缸
+P2M2_CodeStandbyGlueCy	:INT:=47;		//2号叠台		备二维码胶气缸
+P2M2_GlueClampsCy	:INT:=48;		//2号叠台		贴胶夹爪气缸
+P2M2_GluePressCy	:INT:=49;		//2号叠台		压胶气缸
+P2M2_CodeGluePressCy	:INT:=50;		//2号叠台		压二维码胶气缸
+P2M2_GlueCutCy	:INT:=51;		//2号叠台		切胶气缸
+P2M2_codeGlueCutCy	:INT:=52;		//2号叠台		切二维码胶气缸
+P2M2_PullGluePoleCy	:INT:=53;		//2号叠台		拉胶杆抱紧
+P2M2_PullGlueCy	:INT:=54;		//2号叠台		拉胶气缸
+P2M2_GlueNGCy	:INT:=55;		//2号叠台		踢废胶气缸
+P2M2_PullGlueModelCy	:INT:=56;		//2号叠台		贴胶治具气缸
+
+P2M3_AnScrapbinCy	:INT:=57;		//3号叠台		正极片NG收纳盒
+P2M3_CaScrapbinCy	:INT:=58;		//3号叠台		负极片NG收纳盒
+P2M3_CaScrapbinUDCy	:INT:=59;		//3号叠台		负极片NG收纳盒升降
+P2M3_StackpreCy	:INT:=60;		//3号叠台		叠台压刀气缸
+P2M3_PreDiaphCy	:INT:=61;		//3号叠台		压隔膜气缸
+P2M3_PoleInflationCy	:INT:=62;		//3号叠台		隔膜放卷气胀轴
+P2M3_PoleTapeSplicerLCy	:INT:=63;		//3号叠台		隔膜接带左压板气缸
+P2M3_PoleTapeSplicerRCy	:INT:=64;		//3号叠台		隔膜接带右压板气缸
+P2M3_PoleTapeCy	:INT:=65;		//3号叠台		隔膜夹紧气缸
+P2M3_PoleHotCutterCy	:INT:=66;		//3号叠台		隔膜热切升降
+P2M3_PoleSplintCy_U	:INT:=67;		//3号叠台		夹膜上夹板
+P2M3_PoleSplintCy_D	:INT:=68;		//3号叠台		夹膜下夹板
+P2M3_TailCurlSplintCy	:INT:=69;		//3号叠台		尾卷夹爪开合
+P2M3_CurlingSplintCy_L	:INT:=70;		//3号叠台		长卷针夹开合
+P2M3_CurlingSplintCy_S	:INT:=71;		//3号叠台		短卷针夹开合
+P2M3_TailCurlLineCy	:INT:=72;		//3号叠台		尾卷压辊平移缸
+P2M3_TailCurlUpdownCy	:INT:=73;		//3号叠台		尾卷压辊升降缸
+P2M3_StandbyGlueCy	:INT:=74;		//3号叠台		备胶气缸
+P2M3_CodeStandbyGlueCy	:INT:=75;		//3号叠台		备二维码胶气缸
+P2M3_GlueClampsCy	:INT:=76;		//3号叠台		贴胶夹爪气缸
+P2M3_GluePressCy	:INT:=77;		//3号叠台		压胶气缸
+P2M3_CodeGluePressCy	:INT:=78;		//3号叠台		压二维码胶气缸
+P2M3_GlueCutCy	:INT:=79;		//3号叠台		切胶气缸
+P2M3_codeGlueCutCy	:INT:=80;		//3号叠台		切二维码胶气缸
+P2M3_PullGluePoleCy	:INT:=81;		//3号叠台		拉胶杆抱紧
+P2M3_PullGlueCy	:INT:=82;		//3号叠台		拉胶气缸
+P2M3_GlueNGCy	:INT:=83;		//3号叠台		踢废胶气缸
+P2M3_PullGlueModelCy	:INT:=84;		//3号叠台		贴胶治具气缸
+LockonCy:INT:=85;//电芯NG1料盒锁定气缸
+P2M3_CurlingSplintCy_S_1	:INT:=86;		//3号叠台		短卷针夹泄气
+P2M2_CurlingSplintCy_S_1	:INT:=87;		//2号叠台		短卷针夹泄气
+P2M1_CurlingSplintCy_S_1    :INT:=88;		//1号叠台		短卷针夹泄气
+
+P2M1_RollPoleearCy    :INT:=89;		//1号叠台		尾卷托极耳气缸
+P2M2_RollPoleearCy    :INT:=90;		//2号叠台		尾卷托极耳气缸
+P2M3_RollPoleearCy    :INT:=91;		//3号叠台		尾卷托极耳气缸
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

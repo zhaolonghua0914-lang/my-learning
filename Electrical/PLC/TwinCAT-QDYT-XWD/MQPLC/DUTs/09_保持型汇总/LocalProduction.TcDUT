@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="LocalProduction" Id="{90a5dfed-20bd-47a9-968a-01a8b81a299b}">
+    <Declaration><![CDATA[TYPE  LocalProduction :
+STRUCT
+	OutFlag1:BOOL;(*产量计数标志1*)
+	OutFlag2:BOOL;(*产量计数标志2*)
+	NGFlag:ARRAY[1..50] OF BOOL;(*NG1计数标志*)
+
+	RunFlag:BOOL;(*运行标志*)
+	WaitFlag:BOOL;(*待料标志*)
+	AlarmFlag:BOOL;(*故障标志*)
+	DelDataAMBtn:BOOL;(*白班数据清除按钮*)
+	DelDataPMBtn:BOOL;(*夜班数据清除按钮*)
+	NowOutTotal:REAL;(*当前班次加工总数*)
+	NowRate:REAL;(*当前班次良率*)
+	HMI_NGClearAMBtn:ARRAY[1..50] OF BOOL;//白班NG类型计数清零
+	HMI_NGClearPMBtn:ARRAY[1..50] OF BOOL;//夜班NG类型计数清零
+	
+//产能清零
+	HMI_DelDataAMBtn			:BOOL;//白班产能清零
+	HMI_DelDataPMBtn			:BOOL;//夜班产能清零
+(*产能统计*)
+	HMI_TodayTotal				:REAL;(*当天24H生产总数*)
+	HMI_TodayOK					:REAL; (*当天24H生产OK总数*)
+	HMI_TodayNG 				:REAL; (*当天24H生产NG总数*)
+	
+	HMI_HistoryTotal			:ARRAY[1..7 ] 	OF REAL ;(*历史每天24H生产总数ARRAY[1..7 ]*)
+	HMI_HistoryOK				:ARRAY[1..7 ] 	OF REAL ;(*历史每天24H生产OK总数ARRAY[1..7 ]*)
+	HMI_HistoryNG 				:ARRAY[1..7 ] 	OF REAL ; (*历史每天24H生产NG总数ARRAY[1..7 ]*)
+	DayCountTotal				:REAL;(*白班产量合计*)
+	NightCountTotal				:REAL;(*夜班产量合计*)
+	SaveNowDay					:INT;
+	SaveNowMonth				:INT;
+	nDayRunTimeCnt				:ARRAY[8..19 ] 	OF UDINT;		(*白班运行时间统计*)
+	nDayAlarmTimeCnt			:ARRAY[8..19 ] 	OF UDINT;		(*白班报警时间统计*)
+	nDayWaitTimeCnt				:ARRAY[8..19 ] 	OF UDINT;		(*白班待料时间统计*)
+	nNightRunTimeCnt			:ARRAY[0..23 ] OF UDINT;		(*夜班运行时间统计*)
+	nNightAlarmTimeCnt			:ARRAY[0..23 ] OF UDINT;		(*夜班报警时间统计*)
+	nNightWaitTimeCnt			:ARRAY[0..23 ] OF UDINT;		(*夜班待料时间统计*)
+	HourTimeDayCount			:ARRAY[8..19 ] 	OF REAL;		(*白班每小时产量*)
+	HourTimeNightCount			:ARRAY[0..23] 	OF REAL;		(*夜班每小时产量*)
+	NgPerHourDayCount			:ARRAY[1..50 ] 	OF REAL;		(*白班1-30种类的不良分类*)
+	NgPerHourNightCount			:ARRAY[1..50 ] 	OF REAL;		(*夜班1-30种类的不良分类*)
+	HMI_TotalCount				:REAL;(*总产量*)
+	HMI_OkCount					:REAL;(*OK产量*)
+	HMI_NgCount					:REAL;(*Ng产量*)
+	HMI_Qualified 				:REAL;(*良率*)
+	HMI_NG_Qualified 			:REAL;(*不良率*)
+	HMI_OEE							:REAL;//设备稼动率
+	HMI_DayOkCount				:REAL;(*白班OK产量*)
+	HMI_DayNgCount				:REAL;(*白班Ng产量*)
+	HMI_DayQualified 			:REAL;(*白班良率*)
+	HMI_DayNG_Qualified 		:REAL;(*白班不良率*)
+	HMI_NightOkCount			:REAL;(*夜班OK产量*)
+	HMI_NightNgCount			:REAL;(*夜班Ng产量*)
+	HMI_NightQualified 			:REAL;(*夜班良率*)
+	HMI_NightNG_Qualified 		:REAL;(*夜班不良率*)
+	DayRunTimeTotal				:REAL;(*白班总运行时间合计*)
+	NightRunTimeTotal			:REAL;(*夜班总运行时间合计*)
+	DayAlarmTimeTotal			:REAL;(*白班总报警时间合计*)
+	NightAlarmTimeTotal			:REAL;(*夜班总报警时间合计*)
+	DayWaitTimeTotal			:REAL;(*白班总待料时间合计*)
+	NightWaitTimeTotal			:REAL;(*夜班总待料时间合计*)
+	RunTimeTotal				:REAL;(*总运行时间合计*)
+	WaitTimeTotal				:REAL;(*总待料时间合计*)
+	AlarmTimeTotal				:REAL;(*总报警时间合计*)
+	(*历史数据变量汇总1-7天*)
+	(*白班*)
+	DayReadDayHistory			:ARRAY[1..7 ] 	OF INT;(*历史日*)
+	DayReadMonthHistory			:ARRAY[1..7 ] 	OF INT;(*历史月*)
+	DayCountTotalHistory		:ARRAY[1..7 ] 	OF REAL ;(*历史白班每天生产总数*)
+	HMI_DayOkCountHistory		:ARRAY[1..7 ] 	OF REAL ;(*历史白班每天生产OK总数*)
+	HMI_DayNgCountHistory		:ARRAY[1..7 ] 	OF REAL ;(*历史白班每天生产NG总数*)
+	HMI_DayQualifiedHistory		:ARRAY[1..7 ] 	OF REAL ;  (*历史白班每天良率*)
+	DayRunTimeTotalHistory		:ARRAY[1..7 ] 	OF REAL ;(*历史每天白板总运行时间合计*)
+	DayWaitTimeTotalHistory		:ARRAY[1..7 ] 	OF REAL ;(*历史每天白板总待料时间合计*)
+	DayAlarmTimeTotalHistory	:ARRAY[1..7 ] 	OF REAL ;(*历史每天白板总报警时间合计*)
+	NgPerHourDayCountHistory	:ARRAY[1..7,1..50 ] 	OF REAL ;(*历史每天白班各类NG数量*)
+	HourTimeDayCountHistory		:ARRAY[1..7,8..19 ] 	OF REAL ;(*历史每天白班每小时产量*)
+	(*夜班*)
+	NightCountTotalHistory		:ARRAY[1..7 ] 	OF REAL ;
+	HMI_NightOkCountHistory		:ARRAY[1..7 ] 	OF REAL ;
+	HMI_NightNgCountHistory		:ARRAY[1..7 ] 	OF REAL ;
+	HMI_NightQualifiedHistory	:ARRAY[1..7 ] 	OF REAL ;
+	NightRunTimeTotalHistory	:ARRAY[1..7 ] 	OF REAL ;
+	NightWaitTimeTotalHistory	:ARRAY[1..7 ] 	OF REAL ;
+	NightAlarmTimeTotalHistory	:ARRAY[1..7 ] 	OF REAL ;
+	NgPerHourNightCountHistory	:ARRAY[1..7,1..50 ] 	OF REAL ;
+	HourTimeNightCountHistory	:ARRAY[1..7,0..23] 	OF REAL ;
+	(*历史数据变量汇总1-7天*)
+
+
+(**********************************生产统计数据********************************************)
+	DayRunTime_min:ARRAY[8..19] 	OF REAL;	(*白班每小时运行时间*)
+	NightRunTime_min:ARRAY[0..23] 	OF REAL;	(*夜班每小时运行时间*)
+	AllDayRunTime_min: REAL;	(*白班总运行时间*)
+	AllNightRunTime_min: REAL;	(*夜班总运行时间*)
+
+	DayWaitTime_min:ARRAY[8..19] 	OF REAL;	(*白班待料每小时时间*)
+	NightWaitTime_min:ARRAY[0..23] 	OF REAL;	(*夜班待料每小时时间*)
+	AllDayWaitTime_min: REAL;(*白班总待料时间*)
+	AllNightWaitTime_min: REAL;(*夜班总待料时间*)
+
+	DayAlmTime_min:ARRAY[8..19] 	OF REAL;	(*白班每小时报警时间*)
+	NightAlmTime_min:ARRAY[0..23] OF REAL;	(*夜班每小时报警时间*)
+	AllDayAlmTime_min: REAL;	(*白班总报警时间*)
+	AllNightAlmTime_min: REAL;	(*夜班总报警时间*)
+
+	DayBlockTime_min:ARRAY[0..23] 	OF REAL;(*白班每小时堵料时间*)
+	NightBlockTime_min:ARRAY[0..23] 	OF REAL;(*夜班每小时堵料时间*)
+	AllDayBlockTime_min: REAL;(*白班总堵料时间*)
+	AllNightBlockTime_min: REAL;(*夜班总堵料时间*)
+	
+	HMINgClassCount_Day:ARRAY[1..50,0..23] 	OF REAL;(*白班每种NG类型每小时统计 ,,,NG类型，小时*)
+	HMINgClassCount_Night:ARRAY[1..50,0..23] 	OF REAL;(*夜班每种NG类型每小时统计 ,,,NG类型，小时*)
+	
+	
+	
+
+	HisDayRunTime_min	:ARRAY[1..7,8..19 ] OF REAL ; (*历史白班每小时运行时间*)
+	HisNightRunTime_min	:ARRAY[1..7,0..23 ] OF REAL ; (*历史夜班每小时运行时间*)
+	HisAllDayRunTime_min:ARRAY[1..7] OF REAL ;	(*历史白班总运行时间*)
+	HisAllNightRunTime_min:ARRAY[1..7 ] OF REAL ;	(*历史夜班总运行时间*)
+
+	HisDayWaitTime_min	:ARRAY[1..7,8..19 ] OF REAL ; (*历史白班每小时待料时间*)
+	HisNightWaitTime_min:ARRAY[1..7,0..23 ] OF REAL ; (*历史夜班每小时待料时间*)
+	HisAllDayWaitTime_min:ARRAY[1..7] OF REAL ;	(*历史白班总待料时间*)
+	HisAllNightWaitTime_min:ARRAY[1..7 ] OF REAL ;	(*历史夜班总待料时间*)
+
+	HisDayAlmTime_min	:ARRAY[1..7,8..19 ] OF REAL ; (*历史白班每小时报警时间*)
+	HisNightAlmTime_min	:ARRAY[1..7,0..23 ] OF REAL ; (*历史夜班每小时报警时间*)
+	HisAllDayAlmTime_min:ARRAY[1..7] OF REAL ;	(*历史白班总报警时间*)
+	HisAllNightAlmTime_min:ARRAY[1..7 ] OF REAL ;(*历史夜班总报警时间*)
+
+	HisHMINgClassCount_Day:ARRAY[1..50,0..23,1..7] 	OF REAL;(*历史白班每种NG类型每小时统计,,,NG类型，小时，天*)
+	HisHMINgClassCount_Night:ARRAY[1..50,0..23,1..7] 	OF REAL;(*历史夜班每种NG类型每小时统计,,,NG类型，小时，天*)
+
+	
+	HMI_TodayNGQualified:ARRAY[1..50] OF REAL;//当天白班各种NG类型NG率
+	HMI_NightNGQualified:ARRAY[1..50] OF REAL;//当天夜班各种NG类型NG率	
+	
+	HMI_HisTodayNGQualified:ARRAY[1..50,1..7] OF REAL;//历史白班各种NG类型NG率
+	HMI_HisNightNGQualified:ARRAY[1..50,1..7] OF REAL;//历史夜班各种NG类型NG率
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

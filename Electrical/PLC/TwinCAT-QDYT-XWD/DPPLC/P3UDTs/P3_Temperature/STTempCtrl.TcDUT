@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="STTempCtrl" Id="{d5bdb82d-1c9b-44ce-9f8a-a2d8ea106bad}">
+    <Declaration><![CDATA[TYPE STTempCtrl :
+STRUCT
+   In         AT  %I* :    TempIn;
+   Out       AT  %Q* : TempOut;
+   Tem_fPV :			  REAL; //当前温度
+   fPVShow_1:			  REAL; //显示温度_1
+   fPVShow1 :             REAL; //显示温度1
+   fPVShow2 :             REAL; //显示温度2
+   fPVShow3 :             REAL; //显示温度3
+   fPVShow4 :             REAL; //显示温度4
+   fPVShow5 :             REAL; //显示温度5
+(***输出*)
+ //  fTempMax                                :REAL;     //温度上限   监控
+  // fTempMin                                 :REAL;     //温度下限   监控
+(***Status*)
+  bTempError_HI       :BOOL;     //超温报警
+  bTempError_LI       :BOOL;     //超低温报警
+  bSenserError         :BOOL;     //温度检测不一致
+  bTuningError          :BOOL;     //自整定故障
+
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

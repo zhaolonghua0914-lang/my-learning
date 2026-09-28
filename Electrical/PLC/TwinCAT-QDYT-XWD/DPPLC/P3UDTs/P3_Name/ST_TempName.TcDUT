@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_TempName" Id="{e1cbf0ae-fdd0-4838-8d36-17d27a1f41d8}">
+    <Declaration><![CDATA[TYPE ST_TempName :   //  整机纠偏名称
+STRUCT
+	
+//烤箱1加热板				
+P3_PoleBoard1_1	:INT:=1;	//箱烤	1	上加热板1
+P3_PoleBoard1_2	:INT:=2;	//箱烤	1	上加热板2
+P3_PoleBoard1_3	:INT:=3;	//箱烤	1	下加热板1
+P3_PoleBoard1_4	:INT:=4;	//箱烤	1	下加热板2
+//烤箱2加热板				
+P3_PoleBoard2_1	:INT:=5;	//箱烤	2	上加热板1
+P3_PoleBoard2_2	:INT:=6;	//箱烤	2	上加热板2
+P3_PoleBoard2_3	:INT:=7;	//箱烤	2	下加热板1
+P3_PoleBoard2_4	:INT:=8;	//箱烤	2	下加热板2
+//烤箱3加热板				
+P3_PoleBoard3_1	:INT:=9;	//箱烤	3	上加热板1
+P3_PoleBoard3_2	:INT:=10;	//箱烤	3	上加热板2
+P3_PoleBoard3_3	:INT:=11;	//箱烤	3	下加热板1
+P3_PoleBoard3_4	:INT:=12;	//箱烤	3	下加热板2
+//烤箱4加热板				
+P3_PoleBoard4_1	:INT:=13;	//箱烤	4	上加热板1
+P3_PoleBoard4_2	:INT:=14;	//箱烤	4	上加热板2
+P3_PoleBoard4_3	:INT:=15;	//箱烤	4	下加热板1
+P3_PoleBoard4_4	:INT:=16;	//箱烤	4	下加热板2
+//烤箱5加热板				
+P3_PoleBoard5_1	:INT:=17;	//箱烤	5	上加热板1
+P3_PoleBoard5_2	:INT:=18;	//箱烤	5	上加热板2
+P3_PoleBoard5_3	:INT:=19;	//箱烤	5	下加热板1
+P3_PoleBoard5_4	:INT:=20;	//箱烤	5	下加热板2
+//烤箱6加热板				
+P3_PoleBoard6_1	:INT:=21;	//箱烤	6	上加热板1
+P3_PoleBoard6_2	:INT:=22;	//箱烤	6	上加热板2
+P3_PoleBoard6_3	:INT:=23;	//箱烤	6	下加热板1
+P3_PoleBoard6_4	:INT:=24;	//箱烤	6	下加热板2
+//烤箱7加热板				
+P3_PoleBoard7_1	:INT:=25;	//箱烤	7	上加热板1
+P3_PoleBoard7_2	:INT:=26;	//箱烤	7	上加热板2
+P3_PoleBoard7_3	:INT:=27;	//箱烤	7	下加热板1
+P3_PoleBoard7_4	:INT:=28;	//箱烤	7	下加热板2
+//烤箱8加热板				
+P3_PoleBoard8_1	:INT:=33;	//箱烤	8	上加热板1
+P3_PoleBoard8_2	:INT:=34;	//箱烤	8	上加热板2
+P3_PoleBoard8_3	:INT:=35;	//箱烤	8	下加热板1
+P3_PoleBoard8_4	:INT:=36;	//箱烤	8	下加热板2
+//烤箱9加热板				
+P3_PoleBoard9_1	:INT:=37;	//箱烤	9	上加热板1
+P3_PoleBoard9_2	:INT:=38;	//箱烤	9	上加热板2
+P3_PoleBoard9_3	:INT:=39;	//箱烤	9	下加热板1
+P3_PoleBoard9_4	:INT:=40;	//箱烤	9	下加热板2
+//烤箱10加热板				
+P3_PoleBoard10_1	:INT:=41;	//箱烤	10	上加热板1
+P3_PoleBoard10_2	:INT:=42;	//箱烤	10	上加热板2
+P3_PoleBoard10_3	:INT:=43;	//箱烤	10	下加热板1
+P3_PoleBoard10_4	:INT:=44;	//箱烤	10	下加热板2
+//烤箱11加热板				
+P3_PoleBoard11_1	:INT:=45;	//箱烤	11	上加热板1
+P3_PoleBoard11_2	:INT:=46;	//箱烤	11	上加热板2
+P3_PoleBoard11_3	:INT:=47;	//箱烤	11	下加热板1
+P3_PoleBoard11_4	:INT:=48;	//箱烤	11	下加热板2
+//烤箱12加热板				
+P3_PoleBoard12_1	:INT:=49;	//箱烤	12	上加热板1
+P3_PoleBoard12_2	:INT:=50;	//箱烤	12	上加热板2
+P3_PoleBoard12_3	:INT:=51;	//箱烤	12	下加热板1
+P3_PoleBoard12_4	:INT:=52;	//箱烤	12	下加热板2
+//烤箱13加热板				
+P3_PoleBoard13_1	:INT:=53;	//箱烤	13	上加热板1
+P3_PoleBoard13_2	:INT:=54;	//箱烤	13	上加热板2
+P3_PoleBoard13_3	:INT:=55;	//箱烤	13	下加热板1
+P3_PoleBoard13_4	:INT:=56;	//箱烤	13	下加热板2
+//烤箱14加热板				
+P3_PoleBoard14_1	:INT:=57;	//箱烤	14	上加热板1
+P3_PoleBoard14_2	:INT:=58;	//箱烤	14	上加热板2
+P3_PoleBoard14_3	:INT:=59;	//箱烤	14	下加热板1
+P3_PoleBoard14_4	:INT:=60;	//箱烤	14	下加热板2
+//烤箱15加热板				
+P3_PoleBoard15_1	:INT:=65;	//箱烤	15	上加热板1
+P3_PoleBoard15_2	:INT:=66;	//箱烤	15	上加热板2
+P3_PoleBoard15_3	:INT:=67;	//箱烤	15	下加热板1
+P3_PoleBoard15_4	:INT:=68;	//箱烤	15	下加热板2
+//烤箱16加热板				
+P3_PoleBoard16_1	:INT:=69;	//箱烤	16	上加热板1
+P3_PoleBoard16_2	:INT:=70;	//箱烤	16	上加热板2
+P3_PoleBoard16_3	:INT:=71;	//箱烤	16	下加热板1
+P3_PoleBoard16_4	:INT:=72;	//箱烤	16	下加热板2
+//烤箱17加热板				
+P3_PoleBoard17_1	:INT:=73;	//箱烤	17	上加热板1
+P3_PoleBoard17_2	:INT:=74;	//箱烤	17	上加热板2
+P3_PoleBoard17_3	:INT:=75;	//箱烤	17	下加热板1
+P3_PoleBoard17_4	:INT:=76;	//箱烤	17	下加热板2
+//烤箱18加热板				
+P3_PoleBoard18_1	:INT:=77;	//箱烤	18	上加热板1
+P3_PoleBoard18_2	:INT:=78;	//箱烤	18	上加热板2
+P3_PoleBoard18_3	:INT:=79;	//箱烤	18	下加热板1
+P3_PoleBoard18_4	:INT:=80;	//箱烤	18	下加热板2
+//烤箱19加热板				
+P3_PoleBoard19_1	:INT:=81;	//箱烤	19	上加热板1
+P3_PoleBoard19_2	:INT:=82;	//箱烤	19	上加热板2
+P3_PoleBoard19_3	:INT:=83;	//箱烤	19	下加热板1
+P3_PoleBoard19_4	:INT:=84;	//箱烤	19	下加热板2
+//烤箱20加热板				
+P3_PoleBoard20_1	:INT:=85;	//箱烤	20	上加热板1
+P3_PoleBoard20_2	:INT:=86;	//箱烤	20	上加热板2
+P3_PoleBoard20_3	:INT:=87;	//箱烤	20	下加热板1
+P3_PoleBoard20_4	:INT:=88;	//箱烤	20	下加热板2
+//烤箱21加热板				
+P3_PoleBoard21_1	:INT:=89;	//箱烤	21	上加热板1
+P3_PoleBoard21_2	:INT:=90;	//箱烤	21	上加热板2
+P3_PoleBoard21_3	:INT:=91;	//箱烤	21	下加热板1
+P3_PoleBoard21_4	:INT:=92;	//箱烤	21	下加热板2
+//热压加热板				
+P3_HotpressBoard1	:INT:=93;		//热压加热板上板	
+P3_HotpressBoard2	:INT:=94;		//热压加热板下板	
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

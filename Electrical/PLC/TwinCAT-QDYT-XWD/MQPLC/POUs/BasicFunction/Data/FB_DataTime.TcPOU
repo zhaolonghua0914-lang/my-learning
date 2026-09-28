@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DataTime" Id="{56e67177-13c1-4891-8e23-13666574a2df}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_DataTime
+VAR_INPUT
+	Month:INT;//实时月；
+	dDay:INT;//实时日期；
+	Hour:INT;//当前时间小时；
+	Mins:INT;//分钟；
+   Second:INT;//秒
+    Alm :    BOOL ;//报警
+	Wait :BOOL ;//待机
+	Run :BOOL ;//运行
+	JP_Wait:BOOL ;//极片更换时间
+	Query:BOOL;//时间查询
+	
+
+END_VAR
+VAR_OUTPUT
+		STTimedata:ARRAY[0..32] OF ST_Timedata_2;
+
+END_VAR
+VAR
+	
+	rRun : R_TRIG;
+	rAlm : R_TRIG;
+	rWait : R_TRIG;
+	rXL_Wait : R_TRIG;
+	
+	fRun: F_TRIG;
+	fAlm: F_TRIG;
+	fWait: F_TRIG;
+    delay:BOOL ;//延时
+	TON_1: TON;
+	i:INT;
+	K: INT;
+	J: BOOL;
+END_VAR
+
+VAR_IN_OUT
+     date1:INT;//查询日期
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[K:=K+1;
+	IF K>499THEN
+		J:=TRUE;
+		K:=0;
+	ELSE
+		J:=FALSE;
+	END_IF
+
+
+
+
+///////////////运行时间/////////////////
+rRun(CLK:= J , Q=> );
+
+IF rRun.Q  AND  Run THEN
+	STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]:=STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]+1;
+END_IF
+
+IF STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]> 3600 THEN
+	STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]:= 3600 ;
+END_IF
+
+//IF STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]= 0 AND STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]= 0  AND 
+ //   (STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 3585  OR  STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 3586 ) THEN
+	//STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]:= 3600 ;
+//END_IF
+
+
+///////////////待机时间///////////////
+rWait(CLK:=J , Q=> );
+
+IF rWait.Q  AND Wait THEN
+	STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]:=STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]+1;
+END_IF
+
+IF STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]> 3600 THEN
+	STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]:= 3600 ;
+END_IF
+
+//IF STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 0 AND STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]= 0  AND 
+  //   (STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 3585  OR  STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 3586 )  THEN
+//	STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]:= 3600 ;
+//END_IF
+
+
+////////////////报警时间///////////////
+rAlm(CLK:=J , Q=> );
+
+IF rAlm.Q AND Alm THEN
+	STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]:=STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]+1;
+END_IF
+
+IF STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]> 3600 THEN
+	STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]:= 3600 ;
+END_IF
+
+//IF STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 0 AND STTimedata[System.StTime.wDay].WaitTime[System.StTime.wHour]= 0  AND
+//    (STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 3585  OR  STTimedata[System.StTime.wDay].RunTime[System.StTime.wHour]= 3586 ) THEN
+//	STTimedata[System.StTime.wDay].AlmTime[System.StTime.wHour]:= 3600 ;
+//END_IF
+
+////////////////下料等待托盘时间///////////////
+rXL_Wait(CLK:=J, Q=> );
+
+IF rXL_Wait.Q AND JP_Wait THEN
+	STTimedata[System.StTime.wDay].changeTime[System.StTime.wHour]:=STTimedata[System.StTime.wDay].changeTime[System.StTime.wHour]+1;
+END_IF
+
+//数据查询
+IF Query THEN
+	delay:=TRUE;
+END_IF
+
+TON_1(IN:= , PT:=T#60S , Q=> , ET=> );
+IF delay THEN
+		  IF NOT TON_1.Q THEN
+			  TON_1.IN:=TRUE;
+		  ELSE	
+			  delay:=FALSE;
+			  date1:=System.StTime.wDay;
+		  END_IF	 
+ELSE	
+	 TON_1.IN:=FALSE;
+END_IF
+
+
+IF NOT delay THEN
+STTimedata[32]:=STTimedata[System.StTime.wDay];
+ELSE
+STTimedata[32]:=STTimedata[date1];
+END_IF
+
+//数据清零
+IF (System.StTime.wMonth=2 AND  System.StTime.wDay=28 )   OR
+    ((System.StTime.wMonth=4 OR System.StTime.wMonth=6 OR System.StTime.wMonth=9 OR System.StTime.wMonth=11) AND System.StTime.wDay=30 )   OR
+	((System.StTime.wMonth=1 OR  System.StTime.wMonth=3 OR System.StTime.wMonth=5 OR System.StTime.wMonth=7 OR System.StTime.wMonth=8 OR System.StTime.wMonth=10 OR System.StTime.wMonth=12) AND  System.StTime.wDay=31)  AND
+    System.StTime.wHour=23 AND   System.StTime.wMinute =59 AND  System.StTime.wSecond =59 THEN
+	FOR i:=0 TO 32  DO
+	MEMSET(ADR(STTimedata[i]),0,SIZEOF(STTimedata[i]));	
+	END_FOR
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_DataTime">
+      <LineId Id="327" Count="99" />
+      <LineId Id="230" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

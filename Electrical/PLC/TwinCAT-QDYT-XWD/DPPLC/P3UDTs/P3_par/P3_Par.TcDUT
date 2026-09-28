@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="P3_Par" Id="{756a96f2-048d-4e42-9fc8-1aad87e55406}">
+    <Declaration><![CDATA[TYPE P3_Par :
+STRUCT
+	Oven_Shijian:INT;// 烤箱烘烤时间
+	CleanTimeHMIHour1:INT;//白班第一次清洁时间Hour
+	CleanTimeHMIMin1:INT;//白班第一次清洁时间Min
+	CleanTimeHMIHour2:INT;//白班第二次清洁时间Hour
+	CleanTimeHMIMin2:INT;//白班第二次清洁时间Min
+	CleanTimeHMIHour3:INT;//夜班第一次清洁时间Hour
+	CleanTimeHMIMin3:INT;//夜班第一次清洁时间Min
+	CleanTimeHMIHour4:INT;//夜班第二次清洁时间Hour
+	CleanTimeHMIMin4:INT;//夜班第二次清洁时间Ming
+	P3_Thickness_HMIStuas:INT;//记忆测厚电芯状态
+	P3_Thickness_HMIThick:REAL;//记忆测厚电芯厚度
+	P3_Press_SV: ARRAY [1..2] OF REAL;//设定压力值
+	P3_AD_Press: ARRAY [1..2] OF REAL;// 压力模拟量
+	P3_Press_Time: ARRAY [1..2] OF TIME;// 保持压力时间
+    P3_Press_DeadZone :ARRAY[1..2] OF REAL;//压力死区范围
+    P3_Press_Fast_xs:  ARRAY[1..2] OF REAL;//快速系数
+    P3_Press_Slow_xs:  ARRAY[1..2] OF REAL;//慢速系数
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

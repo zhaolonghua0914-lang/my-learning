@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="P2M2_Auto" Id="{b0dd351a-5831-47a3-a84f-6dddd5249757}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P2M2_Auto
+VAR
+	DT2Code_MES: ARRAY[1..10] OF R_TRIG;
+END_VAR
+
+
+
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+// 2号叠台自动
+P2M2_program(
+	DTselect:=2, 
+	Sys_Control:=P2M2_sysControl , 
+	Mach_Control:=P2M2_MachCtrl , 
+	arrCyNo:=P2M2_CycNo , 
+	AxiseNo:=P2M2_Axise ,
+	TableNo:=P2M2_TableNo, 
+	Par:=P2M2_Par,CCD:=
+	P2M2_CCD,
+	Torque:=P2M2_Torque,
+	iTargetTorqueTest=>iTargetTorque[2] );
+	
+//叠片给模切的信号
+D_Pro.bAn_M2Done:=P2M2_MachCtrl.An_b.AN_BeltDone; //正极取流水线极片完成
+D_Pro.bAn_M2Safety:=P2M2_MachCtrl.An_b.AN_BeltSafe;//正极取流水线安全位
+D_Pro.bCa_M2Done:=P2M2_MachCtrl.Ca_b.Ca_BeltDone;//负极取水线极片完成
+D_Pro.bCa_M2Safety:=P2M2_MachCtrl.Ca_b.Ca_BeltSafe;//负极取流水线安全位
+//D_Sys.fM2MainSetPos:=arrAxisCtrl[VirAxisNo.P2M2_VirMain].Cmd.fSetPos;
+//D_Sys.bP2M2Enable:=P2M2_MachCtrl.U.DT_ModelChees;
+
+IF P2M2_MachCtrl.U.DT_iMode=1 THEN
+	D_Sys.bP2M2Enable:=TRUE;	
+ELSE
+	D_Sys.bP2M2Enable:=FALSE;
+END_IF
+
+D_Sys.fM2MainSetPos:=arrAxis[P2M2_Axise.VirAxisName.VirMain].NcToPlc.ActPos;//2号叠片主虚轴位置 20240509 CF
+D_Pro.bAn_M2LockReady:=P2M2_MachCtrl.An_b.GetPiceReady;//正极取流水线极片准备好
+D_Pro.bAn_M2JumpReady:=P2M2_MachCtrl.An_b.JumpPiceReady  OR (bDiffVel[2] AND NOT P2M2_MachCtrl.An_b.GetPiceReady);//正极跳过取流水线极片准备好 20240509 CF
+D_Pro.bCa_M2LockReady:=P2M2_MachCtrl.Ca_b.GetPiceReady;//负极取流水线极片准备好
+D_Pro.bCa_M2JumpReady:=P2M2_MachCtrl.Ca_b.JumpPiceReady;//负极跳过取流水线极片准备好
+D_Pro.bAn_M2PoleHave:=P2M2_MachCtrl.An_b.bAn_PoleHave;
+D_Pro.bCa_M2PoleHave:=P2M2_MachCtrl.Ca_b.bCa_PoleHave;
+//模切给叠片的信号
+P2M2_MachCtrl.An_b.An_MainBeltOK:=M_Pro.bAn_M2Allow;//允许正极取极片
+P2M2_MachCtrl.Ca_b.Ca_MainBeltOK:=M_Pro.bCa_M2Allow;//允许负极取极片
+
+
+
+//运行时间统计
+	DT2_Timedata(
+							Alm:=P2M2_DTSysState.bErrorStop AND NOT P2M2_DError AND NOT P2M2_MachCtrl.DT_b.DT_GMchange(*OR  P2M2_WJSysState.bErrorStop*) , 
+							Wait:=P2M2_MachCtrl.U.DT_iMode=3 AND NOT P2M2_MachCtrl.DT_b.DT_GMchange AND (NOT P2M2_DTSysState.bErrorStop OR P2M2_DError (*AND NOT  P2M2_WJSysState.bErrorStop*) )  , 
+							Run:= P2M2_MachCtrl.U.DT_iMode=1 (*AND P2M2_MachCtrl.U.WJ_iMode=1 AND P2M2_MachCtrl.U.TJ_iMode=1*), 
+							Overhang_NG:= P2M2_MachCtrl.DT_b.DT_OverhangNG, 
+							GM_change:=P2M2_MachCtrl.DT_b.DT_GMchange , 
+							Query:=P2M2_MachCtrl.DT_b.Query, 
+							date1:=P2M2_MachCtrl.DT_b.date1 , 								
+							STTimedata=> );
+
+							
+							
+//隔膜物料码OK
+IF  (P3_PLC_PC_MES.Mes_PcToPlc6 AND  LEN(P3_PLC_PC_MES.Station2_Code)>6  ) OR P2M2_MachCtrl.DT_b.PartNumberOff THEN
+	P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK:=TRUE;
+ELSE
+	P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK:=FALSE;
+END_IF
+//蓝胶物料码OK
+IF  (P3_PLC_PC_MES.Mes_PcToPlc9 AND  LEN(P3_PLC_PC_MES.Station2_BlueCode)>6  ) OR P2M2_MachCtrl.DT_b.PartNumberOff THEN
+	P2M2_MachCtrl.DT_b.BluePartNumberOK:=TRUE;
+ELSE
+	P2M2_MachCtrl.DT_b.BluePartNumberOK:=FALSE;
+END_IF
+
+
+
+IF P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK THEN//隔膜料号OK
+	CellMemory[P2M2_MachCtrl.DT_b.DT_Memory].Station_Code :=P3_PLC_PC_MES.Station2_Code;	
+ELSE
+	CellMemory[P2M2_MachCtrl.DT_b.DT_Memory].Station_Code :='';	
+END_IF
+IF P2M2_MachCtrl.DT_b.BluePartNumberOK THEN//蓝胶料号OK
+	CellMemory[P2M2_MachCtrl.DT_b.DT_Memory].Station_BlueCode :=P3_PLC_PC_MES.Station2_BlueCode;	
+ELSE
+	CellMemory[P2M2_MachCtrl.DT_b.DT_Memory].Station_BlueCode :='';	
+END_IF
+
+
+	
+//物料码清理
+//隔膜条码重新校验
+DT2Code_MES[1](CLK:=arrCyCtrl[P2M2_CycNo.CylinderName.PoleInflationCy].Status.ONState  , Q=> );  
+IF DT2Code_MES[1].Q THEN
+	P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK:=FALSE;
+	P3_PLC_PC_MES.Station2_Code:='';
+	P3_PLC_PC_MES.Mes_PcToPlc6:=FALSE;
+END_IF	
+
+//蓝胶条码重新校验						
+DT2Code_MES[2](CLK:= P2M2_MachCtrl.DT_b.HMI_WinBtn[1] , Q=> );  
+IF DT2Code_MES[2].Q THEN
+	P2M2_MachCtrl.DT_b.BluePartNumberOK:=FALSE;
+	P3_PLC_PC_MES.Station2_BlueCode:='';
+	P3_PLC_PC_MES.Mes_PcToPlc9:=FALSE;
+END_IF									
+
+(*						
+//物料码校验报警
+IF NOT P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK AND NOT P2M2_MachCtrl.DT_b.PartNumberOff THEN
+	P2M2_MachCtrl.DT_b.Error[55]:=TRUE;//叠台隔膜物料码校验未通过，请重新校验物料码
+END_IF
+IF NOT P2M2_MachCtrl.DT_b.BluePartNumberOK AND NOT P2M2_MachCtrl.DT_b.PartNumberOff THEN
+	P2M2_MachCtrl.DT_b.Error[56]:=TRUE;//叠台蓝胶物料码校验未通过，请重新校验物料码
+END_IF							
+*)							
+							
+
+
+IF P2Btn.P2M2_Autobtn THEN
+    arrCyCtrl[163].Cmd.bOFF:=TRUE;	//2号叠台		隔膜接带平台除尘
+    arrCyCtrl[163].Cmd.bON:=FALSE;
+ELSE
+   arrCyCtrl[163].Cmd.bON:=TRUE;
+   arrCyCtrl[163].Cmd.bOFF:=FALSE;
+END_IF
+
+
+				
+]]></ST>
+    </Implementation>
+    <LineIds Name="P2M2_Auto">
+      <LineId Id="6" Count="0" />
+      <LineId Id="59" Count="2" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="62" Count="7" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="35" Count="4" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="93" Count="5" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="80" Count="3" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="7" Count="3" />
+      <LineId Id="107" Count="8" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="143" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="145" Count="36" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="182" Count="17" />
+      <LineId Id="227" Count="10" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="144" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

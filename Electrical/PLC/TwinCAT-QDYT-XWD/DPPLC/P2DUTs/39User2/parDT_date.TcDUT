@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="parDT_date" Id="{016bf497-118d-4c4f-8c6b-bb98b00038a6}">
+    <Declaration><![CDATA[TYPE parDT_date :// 关于叠台设定断电保持的参数
+STRUCT
+	rRecDev:REAL;//隔膜检测传感器标定值显示，触摸屏只显示不输入
+	rRecDevScope:REAL:=1;//隔膜检测传感器标定范围，超过该值判断隔膜打皱
+	An_Quantity:UINT;//正极设定极片数		
+	An_KDQuantity:UINT;//正极空叠极片设定
+	Ca_Quantity:UINT;//负极设定极片数
+	Ca_KDQuantity:UINT;//负极空叠极片设定
+	Ca_betlCount:WORD;//负极极片级存流水线记录极片数
+	
+	Ca_MQ_Slice	:ARRAY[0..9] OF ST_BeltData;//负极模切极片数据  7:送片搬运数据 8:纠偏台数据 9:叠片搬运数据
+	An_MQ_Slice	:ARRAY[0..2] OF ST_BeltData;//正极模切极片数据  0:正极送片搬运数据  1:正极纠偏台数据  2:正极叠片搬运数据
+	
+	CaMQ_MES :ST_BeltData;//负极MES交互数据
+	AnMQ_MES :ST_BeltData;//正极MES交互数据
+	
+	
+	Ca_Thickness:REAL;//负极片厚度
+	An_Thickness:REAL;//正极片厚度
+	SEPTA_Thickness:REAL;//隔膜厚度
+	Pole_ThicknessCom:REAL;//极片厚度补偿系数
+
+	
+	Distance:REAL;//蓝胶检测到压刀外边的距离
+	BluWidth:REAL; //蓝胶宽度
+	Width:REAL:=189; //压刀外边宽
+	
+	SinglePosTime:REAL;//单片时间，主轴速度
+	
+	
+	TensionTable:ARRAY[0..105,1..2] OF REAL;//张力摆杆的学习数据
+	fStudyDiameter:REAL;//学习时隔膜的卷径
+	fDancerMinPos:REAL; //摆杆最小角度
+	fDancerMaxPos:REAL;//摆杆最大角度
+	fDanceBlancePos:REAL; //摆杆平衡位置
+	PidSwitch:REAL; //单次叠膜隔宽度
+	
+	//隔膜纠偏
+	iRectifyAnPos:REAL:=50;//正极位纠偏范围
+	iRectifyCaPos:REAL:=50;//负极位纠偏范围
+   	 iRectifyMode     :INT;    //隔膜纠偏模式选择
+
+	RecDevValueSet:REAL;//纠偏偏差值设置
+	RecDevSpeedCoe:REAL; //纠偏速度系数
+
+	fRectifyMaxValue:REAL;//从轴纠偏行程上限
+	fRectifyMinValue:REAL;//从轴纠偏行程下降
+	fRectifyBalanceValue:REAL;//纠偏平衡位置
+    fRectifyfTolerance:REAL;//纠偏平衡位置
+	fRectifyGMLengthSet :REAL;//纠偏隔膜长度标定
+    fRectifyTimeAdjust           :REAL;  //纠偏时间标定
+    DP_fRectifyTimeAdjust        :REAL;  //叠片纠偏时间标定
+	
+	BeltPoistSet:REAL;//负极皮带相对位置
+	BeltPoistTime:REAL;//负极皮带时间
+
+    fDiameterWarn:REAL;//隔膜放卷卷径临界设置（警告）
+    fDiameterAlarm:REAL;//隔膜放卷卷径临界设置（报警）
+
+	DT_Overhang_SUM :UINT:=30;//负极已叠片数踢对齐度数量
+	BH_Thickness  :REAL;//变化厚度
+	Overhang_CSJS :UDINT;//对齐度检测超时计数
+	YD_JS_L         :UDINT;//左压刀计数
+	YD_YJ_L		  	:UDINT:=1000000;//左压刀预警值
+	YD_SM_L		  	:UDINT:=1000000;//左压刀寿命
+	YD_JS_R         :UDINT;//右压刀计数
+	YD_YJ_R		  	:UDINT:=1000000;//左压刀寿命
+	YD_SM_R		    :UDINT:=1000000;//右压刀预警值
+	YDBarCode_L		:STRING(49);//左压刀压刀条码
+	YDBarCode_R		:STRING(49);//右压刀压刀条码
+	YDCuterTime_L	:STRING(49);//左压刀换刀时间
+	YDCuterTime_R	:STRING(49);//右压刀换刀时间
+	An_Rectifydev_JS :UDINT;//正极纠偏平台NG计数
+	Ca_Rectifydev_JS :UDINT;//负极纠偏平台NG计数
+	An_Rectifydev_Btn :BOOL;//正极纠偏平台NG计数清零
+	Ca_Rectifydev_Btn :BOOL;//负极纠偏平台NG计数清零
+	An_Rectifydev_NGSet :UDINT:=10;//正极纠偏平台NG片数设定
+	Ca_Rectifydev_NGSet :UDINT:=10;//负极纠偏平台NG片数设定
+	
+	An_stuff_No				 :STRING;//正极极卷号
+	Ca_stuff_No				 :STRING;//负极极卷号
+	Diaphragm_No			 :STRING;//隔膜批次
+	QR_code_No				 :STRING;//二维码批次
+	Glue_No					 :STRING;//收尾胶批次
+	iTargetTorqueBLXS	:INT:=10;		//尾卷时扭矩值比例系数
+	iTargetTorqueHMI	: INT:=-80;	//扭矩值HMI变量
+	
+	fVelocity_of_QDX   :REAL:=5; //	夹电芯取电芯速度
+	fVelocity_of_LM   :REAL:=5; //	夹电芯拉膜速度
+	
+	stSetLenght:REAL;//蓝胶接带点到叠台的距离
+	DtCountSet:ARRAY[1..10] OF INT :=[10(10)];//叠台备用计数设定 1:叠台真空关闭层数设定
+	DtCount:ARRAY[1..10] OF INT;//叠台备用计数 
+	CleanTimeHMIHour:INT;//清洁时间Hour
+	CleanTimeHMIMin:INT;//情节时间Min	
+
+	//叠台COE寻址修改参数
+	EtherCatNetID :STRING; //EtherCAT支路ID
+	EtherCatAddr :ARRAY[1..6] OF INT ;    //EtherCAT支路里驱动器ID
+	wSaveCoeCode  :DWORD:=16#65766173;    //电机参数保存
+	SEPTATLine_fSmoothValue   :ARRAY[1..2] OF REAL;    //隔膜平移写入参数值
+	SEPTATLine_bWriteCoeValue  :ARRAY[1..2] OF BOOL;    //隔膜平移写入执行	
+	SEPTATLine_SavePara  :ARRAY[1..2] OF BOOL;   //隔膜平移参数保存	
+	SEPTATCache_fSmoothValue   :ARRAY[1..2] OF REAL;    //隔膜缓存写入参数值
+	SEPTATCache_bWriteCoeValue  :ARRAY[1..2] OF BOOL;    //隔膜缓存写入执行	
+	SEPTATCache_SavePara  :ARRAY[1..2] OF BOOL;   //隔膜缓存参数保存	
+	AnCarryingLine_fSmoothValue   :ARRAY[1..2] OF REAL;    //正极送片搬运平移写入参数值
+	AnCarryingLine_bWriteCoeValue  :ARRAY[1..2] OF BOOL;    //正极送片搬运平移写入执行	
+	AnCarryingLine_SavePara  :ARRAY[1..2] OF BOOL;   //正极送片搬运平移参数保存
+	AnDTCarryingLine_fSmoothValue   :ARRAY[1..2] OF REAL;    //正极叠片搬运平移写入参数值
+	AnDTCarryingLine_bWriteCoeValue  :ARRAY[1..2] OF BOOL;    //正极叠片搬运平移写入执行	
+	AnDTCarryingLine_SavePara  :ARRAY[1..2] OF BOOL;   //正极叠片搬运平移参数保存
+	CaCarryingLine2_fSmoothValue   :ARRAY[1..2] OF REAL;    //负极送片搬运平移写入参数值
+	CaCarryingLine2_bWriteCoeValue  :ARRAY[1..2] OF BOOL;    //负极送片搬运平移写入执行	
+	CaCarryingLine2_SavePara  :ARRAY[1..2] OF BOOL;   //负极送片搬运平移参数保存
+	CaDTCarryingLine_fSmoothValue   :ARRAY[1..2] OF REAL;    //负极叠片搬运平移写入参数值
+	CaDTCarryingLine_bWriteCoeValue  :ARRAY[1..2] OF BOOL;    //负极叠片搬运平移写入执行	
+	CaDTCarryingLine_SavePara  :ARRAY[1..2] OF BOOL;   //负极叠片搬运平移参数保存
+	
+	GMlength_set:REAL;//隔膜总长度
+	GMlength_act:REAL;//隔膜当前长度
+	GMlength_manual:REAL;//手动拉膜长度
+	GMlength_manual2:REAL;//手动拉膜长度
+	GMlength_buttonl:BOOL;//手动拉膜确定按钮
+	
+	Ca_BlueflagingKDSet:UINT:=13;//负极接带空叠隔膜设定片数
+	Ca_YellowmarkKDSet:UINT:=20;//负极色标空叠隔膜设定片数
+	
+	fInsideDiameter:REAL:=88; //内直径
+	fTen_K:REAL;//张力K值
+	fTen_B:REAL;//张力B值
+	fTenset:REAL;//张力设定值
+	bRepair:BOOL;//叠台维修
+	An_Rectifydev_DayNG:UDINT;//正极纠偏平台白班NG计数
+	Ca_Rectifydev_DayNG:UDINT;//负纠偏平台白班NG计数
+    An_Rectifydev_NightNG :UDINT;//正极极纠偏平台晚班NG计数	
+	Ca_Rectifydev_NightNG :UDINT;//负极纠偏平台晚班NG计数	
+	fAlmpos:REAL; //隔膜放卷报警值，度/毫米
+	//20240414WCZ
+	An_Demarcate_X:REAL;//纠偏重复精度测试设定纠偏值X
+	An_Demarcate_X2:REAL;//纠偏重复精度测试设定纠偏值X
+	An_Demarcate_Y:REAL;//纠偏重复精度测试设定纠偏值Y
+	An_Demarcate_R:REAL;//纠偏重复精度测试设定纠偏值R
+	An_CCDNo:INT;//纠偏重复精度测试次数
+	An_CCDCount:INT;//吸盘重复精度测试次数
+	
+	Ca_Demarcate_X:REAL;//纠偏重复精度测试设定纠偏值X
+	Ca_Demarcate_X2:REAL;//纠偏重复精度测试设定纠偏值X	
+	Ca_Demarcate_Y:REAL;//纠偏重复精度测试设定纠偏值Y
+	Ca_Demarcate_R:REAL;//纠偏重复精度测试设定纠偏值R	
+	Ca_CCDNo:INT;//纠偏重复精度测试次数
+	Ca_CCDCount:INT;//吸盘重复精度测试次数
+	
+	YD_ferrJS         :UDINT;//左压刀铁氟龙计数
+    YD_ferrset         :UDINT:=1000000;//左压刀铁氟龙设定值
+	An_sucker1_JS      :UDINT;//正极送片搬运吸盘计数
+	An_sucker1Set      :UDINT:=1000000;//正极送片搬运吸盘设定值
+	An_sucker2_JS      :UDINT;//正极叠台搬运吸盘计数
+	An_sucker2Set      :UDINT:=1000000;//正极叠台搬运吸盘设定值
+	Ca_sucker1_JS      :UDINT;//负极送片搬运吸盘计数
+	Ca_sucker1Set      :UDINT:=1000000;//负极送片搬运吸盘设定值
+	Ca_sucker2_JS      :UDINT;//负极叠台搬运吸盘计数  
+	Ca_sucker2Set      :UDINT:=1000000;//负极叠台搬运吸盘设定值
+    Ca_sucker3_JS      :UDINT;//负极流水线搬运吸盘计数  
+    Ca_sucker3Set      :UDINT:=1000000;//负极流水线搬运吸盘设定值
+	
+	GMAngleALM:REAL:=0.81;//隔膜剩余角度报警值
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

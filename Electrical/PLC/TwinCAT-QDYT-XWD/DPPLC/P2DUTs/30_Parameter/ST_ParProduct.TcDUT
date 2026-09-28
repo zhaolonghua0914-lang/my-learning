@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ParProduct" Id="{f690aec1-896d-473d-bda0-3bf4c2719847}">
+    <Declaration><![CDATA[TYPE ST_ParProduct ://工艺参数
+STRUCT
+(*
+         fAnPoleWith                            :REAL:=98 ;    //正极片宽
+         fCaPoleWith                            :REAL:=100;   //负极片宽
+         fGMInterval                            :REAL:=2 ;     //隔膜间距
+         iRunMode                               :UINT;   //运行模式    1：空跑隔膜    2：不带隔膜整机空跑   3：只跑1#      4::连续制片模式     5：标准模式      
+         iMainVel                                  :UINT;  //运行速度 PPM (最大值180)          整机效率=iMainVel*4  
+
+         
+       
+
+        Publ:                                       	ST_ParPublic;   
+        P2M1:                                          ST_P2Par; (******P2 部分参数******)
+		P2M2:                                          ST_P2Par; (******P2 部分参数******)
+		P2M3:                                          ST_P2Par; (******P2 部分参数******)
+*)
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_MemoryName" Id="{c447e64d-1ccf-41aa-9f03-76cf5cd365f1}">
+    <Declaration><![CDATA[TYPE ST_MemoryName :
+STRUCT
+
+Dietai1          :INT:=1;//1号叠台电芯记忆
+Weijuan1         :INT:=2;//1号尾卷电芯记忆
+Gluing1          :INT:=3;//1号贴胶电芯记忆
+Dietai2          :INT:=4;//2号叠台电芯记忆
+Weijuan2         :INT:=5;//2号尾卷电芯记忆
+Gluing2          :INT:=6;//2号贴胶电芯记忆
+Dietai3          :INT:=7;//3号叠台电芯记忆
+Weijuan3         :INT:=8;//3号尾卷电芯记忆
+Gluing3          :INT:=9;//3号贴胶电芯记忆
+ColdpressClip    :INT:=10;//冷压上料夹子电芯记忆
+Coldpress        :INT:=11;//冷压电芯记忆
+OvenMoveClip1    :INT:=12;//冷压下料到烤箱时夹子电芯记忆
+Oven_M1          :INT:=13;//烤箱位置1的电芯记忆
+Oven_M2          :INT:=14;//烤箱位置2的电芯记忆
+Oven_M3          :INT:=15;//烤箱位置3的电芯记忆
+Oven_M4          :INT:=16;//烤箱位置4的电芯记忆
+Oven_M5          :INT:=17;//烤箱位置5的电芯记忆
+Oven_M6          :INT:=18;//烤箱位置6的电芯记忆
+Oven_M7          :INT:=19;//烤箱位置7的电芯记忆
+Oven_M8          :INT:=20;//烤箱位置8的电芯记忆
+Oven_M9          :INT:=21;//烤箱位置9的电芯记忆
+Oven_M10         :INT:=22;//烤箱位置10的电芯记忆
+Oven_M11         :INT:=23;//烤箱位置11的电芯记忆
+Oven_M12         :INT:=24;//烤箱位置12的电芯记忆
+Oven_M13         :INT:=25;//烤箱位置13的电芯记忆
+Oven_M14         :INT:=26;//烤箱位置14的电芯记忆
+Oven_M15         :INT:=27;//烤箱位置15的电芯记忆
+Oven_M16         :INT:=28;//烤箱位置16的电芯记忆
+Oven_M17         :INT:=29;//烤箱位置17的电芯记忆
+Oven_M18         :INT:=30;//烤箱位置18的电芯记忆
+Oven_M19         :INT:=31;//烤箱位置19的电芯记忆
+Oven_M20         :INT:=32;//烤箱位置20的电芯记忆
+Oven_M21         :INT:=33;//烤箱位置21的电芯记忆
+Oven_M22         :INT:=34;//烤箱位置22的电芯记忆
+Oven_M23         :INT:=35;//烤箱位置23的电芯记忆
+Oven_M24         :INT:=36;//烤箱位置24的电芯记忆
+Oven_M25         :INT:=37;//烤箱位置25的电芯记忆
+Oven_M26         :INT:=38;//烤箱位置26的电芯记忆
+Oven_M27         :INT:=39;//烤箱位置27的电芯记忆
+Oven_M28         :INT:=40;//烤箱位置28的电芯记忆
+Oven_M29         :INT:=41;//烤箱位置29的电芯记忆
+Oven_M30         :INT:=42;//烤箱位置30的电芯记忆
+Oven_M31         :INT:=43;//烤箱位置31的电芯记忆
+Oven_M32         :INT:=44;//烤箱位置32的电芯记忆
+Oven_M33         :INT:=45;//烤箱位置33的电芯记忆
+Oven_M34         :INT:=46;//烤箱位置34的电芯记忆
+Oven_M35         :INT:=47;//烤箱位置35的电芯记忆
+Oven_M36         :INT:=48;//烤箱位置36的电芯记忆
+Oven_M37         :INT:=49;//烤箱位置37的电芯记忆
+Oven_M38         :INT:=50;//烤箱位置38的电芯记忆
+Oven_M39         :INT:=51;//烤箱位置39的电芯记忆
+Oven_M40         :INT:=52;//烤箱位置40的电芯记忆
+Oven_M41         :INT:=53;//烤箱位置41的电芯记忆
+Oven_M42         :INT:=54;//烤箱位置42的电芯记忆
+OvenMoveClip2    :INT:=55;//烤箱下料到热压时烤箱夹子电芯记忆
+Hotpress         :INT:=56;//热压电芯记忆
+WeightClip       :INT:=57;//称重上料夹子电芯记忆
+Weight           :INT:=58;//称重平台电芯记忆
+SortClip1        :INT:=59;//电芯分选夹子去取称重平台时夹子的电芯记忆
+Thickness        :INT:=60;//测厚平台上的电芯记忆
+SortClip2        :INT:=61;//电芯分选夹子去取测厚平台时夹子的电芯记忆
+BlankingPlatform :INT:=62;//下料辅助平台上的电芯记忆
+BlankingClip     :INT:=63;//下料夹子的电芯记忆
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

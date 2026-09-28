@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Oven_Time" Id="{1fa67c63-1046-4a2f-b689-ee616a1e79df}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Oven_Time
+VAR_IN_OUT
+	Oven_Cell :ARRAY[1..42] OF BOOL;//烤箱电芯记忆
+	Oven_Finish :ARRAY[1..42] OF BOOL;//烤箱完成信号
+	Oven_shijian :TIME;//设定时间
+	T_achieve :ARRAY[1..42] OF BOOL;//温度达到信号
+	Ovencell_Shield :ARRAY[1..42] OF BOOL;//烤箱电芯屏蔽
+	Oven_JS :ARRAY[1..42] OF UDINT;//加热完成计数（每10S计数一次）
+	
+END_VAR
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+Residue_T :ARRAY[1..42] OF UDINT;	
+END_VAR
+VAR
+Oven_time :ARRAY[1..42] OF Tc2_Standard.TON;
+Oven_shijian_Z :ARRAY[1..42] OF TIME;
+K :INT:=1;
+T_Residue :ARRAY[1..42] OF TIME;
+JS_ton :ARRAY[1..42] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+K:=K+1;
+IF K<1 OR K>42 THEN
+	K:=1;
+END_IF
+T_Residue[K]:=Oven_time[K].ET;
+Residue_T[K]:=TIME_TO_UDINT(T_Residue[K]/60000);
+Oven_shijian_Z[K] :=Oven_shijian;
+Oven_time[K](IN:=(Oven_Cell[K] AND NOT Ovencell_Shield[K] (*AND T_achieve[K]*)),PT:=Oven_shijian_Z[K]);
+IF Oven_Cell[K] (*AND T_achieve[K]*) AND Oven_time[K].Q AND NOT Ovencell_Shield[K] THEN
+	Oven_Finish[K]:=TRUE;
+
+END_IF
+
+
+JS_ton[K](PT:=T#5S);
+IF Oven_Finish[K] AND Oven_Cell[K] AND NOT Ovencell_Shield[K] THEN
+	IF JS_ton[K].Q THEN
+		JS_ton[K].IN:=FALSE;
+		Oven_JS[K]:=Oven_JS[K]+1;
+	ELSE
+		JS_ton[K].IN:=TRUE;
+	END_IF
+END_IF
+
+
+IF Oven_Finish[K] AND Oven_Cell[K] AND  Ovencell_Shield[K] THEN
+	JS_ton[K].IN:=FALSE;
+	Oven_JS[K]:=0;
+END_IF
+
+IF NOT Oven_Cell[K] THEN
+	JS_ton[K].IN:=FALSE;
+	Oven_JS[K]:=0;
+	Oven_Finish[K]:=FALSE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="Oven_Time">
+      <LineId Id="28" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="23" Count="2" />
+      <LineId Id="79" Count="1" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="34" Count="1" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="127" Count="3" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="111" Count="1" />
+      <LineId Id="125" Count="1" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="109" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

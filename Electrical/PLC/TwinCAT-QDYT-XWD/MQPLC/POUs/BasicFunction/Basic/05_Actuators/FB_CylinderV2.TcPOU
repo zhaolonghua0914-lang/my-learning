@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_CylinderV2" Id="{f84e98fd-1c3c-4063-a4cf-74f6b4602de6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CylinderV2
+VAR_INPUT
+	bReset	:	BOOL	;	
+END_VAR
+
+VAR_IN_OUT
+  CyCtrl: ST_CyCtrl;
+END_VAR
+
+
+VAR
+	rON	:	R_TRIG	;
+	rOFF	:	R_TRIG	;
+	rFree	:	R_TRIG	;
+	Delay2	:	TON	;
+	Delay3	:	TON	;
+	RS1	:	RS	;
+	RS2	:	RS	;
+	Delay4	:	TON	;
+	Delay5	:	TON	;
+	rError1	:	R_TRIG	;
+	fError2	:	F_TRIG	;
+	fError1	:	F_TRIG	;
+	rError2	:	R_TRIG	;
+	DelayOnSwitch	:	TON	;
+	DelayOffSwitch	:	TON	;
+	M1	:	BOOL	;
+
+
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+rON(CLK:=CyCtrl.Cmd.bON );   
+rOFF(CLK:=CyCtrl.Cmd.bOFF  );
+rFree(CLK:=CyCtrl.Cmd.bFree  );
+
+IF rON.Q THEN 
+	CyCtrl.Cmd.bOFF:=FALSE;
+    CyCtrl.Cmd.bFree :=FALSE;
+END_IF;
+IF rOFF.Q THEN 
+	CyCtrl.Cmd.bON:=FALSE;
+    CyCtrl.Cmd.bFree :=FALSE;
+END_IF;
+IF rFree.Q THEN 
+	CyCtrl.Cmd.bON:=FALSE;
+	CyCtrl.Cmd.bOFF:=FALSE;
+END_IF;
+
+
+IF   CyCtrl.Cmd.iType=1 OR CyCtrl.Cmd.iType=3   THEN  // 双
+		IF   rON.Q THEN
+				RS1.SET:=TRUE;
+		        RS1.RESET1:=FALSE;
+				RS2.SET:=FALSE;
+		        RS2.RESET1:=TRUE;			
+		END_IF;
+		IF   rOFF.Q THEN
+				RS2.SET:=TRUE;
+		        RS2.RESET1:=FALSE;
+				RS1.SET:=FALSE;
+		       RS1.RESET1:=TRUE;		   
+		END_IF;
+END_IF;	
+
+IF   CyCtrl.Cmd.iType=2  OR  CyCtrl.Cmd.iType=4   THEN  //   单
+		IF   rON.Q THEN
+				RS1.SET:=TRUE;
+		       RS1.RESET1:=FALSE;
+		END_IF;
+		IF   rOFF.Q THEN
+				RS1.SET:=FALSE;
+		       RS1.RESET1:=TRUE;
+		END_IF;
+   
+   	 RS2.SET:=FALSE;
+	 RS2.RESET1:=TRUE;	  
+END_IF;
+  
+IF  CyCtrl.Cmd.iType>=1 AND   CyCtrl.Cmd.iType<=3 THEN  //泄压
+ 	 IF   rFree.Q THEN
+		RS1.SET:=FALSE;
+		RS1.RESET1:=TRUE;		
+		RS2.SET:=FALSE;
+		RS2.RESET1:=TRUE;
+   END_IF
+END_IF
+
+IF  CyCtrl.Cmd.iType=1 OR  CyCtrl.Cmd.iType=2 THEN
+     CyCtrl.Status.ONState:=CyCtrl.Io.DIOnSwitch;
+      CyCtrl.Status.OFFState:=CyCtrl.Io.DIOFFSwitch;
+END_IF
+IF  CyCtrl.Cmd.iType=4  THEN  
+     CyCtrl.Status.ONState:=  CyCtrl.Io.DOStatus1;
+      CyCtrl.Status.OFFState:=NOT CyCtrl.Io.DOStatus1;
+END_IF
+IF  CyCtrl.Cmd.iType=3  THEN  
+     CyCtrl.Status.ONState:=CyCtrl.Io.DOStatus1;
+      CyCtrl.Status.OFFState:=CyCtrl.Io.DOStatus2;
+END_IF
+
+(*
+//仿真用
+DelayOnSwitch(IN:=DOStatus1 , PT:=T#2000MS  );  //仿真用
+DelayOffSwitch(IN:=DOStatus2 , PT:=T#2000MS  );
+
+ONState:=DelayOnSwitch.Q;
+OFFState:=DelayOffSwitch.Q;
+   *)
+RS1( Q1=>CyCtrl.Io.DOStatus1 );
+RS2( Q1=>CyCtrl.Io.DOStatus2 );
+///////////////////////////////////////
+IF  CyCtrl.Cmd.iType=2 OR  CyCtrl.Cmd.iType=4  THEN  //   单控 T#100MS
+	Delay4(IN:=(RS1.SET      AND  NOT  CyCtrl.Status.ONState) , PT:=INT_TO_TIME(CyCtrl.Cmd.ErrorTime)*1000  );//ON 到位报警
+	Delay5(IN:=(RS1.RESET1 AND NOT  CyCtrl.Status.OFFState ) , PT:= INT_TO_TIME(CyCtrl.Cmd.ErrorTime)*1000  );//OFF 到位报警
+	;
+ELSIF  CyCtrl.Cmd.iType=1  OR  CyCtrl.Cmd.iType=3  THEN
+	Delay4(IN:=(RS1.SET      AND  NOT  CyCtrl.Status.ONState) ,   PT:= INT_TO_TIME(CyCtrl.Cmd.ErrorTime)*1000     );//ON 到位报警
+	Delay5(IN:=(RS2.SET      AND  NOT  CyCtrl.Status.OFFState ) , PT:=INT_TO_TIME(CyCtrl.Cmd.ErrorTime)*1000      );//OFF 到位报警 MULTIME(In1:=T#100MS, In2:=ErrorTime) 
+	;
+END_IF;
+	
+
+
+CyCtrl.Status.Error1:=Delay4.Q;
+CyCtrl.Status.Error2:=Delay5.Q;
+
+
+
+
+
+(*
+rError1(CLK:=Delay4.Q  );  
+rError2(CLK:=Delay5.Q  );  
+
+IF rError1.Q THEN    
+	CyCtrl.Status.Error1:=TRUE;
+END_IF;
+
+IF rError2.Q THEN    
+	CyCtrl.Status.Error2:=TRUE;
+END_IF;
+
+
+IF bReset AND (  CyCtrl.Status.Error1 OR CyCtrl.Status.Error2 )THEN
+	CyCtrl.Status.Error1:=FALSE;
+	CyCtrl.Status.Error2:=FALSE;
+END_IF;
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_CylinderV2">
+      <LineId Id="84" Count="2" />
+      <LineId Id="424" Count="0" />
+      <LineId Id="423" Count="0" />
+      <LineId Id="87" Count="1" />
+      <LineId Id="476" Count="0" />
+      <LineId Id="89" Count="2" />
+      <LineId Id="477" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="428" Count="1" />
+      <LineId Id="431" Count="0" />
+      <LineId Id="427" Count="0" />
+      <LineId Id="426" Count="0" />
+      <LineId Id="358" Count="0" />
+      <LineId Id="367" Count="12" />
+      <LineId Id="359" Count="0" />
+      <LineId Id="93" Count="12" />
+      <LineId Id="366" Count="0" />
+      <LineId Id="364" Count="0" />
+      <LineId Id="433" Count="0" />
+      <LineId Id="443" Count="0" />
+      <LineId Id="441" Count="0" />
+      <LineId Id="437" Count="1" />
+      <LineId Id="442" Count="0" />
+      <LineId Id="444" Count="0" />
+      <LineId Id="436" Count="0" />
+      <LineId Id="381" Count="0" />
+      <LineId Id="327" Count="0" />
+      <LineId Id="133" Count="1" />
+      <LineId Id="383" Count="0" />
+      <LineId Id="386" Count="1" />
+      <LineId Id="391" Count="0" />
+      <LineId Id="384" Count="0" />
+      <LineId Id="389" Count="1" />
+      <LineId Id="392" Count="0" />
+      <LineId Id="385" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="137" Count="7" />
+      <LineId Id="146" Count="1" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="182" Count="2" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="185" Count="2" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="188" Count="1" />
+      <LineId Id="509" Count="0" />
+      <LineId Id="193" Count="1" />
+      <LineId Id="198" Count="2" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="155" Count="2" />
+      <LineId Id="510" Count="15" />
+      <LineId Id="158" Count="22" />
+      <LineId Id="58" Count="25" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

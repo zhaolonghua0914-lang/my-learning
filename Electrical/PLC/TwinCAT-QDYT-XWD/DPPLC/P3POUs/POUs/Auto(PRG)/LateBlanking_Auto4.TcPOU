@@ -1,0 +1,1040 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto4" Id="{360cb696-b44b-4c9a-9b62-47ca4ad334bf}" SpecialFunc="None">
+    <Declaration><![CDATA[//热压中
+PROGRAM LateBlanking_Auto4
+VAR
+	FB_CSP_Velo_Torque_Hot: FB_CSP_Velo_Torque;
+	SingleStep_4 : R_TRIG;
+	b_Hot_TON :ARRAY[1..10] OF ton;
+	Sampling_1: Sampling;
+	Sampling1: Sampling;
+	BlowTime:TON;
+	BlowCloseTime:TON;
+	rt: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Hot_Press();
+b_Hot_TON[2](PT:=T#200MS);
+b_Hot_TON[3](PT:=T#1S);
+Hotbusy:=FB_CSP_Velo_Torque_Hot.Busy;
+
+//清零自动复位
+b_Hot_TON[1](IN:=Press_Clear[2],PT:=T#300MS);
+IF b_Hot_TON[1].Q THEN
+	Press_Clear[2]:=FALSE;
+END_IF
+
+
+FB_CSP_Velo_Torque_Hot.Hold_Time:=P3Par.P3_Press_Time[2]*1000;
+P3Senser.P3_Hot_clear:=Press_Clear[2];
+
+SingleStep_4 (CLK:=P3_Start[4] , Q=>);
+IF  SingleStep_4.Q OR NOT StepModel[4]  THEN
+	SingleStep[4]:=FALSE;
+END_IF
+
+IF Permit_Blow[2] AND P3_SystemRUN.iMode=1 AND
+   LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_M3_HotPressingActuated].arrTargetPoint[4] AND
+   LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.fActPos) > arrAxisPar[P3AxisNo.P3_M3_HotPressingActuated].arrTargetPoint[5] THEN
+   arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bON:=TRUE;
+   arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bOFF:=FALSE; 
+END_IF   
+
+IF P3_SystemRUN.iMode=1 AND 
+   LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_M3_HotPressingActuated].arrTargetPoint[5]  THEN
+   arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bON:=FALSE;
+   arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bOFF:=TRUE;
+END_IF   
+
+(*BlowTime(IN:=Permit_Blow[2], PT:=T#0S , Q=> , ET=> );
+BlowCloseTime(IN:=arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bON, PT:=T#2S , Q=> , ET=> );
+IF BlowTime.Q THEN//热压吹气
+	arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bOFF:=FALSE;
+ELSIF BlowCloseTime.Q THEN
+	arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bON:=FALSE;
+	arrCyCtrl[P3CYNo.P3HotBlow].Cmd.bOFF:=TRUE;
+END_IF*)
+
+
+IF P3_SystemRUN.iMode=1  AND LateBlanking_init_OK[4]  THEN
+CASE Step33 OF
+1://轴和气缸回初始状态
+IF NOT SingleStep[4] THEN
+	
+	arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.bON:=TRUE;//热压麦拉膜气缸松开
+	
+	IF  (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Error) AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.iGoSetPos:=1;	//P3_M3热压驱动电机去初始位
+	END_IF
+	
+	IF  arrCyCtrl[P3CYNo.P3ShortTest].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ShortTest].Status.Error2 AND
+		(NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Error) AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.iGoSetPos:=1;	//P3_M3热压麦拉膜电机去初始位
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1] 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving (*AND arrCyCtrl[P3CYNo.P3HotPressTensed].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3HotPressTensed].Status.Error1 *)THEN
+		IF  StepModel[4] THEN
+			SingleStep[4]:=TRUE;
+		ELSE
+			SingleStep[4]:=FALSE;
+		END_IF		
+	Step33:=10;	
+	END_IF
+	END_IF
+
+10://有允许热压信号、热压驱动在初始位、热压有电芯记忆、热压托板开合在初始位，则跳至15步
+	IF NOT SingleStep[4] THEN
+		IF  Permit_Hot_Press AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] AND  CellMemory[CellNo.Hotpress].Cell AND
+			NOT Hot_Press_Finish AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1]THEN
+			Step33:=15;
+			HotPress_start:=FALSE;
+			Press_Clear[2]:=TRUE;		
+			IF  StepModel[4] THEN
+				SingleStep[4]:=TRUE;
+			ELSE
+				SingleStep[4]:=FALSE;
+			END_IF	
+		END_IF
+	END_IF
+
+15://热压压力、温度上下限
+	CellMemory[CellNo.Hotpress].HotPress_SV:=P3Par.P3_Press_SV[2];
+	CellMemory[CellNo.Hotpress].HotPress_SV_H:=P3Par.P3_Press_SV[2]+150;
+	CellMemory[CellNo.Hotpress].HotPress_SV_L:=P3Par.P3_Press_SV[2]-150;
+	CellMemory[CellNo.Hotpress].HotPress_Time:=TIME_TO_UINT(P3Par.P3_Press_Time[2]);
+	CellMemory[CellNo.Hotpress].HotPress_PVTime:=TIME_TO_UINT(P3Par.P3_Press_Time[2]);
+	CellMemory[CellNo.Hotpress].HotTemp_SV:=arrTempPar[93].fTempSet;
+	CellMemory[CellNo.Hotpress].HotTemp_H:=arrTempPar[93].fTempSet+5;
+	CellMemory[CellNo.Hotpress].HotTemp_L:=arrTempPar[93].fTempSet-5;
+	CellMemory[CellNo.Hotpress].HotTemp_PV:=arrTempCtrl[93].Tem_fPV;
+	Step33:=20;
+
+
+
+20://热压托板开合去张开位条件
+	IF NOT SingleStep[4] THEN
+	    arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.bON:=TRUE;//冷压麦拉膜气缸张紧
+		
+		IF  (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[45]+1)) AND 
+			LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)<=(arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1]+2) AND
+			(NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2]) AND (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Error)
+			AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.iGoSetPos:=2;	//P3_M1冷压麦拉膜电机去张开位
+		END_IF
+		
+		IF  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving 
+			(*AND arrCyCtrl[P3CYNo.P3HotPressTensed].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3HotPressTensed].Status.Error1*) THEN
+			IF  StepModel[4] THEN
+				SingleStep[4]:=TRUE;
+			ELSE
+				SingleStep[4]:=FALSE;
+			END_IF
+		HotPress_start:=FALSE;
+		Step33:=25;	
+		END_IF
+	END_IF
+
+25://检测电芯是否偏移
+	IF NOT SingleStep[4] THEN
+		IF NOT P3Senser.P3_HotOffset_L THEN
+			IF  StepModel[4] THEN
+				SingleStep[4]:=TRUE;
+			ELSE
+				SingleStep[4]:=FALSE;
+			END_IF
+	    b_Hot_TON[3].IN:=FALSE;
+		Step33:=30;	
+		ELSE
+			P3_Error[50]:=TRUE;//热压位电芯位置偏移报警
+		//	Step33:=888;
+		END_IF
+	END_IF
+	
+30://满足条件，热压开始，开始走PID
+	IF NOT SingleStep[4] THEN
+		IF  (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[45]) AND 
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving 
+		AND Permit_Hot_Press  AND b_Press_condition[2] AND CellMemory[CellNo.Hotpress].Cell THEN
+			HotPress_start:=TRUE;
+			Step33:=35;
+			Sampling_finish[2]:=FALSE;
+			  b_Hot_TON[3].IN:=FALSE;
+			IF  StepModel[4] THEN
+				SingleStep[4]:=TRUE;
+			ELSE
+				SingleStep[4]:=FALSE;
+			END_IF
+		ELSIF NOT b_Press_condition[2] THEN
+		       IF NOT b_Hot_TON[3].Q   THEN
+		          b_Hot_TON[3].IN:=TRUE;
+	           ELSE
+	              P3_Error[63]:=TRUE;//热压空压报警
+	           END_IF
+		          b_Hot_TON[3].IN:=FALSE;	
+	   END_IF
+	END_IF
+	
+
+END_CASE
+END_IF
+
+
+IF P3_SystemRUN.iMode=1 OR P3_SystemRUN.iMode=3 THEN
+CASE Step33 OF
+
+35://热压实际压力等于采集平均值
+IF Sampling_finish[2] THEN
+CellMemory[CellNo.Hotpress].HotPress_PV:=Sampling_mean[2]; 
+CellMemory[CellNo.Hotpress].Shortpress:=Sampling_mean[2]; 
+//CellMemory[CellNo.Hotpress].HeatActPos:=LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M3_HotPressingActuated].Status.fActPos);
+   Step33:=40;	
+ END_IF
+	
+	
+40:
+b_Hot_TON[2].IN:=TRUE;
+IF FB_CSP_Velo_Torque_Hot.HoldOK AND FB_CSP_Velo_Torque_Hot.Done AND b_Hot_TON[2].Q THEN
+HotPress_start:=FALSE;
+b_Hot_TON[2].IN:=FALSE;
+ Step33:=50;	
+END_IF 
+
+
+
+
+50://短路测试夹气缸上升,热压完成
+	IF ShortTest_Finish OR P3User2_Par.Shield[1] THEN
+		arrCyCtrl[P3CYNo.P3ShortTest].Cmd.bOFF:=TRUE;
+		IF arrCyCtrl[P3CYNo.P3ShortTest].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ShortTest].Status.Error2 THEN	
+			Step33:=60;
+		
+		END_IF
+	END_IF	
+60://检测电芯是否偏移
+	IF NOT SingleStep[4] THEN
+		IF NOT P3Senser.P3_HotOffset_L THEN
+			IF  StepModel[4] THEN
+				SingleStep[4]:=TRUE;
+			ELSE
+				SingleStep[4]:=FALSE;
+			END_IF
+		Step33:=70;	
+		ELSE
+			P3_Error[50]:=TRUE;//热压位电芯位置偏移报警
+		//	Step33:=888;
+		END_IF
+	END_IF
+
+70://热压麦拉张紧气缸张开，热压驱动、托板开合电机去初始位
+IF NOT SingleStep[4] THEN
+	
+	arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.bON:=TRUE;//热压麦拉膜气缸
+	
+	IF  (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.iGoSetPos:=1;	//P3_M3热压驱动电机去初始位
+	END_IF
+	
+	IF  arrCyCtrl[P3CYNo.P3ShortTest].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ShortTest].Status.Error2  AND	(NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1]) 
+	AND (NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Error) AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.iGoSetPos:=1;	//P3_M3热压麦拉膜电机去初始位
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving
+		 AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+			IF  StepModel[4] THEN
+				SingleStep[4]:=TRUE;
+			ELSE
+				SingleStep[4]:=FALSE;
+			END_IF
+			Hot_Press_Finish:=TRUE;
+    			Permit_Hot_Press:=FALSE;		
+			Step33:=1;	
+		END_IF	
+	END_IF
+
+
+
+
+END_CASE
+END_IF
+
+rt (CLK:=Pressing[2] , Q=>);
+IF rt .Q THEN
+	CellMemory[CellNo.Hotpress].HeatActPos:=LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.fActPos);
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="Hot_Press" Id="{d7961ef2-0413-4e94-b049-fd57a5ced31b}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"FB_CSP_Velo_Torque"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"FB_CSP_Velo_Torque_Hot"</v>
+                          <v n="Type">"FB_CSP_Velo_Torque"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">120L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <n />
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">54L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">"Pressing[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">55L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">56L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">57L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">"P3Press.Pressure_Alarm[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">58L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">59L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">60L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">"P3_Error[30]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">119L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">"Permit_Blow[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">122L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"HotPress_start"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">62L</v>
+                            </o>
+                            <v n="Id">61L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"GMotion.arrAxis[P3AxisNo.P3_M3_HotPressingActuated]"</v>
+                              <v n="Type">"axis_ref"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">64L</v>
+                            </o>
+                            <v n="Id">63L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3_SystemRUN.bReset"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">66L</v>
+                            </o>
+                            <v n="Id">65L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3Par.P3_Press_SV[2]+P3Par.P3_Press_DeadZone[2]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">68L</v>
+                            </o>
+                            <v n="Id">67L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3IOLink.arrFilter_AD[29].Out_Value"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">70L</v>
+                            </o>
+                            <v n="Id">69L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3Par.P3_Press_DeadZone[2]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">72L</v>
+                            </o>
+                            <v n="Id">71L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3Par.P3_Press_Time[2]*1000"</v>
+                              <v n="Type">"TIME"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">74L</v>
+                            </o>
+                            <v n="Id">73L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"arrAxisPar[P3AxisNo.P3_M3_HotPressingActuated].arrTargetPoint[1]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">76L</v>
+                            </o>
+                            <v n="Id">75L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"arrAxisPar[P3AxisNo.P3_M3_HotPressingActuated].arrTargetPoint[2]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">78L</v>
+                            </o>
+                            <v n="Id">77L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"arrAxisPar[P3AxisNo.P3_M3_HotPressingActuated].arrTargetPoint[3]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">86L</v>
+                            </o>
+                            <v n="Id">85L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3Par.P3_Press_Fast_xs[2]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">88L</v>
+                            </o>
+                            <v n="Id">87L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3Par.P3_Press_Slow_xs[2]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">92L</v>
+                            </o>
+                            <v n="Id">91L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"b_Press_condition[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">80L</v>
+                            </o>
+                            <v n="Id">79L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3User2_Par.Hot_par"</v>
+                              <v n="Type">"ST_TorqueMotion"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">82L</v>
+                            </o>
+                            <v n="Id">81L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>Start_Torque</v>
+                            <v>Axis</v>
+                            <v>Reset</v>
+                            <v>Target_Torque</v>
+                            <v>Actual_Torque</v>
+                            <v>DeadZone</v>
+                            <v>Hold_Time</v>
+                            <v>InitPosition</v>
+                            <v>StartPressPosition</v>
+                            <v>MaxPressPosition</v>
+                            <v>Press_Fast_xs</v>
+                            <v>Press_Slow_xs</v>
+                            <v>Press_condition</v>
+                            <v>Option</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>BOOL[REF]</v>
+                            <v>Axis_Ref[REF]</v>
+                            <v>BOOL</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>TIME</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>BOOL</v>
+                            <v>ST_TorqueMotion</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>Done</v>
+                            <v>Busy</v>
+                            <v>Pressing</v>
+                            <v>CurrentPressTime</v>
+                            <v>HoldOK</v>
+                            <v>Error</v>
+                            <v>ErrorID</v>
+                            <v>ErrorMessage</v>
+                            <v>Error1</v>
+                            <v>BlowPermit</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                            <v>TIME</v>
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                            <v>UDINT</v>
+                            <v>STRING</v>
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                          </l2>
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">121L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">51L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"Sampling"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"Sampling1"</v>
+                          <v n="Type">"Sampling"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">113L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"Sampling_mean[2]"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">96L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"Pressing[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">98L</v>
+                            </o>
+                            <v n="Id">97L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"30"</v>
+                              <v n="Type">"INT"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">110L</v>
+                            </o>
+                            <v n="Id">109L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3IOLink.arrFilter_AD[29].Out_Value"</v>
+                              <v n="Type">"REAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">100L</v>
+                            </o>
+                            <v n="Id">99L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"0.2"</v>
+                              <v n="Type">"LREAL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">102L</v>
+                            </o>
+                            <v n="Id">101L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"Sampling_finish[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">104L</v>
+                            </o>
+                            <v n="Id">103L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>S_start</v>
+                            <v>S_amount</v>
+                            <v>S_site</v>
+                            <v>S_time</v>
+                            <v>S_finish</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>BOOL</v>
+                            <v>UINT</v>
+                            <v>REAL</v>
+                            <v>REAL</v>
+                            <v>BOOL[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>Result_mean</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>REAL</v>
+                          </l2>
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">114L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">93L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Auto4">
+      <LineId Id="691" Count="92" />
+      <LineId Id="945" Count="0" />
+      <LineId Id="784" Count="38" />
+      <LineId Id="993" Count="0" />
+      <LineId Id="823" Count="14" />
+      <LineId Id="992" Count="0" />
+      <LineId Id="838" Count="5" />
+      <LineId Id="986" Count="5" />
+      <LineId Id="845" Count="2" />
+      <LineId Id="891" Count="10" />
+      <LineId Id="958" Count="0" />
+      <LineId Id="957" Count="0" />
+      <LineId Id="902" Count="22" />
+      <LineId Id="1006" Count="42" />
+      <LineId Id="925" Count="7" />
+      <LineId Id="971" Count="2" />
+      <LineId Id="933" Count="0" />
+      <LineId Id="318" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

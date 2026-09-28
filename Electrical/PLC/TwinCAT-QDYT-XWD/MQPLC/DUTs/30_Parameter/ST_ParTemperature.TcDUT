@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ParTemperature" Id="{9ee81a88-747d-4c26-a7fc-9497899f3311}">
+    <Declaration><![CDATA[TYPE ST_ParTemperature ://   温控相关参数
+STRUCT
+   fTempSet                                   :REAL;// 设定温度温度(转换后)
+   fTempOffset                               :REAL;// 设定温度温度(转换后);// 温度偏移
+
+   fTempMax                                :REAL;     //温度高限设置
+
+  fTempArea                               :REAL;     
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

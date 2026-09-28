@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Oven_button" Id="{777b79fa-8197-4be6-a576-23fc6c1b83dd}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Oven_button
+
+VAR_IN_OUT
+	Oven_Button :ARRAY[1..42] OF BOOL;
+	Oven_Flow   :ARRAY[1..42] OF BOOL;
+END_VAR
+
+
+VAR_INPUT
+END_VAR
+
+
+VAR_OUTPUT
+END_VAR
+
+
+
+VAR
+	step :UINT;
+	a :INT;
+	i:INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF P3_SystemRUN.iMode=3 THEN
+	
+
+
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error THEN
+step:=9999;
+END_IF
+
+IF step=9999 AND P3_SystemRUN.btnReset THEN
+	step:=0;
+END_IF
+
+CASE step OF
+0:
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error
+	AND Oven_button[a] THEN
+		step:=10;
+		Oven_button[a]:=FALSE;
+	END_IF
+
+10://P3_M2烤箱上料夹进退电机去初始位
+	IF NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+	END_IF
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+		step:=20;	
+	END_IF
+
+20://P3_M2烤箱上料夹升降电机去初始位
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		
+		
+	step:=30;	
+	END_IF
+	
+30:	//P3_M2烤箱上料夹平移电机去烘烤a位
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND 
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[a] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=a;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[a] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving THEN
+		
+	step:=40;	
+	END_IF
+
+
+40://P3_M2烤箱上料夹升降电机去烘烤a位
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND
+		NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[a] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=a;	
+	END_IF
+	
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[a] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving THEN
+		Oven_Flow[a]:=TRUE;
+	step:=50;	
+	END_IF
+END_CASE
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="Oven_button">
+      <LineId Id="10" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="93" Count="1" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="100" Count="2" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="65" Count="1" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="12" Count="4" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="78" Count="9" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="26" Count="7" />
+      <LineId Id="38" Count="5" />
+      <LineId Id="46" Count="6" />
+      <LineId Id="57" Count="3" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

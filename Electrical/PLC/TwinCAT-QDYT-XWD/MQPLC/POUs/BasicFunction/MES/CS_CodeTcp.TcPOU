@@ -1,0 +1,319 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_CodeTcp" Id="{6c1ec581-262d-4442-bd5f-fcd9ca6ef4f7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PUBLIC CS_CodeTcp
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR_IN_OUT
+	
+   iCode2:ICode;
+
+END_VAR
+
+
+VAR
+	
+	fbTcpCon:FB_SocketConnect;
+	fbTcpSend:FB_SocketSend;
+//	fbTcpSend2:FB_SocketSend;
+	fbTcpRec:FB_SocketReceive;
+	fbTcpClose: FB_SocketClose;
+	bConnect: BOOL;
+	bClose: BOOL;
+	hTcpSock: T_HSOCKET;
+	//aTcpSend:ARRAY[1..10] OF BYTE;
+	//aTcpReceive:ARRAY[1..10] OF BYTE;	
+	StrSend:STRING;
+	StrReceive:STRING;
+	fbUdpCreate:FB_SocketUdpCreate;
+	hUdp: T_HSOCKET;
+	bCreate: BOOL;
+	port: UDINT:=60000;
+	bSendTcp: BOOL;
+	bReceiveTcp: BOOL;
+	fbSwingHalt2: MC_Halt;
+    TON01:TON;
+
+
+	Lenth: UINT;
+	StrSend2: STRING;
+	bSendTcp2: BOOL;
+	bCodeConError: BOOL;
+	TON100:TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+	Config();
+	
+	M_SendReceive();
+
+
+	
+	
+
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+(*	
+   fbUdpCreate(
+	sSrvNetId:= , 
+	sLocalHost:= , 
+	nLocalPort:= port, 
+	bExecute:=bCreate , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=> hUdp);
+	
+	
+	*)
+	
+	
+	]]></ST>
+    </Implementation>
+    <Action Name="Config" Id="{4f4cac2d-0015-45f0-ad27-0550d1845503}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+  IF iCode2.bComOpen THEN
+	 bConnect:=TRUE;	
+	 bClose:=FALSE;
+	 iCode2.bComOpen:=FALSE;
+  END_IF
+  
+   IF iCode2.bComClose THEN
+	 bConnect:=FALSE;	
+	 bClose:=TRUE;
+	 iCode2.bComClose:=FALSE;
+  END_IF 
+  
+  
+  
+fbTcpCon(
+	sSrvNetId:= ''   ,          //       (*'169.254.46.193.1.1'*) , 
+	sRemoteHost:='127.0.0.1'     , 
+	nRemotePort:= port, 
+	bExecute:=bConnect , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=>hTcpSock );
+	
+fbTcpClose(
+	sSrvNetId:= ''   , 
+	hSocket:=hTcpSock , 
+	bExecute:=bClose , 
+	tTimeout:=T#5S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+
+IF fbTcpCon.bBusy THEN
+	bConnect:=FALSE;
+END_IF
+
+IF fbTcpClose.bBusy THEN
+   bClose:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="M_SendReceive" Id="{6fcda719-e557-4228-82f2-0f11bee1f35e}">
+      <Implementation>
+        <ST><![CDATA[
+TON100(IN:= , PT:=T#12S , Q=> , ET=> );
+  IF iCode2.bLON THEN
+     StrSend:='LON16$R$N';
+	 bSendTcp:=TRUE;
+	 iCode2.bLON:=FALSE;
+	 iCode2.bDone:=FALSE;
+	 iCode2.bError:=FALSE;
+	 iCode2.strCode:='';
+	 Lenth:=SIZEOF(StrSend);
+	 TON100.IN:=TRUE;
+	// iCode.bCodeConError:=FALSE;
+  END_IF
+
+  IF iCode2.bLOFF THEN
+     StrSend:='LOFF$R$N';
+	 bSendTcp:=TRUE;
+	 iCode2.bLOFF:=FALSE;
+	 iCode2.bDone:=FALSE;
+	 iCode2.bError:=FALSE;
+	 iCode2.strCode:='';
+	 Lenth:=SIZEOF(StrSend2);
+  END_IF
+
+
+fbTcpSend(
+		sSrvNetId:= , 
+		hSocket:=hTcpSock , 
+		cbLen:=SIZEOF(StrSend), 
+		pSrc:= ADR(StrSend), 
+		bExecute:= bSendTcp, 
+		tTimeout:= T#2S , 
+		bBusy=> , 
+		bError=> , 
+		nErrId=> );
+	
+	TON01(IN:= bSendTcp, PT:= T#500MS, Q=> , ET=> );	
+	IF TON01.Q THEN
+		bSendTcp:=FALSE;
+	END_IF
+	
+	
+bReceiveTcp:=NOT bReceiveTcp;
+fbTcpRec(
+	sSrvNetId:= , 
+	hSocket:= hTcpSock, 
+	cbLen:=SIZEOF(StrReceive) , 
+	pDest:=ADR(StrReceive) , 
+	bExecute:=bReceiveTcp , 
+	tTimeout:= T#5S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	nRecBytes=> );
+
+
+(*
+//IF 	StrReceive='ERROR$R0843160C8$R' OR StrReceive= 'ERROR$R' OR StrReceive='ER,' OR StrReceive=  'ERROR$R0842000C4$R' THEN
+IF StrReceive<>''THEN
+	IF LEN(STR:=StrReceive )>=14 AND LEN(STR:=StrReceive )<=20 AND FIND(STR1:=StrReceive , STR2:='ERROR' )=0 THEN
+	  iCode2.strCode:=StrReceive;
+	  StrReceive:='';
+	  iCode2.bDone:=TRUE;
+	ELSIF FIND(STR1:=StrReceive , STR2:='ERROR' )<>0 THEN 
+	  iCode2.strCode:=StrReceive;
+	  StrReceive:='';
+	  iCode2.bError:=TRUE;
+	END_IF
+END_IF
+			
+
+IF  TON100.Q THEN
+   IF StrReceive='' THEN
+     // iCode.bCodeConError:=TRUE;	
+   END_IF
+   TON100.IN:=FALSE;
+END_IF
+
+//iCode.bCodeConError;
+
+*)
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="CS_CodeTcp">
+      <LineId Id="185" Count="1" />
+      <LineId Id="10" Count="3" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="120" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="148" Count="18" />
+      <LineId Id="75" Count="1" />
+      <LineId Id="82" Count="9" />
+      <LineId Id="77" Count="4" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_CodeTcp.Config">
+      <LineId Id="63" Count="1" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="58" Count="2" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="70" Count="3" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="74" Count="1" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="40" Count="17" />
+      <LineId Id="3" Count="2" />
+      <LineId Id="76" Count="1" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="79" Count="1" />
+      <LineId Id="8" Count="10" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_CodeTcp.M_SendReceive">
+      <LineId Id="3" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="53" Count="4" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="39" Count="1" />
+      <LineId Id="58" Count="5" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="4" Count="1" />
+      <LineId Id="16" Count="9" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="27" Count="10" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="130" Count="1" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="97" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="111" Count="1" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="119" Count="1" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="124" Count="4" />
+      <LineId Id="11" Count="4" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

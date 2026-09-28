@@ -1,0 +1,278 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DataXML_Old" Id="{275c2408-bf8b-4995-ba48-40c9bf3238de}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_DataXML_Old
+VAR_INPUT
+    	bSave:BOOL;
+	    bRead:BOOL;
+
+		
+END_VAR
+VAR_OUTPUT
+    	bSaveParDone      :BOOL;
+	    bReadParDone     :BOOL;
+		bError                     :BOOL;   
+END_VAR
+
+VAR
+
+
+	iDataSetp: INT;
+	TON10:Tc2_Standard.TON;
+	I1: INT;
+	rt100:Tc2_Standard.R_TRIG;
+	rt101:Tc2_Standard.R_TRIG;
+	bExecute1: BOOL;
+	bExecute2: BOOL;
+
+
+	bSaveTemp: BOOL;
+	bReadTemp: BOOL;
+
+ fbXmlSrvWrite         : FB_XmlSrvWrite;
+// fbXmlSrvWrite         : FB_SrvWrite;
+   bExecuteW1             : BOOL;
+   sFilePathPar_W       : T_MaxString ;
+
+  // value2                : ST_MYSTRUCT;
+fbXmlSrvRead   : FB_XmlSrvRead;
+//fbXmlSrvRead   : FB_SrvRead;
+   bExecuteR          : BOOL;
+   sFilePathPar_R      : T_MaxString ;
+   sXPathR             : T_MaxString;
+	AA: INT;
+	BB: INT;
+
+
+
+
+
+
+
+
+
+
+
+
+	handleTemp: UDINT;
+	//rtResetSaveDone: R_TRIG;
+	//rtResetReadDone: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+M_WriteOrRead();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="M_WriteOrRead" Id="{e8150753-4766-42c0-96ed-9588df2425ed}">
+      <Implementation>
+        <ST><![CDATA[bError:=fbXmlSrvWrite.bError OR fbXmlSrvRead.bError;
+
+rt100(CLK:=bSave , Q=> );//保存参数
+rt101(CLK:=bRead , Q=> );//读取参数
+
+IF rt100.Q THEN  //保存参数
+	iDataSetp:=100;
+	TON10.IN:=FALSE;
+	I1:=1;
+	bExecute1:=FALSE;
+	bExecute2:=FALSE;
+	bSave:=FALSE;
+	bRead:=FALSE;
+    bSaveTemp:=TRUE;
+	bReadTemp:=FALSE;
+	bSaveParDone:=FALSE;
+END_IF
+
+IF rt101.Q THEN  //读取参数
+	iDataSetp:=100;
+	TON10.IN:=FALSE;
+	I1:=1;
+	bExecute1:=FALSE;
+	bExecute2:=FALSE;	
+	bSave:=FALSE;
+	bRead:=FALSE;
+    bReadTemp:=TRUE;
+    bSaveTemp:=FALSE;
+	bReadParDone:=FALSE;
+END_IF
+
+TON10(IN:= , PT:=T#200MS , Q=> , ET=> );
+
+
+(*
+rtResetSaveDone(CLK:=NOT bSave  AND  bSaveParDone  , Q=> );
+IF  rtResetSaveDone.Q THEN
+	bSaveParDone:=FALSE;
+END_IF
+rtResetReadDone(CLK:=NOT bRead  AND  bReadParDone  , Q=> );
+IF  rtResetReadDone.Q THEN
+	bReadParDone:=FALSE;
+END_IF
+*)
+
+
+
+CASE  iDataSetp OF 
+	
+ 100:
+				CASE I1 OF 
+				  1://轴参数
+					sFilePathPar_W  := 'C:\P1XML\P1arrAxisPar.xml';
+					fbXmlSrvWrite.pSymAddr:=ADR(arrAxisPar);
+					fbXmlSrvWrite.cbSymSize:=SIZEOF(arrAxisPar);   
+
+					sFilePathPar_R  := 'C:\P1XML\P1arrAxisPar.xml';
+					fbXmlSrvRead.pSymAddr:=ADR(arrAxisPar);
+					fbXmlSrvRead.cbSymSize:=SIZEOF(arrAxisPar);   
+     
+				  2://ProductPar
+		  		    sFilePathPar_W  := 'C:\P1XML\P1ProductPar.xml';
+					fbXmlSrvWrite.pSymAddr:=ADR(ProductPar);
+					fbXmlSrvWrite.cbSymSize:=SIZEOF(ProductPar);     
+
+					sFilePathPar_R  :=  'C:\P1XML\P1ProductPar.xml';
+					fbXmlSrvRead.pSymAddr:=ADR(ProductPar);
+					fbXmlSrvRead.cbSymSize:=SIZEOF(ProductPar);   
+(*					
+				  3://Name
+		  		     sFilePathPar_W  := 'C:\P1XML\P1Name.xml';
+					fbXmlSrvWrite.pSymAddr:=ADR(NameNo);
+					fbXmlSrvWrite.cbSymSize:=SIZEOF(NameNo);     
+
+					sFilePathPar_R  := 'C:\P1XML\P1Name.xml';
+					fbXmlSrvRead.pSymAddr:=ADR(NameNo);
+					fbXmlSrvRead.cbSymSize:=SIZEOF(NameNo);   
+
+				  4://Data
+		  		    sFilePathPar_W  := 'C:\P1XML\P1Data.xml';
+					fbXmlSrvWrite.pSymAddr:=ADR(PoleData);
+					fbXmlSrvWrite.cbSymSize:=SIZEOF(PoleData);     
+
+					sFilePathPar_R  := 'C:\P1XML\P1Data.xml';
+					fbXmlSrvRead.pSymAddr:=ADR(PoleData);
+					fbXmlSrvRead.cbSymSize:=SIZEOF(PoleData);   
+
+				  5: //P2M3_Par 
+		  		    sFilePathPar_W  := 'C:\XML\P2M3_Par.xml';
+					fbXmlSrvWrite.pSymAddr:=ADR(P2M3_Par);
+					fbXmlSrvWrite.cbSymSize:=SIZEOF(P2M3_Par);     
+
+					sFilePathPar_R  := 'C:\XML\P2M3_Par.xml';
+					fbXmlSrvRead.pSymAddr:=ADR(P2M3_Par);
+					fbXmlSrvRead.cbSymSize:=SIZEOF(P2M3_Par);   		
+*)					
+				END_CASE
+        IF  bSaveTemp THEN
+              handleTemp:=fbXmlSrvWrite.handle;
+   	          iDataSetp:=200;
+       END_IF
+        IF  bReadTemp THEN
+              handleTemp:=fbXmlSrvRead.handle;
+   	          iDataSetp:=300;
+       END_IF
+
+	200:	//保存数据
+		bExecute1:=TRUE;
+        iDataSetp:=210;
+	210:	
+       IF  NOT fbXmlSrvWrite.bError  AND NOT fbXmlSrvWrite.bBusy AND handleTemp<>fbXmlSrvWrite.handle  THEN
+             iDataSetp:=500;
+      END_IF
+
+	300:	//读取参数
+		bExecute2:=TRUE;
+        iDataSetp:=310;
+	310:	
+       IF  NOT fbXmlSrvRead.bError  AND NOT fbXmlSrvRead.bBusy AND handleTemp<>fbXmlSrvRead.handle  THEN
+             iDataSetp:=500;
+      END_IF
+
+
+	500://继续写下个文件
+	  IF I1>=1 AND I1<3 THEN
+		 I1:=I1+1; 
+		 iDataSetp:=100; 
+		 bExecute1:=FALSE; 
+		 bExecute2:=FALSE; 
+	  ELSIF I1>=3 THEN
+          IF  bSaveTemp THEN
+               bSaveParDone:=TRUE;
+         END_IF
+
+          IF  bReadTemp THEN
+               bReadParDone:=TRUE;
+         END_IF
+
+		  bReadTemp:=FALSE;
+          bSaveTemp:=FALSE;
+
+	   	 iDataSetp:=666;   
+	  END_IF
+END_CASE
+
+
+
+AA:=BB;
+
+fbXmlSrvWrite(
+   nMode           := XMLSRV_ADDMISSING,
+   pSymAddr        :=,//ADR(Value1)
+   cbSymSize       := ,//SIZEOF(Value1)
+   sFilePath       := sFilePathPar_W,
+   sXPath	       := '/dataentry/value',
+   bExecute        := bExecute1
+);
+fbXmlSrvWrite.nErrId;
+
+
+fbXmlSrvRead(
+   pSymAddr       := ,
+   cbSymSize      := ,
+   sFilePath      := sFilePathPar_R,
+   sXPath	         := '/dataentry/value',
+   bExecute       := bExecute2
+);
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="FB_DataXML_Old">
+      <LineId Id="3" Count="17" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_DataXML_Old.M_WriteOrRead">
+      <LineId Id="2" Count="14" />
+      <LineId Id="170" Count="0" />
+      <LineId Id="17" Count="11" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="29" Count="2" />
+      <LineId Id="163" Count="1" />
+      <LineId Id="156" Count="2" />
+      <LineId Id="165" Count="4" />
+      <LineId Id="159" Count="3" />
+      <LineId Id="32" Count="21" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="55" Count="25" />
+      <LineId Id="154" Count="0" />
+      <LineId Id="81" Count="71" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

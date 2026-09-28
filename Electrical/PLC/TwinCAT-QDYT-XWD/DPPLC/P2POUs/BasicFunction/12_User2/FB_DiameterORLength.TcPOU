@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DiameterORLength" Id="{5b75f894-2113-46e4-a9bf-19eea7d120a3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_DiameterORLength
+VAR_INPUT
+	D1 : REAL; //外直径
+	R1 : REAL:=172; //内直径
+	T1 : REAL; //隔膜厚度
+END_VAR
+VAR_OUTPUT
+	OUT1: REAL;
+END_VAR
+VAR
+	R2: REAL;
+	R3: REAL;
+	R4: REAL;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF  T1 <> 0 AND D1 >= R1 THEN
+	R2:=(D1-R1)/2  ;  
+	R3:=((D1*Tc2_System.PI)+(R1*Tc2_System.PI))/2 ;  //平均长度
+	R4:=R2/T1;  //总层数
+	OUT1:=(R4*R3)/1000;
+END_IF
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_DiameterORLength">
+      <LineId Id="3" Count="9" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

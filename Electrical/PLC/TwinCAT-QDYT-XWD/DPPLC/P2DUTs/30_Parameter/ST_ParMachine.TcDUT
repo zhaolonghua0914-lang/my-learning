@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ParMachine" Id="{cf6dede3-2c51-4eb4-a9fe-f12ecc125cbf}">
+    <Declaration><![CDATA[TYPE ST_ParMachine ://机械参数
+STRUCT
+(*
+       fMQDriverDiameter            :REAL:=80   ;
+      
+       fYFHDriverInDiameter         :REAL:=24   ;  //预复合入料辊直径
+       fAuxDriverDiameter            :REAL:=64 ;  //辅助驱动辊张力
+
+       fYFHGMDriverDiameter      :REAL:=64 ; //预复合隔膜压辊直径
+       fYFHGMDriverDiameter2      :REAL:=32 ; 
+
+
+
+       fMainRollDriverDiameter       :REAL:=200 ;//复合大辊直径
+
+      fP4MainDriverDiameter        :REAL:=70 ;//P4主驱动
+      fP4AuxDriverDiameter        :REAL:=30 ;//P4f辅驱动
+
+
+
+
+//叠片主驱动  70
+//叠片辅驱动  30
+//NG皮带 46
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*)
+
+
+
+
+
+
+
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

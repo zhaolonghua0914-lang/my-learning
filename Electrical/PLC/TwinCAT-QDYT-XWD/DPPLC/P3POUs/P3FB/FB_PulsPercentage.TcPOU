@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_PulsPercentage" Id="{d4542791-b821-4042-836e-40a733a7345e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PulsPercentage
+VAR_INPUT
+	fPercentage :INT; 
+    iTimeBasic :INT;//时 基  1S
+ 
+END_VAR
+VAR_OUTPUT
+	bDOPuls:BOOL;
+
+END_VAR
+VAR
+	ton01:Tc2_Standard.TON;
+    tonON:Tc2_Standard.TON;
+    tonOFF:Tc2_Standard.TON;
+
+	iStep: INT;
+	AA1: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ 
+ton01(IN:= , PT:= INT_TO_TIME(iTimeBasic*1000), Q=> , ET=> ); //单位S
+tonON(IN:= , PT:= , Q=> , ET=> );
+tonOFF(IN:= , PT:=, Q=> , ET=> );
+
+IF NOT ton01.Q THEN
+	ton01.IN:=TRUE;
+END_IF
+
+IF  ton01.Q THEN
+	ton01.IN:=FALSE;
+	iStep:=10;
+END_IF
+
+
+//  AA1:= REAL_TO_INT (fPercentage*iTimeBasic*1000/100) ;
+
+ 
+CASE iStep OF 	
+	
+10:  //输出ON
+ tonON.PT:= INT_TO_TIME ( REAL_TO_INT (fPercentage*iTimeBasic*1000/100) );
+ IF tonON.PT>=T#10MS THEN
+	 bDOPuls:=TRUE; 
+	 tonON.IN:=TRUE;
+	 iStep:=20;
+  ELSE
+	 bDOPuls:=FALSE; 
+	 tonON.IN:=FALSE;
+	 iStep:=100;  
+ END_IF
+20:  //输出ON 
+  IF tonON.Q THEN
+	  bDOPuls:=FALSE;
+	  tonON.IN:=FALSE; 
+	  iStep:=100;
+  END_IF
+
+100: //输出OFF
+
+
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_PulsPercentage">
+      <LineId Id="3" Count="42" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

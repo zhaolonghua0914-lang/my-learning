@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_SystemButton" Id="{ca8bc6c2-6149-4a40-bf38-8b344667291e}">
+    <Declaration><![CDATA[TYPE ST_SystemButton :
+STRUCT
+System_StartLights	:BOOL;		//		控制面板启动按钮灯
+System_ResetLights	:BOOL;		//		控制面板复位按钮灯
+System_StopLights	:BOOL;		//		控制面板停止按钮灯
+System_Autonbtn	:BOOL;		//		控制面板手自动切换按钮
+System_Startbtn	:BOOL;		//		控制面板启动按钮
+System_Rrestbtn	:BOOL;		//		控制面板复位按钮
+System_Stopbtn	:BOOL;		//		控制面板停止按钮
+System_EmStopbtn	:BOOL;		//		控制面板急停按钮
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

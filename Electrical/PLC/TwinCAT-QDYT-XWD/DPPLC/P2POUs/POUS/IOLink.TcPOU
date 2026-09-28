@@ -1,0 +1,2892 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="IOLink" Id="{a31dc54c-6693-4026-89c2-f9762f8c620d}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM IOLink
+VAR
+//	tFlash: TON;
+//	bFlash:BOOL;
+//	bIOinit: BOOL;
+	XXX: INT;
+	Q20815: BOOL;
+	AA: INT;
+
+     arrFilter_AD               : ARRAY[1..MaxAINo]  OF  FB_Filter_AD ;
+      arrFilter_ADV2               : ARRAY[1..3]  OF  FB_Filter_ADV2 ;
+
+
+    Test:BOOL;
+	I1: INT;
+
+    rt01   :Tc2_Standard.R_TRIG;
+    rt02   :Tc2_Standard.R_TRIG;
+
+     parDAOld                   :ARRAY[1..44] OF INT;   
+	 q:INT;
+
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[P2_InPut();
+
+P2_OutPut();
+
+AI();
+
+//LimitSwitch();
+
+P2_AutoLink();
+P2M1_AutoLink();
+P2M2_AutoLink();
+P2M3_AutoLink();
+LimitSwitch();
+
+
+IF fbPulseCtrl[4].RT THEN
+      AO();
+END_IF
+(*
+//rt01(CLK:=arrCyCtrl[P3CYNo.RollPress].Cmd.bON , Q=> );
+//rt02(CLK:=arrCyCtrl[P3CYNo.RollPress].Cmd.bOFF , Q=> );
+IF rt01.Q THEN
+    P3EL4004S[3,1]:=parDA[33]	 ;//重力补偿
+  //  P3EL4004S[3,2]:=parDA[34]	 ;
+END_IF
+IF rt02.Q THEN
+    P3EL4004S[3,1]:=22000;//重力补偿
+ //   P3EL4004S[3,2]:=20000;
+END_IF
+
+
+
+*)
+
+
+
+
+
+AA;
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="AI" Id="{3066b8ec-5c98-4636-a876-edfda9b0608e}">
+      <Implementation>
+        <ST><![CDATA[//1号叠片
+arrFilter_AD[1].AD	:=AI30[1];	//1号叠片	隔膜卷径超声波检测
+arrFilter_AD[1].iMode:=2;
+arrFilter_AD[1].fPointNum:=20;
+
+arrFilter_AD[2].AD	:=AI30[2];	//1号叠片	隔膜放卷纠偏前检测
+arrFilter_AD[2].iMode:=2;
+arrFilter_AD[2].fPointNum:=20;//30;
+
+arrFilter_AD[3].AD	:=AI30[3];	//1号叠片	隔膜放卷纠偏后检测
+arrFilter_AD[3].iMode:=2;
+arrFilter_AD[3].fPointNum:=20;//30;
+
+//arrFilter_AD[4].AD	:=AI30[4];//1号叠片	隔膜张力检测
+arrFilter_ADV2[1].AD	:=AI30[4];//1号叠片	隔膜张力检测
+arrFilter_ADV2[1].iMode:=2;
+arrFilter_ADV2[1].fPointNum:=1000;
+//2号叠片
+arrFilter_AD[5].AD	:=ABS(AI40[1]);	//2号叠片	隔膜卷径超声波检测
+arrFilter_AD[5].iMode:=2;
+arrFilter_AD[5].fPointNum:=20;
+
+arrFilter_AD[6].AD	:=ABS(AI40[2]);	//2号叠片	隔膜放卷纠偏前检测
+arrFilter_AD[6].iMode:=2;
+arrFilter_AD[6].fPointNum:=20;//30;
+
+arrFilter_AD[7].AD	:=ABS(AI40[3]);	//2号叠片	隔膜放卷纠偏后检测
+arrFilter_AD[7].iMode:=2;
+arrFilter_AD[7].fPointNum:=20;//30;
+
+//arrFilter_AD[8].AD	:=ABS(AI40[4]);//2号叠片	隔膜张力检测
+arrFilter_ADV2[2].AD	:=ABS(AI40[4]);//2号叠片	隔膜张力检测
+arrFilter_ADV2[2].iMode:=2;
+arrFilter_ADV2[2].fPointNum:=1000;
+//3号叠片
+arrFilter_AD[9].AD	:=ABS(AI50[1]);	//3号叠片	隔膜卷径超声波检测
+arrFilter_AD[9].iMode:=2;
+arrFilter_AD[9].fPointNum:=20;
+
+arrFilter_AD[10].AD	:=ABS(AI50[2]);	//3号叠片	隔膜放卷纠偏前检测
+arrFilter_AD[10].iMode:=2;
+arrFilter_AD[10].fPointNum:=20;//30;
+
+arrFilter_AD[11].AD	:=ABS(AI50[3]);	//3号叠片	隔膜放卷纠偏后检测
+arrFilter_AD[11].iMode:=2;
+arrFilter_AD[11].fPointNum:=20;//30;
+
+//arrFilter_AD[12].AD	:=ABS(AI50[4]);//3号叠片	隔膜张力检测
+arrFilter_ADV2[3].AD	:=ABS(AI50[4]);//3号叠片	隔膜张力检测
+arrFilter_ADV2[3].iMode:=2;
+arrFilter_ADV2[3].fPointNum:=1000;
+
+FOR  I1:=1 TO  12  DO//MaxAINo
+	IF  I1=4  THEN
+           arrFilter_ADV2[1](
+			  iMode:=         , 
+			  AD:=				arrFilter_ADV2[1].AD, 
+			  iLimitH:=         parFilterAD[4].iLimitH  , 
+			  iLimitL:=          parFilterAD[4].iLimitL   , 
+			  fRangeH:=      parFilterAD[4].fRangeH , 
+			  fRangeL:=       parFilterAD[4].fRangeL , 
+			  fPointNum:=    , 
+			  Out_Value=>    );
+  ELSIF  I1=8 THEN
+           arrFilter_ADV2[2](
+			  iMode:=         , 
+			  AD:=			    arrFilter_ADV2[2].AD, 
+			  iLimitH:=         parFilterAD[8].iLimitH  , 
+			  iLimitL:=          parFilterAD[8].iLimitL   , 
+			  fRangeH:=      parFilterAD[8].fRangeH , 
+			  fRangeL:=       parFilterAD[8].fRangeL , 
+			  fPointNum:=    , 
+			  Out_Value=>);
+  ELSIF  I1=12 THEN
+           arrFilter_ADV2[3](
+			  iMode:=         , 
+			  AD:=				arrFilter_ADV2[3].AD, 
+			  iLimitH:=         parFilterAD[12].iLimitH  , 
+			  iLimitL:=          parFilterAD[12].iLimitL   , 
+			  fRangeH:=      parFilterAD[12].fRangeH , 
+			  fRangeL:=       parFilterAD[12].fRangeL , 
+			  fPointNum:=    , 
+			  Out_Value=>);
+ELSE
+	  arrFilter_AD[I1](
+		  iMode:=         , 
+		  AD:=				arrFilter_AD[I1].AD               , 
+		  iLimitH:=         parFilterAD[I1].iLimitH  , 
+		  iLimitL:=          parFilterAD[I1].iLimitL   , 
+		  fRangeH:=      parFilterAD[I1].fRangeH , 
+		  fRangeL:=       parFilterAD[I1].fRangeL , 
+		  fPointNum:=    , 
+		  Out_Value=>);
+END_IF
+
+END_FOR
+//一号叠台
+//P2M1_MachCtrl.DT_b.fWindDiameter:=arrFilter_AD[1].Out_Value;
+P2M1_MachCtrl.DT_b.RecDevPV:=arrFilter_AD[2].Out_Value;
+P2M1_MachCtrl.DT_b.RecDevPV1:=arrFilter_AD[3].Out_Value;
+P2M1_MachCtrl.DT_b.TenAnglePos:=LREAL_TO_REAL(arrAxis[P2M1_Axise.AxisName.SEPTATension].NcToPlc.ActPos);	
+P2M1_Par.stDT_date.fRectifyMaxValue:= parFilterAD[2].fRangeH;
+P2M1_Par.stDT_date.fRectifyMinValue:=parFilterAD[2].fRangeL;
+arrFilter_ADV2[1].Out_Value;
+
+//二号叠台
+//P2M2_MachCtrl.DT_b.fWindDiameter:=arrFilter_AD[5].Out_Value;
+P2M2_MachCtrl.DT_b.RecDevPV:=arrFilter_AD[6].Out_Value;
+P2M2_MachCtrl.DT_b.RecDevPV1:=arrFilter_AD[7].Out_Value;
+P2M2_MachCtrl.DT_b.TenAnglePos:=LREAL_TO_REAL(arrAxis[P2M2_Axise.AxisName.SEPTATension].NcToPlc.ActPos);	//2号叠片	隔膜张力检测;
+P2M2_Par.stDT_date.fRectifyMaxValue:= parFilterAD[6].fRangeH;
+P2M2_Par.stDT_date.fRectifyMinValue:=parFilterAD[6].fRangeL;
+arrFilter_ADV2[2].Out_Value;
+//三号叠台
+//P2M3_MachCtrl.DT_b.fWindDiameter:=arrFilter_AD[9].Out_Value;
+P2M3_MachCtrl.DT_b.RecDevPV:=arrFilter_AD[10].Out_Value;
+P2M3_MachCtrl.DT_b.RecDevPV1:=arrFilter_AD[11].Out_Value;
+P2M3_MachCtrl.DT_b.TenAnglePos:=LREAL_TO_REAL(arrAxis[P2M3_Axise.AxisName.SEPTATension].NcToPlc.ActPos);	//3号叠片	隔膜张力检测
+P2M3_Par.stDT_date.fRectifyMaxValue:= parFilterAD[10].fRangeH;
+P2M3_Par.stDT_date.fRectifyMinValue:=parFilterAD[10].fRangeL;
+arrFilter_ADV2[3].Out_Value;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="AO" Id="{e0afcd14-2c13-4243-a1ac-4ecb59a4e3c7}">
+      <Implementation>
+        <ST><![CDATA[;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="LimitSwitch" Id="{3b1dd21a-6ecf-4887-aef4-8c3e09e356c7}">
+      <Implementation>
+        <ST><![CDATA[
+//1号叠台
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.DigitalInputs;//一号叠台正极搬运平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AnCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.DigitalInputs;//一号叠台正极送片搬运升降
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AnCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.DigitalInputs;//一号叠台正极搬运旋转
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AnCarryingWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.DigitalInputs;//一号叠台正极纠偏平台X1
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AndeviationX1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.DigitalInputs;//一号叠台正极纠偏平台X2
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AndeviationX2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.DigitalInputs;//一号叠台正极纠偏平台Y
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AndeviationY].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.DigitalInputs;//一号叠台正极搬运平移1//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.biPosLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.biNegLimit:=   arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.DigitalInputs;//一号叠台正极搬运升降
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_AnDTCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.DigitalInputs;//一号叠台正极送片皮带
+//arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaBelt].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.DigitalInputs;//一号叠台负极搬运平移1//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.biPosLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine1].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.DigitalInputs;//一号叠台负极搬运平移2//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaCarryingLine2].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.DigitalInputs;//一号叠台负极送片搬运1升降
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.DigitalInputs;//一号叠台负极送片搬运2升降
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaCarryingUpDown2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.DigitalInputs;//一号叠台负极送片搬运1旋转
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaCarryingWhirling1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.DigitalInputs;//一号叠台负极纠偏平台X1
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CadeviationX1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.DigitalInputs;//一号叠台负极纠偏平台X2
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CadeviationX2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.DigitalInputs;//一号叠台负极纠偏平台Y
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CadeviationY].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.DigitalInputs;//一号叠台负极搬运平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.DigitalInputs;//一号叠台负极叠片搬运升降
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_CaDTCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.DigitalInputs;//一号叠台升降
+arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_DTUpDown].Io.DigitalInputs.2;
+
+
+////////////////////////////////////
+arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.DigitalInputs;//一号叠台侧胶夹平移
+arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.DigitalInputs;//一号叠台贴胶头进退
+arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_GluingRetracting].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.DigitalInputs;//一号叠台拉胶升降
+arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_GluingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.DigitalInputs;//一号叠台侧胶夹旋转
+arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.DigitalInputs;//一号叠台长卷针平移   雷赛
+arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.DigitalInputs.6;
+arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.DigitalInputs;//一号叠台长卷针旋转  雷赛
+//arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.DigitalInputs.6;
+//arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_LCurlingneedleWhirling].Io.DigitalInputs.2;
+
+
+
+
+/////////////////
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.DigitalInputs;//一号叠台左压刀开合
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_LeftYDLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.DigitalInputs;//一号叠台左压刀升降
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_LeftYDUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.DigitalInputs;//一号叠台右压刀开合
+arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_RightYDLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.DigitalInputs;//右压刀升降
+arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_RightYDUpDown].Io.DigitalInputs.2;
+
+
+////////////////
+arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.DigitalInputs;//一号叠台平卷针平移   雷赛
+arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.DigitalInputs.6;
+arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.DigitalInputs;//一号叠台短卷针旋转   雷赛
+//arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.DigitalInputs.6;
+//arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SCurlingneedleWhirling].Io.DigitalInputs.2;
+
+
+
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.DigitalInputs;//一号叠台隔膜放卷纠偏
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.DigitalInputs;//一号叠台隔膜尾部纠偏
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SEPTAdeviation2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.DigitalInputs;//一号叠台隔膜缓存//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SEPTATCache].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.DigitalInputs;//一号叠台隔膜摆杆张力
+//arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SEPTATension].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.DigitalInputs;//一号叠台隔膜平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SEPTATLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.DigitalInputs;//一号叠台隔膜放卷
+//arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_SEPTAunwinding].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.DigitalInputs;//一号叠台尾卷夹电芯平移
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_TailCurlLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.DigitalInputs;//一号叠台尾卷夹电芯伸缩
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_TailCurlRetracting].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.DigitalInputs;//一号叠台夹膜平移
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTALine].Io.DigitalInputs.17;
+
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.DigitalInputs;//一号叠台夹膜升降
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_TailCurlSEPTAUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.DigitalInputs;//一号叠台尾卷夹电芯升降
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_TailCurlUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.DigitalInputs;//一号叠台尾卷夹电芯旋转
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M1_TailCurlWhirling].Io.DigitalInputs.17;
+
+
+//2号叠台
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.DigitalInputs;//二号叠台正极送片搬运平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.biNegLimit:= arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AnCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.DigitalInputs;//二号叠台正极送片搬运升降
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AnCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.DigitalInputs;//二号叠台正极送片搬运旋转
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AnCarryingWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.DigitalInputs;//二号叠台正极纠偏平台X1
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AndeviationX1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.DigitalInputs;//二号叠台正极纠偏平台X2
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AndeviationX2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.DigitalInputs;//二号叠台正极纠偏平台Y
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AndeviationY].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.DigitalInputs;//二号叠台正极叠片搬运平移1//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.DigitalInputs;//二号叠台正极叠台搬运升降
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_AnDTCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.DigitalInputs;//二号叠台正极送片皮带
+//arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaBelt].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.DigitalInputs;//二号叠台负极送片搬运1平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine1].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.DigitalInputs;//二号叠台负极送片搬运2平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaCarryingLine2].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.DigitalInputs;//二号叠台负极送片搬运1升降
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.DigitalInputs;//二号叠台负极送片搬运2升降
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaCarryingUpDown2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.DigitalInputs;//二号叠台负极送片搬运1旋转
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaCarryingWhirling1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.DigitalInputs;//二号叠台负极纠偏平台X1
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CadeviationX1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.DigitalInputs;//二号叠台负极纠偏平台X2
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CadeviationX2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.DigitalInputs;//二号叠台负极纠偏平台Y
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CadeviationY].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.DigitalInputs;//二号叠台负极叠片搬运搬运//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.DigitalInputs;//二号叠台负极叠片搬运升降
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_CaDTCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.DigitalInputs;//二号叠台升降
+arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_DTUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.DigitalInputs;//二号叠台侧贴胶平移
+arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.DigitalInputs;//二号叠台贴胶头进退
+arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_GluingRetracting].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.DigitalInputs;//二号叠台拉胶升降
+arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_GluingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.DigitalInputs;//二号叠台贴胶夹旋转
+arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.DigitalInputs;//二号叠台长卷针平移  雷赛
+arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.DigitalInputs.6;
+arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.DigitalInputs;//二号叠台长卷针旋转  雷赛
+//arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.DigitalInputs.6;
+//arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_LCurlingneedleWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.DigitalInputs;//二号叠台左压刀开合
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_LeftYDLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.DigitalInputs;//二号叠台左压刀升降
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_LeftYDUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.DigitalInputs;//二号叠台右压刀开合
+arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_RightYDLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.DigitalInputs;//二号叠台右压刀升降
+arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_RightYDUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.DigitalInputs;//二号叠台短卷针平移  雷赛
+arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.DigitalInputs.6;
+arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.DigitalInputs;////二号叠台短卷针旋转  雷赛
+//arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.DigitalInputs.6;
+//arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SCurlingneedleWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.DigitalInputs;//二号叠台隔膜放卷纠偏
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.DigitalInputs;//二号叠台隔膜尾部纠偏
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SEPTAdeviation2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.DigitalInputs;//二号叠台隔膜缓存//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SEPTATCache].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.DigitalInputs;//二号叠台隔膜摆杆张力
+//arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SEPTATension].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.DigitalInputs;//二号叠台隔膜平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SEPTATLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.DigitalInputs;//二号叠台隔膜放卷
+//arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_SEPTAunwinding].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.DigitalInputs;//二号叠台尾卷夹电芯平移
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_TailCurlLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.DigitalInputs;//二号叠台尾卷夹电芯伸缩
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_TailCurlRetracting].Io.DigitalInputs.17;
+
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.DigitalInputs;//二号叠台夹膜平移
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTALine].Io.DigitalInputs.17;
+
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.DigitalInputs;//二号叠台夹膜升降
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_TailCurlSEPTAUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.DigitalInputs;//二号叠台尾卷夹电芯升降
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_TailCurlUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.DigitalInputs;//二号叠台尾卷夹电芯旋转
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M2_TailCurlWhirling].Io.DigitalInputs.17;
+
+
+
+
+
+
+
+
+//3叠台
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.DigitalInputs;//三号叠台正极送片搬运平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AnCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.DigitalInputs;//三号叠台正极送片搬运升降
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AnCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.DigitalInputs;//三号叠台正极送片搬运旋转
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AnCarryingWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.DigitalInputs;//三号叠台正极纠偏平台X1
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AndeviationX1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.DigitalInputs;//三号叠台正极纠偏平台X2
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AndeviationX2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.DigitalInputs;//三号叠台正极纠偏平台Y
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AndeviationY].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.DigitalInputs;//三号叠台正极叠台搬运平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.DigitalInputs;//三号叠台正极叠台搬运升降
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_AnDTCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.DigitalInputs;//三号叠台负极送片皮带
+//arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaBelt].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.DigitalInputs;//三号叠台负极搬运1平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine1].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.DigitalInputs;//三号叠台负极搬运2平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaCarryingLine2].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.DigitalInputs;//三号叠台负极搬运1升降
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.DigitalInputs;//三号叠台负送片搬运2升降
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaCarryingUpDown2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.DigitalInputs;//三号叠台负极搬运1旋转
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaCarryingWhirling1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.DigitalInputs;//三号叠台负极纠偏平台X1
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CadeviationX1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.DigitalInputs;//三号叠台负极纠偏平台X2
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CadeviationX2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.DigitalInputs;//三号叠台负极纠偏平台Y
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CadeviationY].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.DigitalInputs;//三号叠台负极叠片搬运平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.DigitalInputs;//负极叠台搬运升降
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_CaDTCarryingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.DigitalInputs;//三号叠台叠台升降
+arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_DTUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.DigitalInputs;//三号叠台侧贴胶夹平移
+arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.DigitalInputs;//三号叠台侧贴胶夹进退
+arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_GluingRetracting].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.DigitalInputs;//三号叠台拉胶升降
+arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_GluingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.DigitalInputs;//三号叠台侧胶夹旋转
+arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.DigitalInputs;//三号叠台长卷针平移   雷赛
+arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.DigitalInputs.6;
+arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.DigitalInputs;//三号叠台长卷针旋转  雷赛
+//arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.DigitalInputs.6;
+//arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_LCurlingneedleWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.DigitalInputs;//三号叠台左压刀开合
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_LeftYDLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.DigitalInputs;//三号叠台左压刀升降
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_LeftYDUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.DigitalInputs;//三号叠台右压刀开合
+arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_RightYDLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.DigitalInputs;//三号叠台右压刀升降
+arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_RightYDUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.DigitalInputs;//三号叠台短卷针平移   雷赛
+arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.DigitalInputs.6;
+arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.DigitalInputs;//三号叠台短卷针旋转
+//arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.DigitalInputs.6;
+//arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.DigitalInputs.7;
+arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SCurlingneedleWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.DigitalInputs;//三号叠台隔膜放卷纠偏
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation1].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.DigitalInputs;//三号叠台隔膜尾部纠偏
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SEPTAdeviation2].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.DigitalInputs;//三号叠台隔膜缓存//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SEPTATCache].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.DigitalInputs;////三号叠台隔膜摆杆张力
+//arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SEPTATension].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.DigitalInputs;//三号叠台隔膜平移//直线电机
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.DigitalInputs.18;
+arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SEPTATLine].Io.DigitalInputs.20;
+
+arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.DigitalInputs;//三号叠台隔膜放卷
+//arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.biPosLimit:=NOT arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.DigitalInputs.16;
+//arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.biNegLimit:=NOT  arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.DigitalInputs.17;
+//arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_SEPTAunwinding].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.DigitalInputs;//三号叠台尾卷电芯平移
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_TailCurlLine].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.DigitalInputs;//三号叠台尾卷夹电芯伸缩
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_TailCurlRetracting].Io.DigitalInputs.17;
+
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.DigitalInputs;//三号叠台夹膜平移
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTALine].Io.DigitalInputs.17;
+
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.DigitalInputs;//三号叠台夹膜升降
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.DigitalInputs.2;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_TailCurlSEPTAUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.DigitalInputs;//三号叠台尾卷夹电芯升降
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_TailCurlUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.DigitalInputs;//三号叠台尾卷夹电芯旋转
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.biPosLimit:= arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.biNegLimit:=  arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.DigitalInputs.17;
+arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.biHomeSwitch:=arrAxisCtrl[P2AxisNo.P2M3_TailCurlWhirling].Io.DigitalInputs.17;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2_AutoLink" Id="{0bdd0b09-8641-4714-84c0-44f1f4c96175}">
+      <Implementation>
+        <ST><![CDATA[//叠片系统信号
+P2_sysControl.btn.System_Autonbtn;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2_InPut" Id="{1a0bc88a-3993-44f0-bc00-91f9e0562c9a}">
+      <Implementation>
+        <ST><![CDATA[//1号叠台输入信号
+P2Senser.P2M1_AnBeltsensor:=	I301[1];	//正极模切送料分段皮带1有料感应
+arrCyCtrl[P2CYNo.P2M1_AnScrapbinCy].Io.DIOnSwitch:=	I301[2];	//正极片NG收纳盒伸出位
+arrCyCtrl[P2CYNo.P2M1_AnScrapbinCy].Io.DIOFFSwitch:=	I301[3];	//正极片NG收纳盒缩回位
+arrCyCtrl[P2EVNo.P2M1_AnCarryingVacuum].Io.DIOnSwitch:=	I301[4];	//正极送片搬运升降真空检测
+arrCyCtrl[P2EVNo.P2M1_AnDTCarryingVacuum].Io.DIOnSwitch:=	I301[5];	//正极叠片搬运升降真空检测
+P2M1_MachCtrl.se.AnLimitSwitch:=	I301[6];	//正极搬运防撞检测
+P2Senser.P2M1_CaBeltsensor:=	I301[7];	//负极模切送料分段皮带1有料感应
+arrCyCtrl[P2CYNo.P2M1_CaScrapbinCy].Io.DIOnSwitch:=	I301[8];	;//负极片NG收纳盒伸出位
+arrCyCtrl[P2CYNo.P2M1_CaScrapbinCy].Io.DIOFFSwitch:=	I301[9];	//负极片NG收纳盒缩回位
+arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuum1].Io.DIOnSwitch:=	I301[10];	//负极送片搬运升降1真空检测
+arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuum2].Io.DIOnSwitch:=	I301[11];	//负极送片搬运升降2真空检测
+arrCyCtrl[P2EVNo.P2M1_CaDTCarryingVacuum].Io.DIOnSwitch:=	I301[12];	//负极叠片搬运升降真空检测
+P2M1_MachCtrl.se.CaLimitSwitch:=TRUE;	//I301[13];	//负极搬运防撞检测
+P2Senser.P2M1_Offloadingsensor:=	I301[14];	//取料位有料感应
+P2M1_MachCtrl.An_b.An_deviationCCDDone:=  I301[15];	//正极CCD纠偏定位拍照成像OK
+P2M1_MachCtrl.Ca_b.Ca_deviationCCDDone:=   I301[16];	//负极CCD纠偏定位拍照成像OK
+	
+arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerLCy].Io.DIOnSwitch:=	I302[1];	//隔膜接带左压板气缸伸出位
+arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerLCy].Io.DIOFFSwitch:=	I302[2];	//隔膜接带左压板气缸缩回位
+arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerRCy].Io.DIOnSwitch:=	I302[3];	//隔膜接带右压板气缸伸出位
+arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerRCy].Io.DIOFFSwitch:=	I302[4];	//隔膜接带右压板气缸缩回位
+arrCyCtrl[P2CYNo.P2M1_PoleTapeCy].Io.DIOnSwitch:=	I302[5];	//隔膜夹紧气缸伸出位
+arrCyCtrl[P2CYNo.P2M1_PoleTapeCy].Io.DIOFFSwitch:=	NOT I302[5];	//隔膜夹紧气缸缩回位
+arrCyCtrl[P2EVNo.P2M1_AndeviationVacuum].Io.DIOnSwitch:=I302[6];//正极纠偏平台真空检测
+I302[7];	//叠片平台真空检测
+arrCyCtrl[P2CYNo.P2M1_PoleHotCutterCy].Io.DIOnSwitch:=	I302[8];	//隔膜热切升降伸出位
+arrCyCtrl[P2CYNo.P2M1_PoleHotCutterCy].Io.DIOFFSwitch:=	I302[9];	//隔膜热切升降缩回位
+P2M1_MachCtrl.btn.	PoleInflationbtn:=I302[10];	//隔膜气胀轴按钮
+P2M1_MachCtrl.btn.	PoleTapeSplicerLbtn:=	I302[11];	//隔膜左压板气缸按钮
+P2M1_MachCtrl.btn.	PoleTapeSplicerRbtn:=	I302[12];	//隔膜右压板气缸按钮
+arrCyCtrl[P2CYNo.P2M1_PreDiaph].Io.DIOnSwitch:=	I302[13];	//压隔膜气缸伸出位
+arrCyCtrl[P2CYNo.P2M1_PreDiaph].Io.DIOFFSwitch:=	I302[14];	//压隔膜气缸缩回位
+arrCyCtrl[P2EVNo.P2M1_CadeviationVacuum].Io.DIOnSwitch:=	I302[15];//负极纠偏平台真空检测
+P2Senser.P2M1_Yellowmark:=I302[16];	//隔膜黄标检测
+
+arrCyCtrl[P2CYNo.P2M1_PoleSplintCy_U].Io.DIOnSwitch:=	I303[1];	//夹膜上夹板伸出位
+arrCyCtrl[P2CYNo.P2M1_PoleSplintCy_U].Io.DIOFFSwitch:=	I303[2];	//夹膜上夹板缩回位
+arrCyCtrl[P2CYNo.P2M1_PoleSplintCy_D].Io.DIOnSwitch:=	I303[3];	//夹膜下夹板伸出位
+arrCyCtrl[P2CYNo.P2M1_PoleSplintCy_D].Io.DIOFFSwitch:=	I303[4];	//夹膜下夹板缩回位
+arrCyCtrl[P2EVNo.P2M1_PoleSplintVacuum_D].Io.DIOnSwitch:=	I303[5];	//夹膜下夹板真空检测
+arrCyCtrl[P2CYNo.P2M1_TailCurlSplintCy].Io.DIOnSwitch:=(TRUE AND NOT I303[7]) OR	I303[6];	//尾卷夹张开位
+arrCyCtrl[P2CYNo.P2M1_TailCurlSplintCy].Io.DIOFFSwitch:=	I303[7];	//尾卷夹闭合位
+arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_L].Io.DIOnSwitch:=	I303[8];	//长卷针夹张开位
+arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_L].Io.DIOFFSwitch:=	I303[9];	//长卷针夹闭合位
+arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_S].Io.DIOnSwitch:=	I303[10];	//短卷针夹张开位
+arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_S].Io.DIOFFSwitch:=	I303[11];	//短卷针夹闭合位
+arrCyCtrl[P2CYNo.P2M1_TailCurlLineCy].Io.DIOnSwitch:=	I303[12];	//尾卷压辊平移缸伸出位
+arrCyCtrl[P2CYNo.P2M1_TailCurlLineCy].Io.DIOFFSwitch:=	I303[13];	//尾卷压辊平移缸缩回位
+arrCyCtrl[P2CYNo.P2M1_TailCurlUpdownCy].Io.DIOnSwitch:=	I303[14];	//尾卷压辊升降缸伸出位
+arrCyCtrl[P2CYNo.P2M1_TailCurlUpdownCy].Io.DIOFFSwitch:=	I303[15];	//尾卷压辊升降缸缩回位
+I303[16];	//叠台CCD对检测拍成像OK
+	
+arrCyCtrl[P2CYNo.P2M1_StandbyGlueCy].Io.DIOnSwitch:=	I304[1];	//备胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_StandbyGlueCy].Io.DIOFFSwitch:=NOT 	I304[1];	//备胶气缸收回
+arrCyCtrl[P2CYNo.P2M1_CodeStandbyGlueCy].Io.DIOnSwitch:=	I304[2];	//备二维码胶伸出
+arrCyCtrl[P2CYNo.P2M1_CodeStandbyGlueCy].Io.DIOFFSwitch:=NOT 	I304[2];	//备二维码胶伸出
+arrCyCtrl[P2CYNo.P2M1_GluePressCy].Io.DIOnSwitch:=	I304[3];	//压胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_GluePressCy].Io.DIOFFSwitch:=	I304[4];	//压胶气缸缩回
+arrCyCtrl[P2CYNo.P2M1_CodeGluePressCy].Io.DIOnSwitch:=	I304[5];	//压二维码胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_CodeGluePressCy].Io.DIOFFSwitch:=	I304[6];	//压二维码胶气缸缩回
+arrCyCtrl[P2CYNo.P2M1_GlueCutCy].Io.DIOnSwitch:=	I304[7];	//切胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_GlueCutCy].Io.DIOFFSwitch:=	I304[8];	//切胶气缸缩回
+arrCyCtrl[P2CYNo.P2M1_codeGlueCutCy].Io.DIOnSwitch:=	I304[9];	//切二维码胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_codeGlueCutCy].Io.DIOFFSwitch:=	I304[10];	//切二维码胶气缸缩回
+arrCyCtrl[P2CYNo.P2M1_PullGlueCy].Io.DIOnSwitch:=	I304[11];	//拉胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_PullGlueCy].Io.DIOFFSwitch:=	I304[12];	//拉胶气缸缩回
+arrCyCtrl[P2CYNo.P2M1_PullGluePoleCy].Io.DIOnSwitch:=	I304[13];	//拉胶杆抱紧
+arrCyCtrl[P2CYNo.P2M1_GlueClampsCy].Io.DIOnSwitch:=	I304[14];	//贴胶气缸夹紧
+arrCyCtrl[P2CYNo.P2M1_GlueClampsCy].Io.DIOFFSwitch:=	I304[15];	//贴胶气缸打开
+P2Senser.P2M1_GluebHave:=	I304[16];	//一号贴胶旋转电芯感应
+	
+arrCyCtrl[P2CYNo.P2M1_GlueNGCy].Io.DIOnSwitch:=	I305[1];	//踢废胶气缸伸出
+arrCyCtrl[P2CYNo.P2M1_GlueNGCy].Io.DIOFFSwitch:=	I305[2];	//踢废胶气缸缩回
+arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Io.DIOnSwitch:=	I305[4];	//贴胶治具打开
+arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Io.DIOFFSwitch:=	I305[3];	//贴胶治具压紧
+P2Senser.P2M1_BlueGluetsensor:=	I305[5];	//蓝胶料盘检测
+P2Senser.P2M1_codeGluesensor:=	I305[6];	//二维码胶料盘检测
+P2Senser.P2M1_Markesensor:=	I305[7];	//二维码胶Mark孔检测
+I305[8];	//备用
+P2Senser.P2M1_Coldpressingesensor:=	I305[9];	//冷压上料夹平移电机1号叠台处检测
+P2Btn.P2M1_BlueGluebtn:=	I305[10];	//一键备蓝胶按钮
+P2Btn.P2M1_BlueGluePressbtn:=	I305[11];	//压蓝胶按钮
+P2Btn.P2M1_codeGluebtn:=	I305[12];	//一键备二维码胶按钮
+P2Btn.P2M1_codeGluePressbtn:=	I305[13];	//压二维码胶按钮
+P2Senser.P2M1_Ceramics:=I305[14];// //1号叠台隔膜陶瓷面检测    	
+I305[15];	//备用
+arrCyCtrl[P2EVNo.P2M1_PastesGlueVacuum].Io.DIOnSwitch:=I305[16];	//贴胶头真空检测
+	
+P2Btn.P2M1_Autobtn:=	I306[1];	//控制面板手自动切换按钮
+P2Btn.P2M1_Startbtn:=	I306[2];	//控制面板启动按钮
+P2Btn.P2M1_Resetebtn:=	I306[3] (*AND (NOT P2M1_MachCtrl.Ca_b.Error[6] AND NOT P2M1_MachCtrl.An_b.Error[4])*);	//控制面板复位按钮
+P2Btn.P2M1_Stopbtn:=	I306[4];	//控制面板停止按钮
+P2Btn.P2M1_EmStopbtn1:=	I306[5] AND I307[13] AND NOT P2M1_DTSysState.hmiEstop ;	//控制面板急停按钮
+P2Btn.P2M1_EmStopbtn2:=	I306[6];	//外罩急停1
+P2Senser.P2M1_Securitydoorswitch1:=	I306[7];	//外罩门禁1
+P2Senser.P2M1_Securitydoorswitch2:=	I306[8];	//外罩门禁2
+P2Senser.P2M1_Securitydoorswitch3:=	I306[9];	//外罩门禁3
+P2Senser.P2M1_Securitydoorswitch4:=	I306[10];	//外罩门禁4
+P2Senser.P2M1_Securitydoorswitch5:=	I306[11];	//外罩门禁5
+P2Senser.P2M1_Securitydoorswitch6:=	I306[12];	//外罩门禁6
+P2Senser.P2M1_Securitydoorswitch7:=	I306[13];	//外罩门禁7
+P2Senser.P2M1_Securitydoorswitch8:=	I306[14];	//外罩门禁8
+P2Senser.P2M1_Securitydoorswitch9:=	I306[15];	//外罩门禁9
+P2Senser.P2M1_Securitydoorswitch10:=I306[16];	//外罩门禁10
+
+arrCyCtrl[P2CYNo.LockonCy].Io.DIOnSwitch:=	I307[1];	//电芯NG1料盒锁定气缸伸出位
+arrCyCtrl[P2CYNo.LockonCy].Io.DIOFFSwitch:=	I307[2];	//电芯NG1料盒锁定气缸缩回位
+P3Senser.P3_PoleMotor1_Height:=I307[3];	//电芯NG1料盒高度感应
+P3Senser.P3_PoleMotor1_Reach:=I307[4];	//电芯NG1料盒到位感应
+arrCyCtrl[P2CYNo.P2M1_CaScrapbinUDCy].Io.DIOnSwitch:=I307[5];	//负极片NG料盒升降气缸伸出位
+arrCyCtrl[P2CYNo.P2M1_CaScrapbinUDCy].Io.DIOFFSwitch:=I307[6];	//负极片NG料盒升降气缸缩回位
+P3Senser.P3_PoleMotor1_bHave:=I307[7];	//电芯NG料盒有料感应
+P3Senser.P3_PoleMotor1_P_OT:=I307[8];	//电芯NG料盒排杆电机上 限
+P3Senser.P3_PoleMotor1_N_OT:=I307[9];	//电芯NG料盒排杆电机下限
+I307[10];	//备用
+I307[11];	//备用
+YL_Q[1]:=I307[12];	//叠台1, 11KW风机运行反馈信号；
+I307[13];	//备用
+YL_Q[2]:=I307[14];	//叠台1,  11KW风机故障报警；
+YL_Q[3]:=I307[15];	//叠台1,  5.5KW风机运行反馈信号；
+YL_Q[4]:=I307[16];	//叠台1,  5.5KW风机故障报警；
+
+arrCyCtrl[P2EVNo.P2M1_codeGlueVacuum1].Io.DIOnSwitch:=I308[1];	//二维码胶真检测1
+arrCyCtrl[P2EVNo.P2M1_codeGlueVacuum2].Io.DIOnSwitch:=I308[2];	//二维码胶真检测2
+arrCyCtrl[P2EVNo.P2M1_BlueGlueVacuum1].Io.DIOnSwitch:=I308[3];	//蓝胶真检测1
+arrCyCtrl[P2EVNo.P2M1_BlueGlueVacuum2].Io.DIOnSwitch:=I308[4];	//蓝胶真检测2
+P2M1_MachCtrl.se.QYcode:=I308[5];//叠台一储气罐气压
+P2Senser.P2M1_CaDTCarryingJROnSwitch:=I308[6];//负极叠台搬运极耳真空检测
+P2Senser.P2M1_AnDTCarryingJROnSwitch:=I308[7];//正极叠台搬运极耳真空检测
+P2Senser.P2M1_AnNGboxsensor:=I308[8];	//叠台一正极纠偏NG料盒满感应
+P2Senser.P2M1_CaNGboxsensor:=I308[9];	//叠台一负极纠偏NG料盒满感应
+arrCyCtrl[P2CYNo.P2M1_RollPoleearCy].Io.DIOnSwitch:=I308[10];	//1尾卷托极耳气缸伸出位
+arrCyCtrl[P2CYNo.P2M1_RollPoleearCy].Io.DIOFFSwitch:=I308[11];	//1尾卷托极耳气缸缩回位
+I308[12];	//备用
+I308[13];	//备用
+I308[14];	//备用
+I308[15];	//备用
+I308[16];	//备用
+
+YL_Q[9]:=I309[1];//正极模切送料分段皮带1；
+YL_Q[10]:=I309[2];//负极模切送料分段皮带1；
+YL_Q[11]:=I309[3];//负极叠台1送料皮带；
+I309[4];	//备用
+I309[5];	//备用
+I309[6];	//备用
+I309[7];	//备用
+I309[8];	//备用
+I309[9];	//备用
+I309[10];	//备用
+I309[11];	//备用
+I309[12];	//备用
+I309[13];	//备用
+I309[14];	//备用
+I309[15];	//备用
+I309[16];	//备用
+
+//2号叠台输入信号
+P2Senser.P2M2_AnBeltsensor:=	I401[1];	//正极模切送料分段皮带1有料感应
+arrCyCtrl[P2CYNo.P2M2_AnScrapbinCy].Io.DIOnSwitch:=	I401[2];	//正极片NG收纳盒伸出位
+arrCyCtrl[P2CYNo.P2M2_AnScrapbinCy].Io.DIOFFSwitch:=	I401[3];	//正极片NG收纳盒缩回位
+arrCyCtrl[P2EVNo.P2M2_AnCarryingVacuum].Io.DIOnSwitch:=	I401[4];	//正极送片搬运升降真空检测
+arrCyCtrl[P2EVNo.P2M2_AnDTCarryingVacuum].Io.DIOnSwitch:=	I401[5];	//正极叠片搬运升降真空检测
+P2M2_MachCtrl.se.AnLimitSwitch:=	I401[6];	//正极搬运防撞检测
+P2Senser.P2M2_CaBeltsensor:=	I401[7];	//负极模切送料分段皮带1有料感应
+arrCyCtrl[P2CYNo.P2M2_CaScrapbinCy].Io.DIOnSwitch:=	I401[8];	;//负极片NG收纳盒伸出位
+arrCyCtrl[P2CYNo.P2M2_CaScrapbinCy].Io.DIOFFSwitch:=	I401[9];	//负极片NG收纳盒缩回位
+arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuum1].Io.DIOnSwitch:=	I401[10];	//负极送片搬运升降1真空检测
+arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuum2].Io.DIOnSwitch:=	I401[11];	//负极送片搬运升降2真空检测
+arrCyCtrl[P2EVNo.P2M2_CaDTCarryingVacuum].Io.DIOnSwitch:=	I401[12];	//负极叠片搬运升降真空检测
+P2M2_MachCtrl.se.CaLimitSwitch:=	I401[13];	//负极搬运防撞检测
+P2Senser.P2M2_Offloadingsensor:=	I401[14];	//取料位有料感应
+P2M2_MachCtrl.An_b.An_deviationCCDDone:=I401[15];	//正极CCD纠偏定位拍照成像OK
+P2M2_MachCtrl.Ca_b.Ca_deviationCCDDone:= I401[16];	//负极CCD纠偏定位拍照成像OK
+	
+arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerLCy].Io.DIOnSwitch:=	I402[1];	//隔膜接带左压板气缸伸出位
+arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerLCy].Io.DIOFFSwitch:=	I402[2];	//隔膜接带左压板气缸缩回位
+arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerRCy].Io.DIOnSwitch:=	I402[3];	//隔膜接带右压板气缸伸出位
+arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerRCy].Io.DIOFFSwitch:=	I402[4];	//隔膜接带右压板气缸缩回位
+arrCyCtrl[P2CYNo.P2M2_PoleTapeCy].Io.DIOnSwitch:=	I402[5];	//隔膜夹紧气缸伸出位
+arrCyCtrl[P2CYNo.P2M2_PoleTapeCy].Io.DIOFFSwitch:=	NOT I402[5];	//隔膜夹紧气缸缩回位
+arrCyCtrl[P2EVNo.P2M2_AndeviationVacuum].Io.DIOnSwitch:=	I402[6];	//正极纠偏平台真空检测
+I402[7];	//叠片平台真空检测
+arrCyCtrl[P2CYNo.P2M2_PoleHotCutterCy].Io.DIOnSwitch:=	I402[8];	//隔膜热切升降伸出位
+arrCyCtrl[P2CYNo.P2M2_PoleHotCutterCy].Io.DIOFFSwitch:=	I402[9];	//隔膜热切升降缩回位
+P2Btn.P2M2_PoleInflationbtn:=	I402[10];	//隔膜气胀轴按钮
+P2Btn.P2M2_PoleTapeSplicerLbtn:=	I402[11];	//隔膜左压板气缸按钮
+P2Btn.P2M2_PoleTapeSplicerRbtn:=	I402[12];	//隔膜右压板气缸按钮
+arrCyCtrl[P2CYNo.P2M2_PreDiaphCy].Io.DIOnSwitch:=	I402[13];	//压隔膜气缸伸出位
+arrCyCtrl[P2CYNo.P2M2_PreDiaphCy].Io.DIOFFSwitch:=	I402[14];	//压隔膜气缸缩回位
+arrCyCtrl[P2EVNo.P2M2_CadeviationVacuum].Io.DIOnSwitch:=I402[15];	//负极纠偏平台真空检测
+P2Senser.P2M2_Yellowmark:=I402[16];	//隔膜黄标检测
+	
+arrCyCtrl[P2CYNo.P2M2_PoleSplintCy_U].Io.DIOnSwitch:=	I403[1];	//夹膜上夹板伸出位
+arrCyCtrl[P2CYNo.P2M2_PoleSplintCy_U].Io.DIOFFSwitch:=	I403[2];	//夹膜上夹板缩回位
+arrCyCtrl[P2CYNo.P2M2_PoleSplintCy_D].Io.DIOnSwitch:=	I403[3];	//夹膜下夹板伸出位
+arrCyCtrl[P2CYNo.P2M2_PoleSplintCy_D].Io.DIOFFSwitch:=	I403[4];	//夹膜下夹板缩回位
+arrCyCtrl[P2EVNo.P2M2_PoleSplintVacuum_D].Io.DIOnSwitch:=	I403[5];	//夹膜下夹板真空检测
+arrCyCtrl[P2CYNo.P2M2_TailCurlSplintCy].Io.DIOnSwitch:=(TRUE AND	NOT I403[7]) OR I403[6];	//尾卷夹张开位
+arrCyCtrl[P2CYNo.P2M2_TailCurlSplintCy].Io.DIOFFSwitch:=	I403[7];	//尾卷夹闭合位
+arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_L].Io.DIOnSwitch:=	I403[8];	//长卷针夹张开位
+arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_L].Io.DIOFFSwitch:=	I403[9];	//长卷针夹闭合位
+arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_S].Io.DIOnSwitch:=	I403[10];	//短卷针夹张开位
+arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_S].Io.DIOFFSwitch:=	I403[11];	//短卷针夹闭合位
+arrCyCtrl[P2CYNo.P2M2_TailCurlLineCy].Io.DIOnSwitch:=	I403[12];	//尾卷压辊平移缸伸出位
+arrCyCtrl[P2CYNo.P2M2_TailCurlLineCy].Io.DIOFFSwitch:=	I403[13];	//尾卷压辊平移缸缩回位
+arrCyCtrl[P2CYNo.P2M2_TailCurlUpdownCy].Io.DIOnSwitch:=	I403[14];	//尾卷压辊升降缸伸出位
+arrCyCtrl[P2CYNo.P2M2_TailCurlUpdownCy].Io.DIOFFSwitch:=	I403[15];	//尾卷压辊升降缸缩回位
+I403[16];	//叠台CCD对齐度检测拍照成像OK
+	
+arrCyCtrl[P2CYNo.P2M2_StandbyGlueCy].Io.DIOnSwitch:=	I404[1];	//备胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_StandbyGlueCy].Io.DIOFFSwitch:=NOT 	I404[1];	//备胶气缸收回
+arrCyCtrl[P2CYNo.P2M2_CodeStandbyGlueCy].Io.DIOnSwitch:=	I404[2];	//备二维码胶伸出
+arrCyCtrl[P2CYNo.P2M2_CodeStandbyGlueCy].Io.DIOFFSwitch:=NOT	I404[2];	//备二维码胶收回
+arrCyCtrl[P2CYNo.P2M2_GluePressCy].Io.DIOnSwitch:=	I404[3];	//压胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_GluePressCy].Io.DIOFFSwitch:=	I404[4];	//压胶气缸缩回
+arrCyCtrl[P2CYNo.P2M2_CodeGluePressCy].Io.DIOnSwitch:=	I404[5];	//压二维码胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_CodeGluePressCy].Io.DIOFFSwitch:=	I404[6];	//压二维码胶气缸缩回
+arrCyCtrl[P2CYNo.P2M2_GlueCutCy].Io.DIOnSwitch:=	I404[7];	//切胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_GlueCutCy].Io.DIOFFSwitch:=	I404[8];	//切胶气缸缩回
+arrCyCtrl[P2CYNo.P2M2_codeGlueCutCy].Io.DIOnSwitch:=	I404[9];	//切二维码胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_codeGlueCutCy].Io.DIOFFSwitch:=	I404[10];	//切二维码胶气缸缩回
+arrCyCtrl[P2CYNo.P2M2_PullGlueCy].Io.DIOnSwitch:=	I404[11];	//拉胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_PullGlueCy].Io.DIOFFSwitch:=	I404[12];	//拉胶气缸缩回
+arrCyCtrl[P2CYNo.P2M2_PullGluePoleCy].Io.DIOnSwitch:=	I404[13];	//拉胶杆抱紧
+arrCyCtrl[P2CYNo.P2M2_GlueClampsCy].Io.DIOnSwitch:=	I404[14];	//贴胶气缸夹紧
+arrCyCtrl[P2CYNo.P2M2_GlueClampsCy].Io.DIOFFSwitch:=	I404[15];	//贴胶气缸打开
+P2Senser.P2M2_GluebHave:=	I404[16];	//二号贴胶旋转电芯感应
+	
+arrCyCtrl[P2CYNo.P2M2_GlueNGCy].Io.DIOnSwitch:=	I405[1];	//踢废胶气缸伸出
+arrCyCtrl[P2CYNo.P2M2_GlueNGCy].Io.DIOFFSwitch:=	I405[2];	//踢废胶气缸缩回
+arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Io.DIOnSwitch:=	I405[4];	//贴胶治具打开
+arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Io.DIOFFSwitch:=	I405[3];	//贴胶治具压紧
+P2Senser.P2M2_BlueGluetsensor:=	I405[5];	//蓝胶料盘检测
+P2Senser.P2M2_codeGluesensor:=	I405[6];	//二维码胶料盘检测
+P2Senser.P2M2_Markesensor:=	I405[7];	//二维码胶Mark孔检测
+I405[7];	
+I405[8];
+P2Senser.P2M2_Coldpressingesensor:=	I405[9];	//冷压上料夹平移电机1号叠台处检测
+P2Btn.P2M2_BlueGluebtn:=	I405[10];	//一键备蓝胶按钮
+P2Btn.P2M2_BlueGluePressbtn:=	I405[11];	//压蓝胶按钮
+P2Btn.P2M2_codeGluebtn:=	I405[12];	//一键备二维码胶按钮
+P2Btn.P2M2_codeGluePressbtn:=	I405[13];	//压二维码胶按钮
+P2Senser.P2M2_Ceramics:=I405[14];	//二号叠台隔膜陶瓷面检测
+I405[15];	//备用
+arrCyCtrl[P2EVNo.P2M2_PastesGlueVacuum].Io.DIOnSwitch:=I405[16];	//贴胶头真空检测
+
+I406[1];	//
+I406[2];	//
+arrCyCtrl[P2CYNo.P2M2_CaScrapbinUDCy].Io.DIOnSwitch:=	I406[3]; 	//负极片NG料盒升降气缸伸出位
+arrCyCtrl[P2CYNo.P2M2_CaScrapbinUDCy].Io.DIOFFSwitch:=	I406[4];	//负极片NG料盒升降气缸收回位
+P2Btn.P2M2_Autobtn:=I406[5];	//控制面板手自动切换按钮
+P2Btn.P2M2_Startbtn:=I406[6];	//控制面板启动按钮
+P2Btn.P2M2_Resetebtn:=I406[7] (*AND (NOT P2M2_MachCtrl.Ca_b.Error[6] AND NOT P2M2_MachCtrl.An_b.Error[4])*);	//控制面板复位按钮
+P2Btn.P2M2_Stopbtn:=I406[8];	//控制面板停止按钮
+P2Btn.P2M2_EmStopbtn1:=I406[9] AND I407[13] AND NOT P2M2_DTSysState.hmiEstop;	//控制面板急停按钮
+I406[10];	//备用
+I406[11];	//备用
+I406[12];	//备用
+I406[13];	//备用
+I406[14];	//备用
+I406[15];	//备用
+I406[16];	//备用
+	
+	
+P2Btn.P2M2_EmStopbtn2:=	I407[1];	//外罩急停1
+P2Senser.P2M2_Securitydoorswitch1:=	I407[2];	//外罩门禁1
+P2Senser.P2M2_Securitydoorswitch2:=	I407[3];	//外罩门禁2
+P2Senser.P2M2_Securitydoorswitch3:=	I407[4];	//外罩门禁3
+P2Senser.P2M2_Securitydoorswitch4:=	I407[5];	//外罩门禁4
+P2Senser.P2M2_Securitydoorswitch5:=	I407[6];	//外罩门禁5
+P2Senser.P2M2_Securitydoorswitch6:=	I407[7];	//外罩门禁6
+P2Senser.P2M2_Securitydoorswitch7:=	I407[8];	//外罩门禁7
+P2Senser.P2M2_Securitydoorswitch8:=	I407[9];	//外罩门禁8
+P2Senser.P2M2_Securitydoorswitch9:=	I407[10];	//外罩门禁9
+P2Senser.P2M2_Securitydoorswitch10:=I407[11];	//外罩门禁10
+I407[12];//备用
+I407[13];//备用
+I407[14];//备用
+I407[15];//备用
+I407[16];//备用
+
+arrCyCtrl[P2EVNo.P2M2_codeGlueVacuum1].Io.DIOnSwitch:=I408[1];	//二维码胶真空检测1
+arrCyCtrl[P2EVNo.P2M2_codeGlueVacuum2].Io.DIOnSwitch:=I408[2];	//二维码胶真空检测2
+arrCyCtrl[P2EVNo.P2M2_BlueGlueVacuum1].Io.DIOnSwitch:=I408[3];	//蓝胶真空检测1
+arrCyCtrl[P2EVNo.P2M2_BlueGlueVacuum2].Io.DIOnSwitch:=I408[4];	//蓝胶真空检测2
+P2M2_MachCtrl.se.QYcode:=I408[5];//叠台二储气罐压力
+P2Senser.P2M2_CaDTCarryingJROnSwitch:=I408[6];//负极叠台搬运极耳真空检测
+P2Senser.P2M2_AnDTCarryingJROnSwitch:=I408[7];//正极叠台搬运极耳真空检测
+P2Senser.P2M2_AnNGboxsensor:=I408[8];//叠台二正极纠偏NG料盒满感应
+P2Senser.P2M2_CaNGboxsensor:=I408[9];//叠台二负极纠偏NG料盒满感应
+arrCyCtrl[P2CYNo.P2M2_RollPoleearCy].Io.DIOnSwitch:=I408[10];	//2尾卷托极耳气缸伸出位
+arrCyCtrl[P2CYNo.P2M2_RollPoleearCy].Io.DIOFFSwitch:=I408[11];	//2尾卷托极耳气缸缩回位
+I408[12];//备用
+I408[13];//备用
+I408[14];//备用
+I408[15];//备用
+I408[16];//备用
+
+YL_Q[12]:=I409[1];//正极模切送料分段皮带2；
+YL_Q[13]:=I409[2];//负极模切送料分段皮带2；
+YL_Q[14]:=I409[3];//负极叠台2送料皮带；
+I409[4];//备用
+I409[5];//备用
+I409[6];//备用
+I409[7];//备用
+I409[8];//备用
+I409[9];//备用
+I409[10];//备用
+I409[11];//备用
+I409[12];//备用
+I409[13];//备用
+I409[14];//备用
+I409[15];//备用
+I409[16];//备用
+
+//3号叠台输入信号
+P2Senser.P2M3_AnBeltsensor:=	I501[1];	//正极模切送料分段皮带1有料感应
+arrCyCtrl[P2CYNo.P2M3_AnScrapbinCy].Io.DIOnSwitch:=	I501[2];	//正极片NG收纳盒伸出位
+arrCyCtrl[P2CYNo.P2M3_AnScrapbinCy].Io.DIOFFSwitch:=	I501[3];	//正极片NG收纳盒缩回位
+arrCyCtrl[P2EVNo.P2M3_AnCarryingVacuum].Io.DIOnSwitch:=	I501[4];	//正极送片搬运升降真空检测
+arrCyCtrl[P2EVNo.P2M3_AnDTCarryingVacuum].Io.DIOnSwitch:=	I501[5];	//正极叠片搬运升降真空检测
+P2M3_MachCtrl.se.AnLimitSwitch:=	I501[6];	//正极搬运防撞检测
+P2Senser.P2M3_CaBeltsensor:=	I501[7];	//负极模切送料分段皮带1有料感应
+arrCyCtrl[P2CYNo.P2M3_CaScrapbinCy].Io.DIOnSwitch:=	I501[8];	;//负极片NG收纳盒伸出位
+arrCyCtrl[P2CYNo.P2M3_CaScrapbinCy].Io.DIOFFSwitch:=	I501[9];	//负极片NG收纳盒缩回位
+arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuum1].Io.DIOnSwitch:=	I501[10];	//负极送片搬运升降1真空检测
+arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuum2].Io.DIOnSwitch:=	I501[11];	//负极送片搬运升降2真空检测
+arrCyCtrl[P2EVNo.P2M3_CaDTCarryingVacuum].Io.DIOnSwitch:=	I501[12];	//负极叠片搬运升降真空检测
+P2M3_MachCtrl.se.CaLimitSwitch:=	I501[13];	//负极搬运防撞检测
+P2Senser.P2M3_Offloadingsensor:=	I501[14];	//取料位有料感应
+P2M3_MachCtrl.An_b.An_deviationCCDDone:= I501[15];	//正极CCD纠偏定位拍照成像OK
+P2M3_MachCtrl.Ca_b.Ca_deviationCCDDone:=	I501[16];	//负极CCD纠偏定位拍照成像OK
+	
+arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerLCy].Io.DIOnSwitch:=	I502[1];	//隔膜接带左压板气缸伸出位
+arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerLCy].Io.DIOFFSwitch:=	I502[2];	//隔膜接带左压板气缸缩回位
+arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerRCy].Io.DIOnSwitch:=	I502[3];	//隔膜接带右压板气缸伸出位
+arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerRCy].Io.DIOFFSwitch:=	I502[4];	//隔膜接带右压板气缸缩回位
+arrCyCtrl[P2CYNo.P2M3_PoleTapeCy].Io.DIOnSwitch:=	I502[5];	//隔膜夹紧气缸伸出位
+arrCyCtrl[P2CYNo.P2M3_PoleTapeCy].Io.DIOFFSwitch:=NOT I502[5];	//隔膜夹紧气缸缩回位
+arrCyCtrl[P2EVNo.P2M3_AndeviationVacuum].Io.DIOnSwitch:=	I502[6];	//正极纠偏平台真空检测
+I502[7];	//叠台平台真空检测
+arrCyCtrl[P2CYNo.P2M3_PoleHotCutterCy].Io.DIOnSwitch:=	I502[8];	//隔膜热切升降伸出位
+arrCyCtrl[P2CYNo.P2M3_PoleHotCutterCy].Io.DIOFFSwitch:=	I502[9];	//隔膜热切升降缩回位
+P2Btn.P2M3_PoleInflationbtn:=	I502[10];	//隔膜气胀轴按钮
+P2Btn.P2M3_PoleTapeSplicerLbtn:=	I502[11];	//隔膜左压板气缸按钮
+P2Btn.P2M3_PoleTapeSplicerRbtn:=	I502[12];	//隔膜右压板气缸按钮
+arrCyCtrl[P2CYNo.P2M3_PreDiaphCy].Io.DIOnSwitch:=	I502[13];	//压隔膜气缸伸出位
+arrCyCtrl[P2CYNo.P2M3_PreDiaphCy].Io.DIOFFSwitch:=	I502[14];	//压隔膜气缸缩回位
+arrCyCtrl[P2EVNo.P2M3_CadeviationVacuum].Io.DIOnSwitch:=	I502[15];	//负极纠偏平台真空检测
+P2Senser.P2M3_Yellowmark:=I502[16];	//隔膜黄标检测	
+	
+arrCyCtrl[P2CYNo.P2M3_PoleSplintCy_U].Io.DIOnSwitch:=	I503[1];	//夹膜上夹板伸出位
+arrCyCtrl[P2CYNo.P2M3_PoleSplintCy_U].Io.DIOFFSwitch:=	I503[2];	//夹膜上夹板缩回位
+arrCyCtrl[P2CYNo.P2M3_PoleSplintCy_D].Io.DIOnSwitch:=	I503[3];	//夹膜下夹板伸出位
+arrCyCtrl[P2CYNo.P2M3_PoleSplintCy_D].Io.DIOFFSwitch:=	I503[4];	//夹膜下夹板缩回位
+arrCyCtrl[P2EVNo.P2M3_PoleSplintVacuum_D].Io.DIOnSwitch:=	I503[5];	//夹膜下夹板真空检测
+arrCyCtrl[P2CYNo.P2M3_TailCurlSplintCy].Io.DIOnSwitch:=(TRUE AND NOT I503[7]) OR I503[6];	//尾卷夹张开位
+arrCyCtrl[P2CYNo.P2M3_TailCurlSplintCy].Io.DIOFFSwitch:=	I503[7];	//尾卷夹闭合位
+arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_L].Io.DIOnSwitch:=	I503[8];	//长卷针夹张开位
+arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_L].Io.DIOFFSwitch:=	I503[9];	//长卷针夹闭合位
+arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_S].Io.DIOnSwitch:=	I503[10];	//短卷针夹张开位
+arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_S].Io.DIOFFSwitch:=	I503[11];	//短卷针夹闭合位
+arrCyCtrl[P2CYNo.P2M3_TailCurlLineCy].Io.DIOnSwitch:=	I503[12];	//尾卷压辊平移缸伸出位
+arrCyCtrl[P2CYNo.P2M3_TailCurlLineCy].Io.DIOFFSwitch:=	I503[13];	//尾卷压辊平移缸缩回位
+arrCyCtrl[P2CYNo.P2M3_TailCurlUpdownCy].Io.DIOnSwitch:=	I503[14];	//尾卷压辊升降缸伸出位
+arrCyCtrl[P2CYNo.P2M3_TailCurlUpdownCy].Io.DIOFFSwitch:=	I503[15];	//尾卷压辊升降缸缩回位
+I503[16];	//叠台CCD对齐度检测拍照成像OK
+	
+arrCyCtrl[P2CYNo.P2M3_StandbyGlueCy].Io.DIOnSwitch:=	I504[1];	//备胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_StandbyGlueCy].Io.DIOFFSwitch:=NOT	I504[1];	//备胶气缸收回
+arrCyCtrl[P2CYNo.P2M3_CodeStandbyGlueCy].Io.DIOnSwitch:=	I504[2];	//备二维码胶伸出
+arrCyCtrl[P2CYNo.P2M3_CodeStandbyGlueCy].Io.DIOFFSwitch:=NOT	I504[2];	//备二维码胶收回
+arrCyCtrl[P2CYNo.P2M3_GluePressCy].Io.DIOnSwitch:=	I504[3];	//压胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_GluePressCy].Io.DIOFFSwitch:=	I504[4];	//压胶气缸缩回
+arrCyCtrl[P2CYNo.P2M3_CodeGluePressCy].Io.DIOnSwitch:=	I504[5];	//压二维码胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_CodeGluePressCy].Io.DIOFFSwitch:=	I504[6];	//压二维码胶气缸缩回
+arrCyCtrl[P2CYNo.P2M3_GlueCutCy].Io.DIOnSwitch:=	I504[7];	//切胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_GlueCutCy].Io.DIOFFSwitch:=	I504[8];	//切胶气缸缩回
+arrCyCtrl[P2CYNo.P2M3_codeGlueCutCy].Io.DIOnSwitch:=	I504[9];	//切二维码胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_codeGlueCutCy].Io.DIOFFSwitch:=	I504[10];	//切二维码胶气缸缩回
+arrCyCtrl[P2CYNo.P2M3_PullGlueCy].Io.DIOnSwitch:=	I504[11];	//拉胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_PullGlueCy].Io.DIOFFSwitch:=	I504[12];	//拉胶气缸缩回
+arrCyCtrl[P2CYNo.P2M3_PullGluePoleCy].Io.DIOnSwitch:=	I504[13];	//拉胶杆抱紧
+arrCyCtrl[P2CYNo.P2M3_GlueClampsCy].Io.DIOnSwitch:=	I504[14];	//贴胶气缸夹紧
+arrCyCtrl[P2CYNo.P2M3_GlueClampsCy].Io.DIOFFSwitch:=	I504[15];	//贴胶气缸打开
+P2Senser.P2M3_GluebHave:=	I504[16];	//三号贴胶旋转电芯感应
+	
+arrCyCtrl[P2CYNo.P2M3_GlueNGCy].Io.DIOnSwitch:=	I505[1];	//踢废胶气缸伸出
+arrCyCtrl[P2CYNo.P2M3_GlueNGCy].Io.DIOFFSwitch:=	I505[2];	//踢废胶气缸缩回
+arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Io.DIOnSwitch:=	I505[3];	//贴胶治具打开
+arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Io.DIOFFSwitch:=	I505[4];	//贴胶治具压紧
+P2Senser.P2M3_BlueGluetsensor:=	I505[5];	//蓝胶料盘检测
+P2Senser.P2M3_codeGluesensor:=	I505[6];	//二维码胶料盘检测
+P2Senser.P2M3_Markesensor:=	I505[7];	//二维码胶Mark孔检测
+I505[7];	
+I505[8];	//二维码扫码
+P2Senser.P2M3_Coldpressingesensor:=	I505[9];	//冷压上料夹平移电机1号叠台处检测
+P2Btn.P2M3_BlueGluebtn:=	I505[10];	//一键备蓝胶按钮
+P2Btn.P2M3_BlueGluePressbtn:=	I505[11];	//压蓝胶按钮
+P2Btn.P2M3_codeGluebtn:=	I505[12];	//一键备二维码胶按钮
+P2Btn.P2M3_codeGluePressbtn:=	I505[13];	//压二维码胶按钮
+P2Senser.P2M3_Ceramics:=	I505[14];	//3号叠台陶瓷面检测
+I505[15];	//备用
+arrCyCtrl[P2EVNo.P2M3_PastesGlueVacuum].Io.DIOnSwitch:=I505[16];	//贴胶头真空检测
+
+arrCyCtrl[P2CYNo.P2M3_CaScrapbinUDCy].Io.DIOnSwitch:=	I506[1];	//负极片NG料盒升降气缸伸出位
+arrCyCtrl[P2CYNo.P2M3_CaScrapbinUDCy].Io.DIOFFSwitch:=	I506[2];	//负极片NG料盒升降气缸缩回位
+P2Btn.P2M3_Autobtn:=I506[3];//控制面板手自动切换按钮1
+P2Btn.P2M3_Startbtn:=I506[4];//控制面板启动按钮
+P2Btn.P2M3_Resetebtn:=I506[5] (*AND (NOT P2M3_MachCtrl.Ca_b.Error[6] AND NOT P2M3_MachCtrl.An_b.Error[4])*);//控制面板复位按钮
+P2Btn.P2M3_Stopbtn:=I506[6];//控制面板停止按钮
+P2Btn.P2M3_EmStopbtn1:=I506[7] AND I507[13] AND I507[1] AND NOT  P2M3_DTSysState.hmiEstop;//控制面板急停按钮
+P3Button.P3_Autobtn:=I506[8];//控热压台，手自动按钮
+P3Button.P3_Startbtn:=I506[9];////热压，启动按钮
+P3Button.P3_Resetebtn:=I506[10];//热压台，复位按钮
+P3Button.P3_Stopbtn:=I506[11];//压台，停止按钮
+YL_Q[5]:=I506[12];//叠台3， 7.5KW风机运行反馈信号；
+arrCyCtrl[P3CYNo.P3ColdPressClip].Io.DIONSwitch:= I506[13];//冷压上料夹闭合
+arrCyCtrl[P3CYNo.P3ColdPressClip].Io.DIOFFSwitch:= I506[14];//冷压上料夹张开
+P3Senser.P3_Lyslgy:=I506[15];//冷压上料夹电芯有无
+I506[16];//备用
+
+//P2Btn.P2M2_EmStopbtn1:=	I507[1];	//外罩急停1
+//P2Btn.P2M2_EmStopbtn2:=	I507[2];	//外罩急停2
+P2Senser.P2M3_Securitydoorswitch1:=	I507[6];	//外罩门禁1
+P2Senser.P2M3_Securitydoorswitch2:=	I507[3];	//外罩门禁2
+P2Senser.P2M3_Securitydoorswitch3:=	I507[4];	//外罩门禁3
+P2Senser.P2M3_Securitydoorswitch4:=	I507[5];	//外罩门禁4
+P2Senser.P2M3_Securitydoorswitch5:=	I507[7];	//外罩门禁5
+P2Senser.P2M3_Securitydoorswitch6:=	I507[8];	//外罩门禁6
+P2Senser.P2M3_Securitydoorswitch7:=	I507[9];	//外罩门禁7
+P2Senser.P2M3_Securitydoorswitch8:=	I507[10];	//外罩门禁8
+P2Senser.P2M3_Securitydoorswitch9:=	I507[11];	//外罩门禁9
+P2Senser.P2M3_Securitydoorswitch10:=I507[12];	//外罩门禁10
+YL_Q[6]:=I507[14];//叠台3,   7.5KW风机故障报警；
+YL_Q[7]:=I507[15];//叠台3,   5.5KW风机运行反馈信号；
+YL_Q[8]:=I507[16];//叠台3,   5.5KW风机故障报警；
+
+arrCyCtrl[P2EVNo.P2M3_codeGlueVacuum1].Io.DIOnSwitch:=I508[1];	//二维码胶真空检测1
+arrCyCtrl[P2EVNo.P2M3_codeGlueVacuum2].Io.DIOnSwitch:=I508[2];	//二维码胶真空检测2
+arrCyCtrl[P2EVNo.P2M3_BlueGlueVacuum1].Io.DIOnSwitch:=I508[3];	//蓝胶真空检测1
+arrCyCtrl[P2EVNo.P2M3_BlueGlueVacuum2].Io.DIOnSwitch:=I508[4];	//蓝胶真空检测2
+P2M3_MachCtrl.se.QYcode:=I508[5];//叠台三储气罐压力
+P2Senser.P2M3_CaDTCarryingJROnSwitch:=I508[6];//负极叠台搬运极耳真空检测
+P2Senser.P2M3_AnDTCarryingJROnSwitch:=I508[7];//正极叠台搬运极耳真空检测
+P2Senser.P2M3_AnNGboxsensor:=I508[8];//叠台三正极纠偏NG料盒满感应
+P2Senser.P2M3_CaNGboxsensor:=I508[9];//叠台三负极纠偏NG料盒满感应
+arrCyCtrl[P2CYNo.P2M3_RollPoleearCy].Io.DIOnSwitch:=I508[10];	//3尾卷托极耳气缸伸出位
+arrCyCtrl[P2CYNo.P2M3_RollPoleearCy].Io.DIOFFSwitch:=I508[11];	//3尾卷托极耳气缸缩回位
+I508[12];//备用
+I508[13];//备用
+I508[14];//备用
+I508[15];//备用
+I508[16];//备用
+
+YL_Q[15]:=I509[1];//正极模切送料分段皮带3；
+YL_Q[16]:=I509[2];//负极模切送料分段皮带3；
+YL_Q[17]:=I509[3];//负极叠台3送料皮带；
+YL_Q[18]:= I509[4];//叠台正极流水线皮带末端料盒满感应
+YL_Q[19]:= I509[5];//叠台负极流水线皮带末端料盒满感应
+I509[6];//备用
+I509[7];//备用
+I509[8];//备用
+//arrCyCtrl[P3CYNo.P3Cold_Retracting].Io.DIOFFSwitch:=I509[9];//冷压辅助上料前进气缸伸出位
+//arrCyCtrl[P3CYNo.P3Cold_Retracting].Io.DIONSwitch:=I509[10];//冷压辅助上料前进气缸缩回位
+//arrCyCtrl[P3CYNo.P3Cold_Clamp].Io.DIOFFSwitch:=I509[11];//冷压辅助上料开合气缸张开位
+//arrCyCtrl[P3CYNo.P3Cold_Clamp].Io.DIONSwitch:=I509[12];//冷压辅助上料开合气缸闭合位
+//arrCyCtrl[P3CYNo.P3Cold_Tensed].Io.DIOFFSwitch:=I509[13];//冷压辅助上料夹紧气缸夹紧位
+//arrCyCtrl[P3CYNo.P3Cold_Tensed].Io.DIONSwitch:=I509[14];//冷压辅助上料夹紧气缸松开位
+//arrCyCtrl[P3CYNo.P3Cold_Lifting].Io.DIOFFSwitch:=I509[15];//冷压辅助上料升降气缸上升位
+//arrCyCtrl[P3CYNo.P3Cold_Lifting].Io.DIONSwitch:=I509[16];//冷压辅助上料升降气缸下降位]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2_OutPut" Id="{26bf2ab5-6c8e-43cc-b6b3-cf40205a989b}">
+      <Implementation>
+        <ST><![CDATA[	//1号叠片
+Q301[1]:=	arrCyCtrl[P2EVNo.P2M1_AnBeltVacuum].Io.DOStatus1;//正极模切送料分段皮带1取料处真空
+Q301[2]:=arrCyCtrl[P2EVNo.P2M1_AnBeltVacuumBark].Io.DOStatus1 ;	//;//正极模切送料分段皮带1取料处破真空 arrCyCtrl[P2EVNo.P2M1_AnBeltVacuumBark].Io.DOStatus1
+//Q301[3]:=;//正极模切送料分段皮带1除尘毛刷正转
+//Q301[4]:=;//正极模切送料分段皮带1除尘毛刷反转
+Q301[5]:=	arrCyCtrl[P2CYNo.P2M1_AnScrapbinCy].Io.DOStatus1;//正极片NG收纳盒伸出
+Q301[6]:=	arrCyCtrl[P2CYNo.P2M1_AnScrapbinCy].Io.DOStatus2;//正极片NG收纳盒缩回
+Q301[7]:=	arrCyCtrl[P2EVNo.P2M1_AnCarryingVacuum].Io.DOStatus1;//正极送片搬运升降真空
+Q301[8]:=	arrCyCtrl[P2EVNo.P2M1_AnCarryingVacuumBark].Io.DOStatus1;//正极送片搬运升降破真空
+Q301[9]:=	arrCyCtrl[P2EVNo.P2M1_AndeviationVacuum].Io.DOStatus1;//正极纠偏平台真空
+Q301[10]:=	arrCyCtrl[P2EVNo.P2M1_AndeviationVacuumBark].Io.DOStatus1;//正极纠偏平台破真空
+Q301[11]:=	arrCyCtrl[P2EVNo.P2M1_AndeviationIonizedWind].Io.DOStatus1;//正极纠偏平台除尘风刀
+Q301[12]:=	arrCyCtrl[P2EVNo.P2M1_AnDTCarryingVacuum].Io.DOStatus1;//正极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+Q301[13]:=	arrCyCtrl[P2EVNo.P2M1_AnDTCarryingVacuum].Io.DOStatus1;//正极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q301[13]:=	arrCyCtrl[P2EVNo.P2M1_AnDTCarryingVacuumBark].Io.DOStatus1;//正极叠片搬运升降破真空
+Q301[14]:=P2M1_MachCtrl.An_b.An_CCDStart	;//正极CCD纠偏定位拍照触发
+Q301[15]:=	arrCyCtrl[P2EVNo.P2M1_CaMQBeltVacuum].Io.DOStatus1;//负极模切送料分段皮带1取料处真空
+Q301[16]:=	arrCyCtrl[P2EVNo.P2M1_CaMQBeltVacuumBark].Io.DOStatus1;//负极模切送料分段皮带1取料处破真空
+
+//Q302[1]:=	;//负极模切送料分段皮带1除尘毛刷正转
+//Q302[2]:=	;//负极模切送料分段皮带1除尘毛刷反转
+Q302[3]:=arrDustMotor[DustNo.FeedbeltDust1].bo_Pul	;//负极送料皮带除尘毛刷正转
+Q302[4]:=arrDustMotor[DustNo.FeedbeltDust1].bo_Dir;//负极送料皮带除尘毛刷反转
+Q302[5]:=	arrCyCtrl[P2CYNo.P2M1_CaScrapbinCy].Io.DOStatus1;//负极片NG收纳盒伸出
+Q302[6]:=	arrCyCtrl[P2CYNo.P2M1_CaScrapbinCy].Io.DOStatus2;//负极片NG收纳盒缩回
+Q302[7]:=	P2M1_MachCtrl.Ca_b.Ca_CCDStart;//负极CCD纠偏定位拍照触发
+Q302[8]:=	arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuum1].Io.DOStatus1;//负极送片搬运升降1真空
+Q302[9]:=	arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuumBark1].Io.DOStatus1;//负极送片搬运升降1破真空
+Q302[10]:=	arrCyCtrl[P2EVNo.P2M1_CaLoadUpBeltVacuum].Io.DOStatus1;//负极送片皮带末端真空
+Q302[11]:=	arrCyCtrl[P2EVNo.P2M1_CaLoadUpBeltVacuumBark].Io.DOStatus1;//负极送片皮带末端破真空
+Q302[12]:=	arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuum2].Io.DOStatus1;//负极送片搬运升降2真空----DOStatus1有输出时破真空，没有输出时开真空
+Q302[13]:=	arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuum2].Io.DOStatus1;//负极送片搬运升降2真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q302[13]:=	arrCyCtrl[P2EVNo.P2M1_CaCarryingVacuumBark2].Io.DOStatus1;//负极送片搬运升降2破真空
+Q302[14]:=	arrCyCtrl[P2EVNo.P2M1_CadeviationVacuum].Io.DOStatus1;//负极纠偏平台真空
+Q302[15]:=	arrCyCtrl[P2EVNo.P2M1_CadeviationVacuumBark].Io.DOStatus1;//负极纠偏平台破真空
+Q302[16]:=	arrCyCtrl[P2EVNo.P2M1_CadeviationIonizedWind].Io.DOStatus1;//负极纠偏平台除尘风刀
+	
+Q303[1]:=	arrCyCtrl[P2EVNo.P2M1_CaDTCarryingVacuum].Io.DOStatus1;//负极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+Q303[2]:=	arrCyCtrl[P2EVNo.P2M1_CaDTCarryingVacuum].Io.DOStatus1;//负极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q303[2]:=	arrCyCtrl[P2EVNo.P2M1_CaDTCarryingVacuumBark].Io.DOStatus1;//负极叠片搬运升降破真空
+Q303[3]:=	P2M1_MachCtrl.WJ_b.HotCut;//热切丝启动
+Q303[4]:=	arrCyCtrl[P2CYNo.P2M1_PoleInflationCy].Io.DOStatus1;//隔膜放卷气胀轴张开
+Q303[5]:=	arrCyCtrl[P2CYNo.P2M1_PoleInflationCy].Io.DOStatus2;//隔膜放卷气胀轴缩回
+Q303[6]:=	arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerLCy].Io.DOStatus1;//隔膜接带左压板气缸伸出
+Q303[7]:=	arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerLCy].Io.DOStatus2;//隔膜接带左压板气缸缩回
+Q303[8]:=	arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerRCy].Io.DOStatus1;//隔膜接带右压板气缸伸出
+Q303[9]:=	arrCyCtrl[P2CYNo.P2M1_PoleTapeSplicerRCy].Io.DOStatus2;//隔膜接带右压板气缸缩回
+Q303[10]:=	arrCyCtrl[P2EVNo.P2M1_PoleTapeDustRemoval].Io.DOStatus1;//隔膜接带平台除尘
+Q303[11]:=	arrCyCtrl[P2EVNo.P2M1_PoleTapeVacuum].Io.DOStatus1;//隔膜接带平台真空
+Q303[12]:=	arrCyCtrl[P2CYNo.P2M1_PoleTapeCy].Io.DOStatus1;//隔膜夹紧气缸伸出
+Q303[13]:=	arrCyCtrl[P2EVNo.P2M1_DTVacuum].Io.DOStatus1;//叠片台真空
+Q303[14]:=	arrCyCtrl[P2CYNo.P2M1_PoleHotCutterCy].Io.DOStatus1;//隔膜热切升降伸出
+Q303[15]:=	arrCyCtrl[P2CYNo.P2M1_PoleHotCutterCy].Io.DOStatus2;//隔膜热切升降缩回
+Q303[16]:=P2M1_MachCtrl.DT_b.CDD_OverStart;     //叠台CCD对齐度检测拍照触发
+
+Q304[1]:=	P2Btn.P2M1_PoleInflationLights;//隔膜气胀轴按钮灯
+Q304[2]:=	P2Btn.P2M1_PoleTapeSplicerLLights;//隔膜左压板气缸按钮灯
+Q304[3]:=	P2Btn.P2M1_PoleTapeSplicerRLights;//隔膜右压板气缸按钮灯
+Q304[4]:=	arrCyCtrl[P2CYNo.P2M1_PoleSplintCy_D].Io.DOStatus1;//隔夹膜下夹板伸出
+Q304[5]:=	arrCyCtrl[P2CYNo.P2M1_PoleSplintCy_D].Io.DOStatus2;//夹膜下夹板缩回
+Q304[6]:=	arrCyCtrl[P2EVNo.P2M1_PoleSplintVacuum_D].Io.DOStatus1;//夹膜下夹板真空
+Q304[7]:=	arrCyCtrl[P2CYNo.P2M1_TailCurlSplintCy].Io.DOStatus1;//尾卷夹张开
+Q304[8]:=	arrCyCtrl[P2CYNo.P2M1_TailCurlSplintCy].Io.DOStatus2;//尾卷夹闭合
+Q304[9]:=	arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_L].Io.DOStatus1;//长卷针夹张开
+Q304[10]:=	arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_L].Io.DOStatus2;//长卷针夹闭合
+Q304[11]:=	arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_S].Io.DOStatus1;//短卷针夹张开
+Q304[12]:=	arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_S].Io.DOStatus2;//短卷针夹闭合
+Q304[13]:=	arrCyCtrl[P2CYNo.P2M1_TailCurlLineCy].Io.DOStatus1;//尾卷压辊平移缸伸出
+Q304[14]:=	arrCyCtrl[P2CYNo.P2M1_TailCurlLineCy].Io.DOStatus2;//尾卷压辊平移缸缩回
+Q304[15]:=	arrCyCtrl[P2CYNo.P2M1_TailCurlUpdownCy].Io.DOStatus1;//尾卷压辊升降缸伸出
+Q304[16]:=	arrCyCtrl[P2CYNo.P2M1_TailCurlUpdownCy].Io.DOStatus2;//尾卷压辊升降缸缩回
+
+Q305[1]:=	arrCyCtrl[P2CYNo.P2M1_StandbyGlueCy].Io.DOStatus1;//备胶气缸伸出
+Q305[2]:=	arrCyCtrl[P2CYNo.P2M1_CodeStandbyGlueCy].Io.DOStatus1;//备二维码胶伸出
+Q305[3]:=	arrCyCtrl[P2CYNo.P2M1_GluePressCy].Io.DOStatus1;//压胶气缸伸出
+Q305[4]:=	arrCyCtrl[P2CYNo.P2M1_GluePressCy].Io.DOStatus2;//压胶气缸缩回
+Q305[5]:=	arrCyCtrl[P2CYNo.P2M1_CodeGluePressCy].Io.DOStatus1;//压二维码胶气缸伸出
+Q305[6]:=	arrCyCtrl[P2CYNo.P2M1_CodeGluePressCy].Io.DOStatus2;//压二维码胶气缸缩回
+Q305[7]:=	arrCyCtrl[P2CYNo.P2M1_GlueCutCy].Io.DOStatus1;//切胶气缸伸出
+Q305[8]:=	arrCyCtrl[P2CYNo.P2M1_GlueCutCy].Io.DOStatus2;//切胶气缸缩回
+Q305[9]:=	arrCyCtrl[P2CYNo.P2M1_codeGlueCutCy].Io.DOStatus1;//切二维码胶气缸伸出
+Q305[10]:=	arrCyCtrl[P2CYNo.P2M1_codeGlueCutCy].Io.DOStatus2;//切二维码胶气缸缩回
+Q305[11]:=	arrCyCtrl[P2CYNo.P2M1_PullGlueCy].Io.DOStatus1;//拉胶气缸伸出
+Q305[12]:=	arrCyCtrl[P2CYNo.P2M1_PullGlueCy].Io.DOStatus2;//拉胶气缸缩回
+Q305[13]:=	arrCyCtrl[P2CYNo.P2M1_PullGluePoleCy].Io.DOStatus1;//拉胶杆抱紧
+Q305[14]:=	arrCyCtrl[P2CYNo.P2M1_GlueClampsCy].Io.DOStatus1;//贴胶气缸夹紧
+Q305[15]:=	arrCyCtrl[P2CYNo.P2M1_GlueClampsCy].Io.DOStatus2;//贴胶气缸打开
+Q305[16]:=	arrCyCtrl[P2EVNo.P2M1_PastesGlueVacuum].Io.DOStatus1;//贴胶头真空吸1
+
+Q306[1]:=	arrCyCtrl[P2EVNo.P2M1_BlueGlueVacuum1].Io.DOStatus1;//备蓝胶真空吸1
+Q306[2]:=	arrCyCtrl[P2EVNo.P2M1_BlueGlueVacuum2].Io.DOStatus1;//备蓝胶真空吸2
+Q306[3]:=	arrCyCtrl[P2EVNo.P2M1_codeGlueVacuum1].Io.DOStatus1;//备二维码胶真空吸1
+Q306[4]:=	arrCyCtrl[P2EVNo.P2M1_codeGlueVacuum2].Io.DOStatus1;//备二维码胶真空吸2
+Q306[5]:=	arrCyCtrl[P2CYNo.P2M1_GlueNGCy].Io.DOStatus1;//踢废胶气缸伸出
+Q306[6]:=	arrCyCtrl[P2CYNo.P2M1_GlueNGCy].Io.DOStatus2;//踢废胶气缸缩回
+Q306[7]:=	arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Io.DOStatus1;//贴胶治具打开
+Q306[8]:=	arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Io.DOStatus2;//贴胶治具压紧
+Q306[9]:=	P2Btn.P2M1_BlueGlueLights;//压蓝胶按钮灯
+Q306[10]:=	P2Btn.P2M1_codeGlueLights;//压二维码胶按钮灯
+Q306[11]:=	P2Btn.P2M1_BlueGluebtnLights;//一键备蓝胶按钮灯
+Q306[12]:=	P2Btn.P2M1_codeGluebtnLights;//一键备二维码胶按钮灯
+Q306[13]:=arrCyCtrl[P2CYNo.LockonCy].Io.DOStatus1	;//电芯NG料盒锁定气缸伸出
+Q306[14]:=arrCyCtrl[P2CYNo.LockonCy].Io.DOStatus2	;//电芯NG料盒锁定气缸收回
+Q306[15]:=P3Senser.P3_PoleMotor1_JogP	;//电芯NG料盒排杆电机正转
+Q306[16]:=P3Senser.P3_PoleMotor1_JogN	;//电芯NG料盒排杆电机反转
+Q307[1]:=	P2Btn.System_StartLights;//控制面板启动按钮灯
+Q307[2]:=	P2Btn.System_ResetLights;//控制面板复位按钮灯
+Q307[3]:=	P2Btn.System_StopLights;//控制面板停止按钮灯
+Q307[4]:=	P2Btn.P2M1_Tricolorlamp_Yellow;//三色灯_黄
+Q307[5]:=	P2Btn.P2M1_Tricolorlamp_Green;//三色灯_绿
+Q307[6]:=	P2Btn.P2M1_Tricolorlamp_Red;//三色灯_红
+Q307[7]:=	P2Btn.P2M1_Tricolorlamp_Buzzer;//三色灯_蜂鸣器
+//Q307[8]:=	;//备用
+Q307[9]:=arrCyCtrl[P2CYNo.P2M1_CaScrapbinUDCy].Io.DOStatus1	;//负极片NG料盒升降气缸伸出
+Q307[10]:=arrCyCtrl[P2CYNo.P2M1_CaScrapbinUDCy].Io.DOStatus2	;//负极片NG料盒升降气缸收回
+//Q307[11]:=	;//叠台压刀气缸伸出
+//Q307[12]:=	;//叠台压刀气缸收回
+Q307[13]:=arrCyCtrl[P2EVNo.P2M1_WJ_blow].Io.DOStatus1	;//尾卷夹上料吹气
+Q307[14]:=arrCyCtrl[P2CYNo.P2M1_PreDiaph].Io.DOStatus1	;//压隔膜气缸伸出
+Q307[15]:=arrCyCtrl[P2CYNo.P2M1_PreDiaph].Io.DOStatus2	;//压隔膜气缸收回
+Q307[16]:=arrCyCtrl[P2CYNo.P2M1_PoleTapeCy].Io.DOStatus2	;//隔膜夹紧气缸缩回
+
+Q309[1]:=	arrCyCtrl[P2CYNo.P2M1_CurlingSplintCy_S_1].Io.DOStatus1;//短卷针夹泄气
+Q309[2]:=dDrauFan[1];//风机1；
+Q309[3]:=	arrCyCtrl[P2EVNo.P2M1_WJShortvacuum].Io.DOStatus1;//1短卷针张开真空
+Q309[4]:=	arrCyCtrl[P2CYNo.P2M1_RollPoleearCy].Io.DOStatus1;//尾卷托极耳气缸伸出
+Q309[5]:=	arrCyCtrl[P2CYNo.P2M1_RollPoleearCy].Io.DOStatus2;//尾卷托极耳气缸缩回
+	//2号叠片
+Q401[1]:=	arrCyCtrl[P2EVNo.P2M2_AnBeltVacuum].Io.DOStatus1;//正极模切送料分段皮带1取料处真空
+Q401[2]:=arrCyCtrl[P2EVNo.P2M2_AnBeltVacuumBark].Io.DOStatus1	;//正极模切送料分段皮带1取料处破真空//	arrCyCtrl[P2EVNo.P2M2_AnBeltVacuumBark].Io.DOStatus1
+//Q401[3]:=;//正极模切送料分段皮带1除尘毛刷正转
+//Q401[4]:=;//正极模切送料分段皮带1除尘毛刷反转
+Q401[5]:=	arrCyCtrl[P2CYNo.P2M2_AnScrapbinCy].Io.DOStatus1;//正极片NG收纳盒伸出
+Q401[6]:=	arrCyCtrl[P2CYNo.P2M2_AnScrapbinCy].Io.DOStatus2;//正极片NG收纳盒缩回
+Q401[7]:=	arrCyCtrl[P2EVNo.P2M2_AnCarryingVacuum].Io.DOStatus1;//正极送片搬运升降真空
+Q401[8]:=	arrCyCtrl[P2EVNo.P2M2_AnCarryingVacuumBark].Io.DOStatus1;//正极送片搬运升降破真空
+Q401[9]:=	arrCyCtrl[P2EVNo.P2M2_AndeviationVacuum].Io.DOStatus1;//正极纠偏平台真空
+Q401[10]:=	arrCyCtrl[P2EVNo.P2M2_AndeviationVacuumBark].Io.DOStatus1;//正极纠偏平台破真空
+Q401[11]:=	arrCyCtrl[P2EVNo.P2M2_AndeviationIonizedWind].Io.DOStatus1;//正极纠偏平台除尘风刀
+Q401[12]:=	arrCyCtrl[P2EVNo.P2M2_AnDTCarryingVacuum].Io.DOStatus1;//正极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+Q401[13]:=	arrCyCtrl[P2EVNo.P2M2_AnDTCarryingVacuum].Io.DOStatus1;//正极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空空
+//Q401[13]:=	arrCyCtrl[P2EVNo.P2M2_AnDTCarryingVacuumBark].Io.DOStatus1;//正极叠片搬运升降破真空
+Q401[14]:=P2M2_MachCtrl.An_b.An_CCDStart;	//正极CCD纠偏定位拍照触发
+Q401[15]:=	arrCyCtrl[P2EVNo.P2M2_CaMQBeltVacuum].Io.DOStatus1;//负极模切送料分段皮带1取料处真空
+Q401[16]:=	arrCyCtrl[P2EVNo.P2M2_CaMQBeltVacuumBark].Io.DOStatus1;//负极模切送料分段皮带1取料处破真空
+
+//Q402[1]:=	;//负极模切送料分段皮带1除尘毛刷正转
+//Q402[2]:=	;//负极模切送料分段皮带1除尘毛刷反转
+Q402[3]:=arrDustMotor[DustNo.FeedbeltDust2].bo_Pul	;//负极送料皮带除尘毛刷正转
+Q402[4]:=arrDustMotor[DustNo.FeedbeltDust2].bo_Dir	;//负极送料皮带除尘毛刷反转
+Q402[5]:=	arrCyCtrl[P2CYNo.P2M2_CaScrapbinCy].Io.DOStatus1;//负极片NG收纳盒伸出
+Q402[6]:=	arrCyCtrl[P2CYNo.P2M2_CaScrapbinCy].Io.DOStatus2;//负极片NG收纳盒缩回
+Q402[7]:=P2M2_MachCtrl.Ca_b.Ca_CCDStart	;//负极CCD纠偏定位拍照触发
+Q402[8]:=	arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuum1].Io.DOStatus1;//负极送片搬运升降1真空
+Q402[9]:=	arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuumBark1].Io.DOStatus1;//负极送片搬运升降1破真空
+Q402[10]:=	arrCyCtrl[P2EVNo.P2M2_CaLoadUpBeltVacuum].Io.DOStatus1;//负极送片皮带末端真空
+Q402[11]:=	arrCyCtrl[P2EVNo.P2M2_CaLoadUpBeltVacuumBark].Io.DOStatus1;//负极送片皮带末端破真空
+Q402[12]:=	arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuum2].Io.DOStatus1;//负极送片搬运升降2真空----DOStatus1有输出时破真空，没有输出时开真空
+Q402[13]:=	arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuum2].Io.DOStatus1;//负极送片搬运升降2真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q402[13]:=	arrCyCtrl[P2EVNo.P2M2_CaCarryingVacuumBark2].Io.DOStatus1;//负极送片搬运升降2破真空
+Q402[14]:=	arrCyCtrl[P2EVNo.P2M2_CadeviationVacuum].Io.DOStatus1;//负极纠偏平台真空
+Q402[15]:=	arrCyCtrl[P2EVNo.P2M2_CadeviationVacuumBark].Io.DOStatus1;//负极纠偏平台破真空
+Q402[16]:=	arrCyCtrl[P2EVNo.P2M2_CadeviationIonizedWind].Io.DOStatus1;//负极纠偏平台除尘风刀
+	
+Q403[1]:=	arrCyCtrl[P2EVNo.P2M2_CaDTCarryingVacuum].Io.DOStatus1;//负极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+Q403[2]:=	arrCyCtrl[P2EVNo.P2M2_CaDTCarryingVacuum].Io.DOStatus1;//负极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q403[2]:=	arrCyCtrl[P2EVNo.P2M2_CaDTCarryingVacuumBark].Io.DOStatus1;//负极叠片搬运升降破真空
+Q403[3]:=	P2M2_MachCtrl.WJ_b.HotCut;//热切丝启动
+Q403[4]:=	arrCyCtrl[P2CYNo.P2M2_PoleInflationCy].Io.DOStatus1;//隔膜放卷气胀轴张开
+Q403[5]:=	arrCyCtrl[P2CYNo.P2M2_PoleInflationCy].Io.DOStatus2;//隔膜放卷气胀轴缩回
+Q403[6]:=	arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerLCy].Io.DOStatus1;//隔膜接带左压板气缸伸出
+Q403[7]:=	arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerLCy].Io.DOStatus2;//隔膜接带左压板气缸缩回
+Q403[8]:=	arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerRCy].Io.DOStatus1;//隔膜接带右压板气缸伸出
+Q403[9]:=	arrCyCtrl[P2CYNo.P2M2_PoleTapeSplicerRCy].Io.DOStatus2;//隔膜接带右压板气缸缩回
+Q403[10]:=	arrCyCtrl[P2EVNo.P2M2_PoleTapeDustRemoval].Io.DOStatus1;//隔膜接带平台除尘
+Q403[11]:=	arrCyCtrl[P2EVNo.P2M2_PoleTapeVacuum].Io.DOStatus1;//隔膜接带平台真空
+Q403[12]:=	arrCyCtrl[P2CYNo.P2M2_PoleTapeCy].Io.DOStatus1;//隔膜夹紧气缸伸出
+Q403[13]:=	arrCyCtrl[P2EVNo.P2M2_DTVacuum].Io.DOStatus1;//叠片台真空
+Q403[14]:=	arrCyCtrl[P2CYNo.P2M2_PoleHotCutterCy].Io.DOStatus1;//隔膜热切升降伸出
+Q403[15]:=	arrCyCtrl[P2CYNo.P2M2_PoleHotCutterCy].Io.DOStatus2;//隔膜热切升降缩回
+Q403[16]:=P2M2_MachCtrl.DT_b.CDD_OverStart; 	;//叠台CCD对齐度检测拍照触发
+
+Q404[1]:=	P2Btn.P2M2_PoleInflationLights;//隔膜气胀轴按钮灯
+Q404[2]:=	P2Btn.P2M2_PoleTapeSplicerLLights;//隔膜左压板气缸按钮灯
+Q404[3]:=	P2Btn.P2M2_PoleTapeSplicerRLights;//隔膜右压板气缸按钮灯
+Q404[4]:=	arrCyCtrl[P2CYNo.P2M2_PoleSplintCy_D].Io.DOStatus1;//隔夹膜下夹板伸出
+Q404[5]:=	arrCyCtrl[P2CYNo.P2M2_PoleSplintCy_D].Io.DOStatus2;//夹膜下夹板缩回
+Q404[6]:=	arrCyCtrl[P2EVNo.P2M2_PoleSplintVacuum_D].Io.DOStatus1;//夹膜下夹板真空
+Q404[7]:=	arrCyCtrl[P2CYNo.P2M2_TailCurlSplintCy].Io.DOStatus1;//尾卷夹张开
+Q404[8]:=	arrCyCtrl[P2CYNo.P2M2_TailCurlSplintCy].Io.DOStatus2;//尾卷夹闭合
+Q404[9]:=	arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_L].Io.DOStatus1;//长卷针夹张开
+Q404[10]:=	arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_L].Io.DOStatus2;//长卷针夹闭合
+Q404[11]:=	arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_S].Io.DOStatus1;//短卷针夹张开
+Q404[12]:=	arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_S].Io.DOStatus2;//短卷针夹闭合
+Q404[13]:=	arrCyCtrl[P2CYNo.P2M2_TailCurlLineCy].Io.DOStatus1;//尾卷压辊平移缸伸出
+Q404[14]:=	arrCyCtrl[P2CYNo.P2M2_TailCurlLineCy].Io.DOStatus2;//尾卷压辊平移缸缩回
+Q404[15]:=	arrCyCtrl[P2CYNo.P2M2_TailCurlUpdownCy].Io.DOStatus1;//尾卷压辊升降缸伸出
+Q404[16]:=	arrCyCtrl[P2CYNo.P2M2_TailCurlUpdownCy].Io.DOStatus2;//尾卷压辊升降缸缩回
+
+Q405[1]:=	arrCyCtrl[P2CYNo.P2M2_StandbyGlueCy].Io.DOStatus1;//备胶气缸伸出
+Q405[2]:=	arrCyCtrl[P2CYNo.P2M2_CodeStandbyGlueCy].Io.DOStatus1;//备二维码胶伸出
+Q405[3]:=	arrCyCtrl[P2CYNo.P2M2_GluePressCy].Io.DOStatus1;//压胶气缸伸出
+Q405[4]:=	arrCyCtrl[P2CYNo.P2M2_GluePressCy].Io.DOStatus2;//压胶气缸缩回
+Q405[5]:=	arrCyCtrl[P2CYNo.P2M2_CodeGluePressCy].Io.DOStatus1;//压二维码胶气缸伸出
+Q405[6]:=	arrCyCtrl[P2CYNo.P2M2_CodeGluePressCy].Io.DOStatus2;//压二维码胶气缸缩回
+Q405[7]:=	arrCyCtrl[P2CYNo.P2M2_GlueCutCy].Io.DOStatus1;//切胶气缸伸出
+Q405[8]:=	arrCyCtrl[P2CYNo.P2M2_GlueCutCy].Io.DOStatus2;//切胶气缸缩回
+Q405[9]:=	arrCyCtrl[P2CYNo.P2M2_codeGlueCutCy].Io.DOStatus1;//切二维码胶气缸伸出
+Q405[10]:=	arrCyCtrl[P2CYNo.P2M2_codeGlueCutCy].Io.DOStatus2;//切二维码胶气缸缩回
+Q405[11]:=	arrCyCtrl[P2CYNo.P2M2_PullGlueCy].Io.DOStatus1;//拉胶气缸伸出
+Q405[12]:=	arrCyCtrl[P2CYNo.P2M2_PullGlueCy].Io.DOStatus2;//拉胶气缸缩回
+Q405[13]:=	arrCyCtrl[P2CYNo.P2M2_PullGluePoleCy].Io.DOStatus1;//拉胶杆抱紧
+Q405[14]:=	arrCyCtrl[P2CYNo.P2M2_GlueClampsCy].Io.DOStatus1;//贴胶气缸夹紧
+Q405[15]:=	arrCyCtrl[P2CYNo.P2M2_GlueClampsCy].Io.DOStatus2;//贴胶气缸打开
+Q405[16]:=	arrCyCtrl[P2EVNo.P2M2_PastesGlueVacuum].Io.DOStatus1;//贴胶头真空吸1
+
+Q406[1]:=	arrCyCtrl[P2EVNo.P2M2_BlueGlueVacuum1].Io.DOStatus1;//备蓝胶真空吸1
+Q406[2]:=	arrCyCtrl[P2EVNo.P2M2_BlueGlueVacuum2].Io.DOStatus1;//备蓝胶真空吸2
+Q406[3]:=	arrCyCtrl[P2EVNo.P2M2_codeGlueVacuum1].Io.DOStatus1;//备二维码胶真空吸1
+Q406[4]:=	arrCyCtrl[P2EVNo.P2M2_codeGlueVacuum2].Io.DOStatus1;//备二维码胶真空吸2
+Q406[5]:=	arrCyCtrl[P2CYNo.P2M2_GlueNGCy].Io.DOStatus1;//踢废胶气缸伸出
+Q406[6]:=	arrCyCtrl[P2CYNo.P2M2_GlueNGCy].Io.DOStatus2;//踢废胶气缸缩回
+Q406[7]:=	arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Io.DOStatus1;//贴胶治具打开
+Q406[8]:=	arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Io.DOStatus2;//贴胶治具压紧
+Q406[9]:=	P2Btn.P2M2_BlueGlueLights;//压蓝胶按钮灯
+Q406[10]:=	P2Btn.P2M2_codeGlueLights;//压二维码胶按钮灯
+Q406[11]:=	P2Btn.P2M2_BlueGluebtnLights;//一键备蓝胶按钮灯
+Q406[12]:=	P2Btn.P2M2_codeGluebtnLights;//一键备二维码胶按钮灯
+//Q406[13];
+//Q406[14];//
+Q406[15]:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving	;//冷压上料警示灯
+Q406[16]:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving	;//冷压上料蜂鸣器
+
+Q407[1]:=	P2Btn.System_StartLights;//控制面板启动按钮灯
+Q407[2]:=	P2Btn.System_ResetLights;//控制面板复位按钮灯
+Q407[3]:=	P2Btn.System_StopLights;//控制面板停止按钮灯
+Q407[4]:=	P2Btn.P2M2_Tricolorlamp_Yellow;//三色灯_黄
+Q407[5]:=	P2Btn.P2M2_Tricolorlamp_Green;//三色灯_绿
+Q407[6]:=	P2Btn.P2M2_Tricolorlamp_Red;//三色灯_红
+Q407[7]:=	P2Btn.P2M2_Tricolorlamp_Buzzer;//三色灯_蜂鸣器
+//Q407[8]:=	;//备用
+Q407[9]:=arrCyCtrl[P2CYNo.P2M2_CaScrapbinUDCy].Io.DOStatus1	;//负极片NG料盒升降气缸伸出
+Q407[10]:=arrCyCtrl[P2CYNo.P2M2_CaScrapbinUDCy].Io.DOStatus2;//负极片NG料盒升降气缸缩回
+//Q407[11]:=	;//叠台压刀气缸伸出
+//Q407[12]:=	;//叠台压刀气缸缩回
+Q407[13]:=arrCyCtrl[P2EVNo.P2M2_WJ_blow].Io.DOStatus1	;//尾卷夹上料吹气
+Q407[14]:=arrCyCtrl[P2CYNo.P2M2_PreDiaphCy].Io.DOStatus1	;//压隔膜气缸伸出
+Q407[15]:=arrCyCtrl[P2CYNo.P2M2_PreDiaphCy].Io.DOStatus2	;//压隔膜气缸缩回
+Q407[16]:=arrCyCtrl[P2CYNo.P2M2_PoleTapeCy].Io.DOStatus2	;//隔膜夹紧气缸缩回
+
+Q409[1]:=	arrCyCtrl[P2CYNo.P2M2_CurlingSplintCy_S_1].Io.DOStatus1;//短卷针夹泄气
+Q409[3]:=	arrCyCtrl[P2EVNo.P2M2_WJShortvacuum].Io.DOStatus1;//2短卷针张开真空
+Q409[4]:=	arrCyCtrl[P2CYNo.P2M2_RollPoleearCy].Io.DOStatus1;//尾卷托极耳气缸伸出
+Q409[5]:=	arrCyCtrl[P2CYNo.P2M2_RollPoleearCy].Io.DOStatus2;//尾卷托极耳气缸缩回
+
+
+
+	//3号叠片
+Q501[1]:=	arrCyCtrl[P2EVNo.P2M3_AnBeltVacuum].Io.DOStatus1;//正极模切送料分段皮带1取料处真空
+Q501[2]:=arrCyCtrl[P2EVNo.P2M3_AnBeltVacuumBark].Io.DOStatus1	;//正极模切送料分段皮带1取料处破真空arrCyCtrl[P2EVNo.P2M3_AnBeltVacuumBark].Io.DOStatus1
+//Q501[3]:=;//正极模切送料分段皮带1除尘毛刷正转
+//Q501[4]:=;//正极模切送料分段皮带1除尘毛刷反转
+Q501[5]:=	arrCyCtrl[P2CYNo.P2M3_AnScrapbinCy].Io.DOStatus1;//正极片NG收纳盒伸出
+Q501[6]:=	arrCyCtrl[P2CYNo.P2M3_AnScrapbinCy].Io.DOStatus2;//正极片NG收纳盒缩回
+Q501[7]:=	arrCyCtrl[P2EVNo.P2M3_AnCarryingVacuum].Io.DOStatus1;//正极送片搬运升降真空
+Q501[8]:=	arrCyCtrl[P2EVNo.P2M3_AnCarryingVacuumBark].Io.DOStatus1;//正极送片搬运升降破真空
+Q501[9]:=	arrCyCtrl[P2EVNo.P2M3_AndeviationVacuum].Io.DOStatus1;//正极纠偏平台真空
+Q501[10]:=	arrCyCtrl[P2EVNo.P2M3_AndeviationVacuumBark].Io.DOStatus1;//正极纠偏平台破真空
+Q501[11]:=	arrCyCtrl[P2EVNo.P2M3_AndeviationIonizedWind].Io.DOStatus1;//正极纠偏平台除尘风刀
+Q501[12]:=	arrCyCtrl[P2EVNo.P2M3_AnDTCarryingVacuum].Io.DOStatus1;//正极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+Q501[13]:=	arrCyCtrl[P2EVNo.P2M3_AnDTCarryingVacuum].Io.DOStatus1;//正极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q501[13]:=	arrCyCtrl[P2EVNo.P2M3_AnDTCarryingVacuumBark].Io.DOStatus1;//正极叠片搬运升降破真空
+//Q501[14]:=P2M3_MachCtrl.An_b.An_CCDStart;	//正极CCD纠偏定位拍照触发
+Q507[8]:=P2M3_MachCtrl.An_b.An_CCDStart;	//正极CCD纠偏定位拍照触发
+Q501[15]:=	arrCyCtrl[P2EVNo.P2M3_CaMQBeltVacuum].Io.DOStatus1;//负极模切送料分段皮带1取料处真空
+Q501[16]:=	arrCyCtrl[P2EVNo.P2M3_CaMQBeltVacuumBark].Io.DOStatus1;//负极模切送料分段皮带1取料处破真空
+
+//Q502[1]:=	;//负极模切送料分段皮带1除尘毛刷正转
+//Q502[2]:=	;//负极模切送料分段皮带1除尘毛刷反转
+Q502[3]:=arrDustMotor[DustNo.FeedbeltDust3].bo_Pul		;//负极送料皮带除尘毛刷正转
+Q502[4]:=arrDustMotor[DustNo.FeedbeltDust3].bo_Dir		;//负极送料皮带除尘毛刷反转
+Q502[5]:=	arrCyCtrl[P2CYNo.P2M3_CaScrapbinCy].Io.DOStatus1;//负极片NG收纳盒伸出
+Q502[6]:=	arrCyCtrl[P2CYNo.P2M3_CaScrapbinCy].Io.DOStatus2;//负极片NG收纳盒缩回
+Q502[7]:=P2M3_MachCtrl.Ca_b.Ca_CCDStart	;//负极CCD纠偏定位拍照触发
+Q502[8]:=	arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuum1].Io.DOStatus1;//负极送片搬运升降1真空
+Q502[9]:=	arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuumBark1].Io.DOStatus1;//负极送片搬运升降1破真空
+Q502[10]:=	arrCyCtrl[P2EVNo.P2M3_CaLoadUpBeltVacuum].Io.DOStatus1;//负极送片皮带末端真空
+Q502[11]:=	arrCyCtrl[P2EVNo.P2M3_CaLoadUpBeltVacuumBark].Io.DOStatus1;//负极送片皮带末端破真空
+Q502[12]:=	arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuum2].Io.DOStatus1;//负极送片搬运升降2真空----DOStatus1有输出时破真空，没有输出时开真空
+Q502[13]:=	arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuum2].Io.DOStatus1;//负极送片搬运升降2真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q502[13]:=	arrCyCtrl[P2EVNo.P2M3_CaCarryingVacuumBark2].Io.DOStatus1;//负极送片搬运升降2破真空
+Q502[14]:=	arrCyCtrl[P2EVNo.P2M3_CadeviationVacuum].Io.DOStatus1;//负极纠偏平台真空
+Q502[15]:=	arrCyCtrl[P2EVNo.P2M3_CadeviationVacuumBark].Io.DOStatus1;//负极纠偏平台破真空
+Q502[16]:=	arrCyCtrl[P2EVNo.P2M3_CadeviationIonizedWind].Io.DOStatus1;//负极纠偏平台除尘风刀
+	
+Q503[1]:=	arrCyCtrl[P2EVNo.P2M3_CaDTCarryingVacuum].Io.DOStatus1;//负极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+Q503[2]:=	arrCyCtrl[P2EVNo.P2M3_CaDTCarryingVacuum].Io.DOStatus1;//负极叠片搬运升降真空----DOStatus1有输出时破真空，没有输出时开真空
+//Q503[2]:=	arrCyCtrl[P2EVNo.P2M3_CaDTCarryingVacuumBark].Io.DOStatus1;//负极叠片搬运升降破真空
+Q503[3]:=	P2M3_MachCtrl.WJ_b.HotCut;//热切丝启动
+Q503[4]:=	arrCyCtrl[P2CYNo.P2M3_PoleInflationCy].Io.DOStatus1;//隔膜放卷气胀轴张开
+Q503[5]:=	arrCyCtrl[P2CYNo.P2M3_PoleInflationCy].Io.DOStatus2;//隔膜放卷气胀轴缩回
+Q503[6]:=	arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerLCy].Io.DOStatus1;//隔膜接带左压板气缸伸出
+Q503[7]:=	arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerLCy].Io.DOStatus2;//隔膜接带左压板气缸缩回
+Q503[8]:=	arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerRCy].Io.DOStatus1;//隔膜接带右压板气缸伸出
+Q503[9]:=	arrCyCtrl[P2CYNo.P2M3_PoleTapeSplicerRCy].Io.DOStatus2;//隔膜接带右压板气缸缩回
+Q503[10]:=	arrCyCtrl[P2EVNo.P2M3_PoleTapeDustRemoval].Io.DOStatus1;//隔膜接带平台除尘
+Q503[11]:=	arrCyCtrl[P2EVNo.P2M3_PoleTapeVacuum].Io.DOStatus1;//隔膜接带平台真空
+Q503[12]:=	arrCyCtrl[P2CYNo.P2M3_PoleTapeCy].Io.DOStatus1;//隔膜夹紧气缸伸出
+Q503[13]:=	arrCyCtrl[P2EVNo.P2M3_DTVacuum].Io.DOStatus1;//叠片台真空
+Q503[14]:=	arrCyCtrl[P2CYNo.P2M3_PoleHotCutterCy].Io.DOStatus1;//隔膜热切升降伸出
+Q503[15]:=	arrCyCtrl[P2CYNo.P2M3_PoleHotCutterCy].Io.DOStatus2;//隔膜热切升降缩回
+Q503[16]:=P2M3_MachCtrl.DT_b.CDD_OverStart; 	;//叠台CCD对齐度检测拍照触发
+
+Q504[1]:=	P2Btn.P2M3_PoleInflationLights;//隔膜气胀轴按钮灯
+Q504[2]:=	P2Btn.P2M3_PoleTapeSplicerLLights;//隔膜左压板气缸按钮灯
+Q504[3]:=	P2Btn.P2M3_PoleTapeSplicerRLights;//隔膜右压板气缸按钮灯
+Q504[4]:=	arrCyCtrl[P2CYNo.P2M3_PoleSplintCy_D].Io.DOStatus1;//隔夹膜下夹板伸出
+Q504[5]:=	arrCyCtrl[P2CYNo.P2M3_PoleSplintCy_D].Io.DOStatus2;//夹膜下夹板缩回
+Q504[6]:=	arrCyCtrl[P2EVNo.P2M3_PoleSplintVacuum_D].Io.DOStatus1;//夹膜下夹板真空
+Q504[7]:=	arrCyCtrl[P2CYNo.P2M3_TailCurlSplintCy].Io.DOStatus1;//尾卷夹张开
+Q504[8]:=	arrCyCtrl[P2CYNo.P2M3_TailCurlSplintCy].Io.DOStatus2;//尾卷夹闭合
+Q504[9]:=	arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_L].Io.DOStatus1;//长卷针夹张开
+Q504[10]:=	arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_L].Io.DOStatus2;//长卷针夹闭合
+Q504[11]:=	arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_S].Io.DOStatus1;//短卷针夹张开
+Q504[12]:=	arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_S].Io.DOStatus2;//短卷针夹闭合
+Q504[13]:=	arrCyCtrl[P2CYNo.P2M3_TailCurlLineCy].Io.DOStatus1;//尾卷压辊平移缸伸出
+Q504[14]:=	arrCyCtrl[P2CYNo.P2M3_TailCurlLineCy].Io.DOStatus2;//尾卷压辊平移缸缩回
+Q504[15]:=	arrCyCtrl[P2CYNo.P2M3_TailCurlUpdownCy].Io.DOStatus1;//尾卷压辊升降缸伸出
+Q504[16]:=	arrCyCtrl[P2CYNo.P2M3_TailCurlUpdownCy].Io.DOStatus2;//尾卷压辊升降缸缩回
+
+
+
+
+Q505[1]:=	arrCyCtrl[P2CYNo.P2M3_StandbyGlueCy].Io.DOStatus1;//备胶气缸伸出
+Q505[2]:=	arrCyCtrl[P2CYNo.P2M3_CodeStandbyGlueCy].Io.DOStatus1;//备二维码胶伸出
+Q505[3]:=	arrCyCtrl[P2CYNo.P2M3_GluePressCy].Io.DOStatus1;//压胶气缸伸出
+Q505[4]:=	arrCyCtrl[P2CYNo.P2M3_GluePressCy].Io.DOStatus2;//压胶气缸缩回
+Q505[5]:=	arrCyCtrl[P2CYNo.P2M3_CodeGluePressCy].Io.DOStatus1;//压二维码胶气缸伸出
+Q505[6]:=	arrCyCtrl[P2CYNo.P2M3_CodeGluePressCy].Io.DOStatus2;//压二维码胶气缸缩回
+Q505[7]:=	arrCyCtrl[P2CYNo.P2M3_GlueCutCy].Io.DOStatus1;//切胶气缸伸出
+Q505[8]:=	arrCyCtrl[P2CYNo.P2M3_GlueCutCy].Io.DOStatus2;//切胶气缸缩回
+Q505[9]:=	arrCyCtrl[P2CYNo.P2M3_codeGlueCutCy].Io.DOStatus1;//切二维码胶气缸伸出
+Q505[10]:=	arrCyCtrl[P2CYNo.P2M3_codeGlueCutCy].Io.DOStatus2;//切二维码胶气缸缩回
+Q505[11]:=	arrCyCtrl[P2CYNo.P2M3_PullGlueCy].Io.DOStatus1;//拉胶气缸伸出
+Q505[12]:=	arrCyCtrl[P2CYNo.P2M3_PullGlueCy].Io.DOStatus2;//拉胶气缸缩回
+Q505[13]:=	arrCyCtrl[P2CYNo.P2M3_PullGluePoleCy].Io.DOStatus1;//拉胶杆抱紧
+Q505[14]:=	arrCyCtrl[P2CYNo.P2M3_GlueClampsCy].Io.DOStatus1;//贴胶气缸夹紧
+Q505[15]:=	arrCyCtrl[P2CYNo.P2M3_GlueClampsCy].Io.DOStatus2;//贴胶气缸打开
+Q505[16]:=	arrCyCtrl[P2EVNo.P2M3_PastesGlueVacuum].Io.DOStatus1;//贴胶头真空吸1
+
+Q506[1]:=	arrCyCtrl[P2EVNo.P2M3_BlueGlueVacuum1].Io.DOStatus1;//备蓝胶真空吸1
+Q506[2]:=	arrCyCtrl[P2EVNo.P2M3_BlueGlueVacuum2].Io.DOStatus1;//备蓝胶真空吸2
+Q506[3]:=	arrCyCtrl[P2EVNo.P2M3_codeGlueVacuum1].Io.DOStatus1;//备二维码胶真空吸1
+Q506[4]:=	arrCyCtrl[P2EVNo.P2M3_codeGlueVacuum2].Io.DOStatus1;//备二维码胶真空吸2
+Q506[5]:=	arrCyCtrl[P2CYNo.P2M3_GlueNGCy].Io.DOStatus1;//踢废胶气缸伸出
+Q506[6]:=	arrCyCtrl[P2CYNo.P2M3_GlueNGCy].Io.DOStatus2;//踢废胶气缸缩回
+Q506[7]:=	arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Io.DOStatus1;//贴胶治具打开
+Q506[8]:=	arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Io.DOStatus2;//贴胶治具压紧
+Q506[9]:=	P2Btn.P2M3_BlueGlueLights;//压蓝胶按钮灯
+Q506[10]:=	P2Btn.P2M3_codeGlueLights;//压二维码胶按钮灯
+Q506[11]:=	P2Btn.P2M3_BlueGluebtnLights;//一键备蓝胶按钮灯
+Q506[12]:=	P2Btn.P2M3_codeGluebtnLights;//一键备二维码胶按钮灯
+Q506[13]:=arrCyCtrl[P3CYNo.P3ColdPressClip].Io.DOStatus1	;//冷压上料夹张开
+Q506[14]:=arrCyCtrl[P3CYNo.P3ColdPressClip].Io.DOStatus2	;//冷压上料夹闭合
+//Q506[15]:=	;//备用
+//Q506[16]:=	;//备用
+Q507[1]:=	P2Btn.System_StartLights;//控制面板启动按钮灯
+Q507[2]:=	P2Btn.System_ResetLights;//控制面板复位按钮灯
+Q507[3]:=	P2Btn.System_StopLights;//控制面板停止按钮灯
+Q507[4]:=	P2Btn.P2M3_Tricolorlamp_Yellow;//三色灯_黄
+Q507[5]:=	P2Btn.P2M3_Tricolorlamp_Green;//三色灯_绿
+Q507[6]:=	P2Btn.P2M3_Tricolorlamp_Red;//三色灯_红
+Q507[7]:=	P2Btn.P2M3_Tricolorlamp_Buzzer;//三色灯_蜂鸣器
+Q507[8];//备用
+Q507[9]:=arrCyCtrl[P2CYNo.P2M3_CaScrapbinUDCy].Io.DOStatus2	;//负极片NG料盒升降气缸伸出
+Q507[10]:=arrCyCtrl[P2CYNo.P2M3_CaScrapbinUDCy].Io.DOStatus1	;//负极片NG料盒升降气缸缩回
+//Q507[11]:=	;//叠台压刀气缸伸出
+//Q507[12]:=	;//叠台压刀气缸缩回
+Q507[13]:=arrCyCtrl[P2EVNo.P2M3_WJ_blow].Io.DOStatus1	;//尾卷夹上料吹气
+Q507[14]:=arrCyCtrl[P2CYNo.P2M3_PreDiaphCy].Io.DOStatus1	;//压隔膜气缸伸出
+Q507[15]:=arrCyCtrl[P2CYNo.P2M3_PreDiaphCy].Io.DOStatus2	;//压隔膜气缸缩回
+Q507[16]:=arrCyCtrl[P2CYNo.P2M3_PoleTapeCy].Io.DOStatus2	;//隔膜夹紧气缸缩回
+
+Q509[1]:=	arrCyCtrl[P2CYNo.P2M3_CurlingSplintCy_S_1].Io.DOStatus1;//短卷针夹泄气
+Q509[2]:=dDrauFan[2];//风机2；
+Q509[3]:=	arrCyCtrl[P2EVNo.P2M3_WJShortvacuum].Io.DOStatus1;//3短卷针张开真空
+Q509[4]:=	arrCyCtrl[P2CYNo.P2M3_RollPoleearCy].Io.DOStatus1;//尾卷托极耳气缸伸出
+Q509[5]:=	arrCyCtrl[P2CYNo.P2M3_RollPoleearCy].Io.DOStatus2;//尾卷托极耳气缸缩回
+
+(*Q509[9] :=arrCyCtrl[P3CYNo.P3Cold_Retracting].Io.DOStatus1;//冷压辅助上料前进气缸伸出
+Q509[10]:=arrCyCtrl[P3CYNo.P3Cold_Retracting].Io.DOStatus2;//冷压辅助上料前进气缸缩回
+Q509[11]:=arrCyCtrl[P3CYNo.P3Cold_Clamp].Io.DOStatus1;//冷压辅助上料开合气缸张开
+Q509[12]:=arrCyCtrl[P3CYNo.P3Cold_Clamp].Io.DOStatus2;//冷压辅助上料开合气缸闭合
+Q509[13]:=arrCyCtrl[P3CYNo.P3Cold_Tensed].Io.DOStatus1;//冷压辅助上料夹紧气缸夹紧
+Q509[14]:=arrCyCtrl[P3CYNo.P3Cold_Tensed].Io.DOStatus2;//冷压辅助上料夹紧气缸松开
+Q509[15]:=arrCyCtrl[P3CYNo.P3Cold_Lifting].Io.DOStatus1;//冷压辅助上料升降气缸上升
+Q509[16]:=arrCyCtrl[P3CYNo.P3Cold_Lifting].Io.DOStatus2;//冷压辅助上料升降气缸下降*)]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M1_AutoLink" Id="{3a8fbbc5-aacc-44e2-ab06-6b599bd629a0}">
+      <Implementation>
+        <ST><![CDATA[
+//1号叠台信号链接,机架按钮
+P2M1_MachCtrl.btn.	Tricolorlamp_Yellow 	:=	P2Btn.	P2M1_Tricolorlamp_Yellow 	;//	三色灯_黄
+P2M1_MachCtrl.btn.	Tricolorlamp_Red 	:=	P2Btn.	P2M1_Tricolorlamp_Red 	;//	三色灯_绿
+P2M1_MachCtrl.btn.	Tricolorlamp_Green 	:=	P2Btn.	P2M1_Tricolorlamp_Green 	;//	三色灯_红
+P2M1_MachCtrl.btn.	Tricolorlamp_Buzzer	:=	P2Btn.	P2M1_Tricolorlamp_Buzzer	;//	三色灯_蜂鸣器
+P2M1_MachCtrl.btn.	PoleInflationLights	:=	P2Btn.	P2M1_PoleInflationLights	;//	隔膜气胀轴按钮灯
+P2M1_MachCtrl.btn.	PoleTapeSplicerLLights	:=	P2Btn.	P2M1_PoleTapeSplicerLLights	;//	隔膜左压板气缸按钮灯
+P2M1_MachCtrl.btn.	PoleTapeSplicerRLights	:=	P2Btn.	P2M1_PoleTapeSplicerRLights	;//	隔膜右压板气缸按钮灯
+P2M1_MachCtrl.btn.	BlueGlueLights	:=	P2Btn.	P2M1_BlueGlueLights	;//	压蓝胶按钮灯
+P2M1_MachCtrl.btn.	codeGlueLights	:=	P2Btn.	P2M1_codeGlueLights	;//	压二维码胶按钮灯
+//P2M1_MachCtrl.btn.	PoleInflationbtn	:=	P2Btn.	P2M1_PoleInflationbtn	;//	隔膜气胀轴按钮
+//P2M1_MachCtrl.btn.	PoleTapeSplicerLbtn	:=	P2Btn.	P2M1_PoleTapeSplicerLbtn	;//	隔膜左压板气缸按钮
+//P2M1_MachCtrl.btn.	PoleTapeSplicerRbtn	:=	P2Btn.	P2M1_PoleTapeSplicerRbtn	;//	隔膜右压板气缸按钮
+P2M1_MachCtrl.btn.	BlueGluebtn	:=	P2Btn.	P2M1_BlueGluebtn	;//	一键备蓝胶按钮
+P2M1_MachCtrl.btn.	BlueGluebtnLights	:=	P2Btn.	P2M1_BlueGluebtnLights	;//	一键备蓝胶按钮灯
+P2M1_MachCtrl.btn.	BlueGluePressbtn	:=	P2Btn.	P2M1_BlueGluePressbtn	;//	压蓝胶按钮
+P2M1_MachCtrl.btn.	codeGluebtn	:=	P2Btn.	P2M1_codeGluebtn	;//	一键备二维码胶按钮
+P2M1_MachCtrl.btn.	codeGluebtnLights	:=	P2Btn.	P2M1_codeGluebtnLights	;//	一键备二维码胶按钮灯
+P2M1_MachCtrl.btn.	codeGluePressbtn	:=	P2Btn.	P2M1_codeGluePressbtn	;//	压二维码胶按钮
+P2M1_MachCtrl.btn.	EmStopbtn1	:=	P2Btn.	P2M1_EmStopbtn1	;//	外罩急停1
+P2M1_MachCtrl.btn.	EmStopbtn2	:=	P2Btn.	P2M1_EmStopbtn2	;//	外罩急停2
+P2M1_MachCtrl.btn.	EmStopbtn3	:=	P2Btn.	P2M1_EmStopbtn3	;//	外罩急停3
+P2M1_MachCtrl.btn.	EmStopbtn4	:=	P2Btn.	P2M1_EmStopbtn4	;//	外罩急停4
+//1号叠台信号链接,传感器
+P2M1_MachCtrl.se.	AnBeltsensor	:=	P2Senser.	P2M1_AnBeltsensor	;//	正极模切送料分段皮带1有料感应
+P2M1_MachCtrl.se.	CaBeltsensor	:=	P2Senser.	P2M1_CaBeltsensor	;//	负极模切送料分段皮带1有料感应
+P2M1_MachCtrl.se.	Offloadingsensor	:=	P2Senser.	P2M1_Offloadingsensor	;//	取料位感应
+P2M1_MachCtrl.se.	BlueGluetsensor	:=	P2Senser.	P2M1_BlueGluetsensor	;//	蓝胶料盘检测
+P2M1_MachCtrl.se.	codeGluesensor	:=	P2Senser.	P2M1_codeGluesensor	;//	二维码胶料盘检测
+P2M1_MachCtrl.se.	Markesensor	:=	P2Senser.	P2M1_Markesensor	;//	二维码胶Mark孔检测
+P2M1_MachCtrl.se.	GluebHave 	:=  P2Senser.P2M1_GluebHave;		//一号贴胶旋转电芯感应
+P2M1_MachCtrl.se.	Coldpressingesensor	:=	P2Senser.	P2M1_Coldpressingesensor	;//	冷压上料夹平移电机1号叠台处检测
+P2M1_MachCtrl.se.	Securitydoorswitch1		:=	P2Senser.	P2M1_Securitydoorswitch1	;//	外罩门禁1
+P2M1_MachCtrl.se.	Securitydoorswitch2		:=	P2Senser.	P2M1_Securitydoorswitch2	;//	外罩门禁2
+P2M1_MachCtrl.se.	Securitydoorswitch3		:=	P2Senser.	P2M1_Securitydoorswitch3	;//	外罩门禁3
+P2M1_MachCtrl.se.	Securitydoorswitch4		:=	P2Senser.	P2M1_Securitydoorswitch4	;//	外罩门禁4
+(*P2M1_MachCtrl.se.	Securitydoorswitch5		:=	P2Senser.	P2M1_Securitydoorswitch5	;//	外罩门禁5
+P2M1_MachCtrl.se.	Securitydoorswitch6		:=	P2Senser.	P2M1_Securitydoorswitch6	;//	外罩门禁6
+P2M1_MachCtrl.se.	Securitydoorswitch7		:=	P2Senser.	P2M1_Securitydoorswitch7	;//	外罩门禁7
+P2M1_MachCtrl.se.	Securitydoorswitch8		:=	P2Senser.	P2M1_Securitydoorswitch8	;//	外罩门禁8
+P2M1_MachCtrl.se.	Securitydoorswitch9		:=	P2Senser.	P2M1_Securitydoorswitch9	;//	外罩门禁9
+P2M1_MachCtrl.se.	Securitydoorswitch10	:=	P2Senser.	P2M1_Securitydoorswitch10	;//	外罩门禁10*)
+P2M1_MachCtrl.se.	Yellowmark	:=	P2Senser.P2M1_Yellowmark    ;  //1号叠台		一号隔膜黄标感应    
+P2M1_MachCtrl.se.Ceramics:=P2Senser.P2M1_Ceramics;
+P2M1_MachCtrl.se.AnDTCarryingJROnSwitch:=P2Senser.P2M1_AnDTCarryingJROnSwitch;//1号正极极耳真空信号
+P2M1_MachCtrl.se.CaDTCarryingJROnSwitch:=P2Senser.P2M1_CaDTCarryingJROnSwitch;//1号负极极耳真空信号
+P2M1_MachCtrl.se.AnNGboxsensor:= P2Senser.P2M1_AnNGboxsensor	;		//叠台正极NG料盒满料感应
+P2M1_MachCtrl.se.CaNGboxsensor:= P2Senser.P2M1_CaNGboxsensor 	;		//叠台负极NG料盒满料感应
+
+//1号叠台信号链接,气缸号
+P2M1_CycNo.CylinderName.	AnScrapbinCy	:=	P2CYNo.	P2M1_AnScrapbinCy		;//	正极片NG收纳盒
+P2M1_CycNo.CylinderName.	CaScrapbinCy	:=	P2CYNo.	P2M1_CaScrapbinCy		;//	负极片NG收纳盒
+P2M1_CycNo.CylinderName.CaScrapbinUDCy:=P2CYNo.P2M1_CaScrapbinUDCy;//负极片NG收纳盒升降
+
+P2M1_CycNo.CylinderName.	PreDiaph    	:=	P2CYNo.P2M1_PreDiaph		;//	压隔膜气缸
+P2M1_CycNo.CylinderName.	PoleInflationCy	:=	P2CYNo.	P2M1_PoleInflationCy		;//	隔膜放卷气胀轴
+P2M1_CycNo.CylinderName.	PoleTapeSplicerLCy	:=	P2CYNo.	P2M1_PoleTapeSplicerLCy		;//	隔膜接带左压板气缸
+P2M1_CycNo.CylinderName.	PoleTapeSplicerRCy	:=	P2CYNo.	P2M1_PoleTapeSplicerRCy		;//	隔膜接带右压板气缸
+P2M1_CycNo.CylinderName.	PoleTapeCy	:=	P2CYNo.	P2M1_PoleTapeCy		;//	隔膜夹紧气缸
+P2M1_CycNo.CylinderName.	PoleHotCutterCy	:=	P2CYNo.	P2M1_PoleHotCutterCy		;//	隔膜热切升降
+P2M1_CycNo.CylinderName.	PoleSplintCy_U	:=	P2CYNo.	P2M1_PoleSplintCy_U		;//	夹膜上夹板
+P2M1_CycNo.CylinderName.	PoleSplintCy_D	:=	P2CYNo.	P2M1_PoleSplintCy_D		;//	夹膜下夹板
+P2M1_CycNo.CylinderName.	TailCurlSplintCy	:=	P2CYNo.	P2M1_TailCurlSplintCy		;//	尾卷夹爪开合
+P2M1_CycNo.CylinderName.	CurlingSplintCy_L	:=	P2CYNo.	P2M1_CurlingSplintCy_L		;//	长卷针夹开合
+P2M1_CycNo.CylinderName.	CurlingSplintCy_S	:=	P2CYNo.	P2M1_CurlingSplintCy_S		;//	短卷针夹开合
+P2M1_CycNo.CylinderName.	TailCurlLineCy	:=	P2CYNo.	P2M1_TailCurlLineCy		;//	尾卷压辊平移缸
+P2M1_CycNo.CylinderName.	TailCurlUpdownCy	:=	P2CYNo.	P2M1_TailCurlUpdownCy		;//	尾卷压辊升降缸
+P2M1_CycNo.CylinderName.	StandbyGlueCy	:=	P2CYNo.	P2M1_StandbyGlueCy		;//	备胶气缸
+P2M1_CycNo.CylinderName.	CodeStandbyGlueCy	:=	P2CYNo.	P2M1_CodeStandbyGlueCy		;//	备二维码胶气缸
+P2M1_CycNo.CylinderName.	GlueClampsCy	:=	P2CYNo.	P2M1_GlueClampsCy		;//	贴胶夹爪气缸
+P2M1_CycNo.CylinderName.	GluePressCy	:=	P2CYNo.	P2M1_GluePressCy		;//	压胶气缸
+P2M1_CycNo.CylinderName.	CodeGluePressCy	:=	P2CYNo.	P2M1_CodeGluePressCy		;//	压二维码胶气缸
+P2M1_CycNo.CylinderName.	GlueCutCy	:=	P2CYNo.	P2M1_GlueCutCy		;//	切胶气缸
+P2M1_CycNo.CylinderName.	codeGlueCutCy	:=	P2CYNo.	P2M1_codeGlueCutCy		;//	切二维码胶气缸
+P2M1_CycNo.CylinderName.	PullGluePoleCy	:=	P2CYNo.	P2M1_PullGluePoleCy		;//	拉胶杆抱紧
+P2M1_CycNo.CylinderName.	PullGlueCy	:=	P2CYNo.	P2M1_PullGlueCy		;//	拉胶气缸
+P2M1_CycNo.CylinderName.	GlueNGCy	:=	P2CYNo.	P2M1_GlueNGCy		;//	踢废胶气缸
+P2M1_CycNo.CylinderName.	PullGlueModelCy	:=	P2CYNo.	P2M1_PullGlueModelCy		;//	贴胶治具气缸
+P2M1_CycNo.CylinderName.	CurlingSplintCy_S_1	:=	P2CYNo.P2M1_CurlingSplintCy_S_1		;//	短卷针夹泄气
+P2M1_CycNo.CylinderName.	RollPoleearCy	:=	P2CYNo.P2M1_RollPoleearCy		;//	尾卷托极耳气缸
+
+//1号叠台信号链接,气控阀
+P2M1_CycNo.ElectValveName.	AnBeltVacuum	:=	P2EVNo.	P2M1_AnBeltVacuum		;//	正极模切送料分段皮带1取料处真空
+P2M1_CycNo.ElectValveName.	AnBeltVacuumBark	:=	P2EVNo.	P2M1_AnBeltVacuumBark		;//	正极模切送料分段皮带1取料处破真空
+P2M1_CycNo.ElectValveName.	CaMQBeltVacuum	:=	P2EVNo.	P2M1_CaMQBeltVacuum		;//	负极模切送料分段皮带1取料处真空
+P2M1_CycNo.ElectValveName.	CaMQBeltVacuumBark	:=	P2EVNo.	P2M1_CaMQBeltVacuumBark		;//	负极模切送料分段皮带1取料处破真空
+P2M1_CycNo.ElectValveName.	AnCarryingVacuum	:=	P2EVNo.	P2M1_AnCarryingVacuum		;//	正极送片搬运升降真空
+P2M1_CycNo.ElectValveName.	AnCarryingVacuumBark	:=	P2EVNo.	P2M1_AnCarryingVacuumBark		;//	正极送片搬运升降破真空
+P2M1_CycNo.ElectValveName.	AndeviationVacuum	:=	P2EVNo.	P2M1_AndeviationVacuum		;//	正极纠偏平台真空
+P2M1_CycNo.ElectValveName.	AndeviationIonizedWind	:=	P2EVNo.	P2M1_AndeviationIonizedWind		;//	正极纠偏平台除尘风刀
+P2M1_CycNo.ElectValveName.	AndeviationVacuumBark	:=	P2EVNo.	P2M1_AndeviationVacuumBark		;//	正极纠偏平台破真空
+P2M1_CycNo.ElectValveName.	AnDTCarryingVacuum	:=	P2EVNo.	P2M1_AnDTCarryingVacuum		;//	正极叠片搬运升降真空
+P2M1_CycNo.ElectValveName.	AnDTCarryingVacuumBark	:=	P2EVNo.	P2M1_AnDTCarryingVacuumBark		;//	正极叠片搬运升降破真空
+P2M1_CycNo.ElectValveName.	CaCarryingVacuum1	:=	P2EVNo.	P2M1_CaCarryingVacuum1		;//	负极送片搬运升降1真空
+P2M1_CycNo.ElectValveName.	CaCarryingVacuumBark1	:=	P2EVNo.	P2M1_CaCarryingVacuumBark1		;//	负极送片搬运升降1破真空
+P2M1_CycNo.ElectValveName.	CaLoadUpBeltVacuum	:=	P2EVNo.	P2M1_CaLoadUpBeltVacuum		;//	负极送片皮带末端真空
+P2M1_CycNo.ElectValveName.	CaLoadUpBeltVacuumBark	:=	P2EVNo.	P2M1_CaLoadUpBeltVacuumBark		;//	负极送片皮带末端破真空
+P2M1_CycNo.ElectValveName.	CaCarryingVacuum2	:=	P2EVNo.	P2M1_CaCarryingVacuum2		;//	负极送片搬运升降2真空
+P2M1_CycNo.ElectValveName.	CaCarryingVacuumBark2	:=	P2EVNo.	P2M1_CaCarryingVacuumBark2		;//	负极送片搬运升降2破真空
+P2M1_CycNo.ElectValveName.	CadeviationVacuum	:=	P2EVNo.	P2M1_CadeviationVacuum		;//	负极纠偏平台真空
+P2M1_CycNo.ElectValveName.	CadeviationVacuumBark	:=	P2EVNo.	P2M1_CadeviationVacuumBark		;//	负极纠偏平台破真空
+P2M1_CycNo.ElectValveName.	CadeviationIonizedWind	:=	P2EVNo.	P2M1_CadeviationIonizedWind		;//	负极纠偏平台除尘风刀
+P2M1_CycNo.ElectValveName.	CaDTCarryingVacuum	:=	P2EVNo.	P2M1_CaDTCarryingVacuum		;//	负极叠片搬运升降真空
+P2M1_CycNo.ElectValveName.	CaDTCarryingVacuumBark	:=	P2EVNo.	P2M1_CaDTCarryingVacuumBark		;//	负极叠片搬运升降破真空
+P2M1_CycNo.ElectValveName.	PoleTapeDustRemoval	:=	P2EVNo.	P2M1_PoleTapeDustRemoval		;//	隔膜接带平台除尘
+P2M1_CycNo.ElectValveName.	PoleTapeVacuum	:=	P2EVNo.	P2M1_PoleTapeVacuum		;//	隔膜接带平台真空
+P2M1_CycNo.ElectValveName.	BlueGlueVacuum1	:=	P2EVNo.	P2M1_BlueGlueVacuum1		;//	备胶组件蓝胶真空1
+P2M1_CycNo.ElectValveName.	BlueGlueVacuum2	:=	P2EVNo.	P2M1_BlueGlueVacuum2		;//	备胶组件蓝胶真空2
+P2M1_CycNo.ElectValveName.	codeGlueVacuum1	:=	P2EVNo.	P2M1_codeGlueVacuum1		;//	备胶组件二维码胶真空1
+P2M1_CycNo.ElectValveName.	codeGlueVacuum2	:=	P2EVNo.	P2M1_codeGlueVacuum2		;//	备胶组件二维码胶真空2
+P2M1_CycNo.ElectValveName.	PastesGlueVacuum	:=	P2EVNo.	P2M1_PastesGlueVacuum		;//	备胶组件贴胶头真空
+P2M1_CycNo.ElectValveName.	DTVacuum	:=	P2EVNo.	P2M1_DTVacuum		;//	叠片台真空
+P2M1_CycNo.ElectValveName.	PoleSplintVacuum_D	:=	P2EVNo.	P2M1_PoleSplintVacuum_D		;//	夹膜下夹板真空
+P2M1_CycNo.ElectValveName.WJ_blow:=P2EVNo.P2M1_WJ_blow;//尾卷夹电芯吹气
+P2M1_CycNo.ElectValveName.WJShortvacuum:=P2EVNo.P2M1_WJShortvacuum;//短卷针张开真空
+//1号叠台信号链接,轴号
+P2M1_Axise.AxisName.	AnCarryingLine	:=	P2AxisNo.	P2M1_AnCarryingLine		;//	正极送片搬运平移
+P2M1_Axise.AxisName.	AnCarryingUpDown	:=	P2AxisNo.	P2M1_AnCarryingUpDown		;//	正极送片搬运升降
+P2M1_Axise.AxisName.	AnCarryingWhirling	:=	P2AxisNo.	P2M1_AnCarryingWhirling		;//	正极送片搬运旋转
+P2M1_Axise.AxisName.	AnDTCarryingLine	:=	P2AxisNo.	P2M1_AnDTCarryingLine		;//	正极叠台搬运平移1
+P2M1_Axise.AxisName.	AnDTCarryingUpDown	:=	P2AxisNo.	P2M1_AnDTCarryingUpDown		;//	正极叠台搬运升降
+P2M1_Axise.AxisName.	AndeviationX1	:=	P2AxisNo.	P2M1_AndeviationX1		;//	正极纠偏平台X1
+P2M1_Axise.AxisName.	AndeviationX2	:=	P2AxisNo.	P2M1_AndeviationX2		;//	正极纠偏平台X2
+P2M1_Axise.AxisName.	AndeviationY	:=	P2AxisNo.	P2M1_AndeviationY		;//	正极纠偏平台Y
+P2M1_Axise.AxisName.	CaCarryingLine1	:=	P2AxisNo.	P2M1_CaCarryingLine1		;//	负极送片搬运1平移
+P2M1_Axise.AxisName.	CaCarryingUpDown1	:=	P2AxisNo.	P2M1_CaCarryingUpDown1		;//	负极送片搬运1升降
+P2M1_Axise.AxisName.	CaCarryingWhirling1	:=	P2AxisNo.	P2M1_CaCarryingWhirling1		;//	负极送片搬运1旋转
+P2M1_Axise.AxisName.	CaCarryingLine2	:=	P2AxisNo.	P2M1_CaCarryingLine2		;//	负极送片搬运2平移
+P2M1_Axise.AxisName.	CaCarryingUpDown2	:=	P2AxisNo.	P2M1_CaCarryingUpDown2		;//	负极送片搬运2升降
+P2M1_Axise.AxisName.	CaBelt	:=	P2AxisNo.	P2M1_CaBelt		;//	负极送片皮带
+P2M1_Axise.AxisName.	CaDTCarryingLine	:=	P2AxisNo.	P2M1_CaDTCarryingLine		;//	负极叠台搬运平移
+P2M1_Axise.AxisName.	CaDTCarryingUpDown	:=	P2AxisNo.	P2M1_CaDTCarryingUpDown		;//	负极叠台搬运升降
+P2M1_Axise.AxisName.	CadeviationX1	:=	P2AxisNo.	P2M1_CadeviationX1		;//	负极纠偏平台X1
+P2M1_Axise.AxisName.	CadeviationX2	:=	P2AxisNo.	P2M1_CadeviationX2		;//	负极纠偏平台X2
+P2M1_Axise.AxisName.	CadeviationY	:=	P2AxisNo.	P2M1_CadeviationY		;//	负极纠偏平台Y
+P2M1_Axise.AxisName.	SEPTAunwinding	:=	P2AxisNo.	P2M1_SEPTAunwinding		;//	隔膜放卷
+P2M1_Axise.AxisName.	SEPTAdeviation1	:=	P2AxisNo.	P2M1_SEPTAdeviation1		;//	隔膜放卷纠偏
+P2M1_Axise.AxisName.	SEPTAdeviation2	:=	P2AxisNo.	P2M1_SEPTAdeviation2		;//	隔膜尾部纠偏
+P2M1_Axise.AxisName.	SEPTATension	:=	P2AxisNo.	P2M1_SEPTATension		;//	隔膜摆杆张力
+P2M1_Axise.AxisName.	SEPTATCache	:=	P2AxisNo.	P2M1_SEPTATCache		;//	隔膜缓存
+P2M1_Axise.AxisName.	SEPTATLine	:=	P2AxisNo.	P2M1_SEPTATLine		;//	隔膜平移
+P2M1_Axise.AxisName.	DTUpDown	:=	P2AxisNo.	P2M1_DTUpDown		;//	叠台升降
+P2M1_Axise.AxisName.	LeftYDLine	:=	P2AxisNo.	P2M1_LeftYDLine		;//	左压刀开合
+P2M1_Axise.AxisName.	LeftYDUpDown	:=	P2AxisNo.	P2M1_LeftYDUpDown		;//	左压刀升降
+P2M1_Axise.AxisName.	RightYDLine	:=	P2AxisNo.	P2M1_RightYDLine		;//	右压刀开合
+P2M1_Axise.AxisName.	RightYDUpDown	:=	P2AxisNo.	P2M1_RightYDUpDown		;//	右压刀升降
+P2M1_Axise.AxisName.	TailCurlLine	:=	P2AxisNo.	P2M1_TailCurlLine		;//	尾卷夹电芯平移
+P2M1_Axise.AxisName.	TailCurlUpDown	:=	P2AxisNo.	P2M1_TailCurlUpDown		;//	尾卷夹电芯升降
+P2M1_Axise.AxisName.	TailCurlRetracting	:=	P2AxisNo.	P2M1_TailCurlRetracting		;//	尾卷夹电芯伸缩
+P2M1_Axise.AxisName.	TailCurlWhirling	:=	P2AxisNo.	P2M1_TailCurlWhirling		;//	尾卷夹电芯旋转
+P2M1_Axise.AxisName.	TailCurlSEPTALine	:=	P2AxisNo.	P2M1_TailCurlSEPTALine		;//	夹膜平移
+P2M1_Axise.AxisName.	TailCurlSEPTAUpDown	:=	P2AxisNo.	P2M1_TailCurlSEPTAUpDown		;//	夹膜升降
+P2M1_Axise.AxisName.	LCurlingneedleLine	:=	P2AxisNo.	P2M1_LCurlingneedleLine		;//	长卷针平移
+P2M1_Axise.AxisName.	SCurlingneedleLine	:=	P2AxisNo.	P2M1_SCurlingneedleLine		;//	短卷针平移
+P2M1_Axise.AxisName.	LCurlingneedleWhirling	:=	P2AxisNo.	P2M1_LCurlingneedleWhirling		;//	长卷针旋转
+P2M1_Axise.AxisName.	SCurlingneedleWhirling	:=	P2AxisNo.	P2M1_SCurlingneedleWhirling		;//	短卷针旋转
+P2M1_Axise.AxisName.	GluingLine	:=	P2AxisNo.	P2M1_GluingLine		;//	侧贴夹平移
+P2M1_Axise.AxisName.	GluingWhirling	:=	P2AxisNo.	P2M1_GluingWhirling		;//	侧贴夹旋转
+P2M1_Axise.AxisName.	GluingRetracting	:=	P2AxisNo.	P2M1_GluingRetracting		;//	贴胶头进退
+P2M1_Axise.AxisName.	GluingUpDown	:=	P2AxisNo.	P2M1_GluingUpDown		;//	拉胶升降
+P2M1_Axise.AxisName.	Standby1	:=	P2AxisNo.	P2M1_Standby1		;//	备用
+P2M1_Axise.AxisName.	Standby2	:=	P2AxisNo.	P2M1_Standby2		;//	备用
+//1号叠台信号链接,虚拟轴
+P2M1_Axise.VirAxisName.	VirTimeWind	:=	VirAxisNo.	P2M1_VirTimeWind		;//	时间虚轴
+P2M1_Axise.VirAxisName.	VirMain	:=	VirAxisNo.	P2M1_VirMain		;//	叠台主虚轴
+P2M1_Axise.VirAxisName.	VirDriver	:=	VirAxisNo.	P2M1_VirDriver		;//	放卷驱动虚轴
+P2M1_Axise.VirAxisName.	VirTailCurl	:=	VirAxisNo.	P2M1_VirTailCurl		;//	尾卷虚轴
+P2M1_Axise.VirAxisName.VirGM           	:=	VirAxisNo.P2M1_VirGM		;//	隔膜虚轴
+
+//凸轮表
+P2M1_TableNo.M_AnCarryingLine:=                     P2TableNo.M1_AnCarryingLine;
+P2M1_TableNo.M_AnCarryingUpDown:=              P2TableNo.M1_AnCarryingUpDown;
+P2M1_TableNo.M_AnCarryingUpDown1:=              P2TableNo.M1_AnCarryingUpDown1;
+P2M1_TableNo.M_AnCarryingWhirling:=              P2TableNo.M1_AnCarryingWhirling;
+P2M1_TableNo.M_AnDTCarryingLine:=                P2TableNo.M1_AnDTCarryingLine;
+P2M1_TableNo.M_AnDTCarryingUpDown:=         P2TableNo.M1_AnDTCarryingUpDown;
+P2M1_TableNo.M_AnDTCarryingUpDown1:=         P2TableNo.M1_AnDTCarryingUpDown1;
+P2M1_TableNo.M_CaBelt:=                                 P2TableNo.M1_CaBelt;
+P2M1_TableNo.M_CaCarryingLine1:=                   P2TableNo.M1_CaCarryingLine1;
+P2M1_TableNo.M_CaCarryingLine2:=                  P2TableNo.M1_CaCarryingLine2;
+P2M1_TableNo.M_CaCarryingUpDown1:=            P2TableNo.M1_CaCarryingUpDown1;
+P2M1_TableNo.M_CaCarryingUpDown2:=            P2TableNo.M1_CaCarryingUpDown2;
+P2M1_TableNo.M_CaCarryingUpDown2_1:=            P2TableNo.M1_CaCarryingUpDown2_1;
+P2M1_TableNo.M_CaCarryingWhirling1:=             P2TableNo.M1_CaCarryingWhirling1;
+P2M1_TableNo.M_CaDTCarryingLine:=                P2TableNo.M1_CaDTCarryingLine;
+P2M1_TableNo.M_CaDTCarryingUpDown:=           P2TableNo.M1_CaDTCarryingUpDown;
+P2M1_TableNo.M_CaDTCarryingUpDown1:=           P2TableNo.M1_CaDTCarryingUpDown1;
+P2M1_TableNo.M_DTUpDown:=                           P2TableNo.M1_DTUpDown;
+P2M1_TableNo.M_GMBuffer_L:=                          P2TableNo.M1_GMBuffer_L;
+P2M1_TableNo.M_GMBuffer_R:=                          P2TableNo.M1_GMBuffer_R;
+P2M1_TableNo.M_GMDanserMove_L:=                 P2TableNo.M1_GMDanserMove_L;
+P2M1_TableNo.M_GMDanserMove_R:=                  P2TableNo.M1_GMDanserMove_R;
+P2M1_TableNo.M_GMLengthCalculate_L:=             P2TableNo.M1_GMLengthCalculate_L;
+P2M1_TableNo.M_GMLengthCalculate_R:=           P2TableNo.M1_GMLengthCalculate_R;
+P2M1_TableNo.M_GMVir_L:=                                   P2TableNo.M1_GMVir_L;
+P2M1_TableNo.M_GMWind_L:=                          P2TableNo.M1_GMWind_L;
+P2M1_TableNo.M_GMWind_R:=                        P2TableNo.M1_GMWind_R;
+P2M1_TableNo.M_LeftYDLine:=                         P2TableNo.M1_LeftYDLine;
+P2M1_TableNo.M_LeftYDUpDown:=                   P2TableNo.M1_LeftYDUpDown;
+P2M1_TableNo.M_RightYDLine:=                       P2TableNo.M1_RightYDLine;
+P2M1_TableNo.M_RightYDUpDown:=                P2TableNo.M1_RightYDUpDown;
+P2M1_TableNo.M_TailCurlLine:=                       P2TableNo.M1_TailCurlLine;
+P2M1_TableNo.M_TailCurlUpDown:=                 P2TableNo.M1_TailCurlUpDown;
+
+P2M1_TableNo.M_GMWind2_R :=                 P2TableNo.M1_GMWind2_R;      
+P2M1_TableNo.M_GMWind2_L :=                 P2TableNo.M1_GMWind2_L;     
+P2M1_TableNo.M_GMBuffer2_R :=                 P2TableNo.M1_GMBuffer2_R;     
+P2M1_TableNo.M_GMBuffer2_L :=                 P2TableNo.M1_GMBuffer2_L;     
+P2M1_TableNo.M_GMLengthCalculate2_R :=                 P2TableNo.M1_GMLengthCalculate2_R;     
+P2M1_TableNo.M_GMLengthCalculate2_L :=                 P2TableNo.M1_GMLengthCalculate2_L;    
+
+P2M1_TableNo.M_LeftYDLine2:=                         P2TableNo.M1_LeftYDLine2;
+P2M1_TableNo.M_LeftYDUpDown2:=                   P2TableNo.M1_LeftYDUpDown2;
+P2M1_TableNo.M_RightYDLine2:=                       P2TableNo.M1_RightYDLine2;
+P2M1_TableNo.M_RightYDUpDown2:=                P2TableNo.M1_RightYDUpDown2;
+
+P2M1_TableNo.M_AnCarryingUpDown3:=              P2TableNo.M1_AnCarryingUpDown3;
+P2M1_TableNo.M_AnDTCarryingUpDown3:=          P2TableNo.M1_AnDTCarryingUpDown3;
+P2M1_TableNo.M_CaCarryingUpDown2_3:=            P2TableNo.M1_CaCarryingUpDown2_3;
+P2M1_TableNo.M_CaDTCarryingUpDown3:=           P2TableNo.M1_CaDTCarryingUpDown3;
+
+//  固定 参数
+P2M1_Par.iStationNO :=1;
+P2M1_Par.Code.sRemoteHost :='192.168.10.24';
+P2M1_Par.Code.sRemotePot :=23;
+P2M1_MachCtrl.DT_b.Dust_name:=1;
+//电芯记忆
+P2M1_MachCtrl.DT_b.DT_No:='1#';
+//P2M1_MachCtrl.DT_b.Machine_No:='155AH';
+P2M1_MachCtrl.DT_b.DiaphragmUnwindingTension:=arrFilter_ADV2[1].Out_Value;
+P2M1_MachCtrl.DT_b.DT_Memory:=CellNo.Dietai1;
+P2M1_MachCtrl.WJ_b.WJ_Memory:=CellNo.Weijuan1;
+P2M1_MachCtrl.TJ_b.TJ_Memory:=CellNo.Gluing1;
+P2M1_Par.stDT_date.AnMQ_MES:=AnMQ_MES1;
+P2M1_Par.stDT_date.CaMQ_MES:=CaMQ_MES1;
+P2M1_MachCtrl.DT_b.Put_time:=Puttime;
+
+
+P2M1_MachCtrl.TJ_b.WhirlingSafe:=(arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.Homed AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6])) 
+OR ( ( arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos>(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[2]+10) OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos<(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[2]-10))
+     AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed );
+	 
+	 
+//力矩保护
+	P2M1_Torque.An_CarryingTorSet:=HMI_TorErrLimt_D[1];//正极搬运1移位报警力矩设定
+	P2M1_Torque.An_DTCarryingTorSet:=HMI_TorErrLimt_D[4];//正极叠台搬运报警力矩值设定
+	P2M1_Torque.Ca_Carrying1TorSet:=HMI_TorErrLimt_D[9];//负极搬运1平移报警力矩设定
+	P2M1_Torque.Ca_Carrying2TorSet:=HMI_TorErrLimt_D[12];//负极搬运2平移报警力矩设定
+	P2M1_Torque.Ca_DTCarryingTorSet:=HMI_TorErrLimt_D[15];//负极叠台搬运平移报警力矩设定
+	P2M1_Torque.TailCurlTorSet:=HMI_TorErrLimt_D[31];//尾卷夹电芯平移报警力矩设定
+	P2M1_Torque.TailCurlWhirlTorSet:=HMI_TorErrLimt_D[34];//尾卷夹电芯旋转报警力矩设定
+	P2M1_Torque.TailCurlSEPTATorSet:=HMI_TorErrLimt_D[35];//夹膜平移旋转报警力矩设定
+	//P2M1_Torque.TailCurlRetTorSet:=HMI_TorErrLimt_D[33];//尾卷夹电芯伸缩力矩设定
+	
+	P2M1_Torque.An_CarryingTor:=iActTorque_D[1];//正极搬运1移位实时力矩
+	P2M1_Torque.An_DTCarryingTor:=iActTorque_D[4];//正极叠台搬运实时力矩
+	P2M1_Torque.Ca_Carrying1Tor:=iActTorque_D[9];//负极搬运1平移实时力矩
+	P2M1_Torque.Ca_Carrying2Tor:=iActTorque_D[12];//负极搬运2平移实时力矩
+	P2M1_Torque.Ca_DTCarryingTor:=iActTorque_D[15];//负极叠台搬运平移实时力矩
+	P2M1_Torque.TailCurlTor:=iActTorque_D[31];//尾卷夹电芯平移实时力矩
+	P2M1_Torque.TailCurlWhirlTor:=iActTorque_D[34];//尾卷夹电芯旋转实时力矩
+	P2M1_Torque.TailCurlSEPTATor:=iActTorque_D[35];//夹膜平移旋转实时力矩
+	//P2M1_Torque.TailCurlRetTor:=iActTorque_D[33];//尾卷夹电芯伸缩实时力矩
+	
+	HMI_TorAlarm_D[1]:=P2M1_Torque.An_CarryingTorAlarm;//正极搬运1移位力矩超限报警
+	HMI_TorAlarm_D[4]:=P2M1_Torque.An_DTCarryingTorAlarm;//正极叠台搬运力矩超限报警
+	HMI_TorAlarm_D[9]:=P2M1_Torque.Ca_Carrying1TorAlarm;//负极搬运1平移力矩超限报警
+	HMI_TorAlarm_D[12]:=P2M1_Torque.Ca_Carrying2TorAlarm;//负极搬运2平移力矩超限报警
+	HMI_TorAlarm_D[15]:=P2M1_Torque.Ca_DTCarryingTorAlarm;//负极叠台搬运平移力矩超限报警
+	HMI_TorAlarm_D[31]:=P2M1_Torque.TailCurlTorAlarm;//尾卷夹电芯平移力矩超限报警
+	HMI_TorAlarm_D[34]:=P2M1_Torque.TailCurlWhirlTorAlarm;//尾卷夹电芯旋转力矩超限报警
+	HMI_TorAlarm_D[35]:=P2M1_Torque.TailCurlSEPTATorAlarm;//夹膜平移旋转力矩超限报警
+	//HMI_TorAlarm_D[33]:=P2M1_Torque.TailCurlRetTorAlarm;//尾卷夹电芯伸缩力矩超限报警
+	
+	]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M2_AutoLink" Id="{4c81ad8c-2d98-48bf-86ef-2f7cb29c18b0}">
+      <Implementation>
+        <ST><![CDATA[
+
+//2号叠台信号链接,机架按钮							
+P2M2_MachCtrl.btn.	Tricolorlamp_Yellow 	:=	P2Btn.	P2M2_Tricolorlamp_Yellow 	;//	三色灯_黄	
+P2M2_MachCtrl.btn.	Tricolorlamp_Red 	:=	P2Btn.	P2M2_Tricolorlamp_Red 	;//	三色灯_绿	
+P2M2_MachCtrl.btn.	Tricolorlamp_Green 	:=	P2Btn.	P2M2_Tricolorlamp_Green 	;//	三色灯_红	
+P2M2_MachCtrl.btn.	Tricolorlamp_Buzzer	:=	P2Btn.	P2M2_Tricolorlamp_Buzzer	;//	三色灯_蜂鸣器	
+P2M2_MachCtrl.btn.	PoleInflationLights	:=	P2Btn.	P2M2_PoleInflationLights	;//	隔膜气胀轴按钮灯	
+P2M2_MachCtrl.btn.	PoleTapeSplicerLLights	:=	P2Btn.	P2M2_PoleTapeSplicerLLights	;//	隔膜左压板气缸按钮灯	
+P2M2_MachCtrl.btn.	PoleTapeSplicerRLights	:=	P2Btn.	P2M2_PoleTapeSplicerRLights	;//	隔膜右压板气缸按钮灯	
+P2M2_MachCtrl.btn.	BlueGlueLights	:=	P2Btn.	P2M2_BlueGlueLights	;//	压蓝胶按钮灯	
+P2M2_MachCtrl.btn.	codeGlueLights	:=	P2Btn.	P2M2_codeGlueLights	;//	压二维码胶按钮灯	
+P2M2_MachCtrl.btn.	PoleInflationbtn	:=	P2Btn.	P2M2_PoleInflationbtn	;//	隔膜气胀轴按钮	
+P2M2_MachCtrl.btn.	PoleTapeSplicerLbtn	:=	P2Btn.	P2M2_PoleTapeSplicerLbtn	;//	隔膜左压板气缸按钮	
+P2M2_MachCtrl.btn.	PoleTapeSplicerRbtn	:=	P2Btn.	P2M2_PoleTapeSplicerRbtn	;//	隔膜右压板气缸按钮	
+P2M2_MachCtrl.btn.	BlueGluebtn	:=	P2Btn.	P2M2_BlueGluebtn	;//	一键备蓝胶按钮	
+P2M2_MachCtrl.btn.	BlueGluebtnLights	:=	P2Btn.	P2M2_BlueGluebtnLights	;//	一键备蓝胶按钮灯	
+P2M2_MachCtrl.btn.	BlueGluePressbtn	:=	P2Btn.	P2M2_BlueGluePressbtn	;//	压蓝胶按钮	
+P2M2_MachCtrl.btn.	codeGluebtn	:=	P2Btn.	P2M2_codeGluebtn	;//	一键备二维码胶按钮	
+P2M2_MachCtrl.btn.	codeGluebtnLights	:=	P2Btn.	P2M2_codeGluebtnLights	;//	一键备二维码胶按钮灯	
+P2M2_MachCtrl.btn.	codeGluePressbtn	:=	P2Btn.	P2M2_codeGluePressbtn	;//	压二维码胶按钮	
+P2M2_MachCtrl.btn.	EmStopbtn1	:=	P2Btn.	P2M2_EmStopbtn1	;//	外罩急停1	
+P2M2_MachCtrl.btn.	EmStopbtn2	:=	P2Btn.	P2M2_EmStopbtn2	;//	外罩急停2	
+P2M2_MachCtrl.btn.	EmStopbtn3	:=	P2Btn.	P2M2_EmStopbtn3	;//	外罩急停3	
+P2M2_MachCtrl.btn.	EmStopbtn4	:=	P2Btn.	P2M2_EmStopbtn4	;//	外罩急停4	
+
+
+
+
+//2号叠台信号链接,传感器							
+P2M2_MachCtrl.se.	AnBeltsensor	:=	P2Senser.	P2M2_AnBeltsensor	;//	正极模切送料分段皮带1有料感应	
+P2M2_MachCtrl.se.	CaBeltsensor	:=	P2Senser.	P2M2_CaBeltsensor	;//	负极模切送料分段皮带1有料感应	
+P2M2_MachCtrl.se.	Offloadingsensor	:=	P2Senser.	P2M2_Offloadingsensor	;//	取料位感应	
+P2M2_MachCtrl.se.	BlueGluetsensor	:=	P2Senser.	P2M2_BlueGluetsensor	;//	蓝胶料盘检测	
+P2M2_MachCtrl.se.	codeGluesensor	:=	P2Senser.	P2M2_codeGluesensor	;//	二维码胶料盘检测	
+P2M2_MachCtrl.se.	Markesensor	:=	P2Senser.	P2M2_Markesensor	;//	二维码胶Mark孔检测	
+P2M2_MachCtrl.se.	GluebHave 	:=  P2Senser.P2M2_GluebHave;		//二号贴胶旋转电芯感应
+P2M2_MachCtrl.se.	Coldpressingesensor	:=	P2Senser.	P2M2_Coldpressingesensor	;//	冷压上料夹平移电机1号叠台处检测	
+P2M2_MachCtrl.se.	Securitydoorswitch1		:=	P2Senser.	P2M2_Securitydoorswitch1	;//	外罩门禁1	
+P2M2_MachCtrl.se.	Securitydoorswitch2		:=	P2Senser.	P2M2_Securitydoorswitch2	;//	外罩门禁2	
+P2M2_MachCtrl.se.	Securitydoorswitch3		:=	P2Senser.	P2M2_Securitydoorswitch3	;//	外罩门禁3	
+P2M2_MachCtrl.se.	Securitydoorswitch4		:=	P2Senser.	P2M2_Securitydoorswitch4	;//	外罩门禁4	
+(*P2M2_MachCtrl.se.	Securitydoorswitch5		:=	P2Senser.	P2M2_Securitydoorswitch5	;//	外罩门禁5	
+P2M2_MachCtrl.se.	Securitydoorswitch6		:=	P2Senser.	P2M2_Securitydoorswitch6	;//	外罩门禁6	
+P2M2_MachCtrl.se.	Securitydoorswitch7		:=	P2Senser.	P2M2_Securitydoorswitch7	;//	外罩门禁7	
+P2M2_MachCtrl.se.	Securitydoorswitch8		:=	P2Senser.	P2M2_Securitydoorswitch8	;//	外罩门禁8	
+P2M2_MachCtrl.se.	Securitydoorswitch9		:=	P2Senser.	P2M2_Securitydoorswitch9	;//	外罩门禁9	
+P2M2_MachCtrl.se.	Securitydoorswitch10	:=	P2Senser.	P2M2_Securitydoorswitch10	;//	外罩门禁10*)
+P2M2_MachCtrl.se.	Yellowmark	:=	P2Senser.P2M2_Yellowmark    ;  //2号叠台		二号隔膜黄标感应    
+P2M2_MachCtrl.se.Ceramics:=P2Senser.P2M2_Ceramics;
+P2M2_MachCtrl.se.AnDTCarryingJROnSwitch:=P2Senser.P2M2_AnDTCarryingJROnSwitch;//2号正极极耳真空信号
+P2M2_MachCtrl.se.CaDTCarryingJROnSwitch:=P2Senser.P2M2_CaDTCarryingJROnSwitch;//2号负极极耳真空信号 
+P2M2_MachCtrl.se.AnNGboxsensor:= P2Senser.P2M2_AnNGboxsensor	;		//叠台正极NG料盒满料感应
+P2M2_MachCtrl.se.CaNGboxsensor:= P2Senser.P2M2_CaNGboxsensor 	;		//叠台负极NG料盒满料感应
+
+
+//2号叠台信号链接,气缸号							
+P2M2_CycNo.CylinderName.	AnScrapbinCy	:=	P2CYNo.	P2M2_AnScrapbinCy		;//	正极片NG收纳盒
+P2M2_CycNo.CylinderName.	CaScrapbinCy	:=	P2CYNo.	P2M2_CaScrapbinCy		;//	负极片NG收纳盒
+P2M2_CycNo.CylinderName.CaScrapbinUDCy:=P2CYNo.P2M2_CaScrapbinUDCy;//负极片NG收纳盒升降
+
+P2M2_CycNo.CylinderName.	PreDiaph    	:=	P2CYNo.P2M2_PreDiaphCy		;	//	压隔膜气缸
+P2M2_CycNo.CylinderName.	PoleInflationCy	:=	P2CYNo.	P2M2_PoleInflationCy		;//	隔膜放卷气胀轴
+P2M2_CycNo.CylinderName.	PoleTapeSplicerLCy	:=	P2CYNo.	P2M2_PoleTapeSplicerLCy		;//	隔膜接带左压板气缸
+P2M2_CycNo.CylinderName.	PoleTapeSplicerRCy	:=	P2CYNo.	P2M2_PoleTapeSplicerRCy		;//	隔膜接带右压板气缸
+P2M2_CycNo.CylinderName.	PoleTapeCy	:=	P2CYNo.	P2M2_PoleTapeCy		;//	隔膜夹紧气缸
+P2M2_CycNo.CylinderName.	PoleHotCutterCy	:=	P2CYNo.	P2M2_PoleHotCutterCy		;//	隔膜热切升降
+P2M2_CycNo.CylinderName.	PoleSplintCy_U	:=	P2CYNo.	P2M2_PoleSplintCy_U		;//	夹膜上夹板
+P2M2_CycNo.CylinderName.	PoleSplintCy_D	:=	P2CYNo.	P2M2_PoleSplintCy_D		;//	夹膜下夹板
+P2M2_CycNo.CylinderName.	TailCurlSplintCy	:=	P2CYNo.	P2M2_TailCurlSplintCy		;//	尾卷夹爪开合
+P2M2_CycNo.CylinderName.	CurlingSplintCy_L	:=	P2CYNo.	P2M2_CurlingSplintCy_L		;//	长卷针夹开合
+P2M2_CycNo.CylinderName.	CurlingSplintCy_S	:=	P2CYNo.	P2M2_CurlingSplintCy_S		;//	短卷针夹开合
+P2M2_CycNo.CylinderName.	TailCurlLineCy	:=	P2CYNo.	P2M2_TailCurlLineCy		;//	尾卷压辊平移缸
+P2M2_CycNo.CylinderName.	TailCurlUpdownCy	:=	P2CYNo.	P2M2_TailCurlUpdownCy		;//	尾卷压辊升降缸
+P2M2_CycNo.CylinderName.	StandbyGlueCy	:=	P2CYNo.	P2M2_StandbyGlueCy		;//	备胶气缸
+P2M2_CycNo.CylinderName.	CodeStandbyGlueCy	:=	P2CYNo.	P2M2_CodeStandbyGlueCy		;//	备二维码胶气缸
+P2M2_CycNo.CylinderName.	GlueClampsCy	:=	P2CYNo.	P2M2_GlueClampsCy		;//	贴胶夹爪气缸
+P2M2_CycNo.CylinderName.	GluePressCy	:=	P2CYNo.	P2M2_GluePressCy		;//	压胶气缸
+P2M2_CycNo.CylinderName.	CodeGluePressCy	:=	P2CYNo.	P2M2_CodeGluePressCy		;//	压二维码胶气缸
+P2M2_CycNo.CylinderName.	GlueCutCy	:=	P2CYNo.	P2M2_GlueCutCy		;//	切胶气缸
+P2M2_CycNo.CylinderName.	codeGlueCutCy	:=	P2CYNo.	P2M2_codeGlueCutCy		;//	切二维码胶气缸
+P2M2_CycNo.CylinderName.	PullGluePoleCy	:=	P2CYNo.	P2M2_PullGluePoleCy		;//	拉胶杆抱紧
+P2M2_CycNo.CylinderName.	PullGlueCy	:=	P2CYNo.	P2M2_PullGlueCy		;//	拉胶气缸
+P2M2_CycNo.CylinderName.	GlueNGCy	:=	P2CYNo.	P2M2_GlueNGCy		;//	踢废胶气缸
+P2M2_CycNo.CylinderName.	PullGlueModelCy	:=	P2CYNo.	P2M2_PullGlueModelCy		;//	贴胶治具气缸
+P2M2_CycNo.CylinderName.	CurlingSplintCy_S_1	:=	P2CYNo.P2M2_CurlingSplintCy_S_1		;//	短卷针夹泄气
+P2M2_CycNo.CylinderName.	RollPoleearCy	:=	P2CYNo.P2M2_RollPoleearCy		;//	尾卷托极耳气缸
+
+
+//2号叠台信号链接,气控阀							
+P2M2_CycNo.ElectValveName.	AnBeltVacuum	:=	P2EVNo.	P2M2_AnBeltVacuum		;//	正极模切送料分段皮带1取料处真空
+P2M2_CycNo.ElectValveName.	AnBeltVacuumBark	:=	P2EVNo.	P2M2_AnBeltVacuumBark		;//	正极模切送料分段皮带1取料处破真空
+P2M2_CycNo.ElectValveName.	CaMQBeltVacuum	:=	P2EVNo.	P2M2_CaMQBeltVacuum		;//	负极模切送料分段皮带1取料处真空
+P2M2_CycNo.ElectValveName.	CaMQBeltVacuumBark	:=	P2EVNo.	P2M2_CaMQBeltVacuumBark		;//	负极模切送料分段皮带1取料处破真空
+P2M2_CycNo.ElectValveName.	AnCarryingVacuum	:=	P2EVNo.	P2M2_AnCarryingVacuum		;//	正极送片搬运升降真空
+P2M2_CycNo.ElectValveName.	AnCarryingVacuumBark	:=	P2EVNo.	P2M2_AnCarryingVacuumBark		;//	正极送片搬运升降破真空
+P2M2_CycNo.ElectValveName.	AndeviationVacuum	:=	P2EVNo.	P2M2_AndeviationVacuum		;//	正极纠偏平台真空
+P2M2_CycNo.ElectValveName.	AndeviationIonizedWind	:=	P2EVNo.	P2M2_AndeviationIonizedWind		;//	正极纠偏平台除尘风刀
+P2M2_CycNo.ElectValveName.	AndeviationVacuumBark	:=	P2EVNo.	P2M2_AndeviationVacuumBark		;//	正极纠偏平台破真空
+P2M2_CycNo.ElectValveName.	AnDTCarryingVacuum	:=	P2EVNo.	P2M2_AnDTCarryingVacuum		;//	正极叠片搬运升降真空
+P2M2_CycNo.ElectValveName.	AnDTCarryingVacuumBark	:=	P2EVNo.	P2M2_AnDTCarryingVacuumBark		;//	正极叠片搬运升降破真空
+P2M2_CycNo.ElectValveName.	CaCarryingVacuum1	:=	P2EVNo.	P2M2_CaCarryingVacuum1		;//	负极送片搬运升降1真空
+P2M2_CycNo.ElectValveName.	CaCarryingVacuumBark1	:=	P2EVNo.	P2M2_CaCarryingVacuumBark1		;//	负极送片搬运升降1破真空
+P2M2_CycNo.ElectValveName.	CaLoadUpBeltVacuum	:=	P2EVNo.	P2M2_CaLoadUpBeltVacuum		;//	负极送片皮带末端真空
+P2M2_CycNo.ElectValveName.	CaLoadUpBeltVacuumBark	:=	P2EVNo.	P2M2_CaLoadUpBeltVacuumBark		;//	负极送片皮带末端破真空
+P2M2_CycNo.ElectValveName.	CaCarryingVacuum2	:=	P2EVNo.	P2M2_CaCarryingVacuum2		;//	负极送片搬运升降2真空
+P2M2_CycNo.ElectValveName.	CaCarryingVacuumBark2	:=	P2EVNo.	P2M2_CaCarryingVacuumBark2		;//	负极送片搬运升降2破真空
+P2M2_CycNo.ElectValveName.	CadeviationVacuum	:=	P2EVNo.	P2M2_CadeviationVacuum		;//	负极纠偏平台真空
+P2M2_CycNo.ElectValveName.	CadeviationVacuumBark	:=	P2EVNo.	P2M2_CadeviationVacuumBark		;//	负极纠偏平台破真空
+P2M2_CycNo.ElectValveName.	CadeviationIonizedWind	:=	P2EVNo.	P2M2_CadeviationIonizedWind		;//	负极纠偏平台除尘风刀
+P2M2_CycNo.ElectValveName.	CaDTCarryingVacuum	:=	P2EVNo.	P2M2_CaDTCarryingVacuum		;//	负极叠片搬运升降真空
+P2M2_CycNo.ElectValveName.	CaDTCarryingVacuumBark	:=	P2EVNo.	P2M2_CaDTCarryingVacuumBark		;//	负极叠片搬运升降破真空
+P2M2_CycNo.ElectValveName.	PoleTapeDustRemoval	:=	P2EVNo.	P2M2_PoleTapeDustRemoval		;//	隔膜接带平台除尘
+P2M2_CycNo.ElectValveName.	PoleTapeVacuum	:=	P2EVNo.	P2M2_PoleTapeVacuum		;//	隔膜接带平台真空
+P2M2_CycNo.ElectValveName.	BlueGlueVacuum1	:=	P2EVNo.	P2M2_BlueGlueVacuum1		;//	备胶组件蓝胶真空1
+P2M2_CycNo.ElectValveName.	BlueGlueVacuum2	:=	P2EVNo.	P2M2_BlueGlueVacuum2		;//	备胶组件蓝胶真空2
+P2M2_CycNo.ElectValveName.	codeGlueVacuum1	:=	P2EVNo.	P2M2_codeGlueVacuum1		;//	备胶组件二维码胶真空1
+P2M2_CycNo.ElectValveName.	codeGlueVacuum2	:=	P2EVNo.	P2M2_codeGlueVacuum2		;//	备胶组件二维码胶真空2
+P2M2_CycNo.ElectValveName.	PastesGlueVacuum	:=	P2EVNo.	P2M2_PastesGlueVacuum		;//	备胶组件贴胶头真空
+P2M2_CycNo.ElectValveName.	DTVacuum	:=	P2EVNo.	P2M2_DTVacuum		;//	叠片台真空
+P2M2_CycNo.ElectValveName.	PoleSplintVacuum_D	:=	P2EVNo.	P2M2_PoleSplintVacuum_D		;//	夹膜下夹板真空
+P2M2_CycNo.ElectValveName.WJ_blow:=P2EVNo.P2M2_WJ_blow;//尾卷夹电芯吹气
+P2M2_CycNo.ElectValveName.WJShortvacuum:=P2EVNo.P2M2_WJShortvacuum;//短卷针张开真空
+
+//2号叠台信号链接,轴号							
+P2M2_Axise.AxisName.	AnCarryingLine	:=	P2AxisNo.	P2M2_AnCarryingLine		;//	正极送片搬运平移
+P2M2_Axise.AxisName.	AnCarryingUpDown	:=	P2AxisNo.	P2M2_AnCarryingUpDown		;//	正极送片搬运升降
+P2M2_Axise.AxisName.	AnCarryingWhirling	:=	P2AxisNo.	P2M2_AnCarryingWhirling		;//	正极送片搬运旋转
+P2M2_Axise.AxisName.	AnDTCarryingLine	:=	P2AxisNo.	P2M2_AnDTCarryingLine		;//	正极叠台搬运平移1
+P2M2_Axise.AxisName.	AnDTCarryingUpDown	:=	P2AxisNo.	P2M2_AnDTCarryingUpDown		;//	正极叠台搬运升降
+P2M2_Axise.AxisName.	AndeviationX1	:=	P2AxisNo.	P2M2_AndeviationX1		;//	正极纠偏平台X1
+P2M2_Axise.AxisName.	AndeviationX2	:=	P2AxisNo.	P2M2_AndeviationX2		;//	正极纠偏平台X2
+P2M2_Axise.AxisName.	AndeviationY	:=	P2AxisNo.	P2M2_AndeviationY		;//	正极纠偏平台Y
+P2M2_Axise.AxisName.	CaCarryingLine1	:=	P2AxisNo.	P2M2_CaCarryingLine1		;//	负极送片搬运1平移
+P2M2_Axise.AxisName.	CaCarryingUpDown1	:=	P2AxisNo.	P2M2_CaCarryingUpDown1		;//	负极送片搬运1升降
+P2M2_Axise.AxisName.	CaCarryingWhirling1	:=	P2AxisNo.	P2M2_CaCarryingWhirling1		;//	负极送片搬运1旋转
+P2M2_Axise.AxisName.	CaCarryingLine2	:=	P2AxisNo.	P2M2_CaCarryingLine2		;//	负极送片搬运2平移
+P2M2_Axise.AxisName.	CaCarryingUpDown2	:=	P2AxisNo.	P2M2_CaCarryingUpDown2		;//	负极送片搬运2升降
+P2M2_Axise.AxisName.	CaBelt	:=	P2AxisNo.	P2M2_CaBelt		;//	负极送片皮带
+P2M2_Axise.AxisName.	CaDTCarryingLine	:=	P2AxisNo.	P2M2_CaDTCarryingLine		;//	负极叠台搬运平移
+P2M2_Axise.AxisName.	CaDTCarryingUpDown	:=	P2AxisNo.	P2M2_CaDTCarryingUpDown		;//	负极叠台搬运升降
+P2M2_Axise.AxisName.	CadeviationX1	:=	P2AxisNo.	P2M2_CadeviationX1		;//	负极纠偏平台X1
+P2M2_Axise.AxisName.	CadeviationX2	:=	P2AxisNo.	P2M2_CadeviationX2		;//	负极纠偏平台X2
+P2M2_Axise.AxisName.	CadeviationY	:=	P2AxisNo.	P2M2_CadeviationY		;//	负极纠偏平台Y
+P2M2_Axise.AxisName.	SEPTAunwinding	:=	P2AxisNo.	P2M2_SEPTAunwinding		;//	隔膜放卷
+P2M2_Axise.AxisName.	SEPTAdeviation1	:=	P2AxisNo.	P2M2_SEPTAdeviation1		;//	隔膜放卷纠偏
+P2M2_Axise.AxisName.	SEPTAdeviation2	:=	P2AxisNo.	P2M2_SEPTAdeviation2		;//	隔膜尾部纠偏
+P2M2_Axise.AxisName.	SEPTATension	:=	P2AxisNo.	P2M2_SEPTATension		;//	隔膜摆杆张力
+P2M2_Axise.AxisName.	SEPTATCache	:=	P2AxisNo.	P2M2_SEPTATCache		;//	隔膜缓存
+P2M2_Axise.AxisName.	SEPTATLine	:=	P2AxisNo.	P2M2_SEPTATLine		;//	隔膜平移
+P2M2_Axise.AxisName.	DTUpDown	:=	P2AxisNo.	P2M2_DTUpDown		;//	叠台升降
+P2M2_Axise.AxisName.	LeftYDLine	:=	P2AxisNo.	P2M2_LeftYDLine		;//	左压刀开合
+P2M2_Axise.AxisName.	LeftYDUpDown	:=	P2AxisNo.	P2M2_LeftYDUpDown		;//	左压刀升降
+P2M2_Axise.AxisName.	RightYDLine	:=	P2AxisNo.	P2M2_RightYDLine		;//	右压刀开合
+P2M2_Axise.AxisName.	RightYDUpDown	:=	P2AxisNo.	P2M2_RightYDUpDown		;//	右压刀升降
+P2M2_Axise.AxisName.	TailCurlLine	:=	P2AxisNo.	P2M2_TailCurlLine		;//	尾卷夹电芯平移
+P2M2_Axise.AxisName.	TailCurlUpDown	:=	P2AxisNo.	P2M2_TailCurlUpDown		;//	尾卷夹电芯升降
+P2M2_Axise.AxisName.	TailCurlRetracting	:=	P2AxisNo.	P2M2_TailCurlRetracting		;//	尾卷夹电芯伸缩
+P2M2_Axise.AxisName.	TailCurlWhirling	:=	P2AxisNo.	P2M2_TailCurlWhirling		;//	尾卷夹电芯旋转
+P2M2_Axise.AxisName.	TailCurlSEPTALine	:=	P2AxisNo.	P2M2_TailCurlSEPTALine		;//	夹膜平移
+P2M2_Axise.AxisName.	TailCurlSEPTAUpDown	:=	P2AxisNo.	P2M2_TailCurlSEPTAUpDown		;//	夹膜升降
+P2M2_Axise.AxisName.	LCurlingneedleLine	:=	P2AxisNo.	P2M2_LCurlingneedleLine		;//	长卷针平移
+P2M2_Axise.AxisName.	SCurlingneedleLine	:=	P2AxisNo.	P2M2_SCurlingneedleLine		;//	短卷针平移
+P2M2_Axise.AxisName.	LCurlingneedleWhirling	:=	P2AxisNo.	P2M2_LCurlingneedleWhirling		;//	长卷针旋转
+P2M2_Axise.AxisName.	SCurlingneedleWhirling	:=	P2AxisNo.	P2M2_SCurlingneedleWhirling		;//	短卷针旋转
+P2M2_Axise.AxisName.	GluingLine	:=	P2AxisNo.	P2M2_GluingLine		;//	侧贴夹平移
+P2M2_Axise.AxisName.	GluingWhirling	:=	P2AxisNo.	P2M2_GluingWhirling		;//	侧贴夹旋转
+P2M2_Axise.AxisName.	GluingRetracting	:=	P2AxisNo.	P2M2_GluingRetracting		;//	贴胶头进退
+P2M2_Axise.AxisName.	GluingUpDown	:=	P2AxisNo.	P2M2_GluingUpDown		;//	拉胶升降
+P2M2_Axise.AxisName.	Standby1	:=	P2AxisNo.	P2M2_Standby1		;//	备用
+P2M2_Axise.AxisName.	Standby2	:=	P2AxisNo.	P2M2_Standby2		;//	备用
+
+
+
+//2号叠台信号链接,虚拟轴							
+P2M2_Axise.VirAxisName.	VirTimeWind	:=	VirAxisNo.	P2M2_VirTimeWind		;//	时间虚轴
+P2M2_Axise.VirAxisName.	VirMain	:=	VirAxisNo.	P2M2_VirMain		;//	叠台主虚轴
+P2M2_Axise.VirAxisName.	VirDriver	:=	VirAxisNo.	P2M2_VirDriver		;//	放卷驱动虚轴
+P2M2_Axise.VirAxisName.	VirTailCurl	:=	VirAxisNo.	P2M2_VirTailCurl		;//	尾卷虚轴
+P2M2_Axise.VirAxisName.VirGM           	:=	VirAxisNo.P2M2_VirGM		;//	隔膜虚轴
+
+
+//凸轮表
+P2M2_TableNo.M_AnCarryingLine:=                     P2TableNo.M2_AnCarryingLine;
+P2M2_TableNo.M_AnCarryingUpDown:=              P2TableNo.M2_AnCarryingUpDown;
+P2M2_TableNo.M_AnCarryingUpDown1:=              P2TableNo.M2_AnCarryingUpDown1;
+P2M2_TableNo.M_AnCarryingWhirling:=               P2TableNo.M2_AnCarryingWhirling;
+P2M2_TableNo.M_AnDTCarryingLine:=                 P2TableNo.M2_AnDTCarryingLine;
+P2M2_TableNo.M_AnDTCarryingUpDown:=          P2TableNo.M2_AnDTCarryingUpDown;
+P2M2_TableNo.M_AnDTCarryingUpDown1:=          P2TableNo.M2_AnDTCarryingUpDown1;
+P2M2_TableNo.M_CaBelt:=                                 P2TableNo.M2_CaBelt;
+P2M2_TableNo.M_CaCarryingLine1:=                   P2TableNo.M2_CaCarryingLine1;
+P2M2_TableNo.M_CaCarryingLine2:=                   P2TableNo.M2_CaCarryingLine2;
+P2M2_TableNo.M_CaCarryingUpDown1:=            P2TableNo.M2_CaCarryingUpDown1;
+P2M2_TableNo.M_CaCarryingUpDown2:=            P2TableNo.M2_CaCarryingUpDown2;
+P2M2_TableNo.M_CaCarryingUpDown2_1:=            P2TableNo.M2_CaCarryingUpDown2_1;
+P2M2_TableNo.M_CaCarryingWhirling1:=            P2TableNo.M2_CaCarryingWhirling1;
+P2M2_TableNo.M_CaDTCarryingLine:=                 P2TableNo.M2_CaDTCarryingLine;
+P2M2_TableNo.M_CaDTCarryingUpDown:=           P2TableNo.M2_CaDTCarryingUpDown;
+P2M2_TableNo.M_CaDTCarryingUpDown1:=           P2TableNo.M2_CaDTCarryingUpDown1;
+P2M2_TableNo.M_DTUpDown:=                           P2TableNo.M2_DTUpDown;
+P2M2_TableNo.M_GMBuffer_L:=                          P2TableNo.M2_GMBuffer_L;
+P2M2_TableNo.M_GMBuffer_R:=                          P2TableNo.M2_GMBuffer_R;
+P2M2_TableNo.M_GMDanserMove_L:=                 P2TableNo.M2_GMDanserMove_L;
+P2M2_TableNo.M_GMDanserMove_R:=                  P2TableNo.M2_GMDanserMove_R;
+P2M2_TableNo.M_GMLengthCalculate_L:=             P2TableNo.M2_GMLengthCalculate_L;
+P2M2_TableNo.M_GMLengthCalculate_R:=           P2TableNo.M2_GMLengthCalculate_R;
+P2M2_TableNo.M_GMVir_L:=                                   P2TableNo.M2_GMVir_L;
+P2M2_TableNo.M_GMWind_L:=                           P2TableNo.M2_GMWind_L;
+P2M2_TableNo.M_GMWind_R:=                          P2TableNo.M2_GMWind_R;
+P2M2_TableNo.M_LeftYDLine:=                           P2TableNo.M2_LeftYDLine;
+P2M2_TableNo.M_LeftYDUpDown:=                    P2TableNo.M2_LeftYDUpDown;
+P2M2_TableNo.M_RightYDLine:=                        P2TableNo.M2_RightYDLine;
+P2M2_TableNo.M_RightYDUpDown:=                 P2TableNo.M2_RightYDUpDown;
+P2M2_TableNo.M_TailCurlLine:=                         P2TableNo.M2_TailCurlLine;
+P2M2_TableNo.M_TailCurlUpDown:=                  P2TableNo.M2_TailCurlUpDown;
+
+P2M2_TableNo.M_GMWind2_R :=                 P2TableNo.M2_GMWind2_R;      
+P2M2_TableNo.M_GMWind2_L :=                  P2TableNo.M2_GMWind2_L;     
+P2M2_TableNo.M_GMBuffer2_R :=                 P2TableNo.M2_GMBuffer2_R;     
+P2M2_TableNo.M_GMBuffer2_L :=                 P2TableNo.M2_GMBuffer2_L;     
+P2M2_TableNo.M_GMLengthCalculate2_R :=                 P2TableNo.M2_GMLengthCalculate2_R;     
+P2M2_TableNo.M_GMLengthCalculate2_L :=                 P2TableNo.M2_GMLengthCalculate2_L;     
+
+P2M2_TableNo.M_LeftYDLine2:=                           P2TableNo.M2_LeftYDLine2;
+P2M2_TableNo.M_LeftYDUpDown2:=                    P2TableNo.M2_LeftYDUpDown2;
+P2M2_TableNo.M_RightYDLine2:=                        P2TableNo.M2_RightYDLine2;
+P2M2_TableNo.M_RightYDUpDown2:=                 P2TableNo.M2_RightYDUpDown2;
+
+P2M2_TableNo.M_AnCarryingUpDown3:=              P2TableNo.M2_AnCarryingUpDown3;
+P2M2_TableNo.M_AnDTCarryingUpDown3:=          P2TableNo.M2_AnDTCarryingUpDown3;
+P2M2_TableNo.M_CaCarryingUpDown2_3:=            P2TableNo.M2_CaCarryingUpDown2_3;
+P2M2_TableNo.M_CaDTCarryingUpDown3:=           P2TableNo.M2_CaDTCarryingUpDown3;
+
+
+
+
+
+
+//  固定 参数
+P2M2_Par.iStationNO :=2;
+P2M2_Par.Code.sRemoteHost :='192.168.10.25';
+//P2M1_Par.Code.sRemotePot :=24;
+P2M2_MachCtrl.DT_b.Dust_name:=2;
+//电芯记忆
+P2M2_MachCtrl.DT_b.DT_No:='2#';
+//P2M2_MachCtrl.DT_b.Machine_No:='155AH';
+P2M2_MachCtrl.DT_b.DiaphragmUnwindingTension:=arrFilter_ADV2[2].Out_Value;
+P2M2_MachCtrl.DT_b.DT_Memory:=CellNo.Dietai2;
+P2M2_MachCtrl.WJ_b.WJ_Memory:=CellNo.Weijuan2;
+P2M2_MachCtrl.TJ_b.TJ_Memory:=CellNo.Gluing2;
+P2M2_Par.stDT_date.AnMQ_MES:=AnMQ_MES2;
+P2M2_Par.stDT_date.CaMQ_MES:=CaMQ_MES2;
+P2M2_MachCtrl.DT_b.Put_time:=Puttime;
+
+
+P2M2_MachCtrl.TJ_b.WhirlingSafe:=(arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Status.Homed AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6])) 
+OR ( ( arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos>(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[3]+10) OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos<(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[3]-10))
+     AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed );
+	 
+	 
+	 
+
+//力矩保护
+	P2M2_Torque.An_CarryingTorSet:=HMI_TorErrLimt_D[47];//正极搬运1移位报警力矩设定
+	P2M2_Torque.An_DTCarryingTorSet:=HMI_TorErrLimt_D[50];//正极叠台搬运报警力矩值设定
+	P2M2_Torque.Ca_Carrying1TorSet:=HMI_TorErrLimt_D[55];//负极搬运1平移报警力矩设定
+	P2M2_Torque.Ca_Carrying2TorSet:=HMI_TorErrLimt_D[58];//负极搬运2平移报警力矩设定
+	P2M2_Torque.Ca_DTCarryingTorSet:=HMI_TorErrLimt_D[61];//负极叠台搬运平移报警力矩设定
+	P2M2_Torque.TailCurlTorSet:=HMI_TorErrLimt_D[77];//尾卷夹电芯平移报警力矩设定
+	P2M2_Torque.TailCurlWhirlTorSet:=HMI_TorErrLimt_D[80];//尾卷夹电芯旋转报警力矩设定
+	P2M2_Torque.TailCurlSEPTATorSet:=HMI_TorErrLimt_D[81];//夹膜平移旋转报警力矩设定
+	//P2M2_Torque.TailCurlRetTorSet:=HMI_TorErrLimt_D[79];//尾卷夹电芯伸缩力矩设定
+	
+	P2M2_Torque.An_CarryingTor:=iActTorque_D[47];//正极搬运1移位实时力矩
+	P2M2_Torque.An_DTCarryingTor:=iActTorque_D[50];//正极叠台搬运实时力矩
+	P2M2_Torque.Ca_Carrying1Tor:=iActTorque_D[55];//负极搬运1平移实时力矩
+	P2M2_Torque.Ca_Carrying2Tor:=iActTorque_D[58];//负极搬运2平移实时力矩
+	P2M2_Torque.Ca_DTCarryingTor:=iActTorque_D[61];//负极叠台搬运平移实时力矩
+	P2M2_Torque.TailCurlTor:=iActTorque_D[77];//尾卷夹电芯平移实时力矩
+	P2M2_Torque.TailCurlWhirlTor:=iActTorque_D[80];//尾卷夹电芯旋转实时力矩
+	P2M2_Torque.TailCurlSEPTATor:=iActTorque_D[81];//夹膜平移旋转实时力矩
+	//P2M2_Torque.TailCurlRetTor:=iActTorque_D[79];//尾卷夹电芯伸缩实时力矩
+	
+	HMI_TorAlarm_D[47]:=P2M2_Torque.An_CarryingTorAlarm;//正极搬运1移位力矩超限报警
+	HMI_TorAlarm_D[50]:=P2M2_Torque.An_DTCarryingTorAlarm;//正极叠台搬运力矩超限报警
+	HMI_TorAlarm_D[55]:=P2M2_Torque.Ca_Carrying1TorAlarm;//负极搬运1平移力矩超限报警
+	HMI_TorAlarm_D[58]:=P2M2_Torque.Ca_Carrying2TorAlarm;//负极搬运2平移力矩超限报警
+	HMI_TorAlarm_D[61]:=P2M2_Torque.Ca_DTCarryingTorAlarm;//负极叠台搬运平移力矩超限报警
+	HMI_TorAlarm_D[77]:=P2M2_Torque.TailCurlTorAlarm;//尾卷夹电芯平移力矩超限报警
+	HMI_TorAlarm_D[80]:=P2M2_Torque.TailCurlWhirlTorAlarm;//尾卷夹电芯旋转力矩超限报警
+	HMI_TorAlarm_D[81]:=P2M2_Torque.TailCurlSEPTATorAlarm;//夹膜平移旋转力矩超限报警
+	//HMI_TorAlarm_D[79]:=P2M2_Torque.TailCurlRetTorAlarm;//尾卷夹电芯伸缩力矩超限报警
+
+	]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M3_AutoLink" Id="{58a7f5ec-0a92-4797-a6a9-f5300d76241d}">
+      <Implementation>
+        <ST><![CDATA[//3号叠台信号链接,机架按钮							
+P2M3_MachCtrl.btn.	Tricolorlamp_Yellow 	:=	P2Btn.	P2M3_Tricolorlamp_Yellow 	;//	三色灯_黄	
+P2M3_MachCtrl.btn.	Tricolorlamp_Red 	:=	P2Btn.	P2M3_Tricolorlamp_Red 	;//	三色灯_绿	
+P2M3_MachCtrl.btn.	Tricolorlamp_Green 	:=	P2Btn.	P2M3_Tricolorlamp_Green 	;//	三色灯_红	
+P2M3_MachCtrl.btn.	Tricolorlamp_Buzzer	:=	P2Btn.	P2M3_Tricolorlamp_Buzzer	;//	三色灯_蜂鸣器	
+P2M3_MachCtrl.btn.	PoleInflationLights	:=	P2Btn.	P2M3_PoleInflationLights	;//	隔膜气胀轴按钮灯	
+P2M3_MachCtrl.btn.	PoleTapeSplicerLLights	:=	P2Btn.	P2M3_PoleTapeSplicerLLights	;//	隔膜左压板气缸按钮灯	
+P2M3_MachCtrl.btn.	PoleTapeSplicerRLights	:=	P2Btn.	P2M3_PoleTapeSplicerRLights	;//	隔膜右压板气缸按钮灯	
+P2M3_MachCtrl.btn.	BlueGlueLights	:=	P2Btn.	P2M3_BlueGlueLights	;//	压蓝胶按钮灯	
+P2M3_MachCtrl.btn.	codeGlueLights	:=	P2Btn.	P2M3_codeGlueLights	;//	压二维码胶按钮灯	
+P2M3_MachCtrl.btn.	PoleInflationbtn	:=	P2Btn.	P2M3_PoleInflationbtn	;//	隔膜气胀轴按钮	
+P2M3_MachCtrl.btn.	PoleTapeSplicerLbtn	:=	P2Btn.	P2M3_PoleTapeSplicerLbtn	;//	隔膜左压板气缸按钮	
+P2M3_MachCtrl.btn.	PoleTapeSplicerRbtn	:=	P2Btn.	P2M3_PoleTapeSplicerRbtn	;//	隔膜右压板气缸按钮	
+P2M3_MachCtrl.btn.	BlueGluebtn	:=	P2Btn.	P2M3_BlueGluebtn	;//	一键备蓝胶按钮	
+P2M3_MachCtrl.btn.	BlueGluebtnLights	:=	P2Btn.	P2M3_BlueGluebtnLights	;//	一键备蓝胶按钮灯	
+P2M3_MachCtrl.btn.	BlueGluePressbtn	:=	P2Btn.	P2M3_BlueGluePressbtn	;//	压蓝胶按钮	
+P2M3_MachCtrl.btn.	codeGluebtn	:=	P2Btn.	P2M3_codeGluebtn	;//	一键备二维码胶按钮	
+P2M3_MachCtrl.btn.	codeGluebtnLights	:=	P2Btn.	P2M3_codeGluebtnLights	;//	一键备二维码胶按钮灯	
+P2M3_MachCtrl.btn.	codeGluePressbtn	:=	P2Btn.	P2M3_codeGluePressbtn	;//	压二维码胶按钮	
+P2M3_MachCtrl.btn.	EmStopbtn1	:=	P2Btn.	P2M3_EmStopbtn1	;//	外罩急停1	
+P2M3_MachCtrl.btn.	EmStopbtn2	:=	P2Btn.	P2M3_EmStopbtn2	;//	外罩急停2	
+P2M3_MachCtrl.btn.	EmStopbtn3	:=	P2Btn.	P2M3_EmStopbtn3	;//	外罩急停3	
+P2M3_MachCtrl.btn.	EmStopbtn4	:=	P2Btn.	P2M3_EmStopbtn4	;//	外罩急停4	
+//3号叠台信号链接,传感器							
+P2M3_MachCtrl.se.	AnBeltsensor	:=	P2Senser.	P2M3_AnBeltsensor	;//	正极模切送料分段皮带1有料感应	
+P2M3_MachCtrl.se.	CaBeltsensor	:=	P2Senser.	P2M3_CaBeltsensor	;//	负极模切送料分段皮带1有料感应	
+P2M3_MachCtrl.se.	Offloadingsensor	:=	P2Senser.	P2M3_Offloadingsensor	;//	取料位感应	
+P2M3_MachCtrl.se.	BlueGluetsensor	:=	P2Senser.	P2M3_BlueGluetsensor	;//	蓝胶料盘检测	
+P2M3_MachCtrl.se.	codeGluesensor	:=	P2Senser.	P2M3_codeGluesensor	;//	二维码胶料盘检测	
+P2M3_MachCtrl.se.	Markesensor	:=	P2Senser.	P2M3_Markesensor	;//	二维码胶Mark孔检测	
+P2M3_MachCtrl.se.	GluebHave 	:=  P2Senser.P2M3_GluebHave;		//三号贴胶旋转电芯感应
+P2M3_MachCtrl.se.	Coldpressingesensor		:=	P2Senser.	P2M3_Coldpressingesensor	;//	冷压上料夹平移电机1号叠台处检测	
+P2M3_MachCtrl.se.	Securitydoorswitch1		:=	P2Senser.	P2M3_Securitydoorswitch1	;//	外罩门禁1	
+P2M3_MachCtrl.se.	Securitydoorswitch2		:=	P2Senser.	P2M3_Securitydoorswitch2	;//	外罩门禁2	
+P2M3_MachCtrl.se.	Securitydoorswitch3		:=	P2Senser.	P2M3_Securitydoorswitch3	;//	外罩门禁3	
+P2M3_MachCtrl.se.	Securitydoorswitch4		:=	P2Senser.	P2M3_Securitydoorswitch4	;//	外罩门禁4	
+(*P2M3_MachCtrl.se.	Securitydoorswitch5		:=	P2Senser.	P2M3_Securitydoorswitch5	;//	外罩门禁5	
+P2M3_MachCtrl.se.	Securitydoorswitch6		:=	P2Senser.	P2M3_Securitydoorswitch6	;//	外罩门禁6	
+P2M3_MachCtrl.se.	Securitydoorswitch7		:=	P2Senser.	P2M3_Securitydoorswitch7	;//	外罩门禁7	
+P2M3_MachCtrl.se.	Securitydoorswitch8		:=	P2Senser.	P2M3_Securitydoorswitch8	;//	外罩门禁8
+P2M3_MachCtrl.se.	Securitydoorswitch9		:=	P2Senser.	P2M3_Securitydoorswitch9	;//	外罩门禁9	
+P2M3_MachCtrl.se.	Securitydoorswitch10	:=	P2Senser.	P2M3_Securitydoorswitch10	;//	外罩门禁10*)	
+P2M3_MachCtrl.se.	Yellowmark	:=	P2Senser.P2M3_Yellowmark    ;  //3号叠台		三号隔膜黄标感应    
+P2M3_MachCtrl.se.Ceramics:=P2Senser.P2M3_Ceramics;
+P2M3_MachCtrl.se.AnDTCarryingJROnSwitch:=P2Senser.P2M3_AnDTCarryingJROnSwitch;//3号正极极耳真空信号
+P2M3_MachCtrl.se.CaDTCarryingJROnSwitch:=P2Senser.P2M3_CaDTCarryingJROnSwitch;//3号负极极耳真空信号
+P2M3_MachCtrl.se.AnNGboxsensor:= P2Senser.P2M3_AnNGboxsensor	;		//叠台正极NG料盒满料感应
+P2M3_MachCtrl.se.CaNGboxsensor:= P2Senser.P2M3_CaNGboxsensor 	;		//叠台负极NG料盒满料感应
+
+
+//3号叠台信号链接,气缸号							
+P2M3_CycNo.CylinderName.	AnScrapbinCy	:=	P2CYNo.	P2M3_AnScrapbinCy		;//	正极片NG收纳盒
+P2M3_CycNo.CylinderName.	CaScrapbinCy	:=	P2CYNo.	P2M3_CaScrapbinCy		;//	负极片NG收纳盒
+P2M3_CycNo.CylinderName.CaScrapbinUDCy	:=	P2CYNo.P2M3_CaScrapbinUDCy		;//	负极片NG收纳盒升降
+
+P2M3_CycNo.CylinderName.	PreDiaph    	:=	P2CYNo.P2M3_PreDiaphCy		;//	压隔膜气缸
+P2M3_CycNo.CylinderName.	PoleInflationCy	:=	P2CYNo.	P2M3_PoleInflationCy		;//	隔膜放卷气胀轴
+P2M3_CycNo.CylinderName.	PoleTapeSplicerLCy	:=	P2CYNo.	P2M3_PoleTapeSplicerLCy		;//	隔膜接带左压板气缸
+P2M3_CycNo.CylinderName.	PoleTapeSplicerRCy	:=	P2CYNo.	P2M3_PoleTapeSplicerRCy		;//	隔膜接带右压板气缸
+P2M3_CycNo.CylinderName.	PoleTapeCy	:=	P2CYNo.	P2M3_PoleTapeCy		;//	隔膜夹紧气缸
+P2M3_CycNo.CylinderName.	PoleHotCutterCy	:=	P2CYNo.	P2M3_PoleHotCutterCy		;//	隔膜热切升降
+P2M3_CycNo.CylinderName.	PoleSplintCy_U	:=	P2CYNo.	P2M3_PoleSplintCy_U		;//	夹膜上夹板
+P2M3_CycNo.CylinderName.	PoleSplintCy_D	:=	P2CYNo.	P2M3_PoleSplintCy_D		;//	夹膜下夹板
+P2M3_CycNo.CylinderName.	TailCurlSplintCy	:=	P2CYNo.	P2M3_TailCurlSplintCy		;//	尾卷夹爪开合
+P2M3_CycNo.CylinderName.	CurlingSplintCy_L	:=	P2CYNo.	P2M3_CurlingSplintCy_L		;//	长卷针夹开合
+P2M3_CycNo.CylinderName.	CurlingSplintCy_S	:=	P2CYNo.	P2M3_CurlingSplintCy_S		;//	短卷针夹开合
+P2M3_CycNo.CylinderName.	TailCurlLineCy	:=	P2CYNo.	P2M3_TailCurlLineCy		;//	尾卷压辊平移缸
+P2M3_CycNo.CylinderName.	TailCurlUpdownCy	:=	P2CYNo.	P2M3_TailCurlUpdownCy		;//	尾卷压辊升降缸
+P2M3_CycNo.CylinderName.	StandbyGlueCy	:=	P2CYNo.	P2M3_StandbyGlueCy		;//	备胶气缸
+P2M3_CycNo.CylinderName.	CodeStandbyGlueCy	:=	P2CYNo.	P2M3_CodeStandbyGlueCy		;//	备二维码胶气缸
+P2M3_CycNo.CylinderName.	GlueClampsCy	:=	P2CYNo.	P2M3_GlueClampsCy		;//	贴胶夹爪气缸
+P2M3_CycNo.CylinderName.	GluePressCy	:=	P2CYNo.	P2M3_GluePressCy		;//	压胶气缸
+P2M3_CycNo.CylinderName.	CodeGluePressCy	:=	P2CYNo.	P2M3_CodeGluePressCy		;//	压二维码胶气缸
+P2M3_CycNo.CylinderName.	GlueCutCy	:=	P2CYNo.	P2M3_GlueCutCy		;//	切胶气缸
+P2M3_CycNo.CylinderName.	codeGlueCutCy	:=	P2CYNo.	P2M3_codeGlueCutCy		;//	切二维码胶气缸
+P2M3_CycNo.CylinderName.	PullGluePoleCy	:=	P2CYNo.	P2M3_PullGluePoleCy		;//	拉胶杆抱紧
+P2M3_CycNo.CylinderName.	PullGlueCy	:=	P2CYNo.	P2M3_PullGlueCy		;//	拉胶气缸
+P2M3_CycNo.CylinderName.	GlueNGCy	:=	P2CYNo.	P2M3_GlueNGCy		;//	踢废胶气缸
+P2M3_CycNo.CylinderName.	PullGlueModelCy	:=	P2CYNo.	P2M3_PullGlueModelCy		;//	贴胶治具气缸
+P2M3_CycNo.CylinderName.	CurlingSplintCy_S_1	:=	P2CYNo.P2M3_CurlingSplintCy_S_1		;//	短卷针夹泄气
+P2M3_CycNo.CylinderName.	RollPoleearCy	:=	P2CYNo.P2M3_RollPoleearCy		;//	尾卷托极耳气缸
+
+//3号叠台信号链接,气控阀							
+P2M3_CycNo.ElectValveName.	AnBeltVacuum	:=	P2EVNo.	P2M3_AnBeltVacuum		;//	正极模切送料分段皮带1取料处真空
+P2M3_CycNo.ElectValveName.	AnBeltVacuumBark	:=	P2EVNo.	P2M3_AnBeltVacuumBark		;//	正极模切送料分段皮带1取料处破真空
+P2M3_CycNo.ElectValveName.	CaMQBeltVacuum	:=	P2EVNo.	P2M3_CaMQBeltVacuum		;//	负极模切送料分段皮带1取料处真空
+P2M3_CycNo.ElectValveName.	CaMQBeltVacuumBark	:=	P2EVNo.	P2M3_CaMQBeltVacuumBark		;//	负极模切送料分段皮带1取料处破真空
+P2M3_CycNo.ElectValveName.	AnCarryingVacuum	:=	P2EVNo.	P2M3_AnCarryingVacuum		;//	正极送片搬运升降真空
+P2M3_CycNo.ElectValveName.	AnCarryingVacuumBark	:=	P2EVNo.	P2M3_AnCarryingVacuumBark		;//	正极送片搬运升降破真空
+P2M3_CycNo.ElectValveName.	AndeviationVacuum	:=	P2EVNo.	P2M3_AndeviationVacuum		;//	正极纠偏平台真空
+P2M3_CycNo.ElectValveName.	AndeviationIonizedWind	:=	P2EVNo.	P2M3_AndeviationIonizedWind		;//	正极纠偏平台除尘风刀
+P2M3_CycNo.ElectValveName.	AndeviationVacuumBark	:=	P2EVNo.	P2M3_AndeviationVacuumBark		;//	正极纠偏平台破真空
+P2M3_CycNo.ElectValveName.	AnDTCarryingVacuum	:=	P2EVNo.	P2M3_AnDTCarryingVacuum		;//	正极叠片搬运升降真空
+P2M3_CycNo.ElectValveName.	AnDTCarryingVacuumBark	:=	P2EVNo.	P2M3_AnDTCarryingVacuumBark		;//	正极叠片搬运升降破真空
+P2M3_CycNo.ElectValveName.	CaCarryingVacuum1	:=	P2EVNo.	P2M3_CaCarryingVacuum1		;//	负极送片搬运升降1真空
+P2M3_CycNo.ElectValveName.	CaCarryingVacuumBark1	:=	P2EVNo.	P2M3_CaCarryingVacuumBark1		;//	负极送片搬运升降1破真空
+P2M3_CycNo.ElectValveName.	CaLoadUpBeltVacuum	:=	P2EVNo.	P2M3_CaLoadUpBeltVacuum		;//	负极送片皮带末端真空
+P2M3_CycNo.ElectValveName.	CaLoadUpBeltVacuumBark	:=	P2EVNo.	P2M3_CaLoadUpBeltVacuumBark		;//	负极送片皮带末端破真空
+P2M3_CycNo.ElectValveName.	CaCarryingVacuum2	:=	P2EVNo.	P2M3_CaCarryingVacuum2		;//	负极送片搬运升降2真空
+P2M3_CycNo.ElectValveName.	CaCarryingVacuumBark2	:=	P2EVNo.	P2M3_CaCarryingVacuumBark2		;//	负极送片搬运升降2破真空
+P2M3_CycNo.ElectValveName.	CadeviationVacuum	:=	P2EVNo.	P2M3_CadeviationVacuum		;//	负极纠偏平台真空
+P2M3_CycNo.ElectValveName.	CadeviationVacuumBark	:=	P2EVNo.	P2M3_CadeviationVacuumBark		;//	负极纠偏平台破真空
+P2M3_CycNo.ElectValveName.	CadeviationIonizedWind	:=	P2EVNo.	P2M3_CadeviationIonizedWind		;//	负极纠偏平台除尘风刀
+P2M3_CycNo.ElectValveName.	CaDTCarryingVacuum	:=	P2EVNo.	P2M3_CaDTCarryingVacuum		;//	负极叠片搬运升降真空
+P2M3_CycNo.ElectValveName.	CaDTCarryingVacuumBark	:=	P2EVNo.	P2M3_CaDTCarryingVacuumBark		;//	负极叠片搬运升降破真空
+P2M3_CycNo.ElectValveName.	PoleTapeDustRemoval	:=	P2EVNo.	P2M3_PoleTapeDustRemoval		;//	隔膜接带平台除尘
+P2M3_CycNo.ElectValveName.	PoleTapeVacuum	:=	P2EVNo.	P2M3_PoleTapeVacuum		;//	隔膜接带平台真空
+P2M3_CycNo.ElectValveName.	BlueGlueVacuum1	:=	P2EVNo.	P2M3_BlueGlueVacuum1		;//	备胶组件蓝胶真空1
+P2M3_CycNo.ElectValveName.	BlueGlueVacuum2	:=	P2EVNo.	P2M3_BlueGlueVacuum2		;//	备胶组件蓝胶真空2
+P2M3_CycNo.ElectValveName.	codeGlueVacuum1	:=	P2EVNo.	P2M3_codeGlueVacuum1		;//	备胶组件二维码胶真空1
+P2M3_CycNo.ElectValveName.	codeGlueVacuum2	:=	P2EVNo.	P2M3_codeGlueVacuum2		;//	备胶组件二维码胶真空2
+P2M3_CycNo.ElectValveName.	PastesGlueVacuum	:=	P2EVNo.	P2M3_PastesGlueVacuum		;//	备胶组件贴胶头真空
+P2M3_CycNo.ElectValveName.	DTVacuum	:=	P2EVNo.	P2M3_DTVacuum		;//	叠片台真空
+P2M3_CycNo.ElectValveName.	PoleSplintVacuum_D	:=	P2EVNo.	P2M3_PoleSplintVacuum_D		;//	夹膜下夹板真空
+P2M3_CycNo.ElectValveName.WJ_blow:=P2EVNo.P2M3_WJ_blow;//尾卷夹电芯吹气
+P2M3_CycNo.ElectValveName.WJShortvacuum:=P2EVNo.P2M3_WJShortvacuum;//短卷针张开真空
+
+//3号叠台信号链接,轴号							
+P2M3_Axise.AxisName.	AnCarryingLine	:=	P2AxisNo.	P2M3_AnCarryingLine		;//	正极送片搬运平移
+P2M3_Axise.AxisName.	AnCarryingUpDown	:=	P2AxisNo.	P2M3_AnCarryingUpDown		;//	正极送片搬运升降
+P2M3_Axise.AxisName.	AnCarryingWhirling	:=	P2AxisNo.	P2M3_AnCarryingWhirling		;//	正极送片搬运旋转
+P2M3_Axise.AxisName.	AnDTCarryingLine	:=	P2AxisNo.	P2M3_AnDTCarryingLine		;//	正极叠台搬运平移1
+P2M3_Axise.AxisName.	AnDTCarryingUpDown	:=	P2AxisNo.	P2M3_AnDTCarryingUpDown		;//	正极叠台搬运升降
+P2M3_Axise.AxisName.	AndeviationX1	:=	P2AxisNo.	P2M3_AndeviationX1		;//	正极纠偏平台X1
+P2M3_Axise.AxisName.	AndeviationX2	:=	P2AxisNo.	P2M3_AndeviationX2		;//	正极纠偏平台X2
+P2M3_Axise.AxisName.	AndeviationY	:=	P2AxisNo.	P2M3_AndeviationY		;//	正极纠偏平台Y
+P2M3_Axise.AxisName.	CaCarryingLine1	:=	P2AxisNo.	P2M3_CaCarryingLine1		;//	负极送片搬运1平移
+P2M3_Axise.AxisName.	CaCarryingUpDown1	:=	P2AxisNo.	P2M3_CaCarryingUpDown1		;//	负极送片搬运1升降
+P2M3_Axise.AxisName.	CaCarryingWhirling1	:=	P2AxisNo.	P2M3_CaCarryingWhirling1		;//	负极送片搬运1旋转
+P2M3_Axise.AxisName.	CaCarryingLine2	:=	P2AxisNo.	P2M3_CaCarryingLine2		;//	负极送片搬运2平移
+P2M3_Axise.AxisName.	CaCarryingUpDown2	:=	P2AxisNo.	P2M3_CaCarryingUpDown2		;//	负极送片搬运2升降
+P2M3_Axise.AxisName.	CaBelt	:=	P2AxisNo.	P2M3_CaBelt		;//	负极送片皮带
+P2M3_Axise.AxisName.	CaDTCarryingLine	:=	P2AxisNo.	P2M3_CaDTCarryingLine		;//	负极叠台搬运平移
+P2M3_Axise.AxisName.	CaDTCarryingUpDown	:=	P2AxisNo.	P2M3_CaDTCarryingUpDown		;//	负极叠台搬运升降
+P2M3_Axise.AxisName.	CadeviationX1	:=	P2AxisNo.	P2M3_CadeviationX1		;//	负极纠偏平台X1
+P2M3_Axise.AxisName.	CadeviationX2	:=	P2AxisNo.	P2M3_CadeviationX2		;//	负极纠偏平台X2
+P2M3_Axise.AxisName.	CadeviationY	:=	P2AxisNo.	P2M3_CadeviationY		;//	负极纠偏平台Y
+P2M3_Axise.AxisName.	SEPTAunwinding	:=	P2AxisNo.	P2M3_SEPTAunwinding		;//	隔膜放卷
+P2M3_Axise.AxisName.	SEPTAdeviation1	:=	P2AxisNo.	P2M3_SEPTAdeviation1		;//	隔膜放卷纠偏
+P2M3_Axise.AxisName.	SEPTAdeviation2	:=	P2AxisNo.	P2M3_SEPTAdeviation2		;//	隔膜尾部纠偏
+P2M3_Axise.AxisName.	SEPTATension	:=	P2AxisNo.	P2M3_SEPTATension		;//	隔膜摆杆张力
+P2M3_Axise.AxisName.	SEPTATCache	:=	P2AxisNo.	P2M3_SEPTATCache		;//	隔膜缓存
+P2M3_Axise.AxisName.	SEPTATLine	:=	P2AxisNo.	P2M3_SEPTATLine		;//	隔膜平移
+P2M3_Axise.AxisName.	DTUpDown	:=	P2AxisNo.	P2M3_DTUpDown		;//	叠台升降
+P2M3_Axise.AxisName.	LeftYDLine	:=	P2AxisNo.	P2M3_LeftYDLine		;//	左压刀开合
+P2M3_Axise.AxisName.	LeftYDUpDown	:=	P2AxisNo.	P2M3_LeftYDUpDown		;//	左压刀升降
+P2M3_Axise.AxisName.	RightYDLine	:=	P2AxisNo.	P2M3_RightYDLine		;//	右压刀开合
+P2M3_Axise.AxisName.	RightYDUpDown	:=	P2AxisNo.	P2M3_RightYDUpDown		;//	右压刀升降
+P2M3_Axise.AxisName.	TailCurlLine	:=	P2AxisNo.	P2M3_TailCurlLine		;//	尾卷夹电芯平移
+P2M3_Axise.AxisName.	TailCurlUpDown	:=	P2AxisNo.	P2M3_TailCurlUpDown		;//	尾卷夹电芯升降
+P2M3_Axise.AxisName.	TailCurlRetracting	:=	P2AxisNo.	P2M3_TailCurlRetracting		;//	尾卷夹电芯伸缩
+P2M3_Axise.AxisName.	TailCurlWhirling	:=	P2AxisNo.	P2M3_TailCurlWhirling		;//	尾卷夹电芯旋转
+P2M3_Axise.AxisName.	TailCurlSEPTALine	:=	P2AxisNo.	P2M3_TailCurlSEPTALine		;//	夹膜平移
+P2M3_Axise.AxisName.	TailCurlSEPTAUpDown	:=	P2AxisNo.	P2M3_TailCurlSEPTAUpDown		;//	夹膜升降
+P2M3_Axise.AxisName.	LCurlingneedleLine	:=	P2AxisNo.	P2M3_LCurlingneedleLine		;//	长卷针平移
+P2M3_Axise.AxisName.	SCurlingneedleLine	:=	P2AxisNo.	P2M3_SCurlingneedleLine		;//	短卷针平移
+P2M3_Axise.AxisName.	LCurlingneedleWhirling	:=	P2AxisNo.	P2M3_LCurlingneedleWhirling		;//	长卷针旋转
+P2M3_Axise.AxisName.	SCurlingneedleWhirling	:=	P2AxisNo.	P2M3_SCurlingneedleWhirling		;//	短卷针旋转
+P2M3_Axise.AxisName.	GluingLine	:=	P2AxisNo.	P2M3_GluingLine		;//	侧贴夹平移
+P2M3_Axise.AxisName.	GluingWhirling	:=	P2AxisNo.	P2M3_GluingWhirling		;//	侧贴夹旋转
+P2M3_Axise.AxisName.	GluingRetracting	:=	P2AxisNo.	P2M3_GluingRetracting		;//	贴胶头进退
+P2M3_Axise.AxisName.	GluingUpDown	:=	P2AxisNo.	P2M3_GluingUpDown		;//	拉胶升降
+P2M3_Axise.AxisName.	Standby1	:=	P2AxisNo.	P2M3_Standby1		;//	备用
+P2M3_Axise.AxisName.	Standby2	:=	P2AxisNo.	P2M3_Standby2		;//	备用
+//3号叠台信号链接,虚拟轴							
+P2M3_Axise.VirAxisName.	VirTimeWind	:=	VirAxisNo.	P2M3_VirTimeWind		;//	时间虚轴
+P2M3_Axise.VirAxisName.	VirMain	:=	VirAxisNo.	P2M3_VirMain		;//	叠台主虚轴
+P2M3_Axise.VirAxisName.	VirDriver	:=	VirAxisNo.	P2M3_VirDriver		;//	放卷驱动虚轴
+P2M3_Axise.VirAxisName.	VirTailCurl	:=	VirAxisNo.	P2M3_VirTailCurl		;//	尾卷虚轴
+P2M3_Axise.VirAxisName.VirGM           	:=	VirAxisNo.P2M3_VirGM		;//	隔膜虚轴
+
+
+//凸轮表
+P2M3_TableNo.M_AnCarryingLine:=                     P2TableNo.M3_AnCarryingLine;
+P2M3_TableNo.M_AnCarryingUpDown:=              P2TableNo.M3_AnCarryingUpDown;
+P2M3_TableNo.M_AnCarryingUpDown1:=              P2TableNo.M3_AnCarryingUpDown1;
+P2M3_TableNo.M_AnCarryingWhirling:=               P2TableNo.M3_AnCarryingWhirling;
+P2M3_TableNo.M_AnDTCarryingLine:=                 P2TableNo.M3_AnDTCarryingLine;
+P2M3_TableNo.M_AnDTCarryingUpDown:=          P2TableNo.M3_AnDTCarryingUpDown;
+P2M3_TableNo.M_AnDTCarryingUpDown1:=          P2TableNo.M3_AnDTCarryingUpDown1;
+P2M3_TableNo.M_CaBelt:=                                 P2TableNo.M3_CaBelt;
+P2M3_TableNo.M_CaCarryingLine1:=                   P2TableNo.M3_CaCarryingLine1;
+P2M3_TableNo.M_CaCarryingLine2:=                   P2TableNo.M3_CaCarryingLine2;
+P2M3_TableNo.M_CaCarryingUpDown1:=            P2TableNo.M3_CaCarryingUpDown1;
+P2M3_TableNo.M_CaCarryingUpDown2:=            P2TableNo.M3_CaCarryingUpDown2;
+P2M3_TableNo.M_CaCarryingUpDown2_1:=            P2TableNo.M3_CaCarryingUpDown2_1;
+P2M3_TableNo.M_CaCarryingWhirling1:=            P2TableNo.M3_CaCarryingWhirling1;
+P2M3_TableNo.M_CaDTCarryingLine:=                 P2TableNo.M3_CaDTCarryingLine;
+P2M3_TableNo.M_CaDTCarryingUpDown:=           P2TableNo.M3_CaDTCarryingUpDown;
+P2M3_TableNo.M_CaDTCarryingUpDown1:=           P2TableNo.M3_CaDTCarryingUpDown1;
+P2M3_TableNo.M_DTUpDown:=                           P2TableNo.M3_DTUpDown;
+P2M3_TableNo.M_GMBuffer_L:=                          P2TableNo.M3_GMBuffer_L;
+P2M3_TableNo.M_GMBuffer_R:=                          P2TableNo.M3_GMBuffer_R;
+P2M3_TableNo.M_GMDanserMove_L:=                 P2TableNo.M3_GMDanserMove_L;
+P2M3_TableNo.M_GMDanserMove_R:=                  P2TableNo.M3_GMDanserMove_R;
+P2M3_TableNo.M_GMLengthCalculate_L:=             P2TableNo.M3_GMLengthCalculate_L;
+P2M3_TableNo.M_GMLengthCalculate_R:=           P2TableNo.M3_GMLengthCalculate_R;
+P2M3_TableNo.M_GMVir_L:=                                   P2TableNo.M3_GMVir_L;
+P2M3_TableNo.M_GMWind_L:=                           P2TableNo.M3_GMWind_L;
+P2M3_TableNo.M_GMWind_R:=                          P2TableNo.M3_GMWind_R;
+P2M3_TableNo.M_LeftYDLine:=                           P2TableNo.M3_LeftYDLine;
+P2M3_TableNo.M_LeftYDUpDown:=                    P2TableNo.M3_LeftYDUpDown;
+P2M3_TableNo.M_RightYDLine:=                        P2TableNo.M3_RightYDLine;
+P2M3_TableNo.M_RightYDUpDown:=                 P2TableNo.M3_RightYDUpDown;
+P2M3_TableNo.M_TailCurlLine:=                         P2TableNo.M3_TailCurlLine;
+P2M3_TableNo.M_TailCurlUpDown:=                  P2TableNo.M3_TailCurlUpDown;
+
+P2M3_TableNo.M_GMWind2_R :=                 P2TableNo.M3_GMWind2_R;      
+P2M3_TableNo.M_GMWind2_L :=                  P2TableNo.M3_GMWind2_L;     
+P2M3_TableNo.M_GMBuffer2_R :=                 P2TableNo.M3_GMBuffer2_R;     
+P2M3_TableNo.M_GMBuffer2_L :=                 P2TableNo.M3_GMBuffer2_L;     
+P2M3_TableNo.M_GMLengthCalculate2_R :=        P2TableNo.M3_GMLengthCalculate2_R;     
+P2M3_TableNo.M_GMLengthCalculate2_L :=        P2TableNo.M3_GMLengthCalculate2_L;     
+
+P2M3_TableNo.M_LeftYDLine2:=                           P2TableNo.M3_LeftYDLine2;
+P2M3_TableNo.M_LeftYDUpDown2:=                    P2TableNo.M3_LeftYDUpDown2;
+P2M3_TableNo.M_RightYDLine2:=                        P2TableNo.M3_RightYDLine2;
+P2M3_TableNo.M_RightYDUpDown2:=                 P2TableNo.M3_RightYDUpDown2;
+
+P2M3_TableNo.M_AnCarryingUpDown3:=              P2TableNo.M3_AnCarryingUpDown3;
+P2M3_TableNo.M_AnDTCarryingUpDown3:=          P2TableNo.M3_AnDTCarryingUpDown3;
+P2M3_TableNo.M_CaCarryingUpDown2_3:=            P2TableNo.M3_CaCarryingUpDown2_3;
+P2M3_TableNo.M_CaDTCarryingUpDown3:=           P2TableNo.M3_CaDTCarryingUpDown3;
+
+
+//  固定 参数
+P2M3_Par.iStationNO :=3;
+P2M3_Par.Code.sRemoteHost :='192.168.10.26';
+//P2M1_Par.Code.sRemotePot :=25;
+P2M3_MachCtrl.DT_b.Dust_name:=3;
+//电芯记忆
+
+P2M3_MachCtrl.DT_b.DT_No:='3#';
+//P2M3_MachCtrl.DT_b.Machine_No:='155AH';
+P2M3_MachCtrl.DT_b.DiaphragmUnwindingTension:=arrFilter_ADV2[3].Out_Value;
+P2M3_MachCtrl.DT_b.DT_Memory:=CellNo.Dietai3;
+P2M3_MachCtrl.WJ_b.WJ_Memory:=CellNo.Weijuan3;
+P2M3_MachCtrl.TJ_b.TJ_Memory:=CellNo.Gluing3;
+P2M3_Par.stDT_date.AnMQ_MES:=AnMQ_MES3;
+P2M3_Par.stDT_date.CaMQ_MES:=CaMQ_MES3;
+P2M3_MachCtrl.DT_b.Put_time:=Puttime;
+
+
+
+P2M3_MachCtrl.TJ_b.WhirlingSafe:=(arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Status.Homed AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6])) 
+OR ( ( arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos>(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[4]+10) OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos<(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[4]-10))
+     AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed );
+	 
+	 
+	 
+	 
+
+//力矩保护
+	P2M3_Torque.An_CarryingTorSet:=HMI_TorErrLimt_D[93];//正极搬运1移位报警力矩设定
+	P2M3_Torque.An_DTCarryingTorSet:=HMI_TorErrLimt_D[96];//正极叠台搬运报警力矩值设定
+	P2M3_Torque.Ca_Carrying1TorSet:=HMI_TorErrLimt_D[101];//负极搬运1平移报警力矩设定
+	P2M3_Torque.Ca_Carrying2TorSet:=HMI_TorErrLimt_D[104];//负极搬运2平移报警力矩设定
+	P2M3_Torque.Ca_DTCarryingTorSet:=HMI_TorErrLimt_D[107];//负极叠台搬运平移报警力矩设定
+	P2M3_Torque.TailCurlTorSet:=HMI_TorErrLimt_D[123];//尾卷夹电芯平移报警力矩设定
+	P2M3_Torque.TailCurlWhirlTorSet:=HMI_TorErrLimt_D[126];//尾卷夹电芯旋转报警力矩设定
+	P2M3_Torque.TailCurlSEPTATorSet:=HMI_TorErrLimt_D[127];//夹膜平移旋转报警力矩设定
+	//P2M3_Torque.TailCurlRetTorSet:=HMI_TorErrLimt_D[125];//尾卷夹电芯伸缩力矩设定
+	
+	P2M3_Torque.An_CarryingTor:=iActTorque_D[93];//正极搬运1移位实时力矩
+	P2M3_Torque.An_DTCarryingTor:=iActTorque_D[96];//正极叠台搬运实时力矩
+	P2M3_Torque.Ca_Carrying1Tor:=iActTorque_D[101];//负极搬运1平移实时力矩
+	P2M3_Torque.Ca_Carrying2Tor:=iActTorque_D[104];//负极搬运2平移实时力矩
+	P2M3_Torque.Ca_DTCarryingTor:=iActTorque_D[107];//负极叠台搬运平移实时力矩
+	P2M3_Torque.TailCurlTor:=iActTorque_D[123];//尾卷夹电芯平移实时力矩
+	P2M3_Torque.TailCurlWhirlTor:=iActTorque_D[126];//尾卷夹电芯旋转实时力矩
+	P2M3_Torque.TailCurlSEPTATor:=iActTorque_D[127];//夹膜平移旋转实时力矩
+	//P2M3_Torque.TailCurlRetTor:=iActTorque_D[125];//尾卷夹电芯伸缩实时力矩
+	
+	HMI_TorAlarm_D[93]:=P2M3_Torque.An_CarryingTorAlarm;//正极搬运1移位力矩超限报警
+	HMI_TorAlarm_D[96]:=P2M3_Torque.An_DTCarryingTorAlarm;//正极叠台搬运力矩超限报警
+	HMI_TorAlarm_D[101]:=P2M3_Torque.Ca_Carrying1TorAlarm;//负极搬运1平移力矩超限报警
+	HMI_TorAlarm_D[104]:=P2M3_Torque.Ca_Carrying2TorAlarm;//负极搬运2平移力矩超限报警
+	HMI_TorAlarm_D[107]:=P2M3_Torque.Ca_DTCarryingTorAlarm;//负极叠台搬运平移力矩超限报警
+	HMI_TorAlarm_D[123]:=P2M3_Torque.TailCurlTorAlarm;//尾卷夹电芯平移力矩超限报警
+	HMI_TorAlarm_D[126]:=P2M3_Torque.TailCurlWhirlTorAlarm;//尾卷夹电芯旋转力矩超限报警
+	HMI_TorAlarm_D[127]:=P2M3_Torque.TailCurlSEPTATorAlarm;//夹膜平移旋转力矩超限报警
+	//HMI_TorAlarm_D[125]:=P2M3_Torque.TailCurlRetTorAlarm;//尾卷夹电芯伸缩力矩超限报警
+	 ]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="IOLink">
+      <LineId Id="266" Count="11" />
+      <LineId Id="331" Count="1" />
+      <LineId Id="278" Count="31" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.AI">
+      <LineId Id="146" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="205" Count="0" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="283" Count="0" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="229" Count="0" />
+      <LineId Id="228" Count="0" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="284" Count="0" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="234" Count="0" />
+      <LineId Id="236" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="237" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="286" Count="0" />
+      <LineId Id="241" Count="0" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="256" Count="7" />
+      <LineId Id="247" Count="1" />
+      <LineId Id="264" Count="7" />
+      <LineId Id="249" Count="0" />
+      <LineId Id="272" Count="8" />
+      <LineId Id="250" Count="1" />
+      <LineId Id="156" Count="8" />
+      <LineId Id="281" Count="1" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="196" Count="2" />
+      <LineId Id="243" Count="0" />
+      <LineId Id="192" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="288" Count="0" />
+      <LineId Id="287" Count="0" />
+      <LineId Id="199" Count="2" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="292" Count="0" />
+      <LineId Id="202" Count="2" />
+      <LineId Id="242" Count="0" />
+      <LineId Id="194" Count="0" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="195" Count="0" />
+      <LineId Id="293" Count="0" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.AO">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.LimitSwitch">
+      <LineId Id="342" Count="0" />
+      <LineId Id="1046" Count="228" />
+      <LineId Id="343" Count="0" />
+      <LineId Id="338" Count="0" />
+      <LineId Id="386" Count="0" />
+      <LineId Id="1275" Count="446" />
+      <LineId Id="826" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.P2_AutoLink">
+      <LineId Id="1" Count="2" />
+    </LineIds>
+    <LineIds Name="IOLink.P2_InPut">
+      <LineId Id="3210" Count="131" />
+      <LineId Id="3683" Count="0" />
+      <LineId Id="3682" Count="0" />
+      <LineId Id="3344" Count="156" />
+      <LineId Id="3685" Count="0" />
+      <LineId Id="3684" Count="0" />
+      <LineId Id="3503" Count="151" />
+      <LineId Id="3681" Count="0" />
+      <LineId Id="3656" Count="1" />
+      <LineId Id="3687" Count="0" />
+      <LineId Id="3686" Count="0" />
+      <LineId Id="3689" Count="1" />
+      <LineId Id="3688" Count="0" />
+      <LineId Id="3663" Count="17" />
+      <LineId Id="1173" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.P2_OutPut">
+      <LineId Id="849" Count="12" />
+      <LineId Id="1224" Count="0" />
+      <LineId Id="862" Count="3" />
+      <LineId Id="1193" Count="0" />
+      <LineId Id="866" Count="11" />
+      <LineId Id="1218" Count="0" />
+      <LineId Id="878" Count="5" />
+      <LineId Id="1219" Count="0" />
+      <LineId Id="884" Count="14" />
+      <LineId Id="1192" Count="0" />
+      <LineId Id="899" Count="15" />
+      <LineId Id="1191" Count="0" />
+      <LineId Id="915" Count="15" />
+      <LineId Id="1194" Count="0" />
+      <LineId Id="931" Count="31" />
+      <LineId Id="1210" Count="1" />
+      <LineId Id="1213" Count="0" />
+      <LineId Id="1215" Count="0" />
+      <LineId Id="1227" Count="0" />
+      <LineId Id="618" Count="0" />
+      <LineId Id="963" Count="12" />
+      <LineId Id="1225" Count="0" />
+      <LineId Id="976" Count="3" />
+      <LineId Id="1195" Count="0" />
+      <LineId Id="980" Count="11" />
+      <LineId Id="1220" Count="0" />
+      <LineId Id="992" Count="5" />
+      <LineId Id="1221" Count="0" />
+      <LineId Id="998" Count="14" />
+      <LineId Id="1196" Count="0" />
+      <LineId Id="1013" Count="15" />
+      <LineId Id="1197" Count="0" />
+      <LineId Id="1029" Count="15" />
+      <LineId Id="1198" Count="0" />
+      <LineId Id="1045" Count="15" />
+      <LineId Id="1199" Count="0" />
+      <LineId Id="1061" Count="15" />
+      <LineId Id="732" Count="0" />
+      <LineId Id="489" Count="1" />
+      <LineId Id="1228" Count="0" />
+      <LineId Id="491" Count="2" />
+      <LineId Id="488" Count="0" />
+      <LineId Id="1077" Count="12" />
+      <LineId Id="1226" Count="0" />
+      <LineId Id="1090" Count="1" />
+      <LineId Id="1217" Count="0" />
+      <LineId Id="1092" Count="1" />
+      <LineId Id="1200" Count="0" />
+      <LineId Id="1094" Count="11" />
+      <LineId Id="1222" Count="0" />
+      <LineId Id="1106" Count="5" />
+      <LineId Id="1223" Count="0" />
+      <LineId Id="1112" Count="14" />
+      <LineId Id="1202" Count="0" />
+      <LineId Id="1127" Count="15" />
+      <LineId Id="1207" Count="2" />
+      <LineId Id="1203" Count="0" />
+      <LineId Id="1143" Count="15" />
+      <LineId Id="1204" Count="0" />
+      <LineId Id="1159" Count="31" />
+      <LineId Id="278" Count="1" />
+      <LineId Id="1216" Count="0" />
+      <LineId Id="1205" Count="0" />
+      <LineId Id="1231" Count="0" />
+      <LineId Id="1230" Count="0" />
+      <LineId Id="1229" Count="0" />
+      <LineId Id="280" Count="5" />
+      <LineId Id="275" Count="0" />
+      <LineId Id="1206" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.P2M1_AutoLink">
+      <LineId Id="350" Count="44" />
+      <LineId Id="613" Count="0" />
+      <LineId Id="612" Count="0" />
+      <LineId Id="615" Count="0" />
+      <LineId Id="614" Count="0" />
+      <LineId Id="611" Count="0" />
+      <LineId Id="395" Count="29" />
+      <LineId Id="617" Count="1" />
+      <LineId Id="425" Count="32" />
+      <LineId Id="616" Count="0" />
+      <LineId Id="458" Count="95" />
+      <LineId Id="619" Count="2" />
+      <LineId Id="554" Count="0" />
+      <LineId Id="627" Count="0" />
+      <LineId Id="623" Count="3" />
+      <LineId Id="556" Count="54" />
+      <LineId Id="317" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.P2M2_AutoLink">
+      <LineId Id="437" Count="49" />
+      <LineId Id="723" Count="0" />
+      <LineId Id="722" Count="0" />
+      <LineId Id="725" Count="0" />
+      <LineId Id="724" Count="0" />
+      <LineId Id="721" Count="0" />
+      <LineId Id="487" Count="168" />
+      <LineId Id="726" Count="2" />
+      <LineId Id="656" Count="1" />
+      <LineId Id="729" Count="2" />
+      <LineId Id="658" Count="62" />
+      <LineId Id="394" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.P2M3_AutoLink">
+      <LineId Id="275" Count="43" />
+      <LineId Id="547" Count="0" />
+      <LineId Id="546" Count="0" />
+      <LineId Id="549" Count="0" />
+      <LineId Id="548" Count="0" />
+      <LineId Id="545" Count="0" />
+      <LineId Id="319" Count="30" />
+      <LineId Id="551" Count="0" />
+      <LineId Id="550" Count="0" />
+      <LineId Id="350" Count="131" />
+      <LineId Id="552" Count="2" />
+      <LineId Id="482" Count="1" />
+      <LineId Id="555" Count="3" />
+      <LineId Id="485" Count="59" />
+      <LineId Id="221" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

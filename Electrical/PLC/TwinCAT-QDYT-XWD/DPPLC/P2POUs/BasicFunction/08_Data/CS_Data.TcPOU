@@ -1,0 +1,280 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_Data" Id="{4d120bde-2e29-4e45-8162-730c7057d955}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CS_Data
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	//tDataSave:TON;
+	//fbSaveData:FB_WritePersistentData;
+	//fbXMLWrite:FB_XMLSrvWrite;
+	//bWriteXml: BOOL;
+	
+	fbFileOpen_w:fb_fileopen;
+	//fbFileOpen_r:fb_fileopen;
+	fbFileWrite:fb_filewrite;
+	fbFileRead:FB_FileRead;
+	fbFileClose_w:fb_FileClose;
+	//fbFileClose_r:fb_FileClose;
+	HFILE:UINT;
+	//HFILE_R:UINT;
+	//bFileOpen_w:BOOL;
+	//bFileOpen_r:BOOL;
+	//bFileWrite:BOOL;
+	//bFileClose_w:BOOL;
+	//bFileClose_r:BOOL;
+	//bFileRead:BOOL;
+	bSave:BOOL;
+	bRead:BOOL;
+//	tFileOper_Save:TON;
+	//tFileOper_Read:TON;
+	iDataSetp: INT;
+	TON10:Tc2_Standard.TON;
+	bExecute: BOOL;
+	I1: INT;
+	rt100:Tc2_Standard.R_TRIG;
+	rt101:Tc2_Standard.R_TRIG;
+	bExecute1: BOOL;
+	bExecute2: BOOL;
+	bExecute3: BOOL;	
+
+	bSaveTemp: BOOL;
+	bReadTemp: BOOL;
+	bReadDataOk: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+M_WriteOrRead();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="M_WriteOrRead" Id="{a9e55e0b-093f-48ef-ab05-bf9b3e9ff754}">
+      <Implementation>
+        <ST><![CDATA[
+
+(*
+rt100(CLK:=bSave , Q=> );//保存参数
+rt101(CLK:=bRead , Q=> );//读取参数
+
+IF rt100.Q THEN
+	iDataSetp:=100;
+	TON10.IN:=FALSE;
+	I1:=1;
+	bExecute1:=FALSE;
+	bExecute2:=FALSE;	
+	bExecute3:=FALSE;	
+	bSave:=FALSE;
+	bRead:=FALSE;
+    bSaveTemp:=TRUE;
+	bReadTemp:=FALSE;
+END_IF
+
+IF rt101.Q THEN
+	iDataSetp:=100;
+	TON10.IN:=FALSE;
+	I1:=1;
+	bExecute1:=FALSE;
+	bExecute2:=FALSE;	
+	bExecute3:=FALSE;	
+	bSave:=FALSE;
+	bRead:=FALSE;
+    bReadTemp:=TRUE;
+    bSaveTemp:=FALSE;
+END_IF
+
+TON10(IN:= , PT:=T#200MS , Q=> , ET=> );
+//保存配方	
+CASE  iDataSetp OF 
+	
+	100:	//参数给定
+	   
+	   IF bSaveTemp THEN
+	     fbFileOpen_w.nMode:=FOPEN_MODEWRITE OR FOPEN_MODEBINARY;
+	   END_IF
+	   IF bReadTemp THEN
+	     fbFileOpen_w.nMode:=FOPEN_MODEREAD OR  FOPEN_MODEBINARY;
+	   END_IF
+	  iDataSetp:=101;
+	101:
+
+	  CASE I1 OF 
+		1:
+		 fbFileWrite.pWriteBuff:=ADR(gstM1Par);
+		 fbFileWrite.cbWriteLen:=SIZEOF(gstM1Par);
+		 fbFileRead.pReadBuff:=ADR(gstM1Par1);
+		 fbFileRead.cbReadLen:=SIZEOF(gstM1Par1);
+		 fbFileOpen_w.sPathName:='C:\P2Data\M1.bin';
+		2:
+		 fbFileWrite.pWriteBuff:=ADR(gstM2Par);
+		 fbFileWrite.cbWriteLen:=SIZEOF(gstM2Par);
+		 fbFileRead.pReadBuff:=ADR(gstM2Par1);
+		 fbFileRead.cbReadLen:=SIZEOF(gstM2Par1);
+		 fbFileOpen_w.sPathName:='C:\P2Data\M2.bin';
+		3:
+		 fbFileWrite.pWriteBuff:=ADR(gstM3Par);
+		 fbFileWrite.cbWriteLen:=SIZEOF(gstM3Par);
+		 fbFileRead.pReadBuff:=ADR(gstM3Par1);
+		 fbFileRead.cbReadLen:=SIZEOF(gstM3Par1);
+		 fbFileOpen_w.sPathName:='C:\P2Data\M3.bin';
+		4:
+		 fbFileWrite.pWriteBuff:=ADR(gstM4Par);
+		 fbFileWrite.cbWriteLen:=SIZEOF(gstM4Par);
+		 fbFileRead.pReadBuff:=ADR(gstM4Par1);
+		 fbFileRead.cbReadLen:=SIZEOF(gstM4Par1);
+		 fbFileOpen_w.sPathName:='C:\P2Data\M4.bin';
+		5:  
+		 fbFileWrite.pWriteBuff:=ADR(gstM5Par);
+		 fbFileWrite.cbWriteLen:=SIZEOF(gstM5Par); 
+		 fbFileRead.pReadBuff:=ADR(gstM5Par1);
+		 fbFileRead.cbReadLen:=SIZEOF(gstM5Par1);
+		 fbFileOpen_w.sPathName:='C:\P2Data\M5.bin';
+	  END_CASE
+	  iDataSetp:=200;
+	
+	200:	//打开文件
+		bExecute1:=TRUE;
+		TON10.IN:=TRUE;
+	  IF TON10.Q THEN
+		 bExecute1:=FALSE; 
+		 TON10.IN:=FALSE;
+		 iDataSetp:=300; 
+	  END_IF
+	
+	300:	//读写文件
+		bExecute2:=TRUE;
+		TON10.IN:=TRUE;
+	  IF TON10.Q THEN
+		  bExecute2:=FALSE; 
+		  TON10.IN:=FALSE;
+		 iDataSetp:=400; 
+	  END_IF
+	
+	400:	//关闭文件
+		bExecute3:=TRUE;
+		TON10.IN:=TRUE;
+	  IF TON10.Q THEN
+		  bExecute3:=FALSE; 
+		  TON10.IN:=FALSE;
+		  iDataSetp:=500; 
+	  END_IF
+	
+	500://继续写下个文件
+	  IF I1>=1 AND I1<5 THEN
+		 I1:=I1+1; 
+		 TON10.IN:=FALSE;
+		 iDataSetp:=100; 
+		 bExecute1:=FALSE; 
+		 bExecute2:=FALSE; 
+		 bExecute3:=FALSE; 
+	  ELSIF I1>=5 THEN
+		  bReadTemp:=FALSE;
+          bSaveTemp:=FALSE;
+		 iDataSetp:=666;   
+	  END_IF
+END_CASE
+
+
+IF bReadDataOk THEN
+   gstM1Par:=gstM1Par1;
+   gstM2Par:=gstM2Par1;
+   gstM3Par:=gstM3Par1;
+   gstM4Par:=gstM4Par1;	
+   gstM5Par:=gstM5Par1;
+   bReadDataOk:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+
+   	fbFileOpen_w(
+	sNetId:= , 
+	sPathName:= , //C:\P2Data
+	nMode:=   , 
+	ePath:=PATH_GENERIC , 
+	bExecute:=bExecute1 , 
+	tTimeout:=T#3S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hFile=>hfile );
+
+
+	fbFileWrite(
+	sNetId:= , 
+	hFile:= hFile, 
+	pWriteBuff:= , 
+	cbWriteLen:= , 
+	bExecute:=bExecute2 AND bSaveTemp, 
+	tTimeout:=T#3S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	cbWrite=> );
+
+
+
+	fbFileRead(
+	sNetId:= , 
+	hFile:=hFile , 
+	pReadBuff:= , 
+	cbReadLen:= , 
+	bExecute:= bExecute2 AND bReadTemp, 
+	tTimeout:= T#3S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	cbRead=> , 
+	bEOF=> );
+
+
+	fbFileClose_w(
+	sNetId:= , 
+	hFile:= hFile, 
+	bExecute:= bExecute3, 
+	tTimeout:=T#3S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+	
+	
+	
+*)
+	
+	
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="CS_Data">
+      <LineId Id="3" Count="17" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_Data.M_WriteOrRead">
+      <LineId Id="2" Count="196" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

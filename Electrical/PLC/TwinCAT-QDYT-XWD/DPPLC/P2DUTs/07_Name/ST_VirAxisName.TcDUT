@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_VirAxisName" Id="{92399ca8-e86c-412a-8d39-2fc15dbe2818}">
+    <Declaration><![CDATA[TYPE ST_VirAxisName :
+STRUCT
+	VirTimeWind	:INT;	//P2时间虚轴
+
+	VirMain	:INT;	//叠台主虚轴
+	VirDriver	:INT;	//放卷驱动虚轴
+
+	VirTailCurl	:INT;	//尾卷虚轴
+
+    VirGM  :INT ;  //隔膜虚轴
+
+	CaCarryingVirGM  :INT ;  //负极取料虚轴
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

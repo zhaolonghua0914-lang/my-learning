@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Cam" Id="{09c6fbe7-fa67-436d-8df6-a820257cfbdd}">
+    <Declaration><![CDATA[TYPE ST_Cam :  //张力FB 接口信号
+STRUCT
+   	bCamInExecute			                 :BOOL;	
+   	bCreatTable		                         :BOOL;	
+
+    bCreatTableDone                        :BOOL;
+    bCreatTableError                        :BOOL;
+	bError                                       :BOOL;
+
+	bReady                                      :BOOL;
+	bStartSync		                             :BOOL;
+	bInSync		                                 :BOOL;//同步状态
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

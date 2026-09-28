@@ -1,0 +1,173 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TableName" Id="{7ae77d7f-4d00-43b4-8a67-a83bd6f95e66}">
+    <Declaration><![CDATA[TYPE ST_TableName :           //凸轮表
+STRUCT
+ 	  M1_GMDanserMove_L	              :UINT:=100;	//1号叠台	隔膜摆臂左凸轮
+	  M1_GMDanserMove_R	              :UINT:=101;	//1号叠台	隔膜摆臂左凸轮
+      M1_GMWind_L	                          :UINT:=102;	//1号叠台	隔膜放卷左凸轮
+      M1_GMWind_R	                      :UINT:=103;	//1号叠台	隔膜放卷右凸轮
+  	  M1_GMBuffer_L	                      :UINT:=104;	//1号叠台	隔膜缓存左凸轮
+      M1_GMBuffer_R	                      :UINT:=105;	//1号叠台	隔膜缓存右凸轮
+  	  M1_GMLengthCalculate_L	           :UINT:=106;	//1号叠台	隔膜长度计算左凸轮
+      M1_GMLengthCalculate_R	           :UINT:=107;	//1号叠台	隔膜长度计算右凸轮
+      M1_AnCarryingLine                   	              :UINT:=108;	//1号叠台	正极送片搬运平移
+	  
+      M1_AnCarryingUpDown            	              :UINT:=109;	//1号叠台	正极送片搬运升降取片
+      M1_AnCarryingUpDown1            	              :UINT:=110;	//1号叠台	正极送片搬运升降放片
+	  M1_AnCarryingUpDown3            	              :UINT:=231;	//1号叠台	正极送片搬运升降放片    0240528SJ
+      M1_AnCarryingWhirling             	              :UINT:=111;	//1号叠台	正极送片搬运旋转
+      M1_AnDTCarryingLine                 	              :UINT:=112;	//1号叠台	正极叠台搬运平移1
+      M1_AnDTCarryingUpDown           	              :UINT:=113;	//1号叠台	正极叠台搬运升降取片
+      M1_AnDTCarryingUpDown1           	              :UINT:=114;	//1号叠台	正极叠台搬运升降放片
+	  M1_AnDTCarryingUpDown3           	              :UINT:=232;	//1号叠台	正极叠台搬运升降放片    20240528SJ
+      M1_CaCarryingLine1                    	              :UINT:=115;	//1号叠台	负极送片搬运1平移
+      M1_CaCarryingUpDown1           	              :UINT:=116;	//1号叠台	负极送片搬运1升降
+      M1_CaCarryingWhirling1           	              :UINT:=117;	//1号叠台	负极送片搬运1旋转
+      M1_CaCarryingLine2                   	              :UINT:=118;	//1号叠台	负极送片搬运2平移
+      M1_CaCarryingUpDown2             	              :UINT:=119;	//1号叠台	负极送片搬运2升降取片
+      M1_CaCarryingUpDown2_1            	              :UINT:=120;	//1号叠台	负极送片搬运2升降放片
+	   M1_CaCarryingUpDown2_3            	              :UINT:=233;	//1号叠台	负极送片搬运2升降放片  20240528SJ
+      M1_CaBelt                                 	              :UINT:=121;	//1号叠台	负极送片皮带
+      M1_CaDTCarryingLine                 	              :UINT:=122;	//1号叠台	负极叠台搬运平移
+      M1_CaDTCarryingUpDown           	              :UINT:=123;	//1号叠台	负极叠台搬运升降取片
+      M1_CaDTCarryingUpDown1          	              :UINT:=124;	//1号叠台	负极叠台搬运升降放片
+	   M1_CaDTCarryingUpDown3          	              :UINT:=234;	//1号叠台	负极叠台搬运升降放片  20240528SJ
+      M1_DTUpDown	              :UINT:=125;	//1号叠台	叠台升降
+      M1_LeftYDLine                          	              :UINT:=126;	//1号叠台	左压刀开合
+      M1_LeftYDUpDown                    	              :UINT:=127;	//1号叠台	左压刀升降
+      M1_RightYDLine	              :UINT:=128;	//1号叠台	右压刀开合
+      M1_RightYDUpDown                  	              :UINT:=129;	//1号叠台	右压刀升降
+      M1_TailCurlLine                        	              :UINT:=130;	//1号叠台	尾卷平移
+      M1_TailCurlUpDown	              :UINT:=131;	//1号叠台	尾卷升降
+      M1_GMVir_L                            :UINT:=132;	//1号叠台  隔膜虚轴
+ 
+	  M1_GMWind2_R                                     :UINT:=133;	
+      M1_GMWind2_L                                      :UINT:=134;	
+      M1_GMBuffer2_R                                   :UINT:=135;	
+       M1_GMBuffer2_L                                    :UINT:=136;	
+      M1_GMLengthCalculate2_R                      :UINT:=137;	
+      M1_GMLengthCalculate2_L                      :UINT:=138;	
+	  
+	  
+	  
+	  
+	  
+  	  M2_GMDanserMove_L	              :UINT:=140;	//2号叠台	隔膜摆臂左凸轮
+      M2_GMDanserMove_R	              :UINT:=141;	//2号叠台	隔膜摆臂左凸轮
+      M2_GMWind_L	              :UINT:=142;	//2号叠台	隔膜放卷左凸轮
+      M2_GMWind_R	              :UINT:=143;	//2号叠台	隔膜放卷右凸轮
+      M2_GMBuffer_L	              :UINT:=144;	//2号叠台	隔膜缓存左凸轮
+      M2_GMBuffer_R	              :UINT:=145;	//2号叠台	隔膜缓存右凸轮
+      M2_GMLengthCalculate_L	              :UINT:=146;	//2号叠台	 隔膜长度计算左凸轮
+      M2_GMLengthCalculate_R	              :UINT:=147;	//2号叠台	隔膜长度计算右凸轮
+      M2_AnCarryingLine                  	              :UINT:=148;	//2号叠台	正极送片搬运平移
+      M2_AnCarryingUpDown             	              :UINT:=149;	//2号叠台	正极送片搬运升降取片
+      M2_AnCarryingUpDown1             	              :UINT:=150;	//2号叠台	正极送片搬运升降放片
+	  M2_AnCarryingUpDown3             	              :UINT:=235;	//2号叠台	正极送片搬运升降放片  20240528SJ
+      M2_AnCarryingWhirling              	              :UINT:=151;	//2号叠台	正极送片搬运旋转
+      M2_AnDTCarryingLine               	              :UINT:=152;	//2号叠台	正极叠台搬运平移1
+      M2_AnDTCarryingUpDown          	              :UINT:=153;	//2号叠台	正极叠台搬运升降取片
+      M2_AnDTCarryingUpDown1           	              :UINT:=154;	//2号叠台	正极叠台搬运升降放片
+	     M2_AnDTCarryingUpDown3           	          :UINT:=236;	//2号叠台	正极叠台搬运升降放片  20240528SJ
+      M2_CaCarryingLine1                    	              :UINT:=155;	//2号叠台	负极送片搬运1平移
+      M2_CaCarryingUpDown1              	              :UINT:=156;	//2号叠台	负极送片搬运1升降
+      M2_CaCarryingWhirling1            	              :UINT:=157;	//2号叠台	负极送片搬运1旋转
+      M2_CaCarryingLine2                   	              :UINT:=158;	//2号叠台	负极送片搬运2平移
+      M2_CaCarryingUpDown2            	              :UINT:=159;	//2号叠台	负极送片搬运2升降取片
+      M2_CaCarryingUpDown2_1             	              :UINT:=160;	//2号叠台	负极送片搬运2升降放片
+	     M2_CaCarryingUpDown2_3             	              :UINT:=237;	//2号叠台	负极送片搬运2升降放片  20240528SJ
+      M2_CaBelt                                  	              :UINT:=161;	//2号叠台	负极送片皮带
+      M2_CaDTCarryingLine              	              :UINT:=162;	//2号叠台	负极叠台搬运平移
+      M2_CaDTCarryingUpDown        	              :UINT:=163;	//2号叠台	负极叠台搬运升降取片
+      M2_CaDTCarryingUpDown1         	              :UINT:=164;	//2号叠台	负极叠台搬运升降放片
+	  M2_CaDTCarryingUpDown3         	              :UINT:=238;	//2号叠台	负极叠台搬运升降放片   20240528SJ
+      M2_DTUpDown	              :UINT:=165;	//2号叠台	叠台升降
+      M2_LeftYDLine                           	              :UINT:=166;	//2号叠台	左压刀开合
+      M2_LeftYDUpDown                   	              :UINT:=167;	//2号叠台	左压刀升降
+      M2_RightYDLine	              :UINT:=168;	//2号叠台	右压刀开合
+      M2_RightYDUpDown                  	              :UINT:=169;	//2号叠台	右压刀升降
+      M2_TailCurlLine                        	              :UINT:=170;	//2号叠台	尾卷平移
+      M2_TailCurlUpDown	              :UINT:=171;	//2号叠台	尾卷升降
+      M2_GMVir_L                            :UINT:=172;	//1号叠台  隔膜虚轴
+ 
+ 	  M2_GMWind2_R                                     :UINT:=173;	
+	  M2_GMWind2_L                                      :UINT:=174;	
+	  M2_GMBuffer2_R                                   :UINT:=175;	
+	  M2_GMBuffer2_L                                    :UINT:=176;	
+	  M2_GMLengthCalculate2_R                      :UINT:=177;	
+	  M2_GMLengthCalculate2_L                      :UINT:=178;		
+	  	  
+	  
+      M3_GMDanserMove_L	              :UINT:=180;	// 3号叠台 	隔膜摆臂左凸轮
+      M3_GMDanserMove_R	              :UINT:=181;	// 3号叠台 	隔膜摆臂左凸轮
+      M3_GMWind_L	              :UINT:=182;	// 3号叠台	隔膜放卷左凸轮
+      M3_GMWind_R	              :UINT:=183;	// 3号叠台	隔膜放卷右凸轮
+      M3_GMBuffer_L	              :UINT:=184;	// 3号叠台	隔膜缓存左凸轮
+      M3_GMBuffer_R	              :UINT:=185;	// 3号叠台	隔膜缓存右凸轮
+      M3_GMLengthCalculate_L	              :UINT:=186;	// 3号叠台	隔膜长度计算左凸轮
+      M3_GMLengthCalculate_R	              :UINT:=187;	// 3号叠台	隔膜长度计算右凸轮
+      M3_AnCarryingLine                   	              :UINT:=188;	// 3号叠台	正极送片搬运平移
+      M3_AnCarryingUpDown          	              :UINT:=189;	// 3号叠台	正极送片搬运升降取片
+      M3_AnCarryingUpDown1             	              :UINT:=190;	// 3号叠台	正极送片搬运升降放片
+	  M3_AnCarryingUpDown3             	              :UINT:=239;	// 3号叠台	正极送片搬运升降放片    20240528SJ
+      M3_AnCarryingWhirling             	              :UINT:=191;	// 3号叠台	正极送片搬运旋转
+      M3_AnDTCarryingLine               	              :UINT:=192;	// 3号叠台	正极叠台搬运平移1
+      M3_AnDTCarryingUpDown           	              :UINT:=193;	// 3号叠台	正极叠台搬运升降取片
+      M3_AnDTCarryingUpDown1           	              :UINT:=194;	// 3号叠台	正极叠台搬运升降放片
+	  M3_AnDTCarryingUpDown3           	              :UINT:=240;	// 3号叠台	正极叠台搬运升降放片 20240528SJ
+      M3_CaCarryingLine1                   	              :UINT:=195;	// 3号叠台	负极送片搬运1平移
+      M3_CaCarryingUpDown1              	              :UINT:=196;	// 3号叠台	负极送片搬运1升降
+      M3_CaCarryingWhirling1            	              :UINT:=197;	// 3号叠台	负极送片搬运1旋转
+      M3_CaCarryingLine2                    	              :UINT:=198;	// 3号叠台	负极送片搬运2平移
+      M3_CaCarryingUpDown2            	              :UINT:=199;	// 3号叠台	负极送片搬运2升降取片
+      M3_CaCarryingUpDown2_1             	              :UINT:=200;	// 3号叠台	负极送片搬运2升降放片
+	  M3_CaCarryingUpDown2_3             	              :UINT:=241;	// 3号叠台	负极送片搬运2升降放片  20240528SJ  
+      M3_CaBelt                                   	              :UINT:=201;	// 3号叠台	负极送片皮带
+      M3_CaDTCarryingLine                  	              :UINT:=202;	// 3号叠台	负极叠台搬运平移
+      M3_CaDTCarryingUpDown           	              :UINT:=203;	// 3号叠台	负极叠台搬运升降取片
+      M3_CaDTCarryingUpDown1           	              :UINT:=204;	// 3号叠台	负极叠台搬运升降放片
+	   M3_CaDTCarryingUpDown3           	              :UINT:=242;	// 3号叠台	负极叠台搬运升降放片   20240528SJ  
+      M3_DTUpDown	              :UINT:=205;	// 3号叠台	叠台升降
+      M3_LeftYDLine                             	              :UINT:=206;	// 3号叠台	左压刀开合
+      M3_LeftYDUpDown                     	              :UINT:=207;	// 3号叠台	左压刀升降
+      M3_RightYDLine	              :UINT:=208;	// 3号叠台	右压刀开合
+      M3_RightYDUpDown                     	              :UINT:=209;	// 3号叠台	右压刀升降
+	  M3_TailCurlLine                        	              :UINT:=210;	// 3号叠台	尾卷平移
+ 	  M3_TailCurlUpDown	              :UINT:=211;	// 3号叠台	尾卷升降
+      M3_GMVir_L                            :UINT:=212;	//3号叠台  隔膜虚轴
+
+	  
+	  	M3_GMWind2_R                                     :UINT:=213;	
+		M3_GMWind2_L                                      :UINT:=214;	
+		M3_GMBuffer2_R                                   :UINT:=215;	
+		M3_GMBuffer2_L                                    :UINT:=216;	
+		M3_GMLengthCalculate2_R                      :UINT:=217;	
+		M3_GMLengthCalculate2_L                      :UINT:=218;		
+
+	  M1_LeftYDLine2                             	   :UINT:=219;	// 1号叠台	左压刀开合2
+      M1_LeftYDUpDown2                     	           :UINT:=220;	// 1号叠台	左压刀升降2
+      M1_RightYDLine2	                               :UINT:=221;	// 1号叠台	右压刀开合2
+      M1_RightYDUpDown2                    	           :UINT:=222;	// 1号叠台	右压刀升降2
+	  
+	  M2_LeftYDLine2                             	   :UINT:=223;	// 2号叠台	左压刀开合2
+      M2_LeftYDUpDown2                     	           :UINT:=224;	// 2号叠台	左压刀升降2
+      M2_RightYDLine2	                               :UINT:=225;	// 2号叠台	右压刀开合2
+      M2_RightYDUpDown2                    	           :UINT:=226;	// 2号叠台	右压刀升降2
+	  
+	  M3_LeftYDLine2                             	   :UINT:=227;	// 3号叠台	左压刀开合2
+      M3_LeftYDUpDown2                     	           :UINT:=228;	// 3号叠台	左压刀升降2
+      M3_RightYDLine2	                               :UINT:=229;	// 3号叠台	右压刀开合2
+      M3_RightYDUpDown2                    	           :UINT:=230;	// 3号叠台	右压刀升降2	  
+	  
+	  
+	  
+	  
+	  
+	  
+	  
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

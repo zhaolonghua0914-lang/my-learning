@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ShortDataShow" Id="{cb3ba7dc-ee6a-44fd-8adc-ffc404735fee}">
+    <Declaration><![CDATA[TYPE ShortDataShow :
+STRUCT
+	strState:STRING;         //0：停止中  1：测试中   2：放电中
+    strResult:STRING;  //启动测试后返回结果   综合结果
+	
+	strMeasure :STRING;     //测量电阻值
+	strMeasureState :STRING;     //1:OFF 2:NOcomp 3:DELAY 4:PASS 5:UFAIL 6:LFAIL 7:ULFAIL
+
+	strVoltageSetValue:STRING;  //电压设定值查询
+    strVoltageMonitor:STRING; //电压值监视
+	
+	strMohmRangeValue:STRING;//(1:2M/2:20M/3:200M/4:2000M/5:4000M/6:AUTO) 
+    
+	strSpeedValue:STRING ;//测量速度查询(FAST/SLOW)
+	
+	strTimerValue :STRING;  //测试时间查询
+	strDelayValue :STRING;  //响应时间查询(0自动）
+	
+	strComparatorLimitSet :STRING;  //比较器上限 下限值
+	strComparatorModeValue: STRING ;// 21  测试模式查询（CONTinue/PASSstop/FAILstop/SEQuence）
+	strComparatorBeeperValue:    STRING;//23  判定蜂鸣器查询(PASS/FAIL/OFF/END)
+	
+	strContactValue :STRING;//  25  接触检查功能查询(ON/OFF)
+	strContactResult :STRING;//  27  接触检查结果查询(NOCHK/PASS/HFAIL/LFAIL/HLFAIL)
+	
+	strShortValue:STRING;// 28  短路检查功能查询(ON/OFF)
+	strShortTimeValue:  STRING;// 30 短路检查时间查询(0:自动)
+	strShortResult:STRING;// 32  短路检查结果查询（NOCHK/PASS/FAIL）
+	
+	strKeyBeeperValue:STRING;  // 33  按键输入蜂鸣器音查询(ON/OFF)	
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

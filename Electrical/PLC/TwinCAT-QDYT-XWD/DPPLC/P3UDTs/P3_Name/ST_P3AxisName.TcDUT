@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P3AxisName" Id="{bc712c77-00e8-4650-ab58-af413ceccb6c}">
+    <Declaration><![CDATA[TYPE ST_P3AxisName :
+STRUCT
+P3M1_ColdpreLine	         :INT:=160; //	P3_M1冷压上料夹平移, 1、初始位，2、贴胶1位，3、贴胶2位，4、贴胶3位，5、冷压位，6、排NG料1位，7、排NG料2位
+P3M1_ColdpreRetracting	     :INT:=161;	//	P3_M1冷压上料夹进退  1、初始位，2、贴胶1位，3、贴胶2位，4、贴胶3位，5、冷压位，6、排NG料位
+P3M1_ColdpreWhirling	     :INT:=162;	//	P3_M1冷压上料夹旋转  1、初始位，2、贴胶1位，3、贴胶2位，4、贴胶3位，5、冷压位，6、排NG料位
+P3M1_ColdpreUpDown	         :INT:=163; //	P3_M1冷压上料夹升降  1、初始位，2、贴胶1位，3、贴胶2位，4、贴胶3位，5、冷压位，6、排NG料位  7、贴胶1辅助位  8、贴胶2辅助位  9、贴胶3辅助位  10、冷压辅助位
+P3M1_ColdpreSupPlateLine	 :INT:=164;	//	P3_M1冷压托板开合    1、初始位，2、张开位
+P3M1_ColdpreActuated	     :INT:=165;	//	P3_M1冷压驱动        1、初始位, 2、电芯位
+P3_M2_OvenCarrying	         :INT:=166;	//	P3_M2烤箱上料夹搬运 43、初始位，44、冷压位，45、热压位，1-42、烤箱位，46、扫码位，47、贴二维码胶位
+P3_M2_OvenRetracting	     :INT:=167;	//	P3_M2烤箱上料夹进退 43、初始位，44、冷压位，45、热压位，1-42、烤箱位，46、扫码位和贴二维码胶位
+P3_M2_OvenUpDown	         :INT:=168;	//	P3_M2烤箱上料夹升降 43、初始位，44、冷压位，45、热压位，1-42、烤箱位，46、扫码位和贴二维码胶位 48、热压辅助位 49、冷压辅助位
+P3_M3_HotPressingLine	     :INT:=169;	//	P3_M3热压托板开合    1、初始位，2、张开位
+P3_M3_HotPressingActuated	 :INT:=170;	//	P3_M3热压驱动        1、初始位，2、电芯位
+P3_M4_WeighLine	             :INT:=171;	//	P3_M4称重上料夹平移  1、初始位，2、热压位，3、称重位   4、避让位(可旋转)
+P3_M4_WeighUpDown	         :INT:=172;	//	P3_M4称重上料夹升降  1、初始位，2、热压位，3、称重位  4、热压辅助位   5、称重辅助位
+P3_M4_WeighWhirling	         :INT:=173;	//	P3_M4称重上料夹旋转  1、初始位，2、热压位，3、称重位
+P3_M4_SortingoutCarrying	 :INT:=174;	//	P3_M4电芯分选夹搬运  1、初始位，2、称重位，3、测厚位，4、放料位，5、1号料盒短路对齐度NG位，6、2号料盒厚度烘烤NG位，7、3号料盒扫码称重mesNG位
+P3_M4_SortingoutUpDown	     :INT:=175;	//	P3_M4电芯分选夹升降  1、初始位，2、称重位，3、测厚位，4、放料位，5、短路NG位，6、称重和测厚NG位，7扫码NG位,8称重辅助位，9测厚辅助位
+P3_M4_OffloadingCarrying	 :INT:=176;	//	P3_M4电芯下料夹搬运  1、初始位，2、取料位，3、下料位1  4、下料位2
+P3_M4_OffloadingUpDown	     :INT:=177;	//	P3_M4电芯下料夹升降  1、初始位，2、取料位，3、下料位, 4、取料下降位 5、等待高度 6、下料下降位
+P3_TapeAdvance				:INT:=178;	//	P3_M3贴胶头进退1=初始位,2=取胶位,3=非极耳侧贴胶位,4=贴胶等待位,5=极耳侧贴胶位
+P3_TapeTranslation			:INT:=179;	//	P3_M3贴胶平移1=贴胶1位，2=贴胶2位，3=贴胶3位，4=贴胶4位，5=贴胶5位，6=贴胶6位，7=下料位，,8=初始位
+
+//新增
+P3_IDPut							:INT:=180;//二维码胶拉胶		1:初始位  2:取胶位  3:拉胶位  4:切胶最小位 5:切胶最大位	6,Mark孔后定长 7,NG位
+P3_IDLift							:INT:=181;//二维码胶升降		1:初始位  2:取胶位  3:贴胶位  4:避让位  5:NG位
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

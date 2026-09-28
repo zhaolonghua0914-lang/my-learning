@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Torque_P3" Id="{2f38d782-cdc7-4428-ab74-025a88ed4a95}">
+    <Declaration><![CDATA[TYPE ST_Torque_P3 :
+STRUCT
+	
+	ColdpreLineTorSet:INT;//冷呀上料夹平移报警力矩设定
+	ColdpreRetractTorSet:INT;//冷压上料夹进退报警力矩设定
+	ColdpreWhirlTorSet:INT;//冷压上料夹旋转报警力矩设定
+	ColdpreActTorSet:INT;//冷压驱动报警力矩设定
+	OvenCarryTorSet:INT;//烤箱上料夹搬运报警力矩设定
+	OvenRetractTorSet:INT;//烤箱上料夹进退报警力矩设定
+	HotpreActTorSet:INT;//热压驱动报警力矩设定
+	WeighLineTorSet:INT;//称重上料夹平移报警力矩设定
+	WeighWhirlTorSet:INT;//称重上料夹旋转报警力矩设定
+	SortingCarryTorSet:INT;//电芯分选夹搬运报警力矩设定
+	OffloadCarryTorSet:INT;//电芯下料夹搬运报警力矩设定
+	
+	TapeAdvanceTorSet:INT;//后段贴胶平移实时力矩设定
+	TapeTranslationTorSet:INT;//后段贴胶头进退实时力矩设定
+	
+	ColdpreLineTor:INT;//冷呀上料夹平移实时力矩
+	ColdpreRetractTor:INT;//冷压上料夹进退实时力矩
+	ColdpreWhirlTor:INT;//冷压上料夹旋转实时力矩
+	ColdpreActTor:INT;//冷压驱动实时力矩
+	OvenCarryTor:INT;//烤箱上料夹搬运实时力矩
+	OvenRetractTor:INT;//烤箱上料夹进退实时力矩
+	HotpreActTor:INT;//热压驱动实时力矩
+	WeighLineTor:INT;//称重上料夹平移实时力矩
+	WeighWhirlTor:INT;//称重上料夹旋转实时力矩
+	SortingCarryTor:INT;//电芯分选夹搬运实时力矩
+	OffloadCarryTor:INT;//电芯下料夹搬运实时力矩
+	
+	TapeAdvanceTor:INT;//后段贴胶平移实时力矩
+	TapeTranslationTor:INT;//后段贴胶头进退实时力矩
+	
+	ColdpreLineTorAlarm:BOOL;//冷呀上料夹平移力矩超限报警
+	ColdpreRetractTorAlarm:BOOL;//冷压上料夹进退力矩超限报警
+	ColdpreWhirlTorAlarm:BOOL;//冷压上料夹旋转力矩超限报警
+	ColdpreActTorAlarm:BOOL;//冷压驱动力矩超限报警
+	OvenCarryTorAlarm:BOOL;//烤箱上料夹搬运力矩超限报警
+	OvenRetractTorAlarm:BOOL;//烤箱上料夹进退力矩超限报警
+	HotpreActTorAlarm:BOOL;//热压驱动力矩超限报警
+	WeighLineTorAlarm:BOOL;//称重上料夹平移力矩超限报警
+	WeighWhirlTorAlarm:BOOL;//称重上料夹旋转力矩超限报警
+	SortingCarryTorAlarm:BOOL;//电芯分选夹搬运力矩超限报警
+	OffloadCarryTorAlarm:BOOL;//电芯下料夹搬运力矩超限报警
+	
+	TapeAdvanceTorSetAlarm:BOOL;//后段贴胶平移实时力矩超限报警
+	TapeTranslationTorSetAlarm:BOOL;//后段贴胶头进退实时力矩超限报警
+	
+	
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

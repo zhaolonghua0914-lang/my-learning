@@ -1,0 +1,742 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="P3IOLink" Id="{531ff1ad-88e3-43e9-8c4e-3636fec73eba}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P3IOLink
+VAR
+//	tFlash: TON;
+//	bFlash:BOOL;
+//	bIOinit: BOOL;
+	XXX: INT;
+	Q20815: BOOL;
+	AA: INT;
+
+     arrFilter_AD               : ARRAY[1..MaxAINo]  OF  FB_Filter_AD ;
+
+
+
+
+	I1: INT;
+
+    rt01   :Tc2_Standard.R_TRIG;
+    rt02   :Tc2_Standard.R_TRIG;
+
+     parDAOld                   :ARRAY[1..44] OF INT;   
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+P3_AI();
+P3_AO();
+P3_AutoLink();
+P3_InPut();
+P3_LimitSwitch();
+P3_OutPut();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="P3_AI" Id="{7a383c27-e243-48c9-82cf-973cc7c4c2aa}">
+      <Implementation>
+        <ST><![CDATA[//尾段下料
+
+arrFilter_AD[28].AD	:=AI60[0];  //冷压压力检测
+arrFilter_AD[29].AD	:=AI60[1];  //热压压力检测
+
+//转换
+FOR  I1:=28 TO 29   DO
+  arrFilter_AD[I1](
+	  iMode:=         2, 
+	  AD:=					arrFilter_AD[I1].AD               , 
+	  iLimitH:=         parFilterAD[I1].iLimitH  , 
+	  iLimitL:=          parFilterAD[I1].iLimitL   , 
+	  fRangeH:=      parFilterAD[I1].fRangeH , 
+	  fRangeL:=       parFilterAD[I1].fRangeL , 
+	  fPointNum:=   15 , 
+	  Out_Value=>);
+END_FOR
+
+//P3Par.P3_AD_Press[1]:=arrFilter_AD[28].Out_Value;
+//P3Par.P3_AD_Press[2]:=arrFilter_AD[29].Out_Value;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P3_AO" Id="{1c582f8e-8716-48b2-b177-745f58f2fcfc}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P3_AutoLink" Id="{16bdc51d-3833-4bf7-bf0d-a2b7f519f82a}">
+      <Implementation>
+        <ST><![CDATA[//气缸映射
+P3_Oven[1]:=P3CYNo.P3Oven1;
+P3_Oven[2]:=P3CYNo.P3Oven2;
+P3_Oven[3]:=P3CYNo.P3Oven3;
+P3_Oven[4]:=P3CYNo.P3Oven4;
+P3_Oven[5]:=P3CYNo.P3Oven5;
+P3_Oven[6]:=P3CYNo.P3Oven6;
+P3_Oven[7]:=P3CYNo.P3Oven7;
+P3_Oven[8]:=P3CYNo.P3Oven8;
+P3_Oven[9]:=P3CYNo.P3Oven9;
+P3_Oven[10]:=P3CYNo.P3Oven10;
+P3_Oven[11]:=P3CYNo.P3Oven11;
+P3_Oven[12]:=P3CYNo.P3Oven12;
+P3_Oven[13]:=P3CYNo.P3Oven13;
+P3_Oven[14]:=P3CYNo.P3Oven14;
+P3_Oven[15]:=P3CYNo.P3Oven15;
+P3_Oven[16]:=P3CYNo.P3Oven16;
+P3_Oven[17]:=P3CYNo.P3Oven17;
+P3_Oven[18]:=P3CYNo.P3Oven18;
+P3_Oven[19]:=P3CYNo.P3Oven19;
+P3_Oven[20]:=P3CYNo.P3Oven20;
+P3_Oven[21]:=P3CYNo.P3Oven21;
+
+
+
+
+//力矩
+	Torque_P3.ColdpreLineTorSet:=HMI_TorErrLimt_D[160];//冷呀上料夹平移报警力矩设定
+	Torque_P3.ColdpreRetractTorSet:=HMI_TorErrLimt_D[161];//冷压上料夹进退报警力矩设定
+	Torque_P3.ColdpreWhirlTorSet:=HMI_TorErrLimt_D[162];//冷压上料夹旋转报警力矩设定
+	Torque_P3.ColdpreActTorSet:=HMI_TorErrLimt_D[165];//冷压驱动报警力矩设定
+	Torque_P3.OvenCarryTorSet:=HMI_TorErrLimt_D[166];//烤箱上料夹搬运报警力矩设定
+	Torque_P3.OvenRetractTorSet:=HMI_TorErrLimt_D[167];//烤箱上料夹进退报警力矩设定
+	Torque_P3.HotpreActTorSet:=HMI_TorErrLimt_D[170];//热压驱动报警力矩设定
+	Torque_P3.WeighLineTorSet:=HMI_TorErrLimt_D[171];//称重上料夹平移报警力矩设定
+	Torque_P3.WeighWhirlTorSet:=HMI_TorErrLimt_D[173];//称重上料夹旋转报警力矩设定
+	Torque_P3.SortingCarryTorSet:=HMI_TorErrLimt_D[174];//电芯分选夹搬运报警力矩设定
+	Torque_P3.OffloadCarryTorSet:=HMI_TorErrLimt_D[176];//电芯下料夹搬运报警力矩设定
+	
+	Torque_P3.TapeTranslationTorSet:=HMI_TorErrLimt_D[178];//后段贴胶头进退报警力矩设定
+	Torque_P3.TapeAdvanceTorSet:=HMI_TorErrLimt_D[179];//后段贴胶平移报警力矩设定
+	
+	Torque_P3.ColdpreLineTor:=iActTorque_D[160];//冷呀上料夹平移实时力矩
+	Torque_P3.ColdpreRetractTor:=iActTorque_D[161];//冷压上料夹进退实时力矩
+	Torque_P3.ColdpreWhirlTor:=iActTorque_D[162];//冷压上料夹旋转实时力矩
+	Torque_P3.ColdpreActTor:=iActTorque_D[165];//冷压驱动实时力矩
+	Torque_P3.OvenCarryTor:=iActTorque_D[166];//烤箱上料夹搬运实时力矩
+	Torque_P3.OvenRetractTor:=iActTorque_D[167];//烤箱上料夹进退实时力矩
+	Torque_P3.HotpreActTor:=iActTorque_D[170];//热压驱动实时力矩
+	Torque_P3.WeighLineTor:=iActTorque_D[171];//称重上料夹平移实时力矩
+	Torque_P3.WeighWhirlTor:=iActTorque_D[173];//称重上料夹旋转实时力矩
+	Torque_P3.SortingCarryTor:=iActTorque_D[174];//电芯分选夹搬运实时力矩
+	Torque_P3.OffloadCarryTor:=iActTorque_D[176];//电芯下料夹搬运实时力矩
+	
+	Torque_P3.TapeTranslationTor:=iActTorque_D[178];//后段贴胶头进退实时力矩
+	Torque_P3.TapeAdvanceTor:=iActTorque_D[179];//后段贴胶平移实时力矩
+	
+(*
+	HMI_TorAlarm_D[160]:=Torque_P3.ColdpreLineTorAlarm;//冷呀上料夹平移力矩超限报警
+	HMI_TorAlarm_D[161]:=Torque_P3.ColdpreRetractTorAlarm;//冷压上料夹进退力矩超限报警
+	HMI_TorAlarm_D[162]:=Torque_P3.ColdpreWhirlTorAlarm;//冷压上料夹旋转力矩超限报警
+	HMI_TorAlarm_D[165]:=Torque_P3.ColdpreActTorAlarm;//冷压驱动力矩超限报警
+	HMI_TorAlarm_D[166]:=Torque_P3.OvenCarryTorAlarm;//烤箱上料夹搬运力矩超限报警
+	HMI_TorAlarm_D[167]:=Torque_P3.OvenRetractTorAlarm;//烤箱上料夹进退力矩超限报警
+	HMI_TorAlarm_D[170]:=Torque_P3.HotpreActTorAlarm;//热压驱动力矩超限报警
+	HMI_TorAlarm_D[171]:=Torque_P3.WeighLineTorAlarm;//称重上料夹平移力矩超限报警
+	HMI_TorAlarm_D[173]:=Torque_P3.WeighWhirlTorAlarm;//称重上料夹旋转力矩超限报警
+	HMI_TorAlarm_D[174]:=Torque_P3.SortingCarryTorAlarm;//电芯分选夹搬运力矩超限报警
+	HMI_TorAlarm_D[176]:=Torque_P3.OffloadCarryTorAlarm;//电芯下料夹搬运力矩超限报警
+*)	
+	
+	HMI_TorAlarm_D[178]:=Torque_P3.TapeTranslationTorSetAlarm;//后段贴胶头进退力矩超限报警
+	HMI_TorAlarm_D[179]:=Torque_P3.TapeAdvanceTorSetAlarm;//后段贴胶平移力矩超限报警]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P3_InPut" Id="{c7e03519-6461-4ffb-b979-f0aed99cca95}">
+      <Implementation>
+        <ST><![CDATA[//尾段下料
+//I601
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Io.DIOnSwitch:=I601[1]	;//	冷压麦拉张紧气缸伸出位
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Io.DIOFFSwitch:=I601[2]	;//	冷压麦拉张紧气缸缩回位
+P3Senser.P3_ColdEmptyPress:=I601[3]	;//	冷压防空压感应
+P3Senser.P3_ColdScapegoat :=I601[4]	;//	冷压替罪羊检测
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIONSwitch:=I601[5]	;//	烤箱上料夹张开位
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOFFSwitch:=I601[6]	;//	烤箱上料夹闭合位
+
+//P3Senser.P3_CacheSensor:=I601[7]	;//贴胶平台有料感应
+P3Senser.P3_Securitydoorswitch13:=I601[7]	;//外罩门禁13
+
+P3Senser.P3_Fxjgy:=I601[8]	;//	//分选夹电芯有无
+P3Senser.P3_ShortTest_UpperFall:=I601[9]	;//	短路测试结果超上限
+P3Senser.P3_ShortTest_LowerFall:=I601[10]   ;//	短路测试结果超下限
+P3Senser.P3_ShortTest_Testing:=I601[11]     ;//	短路测试中
+P3Senser.P3_ShortTest_Pass:=I601[12]        ;//	短路测试OK
+P3Senser.P3_Czslgy:=I601[13];//称重上料夹电芯有无	
+P3Senser.P3_Kxslgy:=I601[14];//烤箱上料夹电芯有无
+P3Senser.P3_InLayOffPer1:=I601[15];//	下料位1允许放料
+P3Senser.P3_InLayOffPer2:=I601[16];//	下料位2允许放料		
+		
+//I602		
+arrCyCtrl[P3CYNo.P3Oven1].Io.DIOFFSwitch:=I602[1]	;//	1_1烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven1].Io.DIONSwitch:=I602[2]	;//	1_1烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven4].Io.DIOFFSwitch:=I602[3]	;//	1_2烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven4].Io.DIONSwitch:=I602[4]	;//	1_2烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven7].Io.DIOFFSwitch:=I602[5]	;//	1_3烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven7].Io.DIONSwitch:=I602[6]	;//	1_3烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven10].Io.DIOFFSwitch:=I602[7]	;//	1_4烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven10].Io.DIONSwitch:=I602[8]	;//	1_4烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven13].Io.DIOFFSwitch:=I602[9]	;//	1_5烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven13].Io.DIONSwitch:=I602[10] 	;//	1_5烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven16].Io.DIOFFSwitch:=I602[11] ;//	1_6烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven16].Io.DIONSwitch:=I602[12] 	;//	1_6烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven19].Io.DIOFFSwitch:=I602[13] ;//	1_7烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven19].Io.DIONSwitch:=I602[14] 	;//	1_7烤箱门打开
+P3Senser.P3_Ovendoorswitch1:=I602[15]               ;//	烤箱1对射感应
+P3Senser.P3_OVenScapegoat1:=I602[16]               ;//烤箱1替罪羊	
+		
+//I603		
+arrCyCtrl[P3CYNo.P3Oven2].Io.DIOFFSwitch:=I603[1]	;//	2_1烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven2].Io.DIONSwitch:=I603[2]	;//	2_1烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven5].Io.DIOFFSwitch:=I603[3]	;//	2_2烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven5].Io.DIONSwitch:=I603[4]	;//	2_2烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven8].Io.DIOFFSwitch:=I603[5]	;//	2_3烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven8].Io.DIONSwitch:=I603[6]	;//	2_3烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven11].Io.DIOFFSwitch:=I603[7]	;//	2_4烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven11].Io.DIONSwitch:=I603[8]	;//	2_4烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven14].Io.DIOFFSwitch:=I603[9]	;//	2_5烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven14].Io.DIONSwitch:=I603[10] 	;//	2_5烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven17].Io.DIOFFSwitch:=I603[11] ;//	2_6烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven17].Io.DIONSwitch:=I603[12] 	;//	2_6烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven20].Io.DIOFFSwitch:=I603[13] ;//	2_7烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven20].Io.DIONSwitch:=I603[14] 	;//	2_7烤箱门打开
+P3Senser.P3_Ovendoorswitch2:=I603[15]               ;//	烤箱2对射感应
+P3Senser.P3_OVenScapegoat2:=I603[16] 				 ;//烤箱2替罪羊		
+		
+		
+//I604		
+arrCyCtrl[P3CYNo.P3Oven3].Io.DIOFFSwitch:=I604[1]	;//	3_1烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven3].Io.DIONSwitch:=I604[2]	;//	3_1烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven6].Io.DIOFFSwitch:=I604[3]	;//	3_2烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven6].Io.DIONSwitch:=I604[4]	;//	3_2烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven9].Io.DIOFFSwitch:=I604[5]	;//	3_3烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven9].Io.DIONSwitch:=I604[6]	;//	3_3烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven12].Io.DIOFFSwitch:=I604[7]	;//	3_4烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven12].Io.DIONSwitch:=I604[8]	;//	3_4烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven15].Io.DIOFFSwitch:=I604[9]	;//	3_5烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven15].Io.DIONSwitch:=I604[10] 	;//	3_5烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven18].Io.DIOFFSwitch:=I604[11] ;//	3_6烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven18].Io.DIONSwitch:=I604[12] 	;//	3_6烤箱门打开
+arrCyCtrl[P3CYNo.P3Oven21].Io.DIOFFSwitch:=I604[13] ;//	3_7烤箱门关闭
+arrCyCtrl[P3CYNo.P3Oven21].Io.DIONSwitch:=I604[14] 	;//	3_7烤箱门打开
+P3Senser.P3_Ovendoorswitch3:=I604[15]               ;//	烤箱3对射感应
+P3Senser.P3_OVenScapegoat3:=I604[16] 				 ;//烤箱3替罪羊		
+	
+
+
+//I605
+arrCyCtrl[P3CYNo.P3ShortTest].Io.DIOnSwitch:=I605[1]	    ;//	短路测试夹气缸张开
+arrCyCtrl[P3CYNo.P3ShortTest].Io.DIOFFSwitch:=I605[2]	    ;//	短路测试夹气缸缩回
+arrCyCtrl[P3CYNo.P3HotPressTensed].Io.DIOnSwitch:=I605[3]	;//	热压麦拉张紧气缸伸出位
+arrCyCtrl[P3CYNo.P3HotPressTensed].Io.DIOFFSwitch:=I605[4]	;//	热压麦拉张紧气缸缩回位
+P3Senser.P3_HotEmptyPress:=I605[5]	                        ;//	热压防空压感应
+P3Senser.P3_HotScapegoat :=I605[6]	                        ;//	热压替罪羊检测
+P3Senser.P3_HotMoveOffset_X:=I605[7]	;//	热压上料偏移检测1x
+P3Senser.P3_HotMoveOffset_Y:=I605[8]	;//	热压上料偏移检测2x
+P3Senser.P3_HotMoveOffset_Z:=I605[9]	;//	热压上料偏移检测3z
+arrCyCtrl[P3CYNo.P3CellPushSpin].Io.DIOffSwitch:=I605[10]  ;//	电芯旋转定位气缸伸出位
+arrCyCtrl[P3CYNo.P3CellPushSpin].Io.DIOnSwitch:=I605[11]  ;//	电芯旋转定位气缸缩回位	
+arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Io.DIOFFSwitch:=I605[12]  ;//称重上料夹张开位
+arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Io.DIONSwitch:=I605[13]   ;//称重上料夹闭合位
+P3Senser.P3_WeightSensor:=I605[14]      ;//	称重台有料感应
+arrCyCtrl[P3CYNo.P3WgightUP].Io.DIOnSwitch:=      I605[15]  ;//	称重上料夹夹电芯气缸张开位
+arrCyCtrl[P3CYNo.P3WgightUP].Io.DIOFFSwitch:=I605[16]  ;//	称重上料夹夹电芯气缸闭合位
+	
+
+//I606
+arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Io.DIOnSwitch:=I606[1]	;//测厚台切换气缸伸出位
+arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Io.DIOFFSwitch:=I606[2];//	测厚台切换气缸缩回位
+arrCyCtrl[P3CYNo.P3ThicknessSupport].Io.DIOnSwitch:=I606[3]	    ;//	测厚台托板气缸伸出
+arrCyCtrl[P3CYNo.P3ThicknessSupport].Io.DIOFFSwitch:=I606[4]	;//	测厚台托板气缸缩回
+arrCyCtrl[P3CYNo.P3ThicknessPressure].Io.DIOnSwitch:=I606[5]	;//	测厚台压板气缸伸出
+arrCyCtrl[P3CYNo.P3ThicknessPressure].Io.DIOFFSwitch:=I606[6]	;//	测厚台压板气缸缩回
+P3Senser.P3_ThicknessSensor:=I606[7]	;//	测厚台有料感应
+P3Senser.P3_HotOffset_L:=I606[8]	;//	//热压电芯位置检测1
+arrCyCtrl[P3CYNo.P3SortClamp].Io.DIOFFSwitch:=I606[9]	  ;//	电芯分选夹张开位
+arrCyCtrl[P3CYNo.P3SortClamp].Io.DIOnSwitch:=I606[10]     ;//	电芯分选夹闭合位
+arrCyCtrl[P3CYNo.P3SortLifting].Io.DIOFFSwitch:=I606[11]  ;//	电芯分选夹上升位
+arrCyCtrl[P3CYNo.P3SortLifting].Io.DIOnSwitch:=I606[12]   ;//	电芯分选夹下降位
+arrCyCtrl[P3CYNo.P3SortRotate].Io.DIOFFSwitch:=I606[13]   ;//	电芯分选夹0度位
+arrCyCtrl[P3CYNo.P3SortRotate].Io.DIONSwitch:=I606[14]    ;//	电芯分选夹90度位
+arrCyCtrl[P3CYNo.P3TapeSpin].Io.DIOnSwitch:=      I606[15]  ;//	流水线下料旋转气缸张开位
+arrCyCtrl[P3CYNo.P3TapeSpin].Io.DIOFFSwitch:=I606[16]  ;//	流水线下料旋转气缸闭合位	
+
+
+//I607	
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Io.DIOnSwitch:=I607[1]	;//	电芯NG1料盒锁定气缸伸出位
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Io.DIOFFSwitch:=I607[2]	;//	电芯NG1料盒锁定气缸缩回位
+P3Senser.P3_PoleMotor2_Height:=I607[3]	;//	电芯NG1料盒高度感应
+P3Senser.P3_PoleMotor2_Reach:=I607[4]	;//	电芯NG1料盒到位感应
+P3Senser.P3_PoleMotor2_P_OT:=I607[5]	;//	电芯NG1料盒顶升电机上限
+P3Senser.P3_PoleMotor2_N_OT:=I607[6]	;//	电芯NG1料盒顶升电机下限
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Io.DIOnSwitch:=I607[7]	;//	电芯NG2料盒锁定气缸伸出位
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Io.DIOFFSwitch:=I607[8]	;//	电芯NG2料盒锁定气缸缩回位
+P3Senser.P3_PoleMotor3_Height:=I607[9]	;//	电芯NG2料盒高度感应
+P3Senser.P3_PoleMotor3_Reach:=I607[10]  ;//	电芯NG2料盒到位感应
+P3Senser.P3_PoleMotor3_P_OT:=I607[11]  ;//	电芯NG2料盒顶升电机上限
+P3Senser.P3_PoleMotor3_N_OT:=I607[12]  ;//	电芯NG2料盒顶升电机下限
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Io.DIOnSwitch:=I607[13]  ;//	电芯NG3料盒锁定气缸伸出位
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Io.DIOFFSwitch:=I607[14]  ;//	电芯NG3料盒锁定气缸缩回位
+P3Senser.P3_PoleMotor4_Height:=I607[15]  ;//	电芯NG3料盒高度感应
+P3Senser.P3_PoleMotor4_Reach:=I607[16]  ;//	电芯NG3料盒到位感应
+
+
+//I608
+P3Senser.P3_PoleMotor4_P_OT:=I608[1]	;//	电芯NG3料盒顶升电机上限
+P3Senser.P3_PoleMotor4_N_OT:=I608[2]	;//	电芯NG3料盒顶升电机下限
+arrCyCtrl[P3CYNo.P3SortPush].Io.DIOFFSwitch:=I608[3]	;//	电芯分选夹夹电芯张开位
+arrCyCtrl[P3CYNo.P3SortPush].Io.DIOnSwitch:=I608[4]	;//	电芯分选夹夹电芯夹紧位
+arrCyCtrl[P3CYNo.P3BlankingClamp].Io.DIOFFSwitch:=I608[5]	;//	电芯下料夹张开位
+arrCyCtrl[P3CYNo.P3BlankingClamp].Io.DIOnSwitch:=I608[6]	;//	电芯下料夹闭合位
+arrCyCtrl[P3CYNo.P3BlankingLifting].Io.DIOFFSwitch:=I608[7]	;//	电芯下料夹上升位
+arrCyCtrl[P3CYNo.P3BlankingLifting].Io.DIOnSwitch:=I608[8]	;//	电芯下料夹下降位
+P3Senser.P3_CacheSensor:=I608[9]	;//贴胶平台有料感应
+P3Senser.P3_PoleMotor2_bHave:=I608[10]  ;//电芯NG1料盒有料感应	
+P3Senser.P3_PoleMotor3_bHave:=I608[11]  ;//	电芯NG2料盒有料感应
+P3Senser.P3_PoleMotor4_bHave:=I608[12]  ;//	电芯NG3料盒有料感应
+arrCyCtrl[P3CYNo.P3CellSpin].Io.DIONSwitch:=I608[13]  ;//电芯旋转气缸0°
+arrCyCtrl[P3CYNo.P3CellSpin].Io.DIOFFSwitch:=I608[14]  ;//电芯旋转气缸180°
+P3Button.LateStop:=I608[15]  ;//急停按钮
+arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch:=I608[16]  ;//	贴胶头真空
+
+//I609
+P3Senser.P3_Securitydoorswitch1:=I609[1]	;//外罩门禁1	
+P3Senser.P3_Securitydoorswitch2:=I609[2]	;//外罩门禁2
+P3Senser.P3_Securitydoorswitch3:=I609[3]	;//外罩门禁3	
+P3Senser.P3_Securitydoorswitch4:=I609[4]	;//外罩门禁4	
+P3Senser.P3_Securitydoorswitch5:=I609[5]	;//外罩门禁5	
+P3Senser.P3_Securitydoorswitch6:=I609[6]	;//外罩门禁6	
+P3Senser.P3_Securitydoorswitch7:=I609[7]	;//外罩门禁7
+P3Senser.P3_Securitydoorswitch8:=I609[8]	;//外罩门禁8
+P3Senser.P3_Securitydoorswitch9:=I609[9]	;//外罩门禁9	
+P3Senser.P3_Securitydoorswitch10:=I609[10]  ;//外罩门禁10	
+P3Senser.P3_Securitydoorswitch11:=I609[11]  ;//外罩门禁11	
+P3Senser.P3_Securitydoorswitch12:=I609[12]  ;//外罩门禁12	
+P3Press.Gluebtn:=I609[13]  ;//拉胶按钮
+P3Press.Cutbtn:=I609[14]  ;//切胶按钮
+P3Press.Readybtn:=I609[15]  ;//	备胶按钮
+P3Senser.P3_BuleHavetape:=I609[16]  ;//后段蓝胶胶带有料检测
+
+arrCyCtrl[P3CYNo.P3CellPush].Io.DIOnSwitch:=I701[1]	;//电芯压紧气缸伸出位	
+arrCyCtrl[P3CYNo.P3CellPush].Io.DIOFFSwitch:=I701[2]	;//电芯压紧气缸缩回位
+arrCyCtrl[P3CYNo.P3CellAdvance].Io.DIOnSwitch:=I701[3]	;//电芯平移气缸伸出位	
+arrCyCtrl[P3CYNo.P3CellAdvance].Io.DIOFFSwitch:=I701[4]	;//电芯平移气缸缩回位	
+arrCyCtrl[P3CYNo.P3TapePush].Io.DIOnSwitch:=I701[5]	;//贴胶头夹紧气缸伸出位	
+arrCyCtrl[P3CYNo.P3TapePush].Io.DIOFFSwitch:=I701[6]	;//贴胶头夹紧气缸缩回位	
+arrCyCtrl[P3CYNo.P3TapePull].Io.DIOnSwitch:=I701[7]	;//拉带气缸伸出位
+arrCyCtrl[P3CYNo.P3TapePull].Io.DIOFFSwitch:=I701[8]	;//拉带气缸缩回位
+arrCyCtrl[P3CYNo.P3TapeLift].Io.DIOnSwitch:=I701[9]	;//拉带升降气缸伸出位	
+arrCyCtrl[P3CYNo.P3TapeLift].Io.DIOFFSwitch:=I701[10]  ;//拉带升降气缸缩回位	
+arrCyCtrl[P3CYNo.P3TapeCut].Io.DIOnSwitch:=I701[11]  ;//切胶气缸伸出位	
+arrCyCtrl[P3CYNo.P3TapeCut].Io.DIOFFSwitch:=I701[12]  ;//切胶气缸缩回位	
+arrCyCtrl[P3CYNo.P3GluePush].Io.DIOFFSwitch:=I701[13]  ;//压胶气缸伸出位	
+arrCyCtrl[P3CYNo.P3GluePush].Io.DIOnSwitch:=I701[14]  ;//压胶气缸缩回位	
+arrCyCtrl[P3CYNo.P3TapeBuffer].Io.DIOnSwitch:=I701[15]  ;//贴胶缓存气缸伸出位	
+arrCyCtrl[P3CYNo.P3TapeBuffer].Io.DIOFFSwitch:=I701[16]  ;//贴胶缓存气缸缩回位	
+
+
+arrCyCtrl[P3CYNo.P3ColdBlow].Io.DIOnSwitch:=arrCyCtrl[P3CYNo.P3ColdBlow].Io.DOStatus1;//冷压吹气
+arrCyCtrl[P3CYNo.P3ColdBlow].Io.DIOFFSwitch:=NOT arrCyCtrl[P3CYNo.P3ColdBlow].Io.DOStatus1;//冷压吹气
+arrCyCtrl[P3CYNo.P3HotBlow].Io.DIOnSwitch:=arrCyCtrl[P3CYNo.P3ColdBlow].Io.DOStatus1;//热压吹气
+arrCyCtrl[P3CYNo.P3HotBlow].Io.DIOFFSwitch:=NOT arrCyCtrl[P3CYNo.P3ColdBlow].Io.DOStatus1;//热压吹气
+
+
+//新增
+arrCyCtrl[P3CYNo.P3_GlueExtend].Io.DIOnSwitch:=I702[1]  ;//二维码蹬胶气缸蹬出
+arrCyCtrl[P3CYNo.P3_GlueExtend].Io.DIOFFSwitch:=arrCyCtrl[P3CYNo.P3_GlueExtend].Io.DOStatus2;//二维码蹬胶气缸缩回
+arrCyCtrl[P3CYNo.P3_GluePress].Io.DIOnSwitch:=I702[3]  ;//二维码压胶气缸压紧
+arrCyCtrl[P3CYNo.P3_GluePress].Io.DIOFFSwitch:=I702[4]  ;//二维码压胶气缸松开
+arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIOnSwitch:=I702[5]  ;//二维码切胶气缸切胶
+arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIOFFSwitch:=I702[6]  ;//二维码切胶气缸缩回
+arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOnSwitch:=I702[7]  ;//二维码拉胶气缸夹紧
+arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOFFSwitch:=I702[8]  ;//二维码拉胶气缸松开
+arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIONSwitch:=I702[9]  ;//	二维码贴胶吸盘真空
+P3Senser.P3_IDMark:=I702[10]  ;//二维码胶Mark孔检测
+P3Senser.P3_Securitydoorswitch14:=I702[11]  	;//外罩门禁14
+P3Senser.P3_IDHavetape:=I702[12]  ;//二维码胶胶卷有料检测
+P3Button.IDStickBtn:=I702[13]  ;//二维码备胶按钮
+P3Button.IDGluebtn:=I702[14]  ;//二维码拉胶按钮
+P3Button.IDCutbtn:=I702[15]  ;//二维码切胶按钮
+P3Senser.P3_Securitydoorswitch15:=I702[16]  	;//外罩门禁15
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P3_LimitSwitch" Id="{8eef36a3-2974-4c7a-ac0e-f90572f6e7b3}">
+      <Implementation>
+        <ST><![CDATA[//尾段下料
+
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.DigitalInputs;//冷压上料夹平移电机
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Io.DigitalInputs.17;
+
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.DigitalInputs;//冷压上料夹进退电机
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.DigitalInputs;//冷压上料夹旋转电机
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.DigitalInputs.2;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.DigitalInputs;//冷压上料夹升降电机
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.DigitalInputs;//冷压托板开合电机
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.DigitalInputs.2;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.DigitalInputs.7;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.DigitalInputs;//冷压驱动电机
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Io.DigitalInputs.17;
+
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.DigitalInputs;//烤箱上料夹搬运电机
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.biPosLimit :=  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.DigitalInputs.16;
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.biNegLimit :=  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.DigitalInputs.17;
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.biHomeSwitch :=arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.DigitalInputs.2;
+
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.DigitalInputs;//烤箱上料夹进退电机
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biPosLimit := arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.DigitalInputs.16;
+//arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biNegLimit :=  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.DigitalInputs.17;
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biHomeSwitch := arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.DigitalInputs.17;
+
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.DigitalInputs;//烤箱上料夹升降电机
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.biPosLimit:=  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.DigitalInputs.16;
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.biNegLimit:=  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.DigitalInputs.17;
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.biHomeSwitch:= arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.DigitalInputs;//热压驱动电机
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Io.DigitalInputs.17;
+
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.DigitalInputs;//热压托板开合电机
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.DigitalInputs.2;
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.DigitalInputs.7;
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Io.DigitalInputs.7;
+
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.DigitalInputs;//电芯下料夹搬运电机
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Io.DigitalInputs.17;
+
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.DigitalInputs;//电芯下料夹升降电机
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.DigitalInputs;//电芯分选夹搬运电机
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Io.DigitalInputs.17;
+
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.DigitalInputs;//电芯分选夹升降电机
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.DigitalInputs;//称重上料夹平移电机
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Io.DigitalInputs.17;
+
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.DigitalInputs;//称重上料夹升降电机
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Io.DigitalInputs;//称重上料夹旋转电机
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Io.biPosLimit:=  FALSE;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Io.biNegLimit:=  FALSE;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.DigitalInputs;//贴胶头进退
+arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.DigitalInputs;//贴胶平移
+arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_IDPut].Io.DigitalInputs;//二维码胶拉胶
+arrAxisCtrl[P3AxisNo.P3_IDPut].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_IDPut].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_IDPut].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_IDPut].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_IDPut].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_IDPut].Io.DigitalInputs.2;
+
+arrAxisCtrl[P3AxisNo.P3_IDLift].Io.DigitalInputs;//二维码胶升降
+arrAxisCtrl[P3AxisNo.P3_IDLift].Io.biPosLimit:=  arrAxisCtrl[P3AxisNo.P3_IDLift].Io.DigitalInputs.16;
+arrAxisCtrl[P3AxisNo.P3_IDLift].Io.biNegLimit:=  arrAxisCtrl[P3AxisNo.P3_IDLift].Io.DigitalInputs.17;
+arrAxisCtrl[P3AxisNo.P3_IDLift].Io.biHomeSwitch:=arrAxisCtrl[P3AxisNo.P3_IDLift].Io.DigitalInputs.2;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P3_OutPut" Id="{cd2fb587-5353-4b25-9a07-184990d21b33}">
+      <Implementation>
+        <ST><![CDATA[//尾段下料
+Q601[1]:=arrCyCtrl[P3CYNo.P3ColdPressTensed].Io.DOStatus2	;//	冷压麦拉张紧气缸伸出
+Q601[2]:=arrCyCtrl[P3CYNo.P3ColdPressTensed].Io.DOStatus1	;//	冷压麦拉张紧气缸缩回
+Q601[3]	:=P3Senser.P3_Cold_clear;//	冷压清零
+Q601[4]	:=P3Senser.P3_Hot_clear;//	   热压清零
+Q601[5]:=arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DOStatus2	;//	烤箱上料夹张开
+Q601[6]:=arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DOStatus1	;//	烤箱上料夹闭合
+Q601[7]:=P3Senser.P3_ShortTest_Start 	;//	短路测试测量开始
+
+Q601[8]:=arrCyCtrl[P3CYNo.P3ColdBlow].Io.DOStatus1	;//冷压吹气
+Q601[9]:=arrCyCtrl[P3CYNo.P3HotBlow].Io.DOStatus1	;//热压吹气
+
+Q601[10]:=P3Senser.P3_Tricolorlamp_Yellow;//	后段三色灯-黄
+Q601[11]:=P3Senser.P3_Tricolorlamp_Green;//	后段三色灯-绿
+Q601[12]:=P3Senser.P3_Tricolorlamp_Red;//	后段三色灯-红
+Q601[13]:=P3Senser.P3_Tricolorlamp_Buzzer;//	后段三色灯-蜂鸣器
+Q601[14];//	
+Q601[15]:=P3Senser.P3_OutSafe;//下料位置安全	
+Q601[16]:=P3Senser.P3_OutSendFinish;//	下料放料完成
+
+
+
+Q602[1]:=arrCyCtrl[P3CYNo.P3Oven1].Io.DOStatus1	  ;//	1_1烤箱托板上升
+Q602[2]:=arrCyCtrl[P3CYNo.P3Oven1].Io.DOStatus2	  ;//	1_1烤箱托板下降
+Q602[3]:=arrCyCtrl[P3CYNo.P3Oven4].Io.DOStatus1	  ;//	1_2烤箱托板上升
+Q602[4]:=arrCyCtrl[P3CYNo.P3Oven4].Io.DOStatus2	  ;//	1_2烤箱托板下降
+Q602[5]:=arrCyCtrl[P3CYNo.P3Oven7].Io.DOStatus1	  ;//	1_3烤箱托板上升
+Q602[6]:=arrCyCtrl[P3CYNo.P3Oven7].Io.DOStatus2	  ;//	1_3烤箱托板下降
+Q602[7]:=arrCyCtrl[P3CYNo.P3Oven10].Io.DOStatus1  ;//	1_4烤箱托板上升
+Q602[8]:=arrCyCtrl[P3CYNo.P3Oven10].Io.DOStatus2  ;//	1_4烤箱托板下降
+Q602[9]:=arrCyCtrl[P3CYNo.P3Oven13].Io.DOStatus1  ;//	1_5烤箱托板上升
+Q602[10]:=arrCyCtrl[P3CYNo.P3Oven13].Io.DOStatus2 ;//	1_5烤箱托板下降
+Q602[11]:=arrCyCtrl[P3CYNo.P3Oven16].Io.DOStatus1 ;//	1_6烤箱托板上升
+Q602[12]:=arrCyCtrl[P3CYNo.P3Oven16].Io.DOStatus2 ;//	1_6烤箱托板下降
+Q602[13]:=arrCyCtrl[P3CYNo.P3Oven19].Io.DOStatus1 ;//	1_7烤箱托板上升
+Q602[14]:=arrCyCtrl[P3CYNo.P3Oven19].Io.DOStatus2 ;//	1_7烤箱托板下降
+Q602[15];//	
+Q602[16];//	
+	
+Q603[1]:=arrCyCtrl[P3CYNo.P3Oven2].Io.DOStatus1	  ;//	2_1烤箱托板上升
+Q603[2]:=arrCyCtrl[P3CYNo.P3Oven2].Io.DOStatus2   ;//	2_1烤箱托板下降
+Q603[3]:=arrCyCtrl[P3CYNo.P3Oven5].Io.DOStatus1	  ;//	2_2烤箱托板上升
+Q603[4]:=arrCyCtrl[P3CYNo.P3Oven5].Io.DOStatus2	  ;//	2_2烤箱托板下降
+Q603[5]:=arrCyCtrl[P3CYNo.P3Oven8].Io.DOStatus1   ;//	2_3烤箱托板上升
+Q603[6]:=arrCyCtrl[P3CYNo.P3Oven8].Io.DOStatus2	  ;//	2_3烤箱托板下降
+Q603[7]:=arrCyCtrl[P3CYNo.P3Oven11].Io.DOStatus1  ;//	2_4烤箱托板上升
+Q603[8]:=arrCyCtrl[P3CYNo.P3Oven11].Io.DOStatus2  ;//	2_4烤箱托板下降
+Q603[9]:=arrCyCtrl[P3CYNo.P3Oven14].Io.DOStatus1  ;//	2_5烤箱托板上升
+Q603[10]:=arrCyCtrl[P3CYNo.P3Oven14].Io.DOStatus2 ;//	2_5烤箱托板下降
+Q603[11]:=arrCyCtrl[P3CYNo.P3Oven17].Io.DOStatus1 ;//	2_6烤箱托板上升
+Q603[12]:=arrCyCtrl[P3CYNo.P3Oven17].Io.DOStatus2 ;//	2_6烤箱托板下降
+Q603[13]:=arrCyCtrl[P3CYNo.P3Oven20].Io.DOStatus1 ;//	2_7烤箱托板上升
+Q603[14]:=arrCyCtrl[P3CYNo.P3Oven20].Io.DOStatus2 ;//	2_7烤箱托板下降
+Q603[15];//	
+Q603[16];//	
+
+Q604[1]:=arrCyCtrl[P3CYNo.P3Oven3].Io.DOStatus1	  ;//	3_1烤箱托板上升
+Q604[2]:=arrCyCtrl[P3CYNo.P3Oven3].Io.DOStatus2	  ;//	3_1烤箱托板下降
+Q604[3]:=arrCyCtrl[P3CYNo.P3Oven6].Io.DOStatus1   ;//	3_2烤箱托板上升
+Q604[4]:=arrCyCtrl[P3CYNo.P3Oven6].Io.DOStatus2	  ;//	3_2烤箱托板下降
+Q604[5]:=arrCyCtrl[P3CYNo.P3Oven9].Io.DOStatus1	  ;//	3_3烤箱托板上升
+Q604[6]:=arrCyCtrl[P3CYNo.P3Oven9].Io.DOStatus2	  ;//	3_3烤箱托板下降
+Q604[7]:=arrCyCtrl[P3CYNo.P3Oven12].Io.DOStatus1  ;//	3_4烤箱托板上升
+Q604[8]:=arrCyCtrl[P3CYNo.P3Oven12].Io.DOStatus2  ;//	3_4烤箱托板下降
+Q604[9]:=arrCyCtrl[P3CYNo.P3Oven15].Io.DOStatus1  ;//	3_5烤箱托板上升
+Q604[10]:=arrCyCtrl[P3CYNo.P3Oven15].Io.DOStatus2 ;//	3_5烤箱托板下降
+Q604[11]:=arrCyCtrl[P3CYNo.P3Oven18].Io.DOStatus1 ;//	3_6烤箱托板上升
+Q604[12]:=arrCyCtrl[P3CYNo.P3Oven18].Io.DOStatus2 ;//	3_6烤箱托板下降
+Q604[13]:=arrCyCtrl[P3CYNo.P3Oven21].Io.DOStatus1 ;//	3_7烤箱托板上升
+Q604[14]:=arrCyCtrl[P3CYNo.P3Oven21].Io.DOStatus2 ;//	3_7烤箱托板下降
+Q604[15];//	
+Q604[16];//	
+
+Q605[1]:=arrCyCtrl[P3CYNo.P3ShortTest].Io.DOStatus2	;//	短路测试夹气缸张开
+Q605[2]:=arrCyCtrl[P3CYNo.P3ShortTest].Io.DOStatus1	;//	短路测试夹气缸缩回
+Q605[3]:=arrCyCtrl[P3CYNo.P3HotPressTensed].Io.DOStatus2	;//	热压麦拉张紧气缸伸出
+Q605[4]:=arrCyCtrl[P3CYNo.P3HotPressTensed].Io.DOStatus1	;//	热压麦拉张紧气缸缩回
+Q605[5]	;//	
+Q605[6]	;//	
+Q605[7]	;//	
+Q605[8] :=P3Senser.P3_Oven_Power1		;//	
+Q605[9]	:=P3Senser.P3_Hotpress_Power		;//	
+Q605[10];//	
+Q605[11];//	
+Q605[12]:=arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Io.DOStatus1;//	称重上料夹张开
+Q605[13]:=arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Io.DOStatus2;//	称重上料夹闭合
+Q605[14];//	
+Q605[15]:=arrCyCtrl[P3CYNo.P3WgightUP].Io.DOStatus1;//	
+Q605[16]:=arrCyCtrl[P3CYNo.P3SortPush].Io.DOStatus1;//	
+
+Q606[1]:=arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Io.DOStatus2	;//	测厚台切换气缸伸出
+Q606[2]:=arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Io.DOStatus1	;//	测厚台切换气缸缩回
+Q606[3]:=arrCyCtrl[P3CYNo.P3ThicknessSupport].Io.DOStatus2	;//	测厚台托板气缸伸出
+Q606[4]:=arrCyCtrl[P3CYNo.P3ThicknessSupport].Io.DOStatus1	;//	测厚台托板气缸缩回
+Q606[5]:=arrCyCtrl[P3CYNo.P3ThicknessPressure].Io.DOStatus2	;//	测厚台压板气缸伸出
+Q606[6]:=arrCyCtrl[P3CYNo.P3ThicknessPressure].Io.DOStatus1	;//	测厚台压板气缸缩回
+Q606[7]	;//	
+Q606[8]	;//	
+Q606[9]:=arrCyCtrl[P3CYNo.P3SortClamp].Io.DOStatus1	;//	电芯分选夹张开
+Q606[10]:=arrCyCtrl[P3CYNo.P3SortClamp].Io.DOStatus2;//	电芯分选夹闭合
+Q606[11]:=arrCyCtrl[P3CYNo.P3SortLifting].Io.DOStatus1;//	电芯分选夹上升
+Q606[12]:=arrCyCtrl[P3CYNo.P3SortLifting].Io.DOStatus2;//	电芯分选夹下降
+Q606[13]:=arrCyCtrl[P3CYNo.P3SortRotate].Io.DOStatus1;//	电芯分选夹旋转0度
+Q606[14]:=arrCyCtrl[P3CYNo.P3SortRotate].Io.DOStatus2;//	电芯分选夹旋转90度
+Q606[15]:=arrCyCtrl[P3CYNo.P3TapeSpin].Io.DOStatus1	;//贴胶旋转气缸伸出位;//	
+Q606[16]:=arrCyCtrl[P3CYNo.P3TapeSpin].Io.DOStatus2	;//贴胶旋转气缸缩回位	;//	
+
+Q607[1]:=arrCyCtrl[P3CYNo.P3BoxLock1_NG].Io.DOStatus2	;//	电芯NG1料盒锁定气缸伸出
+Q607[2]:=arrCyCtrl[P3CYNo.P3BoxLock1_NG].Io.DOStatus1	;//	电芯NG1料盒锁定气缸缩回
+Q607[3]:=P3Senser.P3_PoleMotor2_JogP	;//	NG料盒1排杆电机正转
+Q607[4]:=P3Senser.P3_PoleMotor2_JogN 	;//	NG料盒1排杆电机反转
+Q607[5]:=arrCyCtrl[P3CYNo.P3BoxLock2_NG].Io.DOStatus2	;//	电芯NG2料盒锁定气缸伸出
+Q607[6]:=arrCyCtrl[P3CYNo.P3BoxLock2_NG].Io.DOStatus1	;//	电芯NG2料盒锁定气缸缩回
+Q607[7]:=P3Senser.P3_PoleMotor3_JogP	;//	NG料盒2排杆电机正转
+Q607[8]:=P3Senser.P3_PoleMotor3_JogN	;//	NG料盒2排杆电机反转
+Q607[9]:=arrCyCtrl[P3CYNo.P3BoxLock3_NG].Io.DOStatus2	;//	电芯NG3料盒锁定气缸伸出
+Q607[10]:=arrCyCtrl[P3CYNo.P3BoxLock3_NG].Io.DOStatus1  ;//	电芯NG3料盒锁定气缸缩回
+Q607[11]:=P3Senser.P3_PoleMotor4_JogP   ;//	NG料盒3排杆电机正转
+Q607[12]:=P3Senser.P3_PoleMotor4_JogN;//	NG料盒3排杆电机反转
+Q607[13];//	
+Q607[14];//	
+Q607[15];//	
+Q607[16];//	
+
+
+
+Q608[1]:=arrCyCtrl[P3CYNo.P3CellPushSpin].Io.DOStatus1		;//P3电芯旋转定位气缸 
+Q608[2]:=arrCyCtrl[P3CYNo.P3CellPush].Io.DOStatus1			;//P3电芯压紧气缸
+Q608[3]:=arrCyCtrl[P3CYNo.P3BlankingRotate].Io.DOStatus1	;//	电芯下料夹旋转0度
+Q608[4]:=arrCyCtrl[P3CYNo.P3BlankingRotate].Io.DOStatus2	;//	电芯下料夹旋转90度
+Q608[5]:=arrCyCtrl[P3CYNo.P3BlankingClamp].Io.DOStatus1	    ;//	电芯下料夹张开
+Q608[6]:=arrCyCtrl[P3CYNo.P3BlankingClamp].Io.DOStatus2		;//	电芯下料夹闭合
+Q608[7]:=arrCyCtrl[P3CYNo.P3BlankingLifting].Io.DOStatus1		;//	电芯下料夹上升
+Q608[8]:=arrCyCtrl[P3CYNo.P3BlankingLifting].Io.DOStatus2		;//	电芯下料夹下降
+Q608[9]	:=arrCyCtrl[P3CYNo.P3_GlueExtend].Io.DOStatus1;//二维码蹬胶气缸
+Q608[10]:=arrCyCtrl[P3CYNo.P3_GluePress].Io.DOStatus1;//二维码压胶气缸
+Q608[11]:=arrCyCtrl[P3CYNo.P3_GlueCut].Io.DOStatus1;//	二维码切胶气缸
+Q608[12]:=arrCyCtrl[P3CYNo.P3_GluePull].Io.DOStatus1;//二维码拉胶气缸夹紧	
+Q608[13]:=arrCyCtrl[P3CYNo.P3TapeSpin].Io.DOStatus1	;//贴胶旋转气缸伸出位	
+Q608[14]:=arrCyCtrl[P3CYNo.P3TapeSpin].Io.DOStatus2;//	贴胶旋转气缸缩回位
+Q608[15]:=arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DOStatus1;//贴胶头真空开
+Q608[16]:=arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DOStatus1;//		二维码贴胶吸盘真空
+
+
+
+Q609[1]:=arrCyCtrl[P3CYNo.P3CellSpin].Io.DOStatus1	;//P3电芯旋转气缸伸出位	
+Q609[2]:=arrCyCtrl[P3CYNo.P3CellSpin].Io.DOStatus2	;//P3电芯旋转气缸缩回位	
+Q609[3]:=arrCyCtrl[P3CYNo.P3CellAdvance].Io.DOStatus1	;//电芯平移气缸伸出位	
+Q609[4]	:=arrCyCtrl[P3CYNo.P3CellAdvance].Io.DOStatus2;//	电芯平移气缸缩回位
+Q609[5]:=arrCyCtrl[P3CYNo.P3TapePush].Io.DOStatus1	;//贴胶头夹紧气缸伸出位
+Q609[6]:=arrCyCtrl[P3CYNo.P3TapePush].Io.DOStatus2	;//贴胶头夹紧气缸缩回位
+Q609[7]:=arrCyCtrl[P3CYNo.P3TapePull].Io.DOStatus1	;//拉带夹紧气缸伸出位	
+Q609[8]:=arrCyCtrl[P3CYNo.P3TapePull].Io.DOStatus2	;//拉带夹紧气缸缩回位	
+Q609[9]:=arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1	;//拉带升降气缸伸出位	
+Q609[10]:=arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2;//	拉带升降气缸缩回位
+Q609[11]:=arrCyCtrl[P3CYNo.P3TapeCut].Io.DOStatus1;//	切胶气缸伸出位
+Q609[12]:=arrCyCtrl[P3CYNo.P3TapeCut].Io.DOStatus2;//	切胶气缸缩回位
+Q609[13]:=arrCyCtrl[P3CYNo.P3GluePush].Io.DOStatus1;//压胶气缸伸出位	
+Q609[14]:=arrCyCtrl[P3CYNo.P3GluePush].Io.DOStatus2;//	压胶气缸缩回位
+Q609[15]:=arrCyCtrl[P3CYNo.P3TapeBuffer].Io.DOStatus1;//	贴胶缓存气缸伸出位
+Q609[16]:=arrCyCtrl[P3CYNo.P3TapeBuffer].Io.DOStatus2;//	贴胶缓存气缸缩回位
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P3IOLink">
+      <LineId Id="277" Count="0" />
+      <LineId Id="331" Count="1" />
+      <LineId Id="337" Count="0" />
+      <LineId Id="333" Count="0" />
+      <LineId Id="338" Count="2" />
+      <LineId Id="334" Count="2" />
+      <LineId Id="296" Count="13" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P3IOLink.P3_AI">
+      <LineId Id="2" Count="3" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="10" Count="9" />
+      <LineId Id="8" Count="1" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3IOLink.P3_AO">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3IOLink.P3_AutoLink">
+      <LineId Id="2" Count="20" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="24" Count="16" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="41" Count="10" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="52" Count="13" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="74" Count="0" />
+    </LineIds>
+    <LineIds Name="P3IOLink.P3_InPut">
+      <LineId Id="1209" Count="7" />
+      <LineId Id="1429" Count="0" />
+      <LineId Id="1217" Count="0" />
+      <LineId Id="1428" Count="0" />
+      <LineId Id="1430" Count="0" />
+      <LineId Id="1218" Count="6" />
+      <LineId Id="1227" Count="69" />
+      <LineId Id="1298" Count="1" />
+      <LineId Id="1301" Count="57" />
+      <LineId Id="1361" Count="66" />
+      <LineId Id="983" Count="0" />
+    </LineIds>
+    <LineIds Name="P3IOLink.P3_LimitSwitch">
+      <LineId Id="93" Count="0" />
+      <LineId Id="98" Count="9" />
+      <LineId Id="183" Count="3" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="188" Count="4" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="109" Count="3" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="195" Count="3" />
+      <LineId Id="123" Count="59" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="200" Count="2" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="204" Count="3" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="209" Count="3" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="214" Count="3" />
+      <LineId Id="213" Count="0" />
+    </LineIds>
+    <LineIds Name="P3IOLink.P3_OutPut">
+      <LineId Id="533" Count="164" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

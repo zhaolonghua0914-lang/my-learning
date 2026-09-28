@@ -29,6 +29,11 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # IDEs and Editors
+.vs/
+*.suo
+*.user
+*.useros
+*.sln.docstates
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

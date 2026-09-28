@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="File_com_typ" Id="{06002bad-a8a1-432c-ba66-63a2afdda0f1}">
+    <Declaration><![CDATA[TYPE File_com_typ :(*xml内部用*)
+STRUCT
+	FileName_save: 		T_MaxString	 := 'test.xml';		(* File name would be saved setting by the HMI用来保存的文件名称 *)
+	FileName_active: 	T_MaxString	 := 'test.xml';		(* File name activated now to be loaded 用来读取的文件目标文件名*)
+	Device: 			T_MaxString  := '\Hard Disk\';		(* Device: C:\ or USB    or ce   \Hard Disk\*)
+	DeviceNum:		INT:=3;							(* 1= C:\ or 2=USB    or 3= ce   \Hard Disk\*)
+	Var_Name: 			ARRAY [0..19] OF T_MaxString;	(* Variable name which need to be loaded or saved *)
+	Dir_change:			BOOL;							(* Command for change the directory	*)
+	File_load:			BOOL;							(* Command for load the exiting file	*)
+	File_save:			BOOL;							(* Command for save the file	*)
+	File_del:			BOOL;							(* Command for delete the exiting file	*)
+	File_copy:			BOOL;							(* Command for copy the exiting file between the C:\ and USB *)
+	Err_ack:			BOOL;							(* Command for acklonege the error	*)
+	bBusy:				BOOL;							(* State for the FB running	*)
+	ErrorID:			UDINT;							(* Error ID from the FB *)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

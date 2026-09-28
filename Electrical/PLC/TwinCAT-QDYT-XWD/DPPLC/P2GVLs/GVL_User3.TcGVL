@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_User3" Id="{6617aa65-e6b8-41e0-b6d9-de9f0805cf99}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+
+
+(***方法***)
+            stMethod                                 :ST_Method;
+
+            bAllTenReady                              :BOOL;
+            bAllGearReady                            :BOOL;
+            bAllHomeReady                          :BOOL;
+
+
+            bP1CamInReady                           :BOOL;
+            bP2CamInReady_U                       :BOOL;
+            bP2CamInReady_D                       :BOOL;
+            bP3CamInReady_U                       :BOOL;
+            bP3CamInReady_D                       :BOOL;
+
+(***条件***)
+           bAllTenOk                                   :BOOL;
+           bHomeOk                                   :BOOL;        
+           bAllGearOK                                :BOOL;
+           bAllTempOK                               :BOOL;
+           bAllRecOK                                  :BOOL;
+           bAllCreatTableOK                        :BOOL;
+           bAllCamOK                                 :BOOL;
+
+(**报警**)
+         arrCYOnAlarm                                :ARRAY[1..MaxCy]  OF BOOL;              //气缸ON报警
+         arrCYOFFAlarm                              :ARRAY[1..MaxCy]  OF BOOL;              //气缸ON报警
+         bCYHaveAlarm                              :BOOL;                                              //气缸有报警
+		 P2M1_DTCYHaveAlarm                         :BOOL;                                              //一号叠台气缸有报警
+		 P2M1_WJCYHaveAlarm                         :BOOL;                                              //一号尾卷贴胶气缸有报警
+
+		 P2M2_DTCYHaveAlarm                         :BOOL;                                              //二号叠台气缸有报警
+		 P2M2_WJCYHaveAlarm                         :BOOL;                                              //二号尾卷贴胶气缸有报警
+
+		 P2M3_DTCYHaveAlarm                         :BOOL;                                              //三号叠台气缸有报警
+		 P2M3_WJCYHaveAlarm                         :BOOL;                                              //三号尾卷贴胶气缸有报警
+
+		 
+         arrAxisbstop                                  :ARRAY[1..MaxAxes]  OF BOOL;            //轴停止
+         arrAxisAlarm                                  :ARRAY[1..MaxAxes]  OF BOOL;            //轴报警
+         bAxisHaveAlarm                              :BOOL;                                             //轴有报警
+		 P2M1_DTAxisHaveAlarm                              :BOOL;                                             //一号叠台轴有报警
+		 P2M1_WJAxisHaveAlarm                              :BOOL;                                             //一号尾卷轴有报警
+		 
+		 P2M1_AnHaveAlarm                              :BOOL;                                             //一号正极取料自动程序有报警
+		 P2M1_CaHaveAlarm                              :BOOL;                                             //一号负极取料自动程序有报警
+		 P2M1_DTHaveAlarm                              :BOOL;                                             //一号叠台自动程序有报警
+		 P2M1_WJHaveAlarm                              :BOOL;                                             //一号尾卷自动程序有报警
+		 P2M1_TJHaveAlarm                              :BOOL;                                             //一号贴胶自动程序有报警
+		 P2M1_DoorAlarm                                :BOOL;                                             //一号叠台门禁报警
+		 
+		 P2M2_DTAxisHaveAlarm                              :BOOL;                                             //二号叠台轴有报警
+		 P2M2_WJAxisHaveAlarm                              :BOOL;                                             //二号尾卷轴有报警
+
+		 P2M2_AnHaveAlarm                              :BOOL;                                             //二号正极取料自动程序有报警
+		 P2M2_CaHaveAlarm                              :BOOL;                                             //二号负极取料自动程序有报警
+		 P2M2_DTHaveAlarm                              :BOOL;                                             //二号叠台自动程序有报警
+		 P2M2_WJHaveAlarm                              :BOOL;                                             //二号尾卷自动程序有报警
+		 P2M2_TJHaveAlarm                              :BOOL;                                             //二号贴胶自动程序有报警
+		 P2M2_DoorAlarm                                :BOOL;                                             //二号叠台门禁报警
+		 
+		 P2M3_DTAxisHaveAlarm                              :BOOL;                                             //三号叠台轴有报警
+		 P2M3_WJAxisHaveAlarm                              :BOOL;                                             //三号尾卷轴有报警		 
+		 P2M3_AnHaveAlarm                              :BOOL;                                             //三号正极取料自动程序有报警
+		 P2M3_CaHaveAlarm                              :BOOL;                                             //三号负极取料自动程序有报警
+		 P2M3_DTHaveAlarm                              :BOOL;                                             //三号叠台自动程序有报警
+		 P2M3_WJHaveAlarm                              :BOOL;                                             //三号尾卷自动程序有报警
+		 P2M3_TJHaveAlarm                              :BOOL;                                             //三号贴胶自动程序有报警
+		 P2M3_DoorAlarm                                :BOOL;                                             //三号叠台门禁报警
+(*
+         arrTemHIAlarm                              :ARRAY[1..MaxTemp]  OF BOOL;        //超温报警
+         arrTemSenserAlarm                       :ARRAY[1..MaxTemp]  OF BOOL;        //温度检测不一致
+         arrTemTuningAlarm                       :ARRAY[1..MaxTemp]  OF BOOL;        //自整定故障
+         bTemHaveAlarm                            :BOOL;                                             //温控有报警
+*)
+          arrTenAlarm                                 :ARRAY[1..15]  OF BOOL;                  //张力报警
+          bTenHaveAlarm                            :BOOL;                                           //张力有报警
+
+          arrRecAlarm                                 :ARRAY[1..15]  OF BOOL;                  //纠偏报警
+          bRecHaveAlarm                            :BOOL;                                          //纠偏有报警
+
+         arrCreatTableAlarm                         :ARRAY[1..30]  OF BOOL;             //创建凸轮报警
+         bCreatTableHaveAlarm                    :BOOL;//凸轮耦合有报警
+
+         arrCamInAlarm                               :ARRAY[1..30]  OF BOOL;             //凸轮耦合报警
+         bCamHaveAlarm                             :BOOL;//凸轮耦合有报警
+
+         arrGearAlarm                                  :ARRAY[1..25]  OF BOOL;             //齿轮报警
+         bGearHaveAlarm                             :BOOL;//凸轮耦合有报警
+
+
+       fP1PutInPeacePos                                 :LREAL; //P1入片位置mm
+       fP1PutInPeaceLength                             :REAL; //P1入片当前距离
+
+       fP2PutInPeacePos                               :LREAL; //P1入片位置mm
+       fP2PutInPeaceLength                          :REAL; //P1入片当前距离
+
+
+        Axis_error                             :ARRAY[1..185]  OF BOOL;             //轴手自动对比报警
+
+		P2M1_DError                                :BOOL;                                             //1号叠台门禁先报警
+		P2M2_DError                                :BOOL;                                             //2号叠台门禁先报警
+		P2M3_DError                                :BOOL;                                             //3号叠台门禁先报警
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

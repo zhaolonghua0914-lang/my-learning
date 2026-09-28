@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="L_Init7" Id="{186d5401-9668-4208-833d-d1d31ed68a5d}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM L_Init7
+VAR
+	INIT_TON2  :ARRAY[1..20] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[INIT_TON2[1](PT:=T#2S);
+INIT_TON2[2](PT:=T#2S);
+INIT_TON2[3](PT:=T#2S);
+INIT_TON2[4](PT:=T#2S);
+INIT_TON2[5](PT:=T#2S);
+INIT_TON2[6](PT:=T#2S);
+INIT_TON2[7](PT:=T#2S);
+INIT_TON2[8](PT:=T#2S);
+INIT_TON2[9](PT:=T#2S);
+INIT_TON2[10](PT:=T#2S);
+INIT_TON2[20](PT:=T#60S);//电芯下料夹回原超时计时
+
+IF INIT_TON2[20].Q THEN
+	Init_step[7]:=0;
+	P3_Error[126]:=TRUE;//电芯下料夹回原超时报警
+	INIT_TON2[20].IN:=FALSE;
+END_IF
+
+//电芯下料夹搬运回原条件
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1]  THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+ //电芯下料夹升降回原条件
+ IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error AND P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+
+
+
+//下料初始化
+IF P3_SystemRUN.iMode=3 THEN
+IF LateBlanking_init_start[7]  THEN
+	Init_step[7]:=1;
+	LateBlanking_init_OK[7]:=FALSE;
+	LateBlanking_init_start[7]:=FALSE;
+END_IF	
+END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+CASE Init_step[7] OF
+1://信号复位，下料夹电芯记忆清除
+	INIT_TON2[20].IN:=TRUE;
+    Permit_BlankingRack :=FALSE; 
+    Permit_TakeMaterial :=FALSE;
+	Step36:=0;
+	MEMSET(ADR(CellMemory[CellNo.BlankingClip]),0,SIZEOF(CellMemory[CellNo.BlankingClip]));
+	Init_step[7]:=10;//信号复位	
+	
+10://电芯下料夹开合气缸张开
+	arrCyCtrl[P3CYNo.P3BlankingClamp].Cmd.bON:=TRUE;
+	IF arrCyCtrl[P3CYNo.P3BlankingClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3BlankingClamp].Status.Error1 THEN
+	   Init_step[7]:=20;
+	END_IF
+
+20://电芯下料夹升降气缸张开
+arrCyCtrl[P3CYNo.P3BlankingLifting].Cmd.bON:=TRUE;
+IF arrCyCtrl[P3CYNo.P3BlankingLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3BlankingLifting].Status.Error1 THEN
+ Init_step[7]:=30;
+ END_IF
+ 
+30:
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bStop:=TRUE;//轴停止
+	INIT_TON2[1].IN:=TRUE;
+	IF INIT_TON2[1].Q THEN
+		Init_step[7]:=50;
+		INIT_TON2[1].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bStop:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bStop:=FALSE;
+	END_IF
+
+50://电芯下料夹各轴复位
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bReset:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bReset:=TRUE;//轴复位
+	INIT_TON2[2].IN:=TRUE;
+	IF INIT_TON2[2].Q THEN
+		Init_step[7]:=60;
+		INIT_TON2[2].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bReset:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bReset:=FALSE;
+	END_IF	
+
+60://电芯下料夹各轴使能
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bEnable:=TRUE;
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bEnable:=TRUE;//轴上使能
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled  THEN
+	Init_step[7]:=70;
+END_IF
+
+70://电芯下料夹升降开始回零
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bHome:=TRUE;
+IF NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed THEN
+Init_step[7]:=80;
+END_IF
+
+80://电芯下料夹升降回零完成
+	INIT_TON2[3].IN:=TRUE;
+	IF INIT_TON2[3].Q AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving THEN
+		Init_step[7]:=90;
+		INIT_TON2[3].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bHome:=FALSE;
+	END_IF
+
+90://电芯下料夹升降电机回初始位	
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.iGoSetPos:=1;//电芯下料夹升降电机回初始位	
+END_IF
+
+IF 		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving THEN
+		Init_step[7]:=100;
+END_IF
+
+
+100://电芯下料夹搬运开始回零
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bHome:=TRUE;
+		IF NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed  THEN
+		Init_step[7]:=110;	
+		END_IF
+		
+
+		
+110://电芯下料夹搬运回零完成
+	INIT_TON2[4].IN:=TRUE;
+	IF INIT_TON2[4].Q AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving THEN
+		Init_step[7]:=120;
+		INIT_TON2[4].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bHome:=FALSE;
+	END_IF
+			
+		
+120://电芯下料夹搬运电机回初始位	
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.iGoSetPos:=1;//电芯下料夹搬运电机回初始位	
+	OffloadCarryTorMark:=TRUE;//电芯下料夹搬运报警力矩设定
+END_IF
+
+IF    arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving THEN
+	OffloadCarryTorMark:=FALSE;//电芯下料夹搬运报警力矩设定
+	Init_step[7]:=130;
+END_IF
+
+130://流水线下料旋转气缸缩回
+    arrCyCtrl[P3CYNo.P3TapeSpin].Cmd.bOFF:=TRUE;
+    IF arrCyCtrl[P3CYNo.P3TapeSpin].Status.OFFState THEN
+       Init_step[7]:=140;			
+    END_IF
+
+140:
+	Step36:=1;
+	Init_step[7]:=999;
+	
+999://下料初始化完成
+IF Init_step[7]=999 THEN
+LateBlanking_init_OK[7]:=TRUE;
+INIT_TON2[20].IN:=FALSE;
+END_IF
+
+END_CASE
+END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error OR arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error THEN
+	Init_step[7]:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="L_Init7">
+      <LineId Id="568" Count="97" />
+      <LineId Id="738" Count="0" />
+      <LineId Id="666" Count="0" />
+      <LineId Id="739" Count="0" />
+      <LineId Id="667" Count="21" />
+      <LineId Id="740" Count="2" />
+      <LineId Id="689" Count="44" />
+      <LineId Id="546" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

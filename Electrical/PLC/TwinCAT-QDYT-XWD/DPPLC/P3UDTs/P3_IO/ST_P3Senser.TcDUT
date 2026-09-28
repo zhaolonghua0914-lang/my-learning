@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P3Senser" Id="{820ff40a-5562-4a34-8763-dcb4b80f58ca}">
+    <Declaration><![CDATA[TYPE ST_P3Senser :
+STRUCT
+P3_PoleMotor1_JogP      :BOOL;//对齐度NG排杆电机正转
+P3_PoleMotor1_JogN      :BOOL;//对齐度NG排杆电机反转
+P3_PoleMotor1_Reach     :BOOL;//对齐度NG料盒到位感应
+P3_PoleMotor1_Height    :BOOL;//对齐度NG料盒高度感应
+P3_PoleMotor1_P_OT      :BOOL;//对齐度NG料盒顶升电机上限
+P3_PoleMotor1_N_OT      :BOOL;//对齐度NG料盒顶升电机下限
+P3_PoleMotor1_bHave		:BOOL;//对齐度NG料盒有料感应
+P3_PoleMotor2_JogP      :BOOL;//短路NG排杆电机正转
+P3_PoleMotor2_JogN      :BOOL;//短路NG排杆电机反转
+P3_PoleMotor2_Reach     :BOOL;//短路NG料盒到位感应
+P3_PoleMotor2_Height    :BOOL;//短路NG料盒高度感应
+P3_PoleMotor2_P_OT      :BOOL;//短路NG料盒顶升电机上限
+P3_PoleMotor2_N_OT      :BOOL;//短路NG料盒顶升电机下限
+P3_PoleMotor2_bHave		:BOOL;//短路NG料盒有料感应
+P3_PoleMotor3_JogP      :BOOL;//称重和测厚NG排杆电机正转
+P3_PoleMotor3_JogN      :BOOL;//称重和测厚NG排杆电机反转
+P3_PoleMotor3_Reach     :BOOL;//称重和测厚NG料盒到位感应
+P3_PoleMotor3_Height    :BOOL;//称重和测厚NG料盒高度感应
+P3_PoleMotor3_P_OT      :BOOL;//称重和测厚NG料盒顶升电机上限
+P3_PoleMotor3_N_OT      :BOOL;//称重和测厚NG料盒顶升电机下限
+P3_PoleMotor3_bHave		:BOOL;//称重和测厚NG料盒有料感应
+P3_PoleMotor4_JogP      :BOOL;//扫码NG排杆电机正转
+P3_PoleMotor4_JogN      :BOOL;//扫码NG排杆电机反转
+P3_PoleMotor4_Reach     :BOOL;//扫码NG料盒到位感应
+P3_PoleMotor4_Height    :BOOL;//扫码NG料盒高度感应
+P3_PoleMotor4_P_OT      :BOOL;//扫码NG料盒顶升电机上限
+P3_PoleMotor4_N_OT      :BOOL;//扫码NG料盒顶升电机下限
+P3_PoleMotor4_bHave		:BOOL;//扫码NG料盒有料感应
+P3_ColdEmptyPress       :BOOL;//冷压空压感应
+P3_HotEmptyPress        :BOOL;//冷压空压感应
+P3_ColdScapegoat        :BOOL;//冷压替罪羊检测
+P3_HotScapegoat         :BOOL;//冷压替罪羊检测
+P3_OVenScapegoat1      :BOOL;//烤箱1替罪羊
+P3_OVenScapegoat2      :BOOL;//烤箱2替罪羊
+P3_OVenScapegoat3      :BOOL;//烤箱3替罪羊
+P3_WeightSensor         :BOOL;//称重有料感应
+P3_ThicknessSensor      :BOOL;//测厚有料感应
+P3_CacheSensor          :BOOL;//缓存有料感应
+P3_HotMoveOffset_X      :BOOL;//热压上料偏移检测1X
+P3_HotMoveOffset_Y      :BOOL;//热压上料偏移检测2Y
+P3_HotMoveOffset_Z      :BOOL;//热压上料偏移检测3Z
+P3_HotOffset_L           :BOOL;//热压电芯短路测试偏移检测左   
+P3_HotOffset_R           :BOOL;//热压电芯短路测试偏移检测右
+P3_Ovendoorswitch1      :BOOL;//烤箱1对射感应
+P3_Ovendoorswitch2      :BOOL;//烤箱2对射感应
+P3_Ovendoorswitch3      :BOOL;//烤箱3对射感应
+P3_Securitydoorswitch1  :BOOL;//外罩门禁1
+P3_Securitydoorswitch2  :BOOL;//外罩门禁2
+P3_Securitydoorswitch3  :BOOL;//外罩门禁3
+P3_Securitydoorswitch4  :BOOL;//外罩门禁4
+P3_Securitydoorswitch5  :BOOL;//外罩门禁5
+P3_Securitydoorswitch6  :BOOL;//外罩门禁6
+P3_Securitydoorswitch7  :BOOL;//外罩门禁7
+P3_Securitydoorswitch8  :BOOL;//外罩门禁8
+P3_Securitydoorswitch9  :BOOL;//外罩门禁9
+P3_Securitydoorswitch10 :BOOL;//外罩门禁10
+P3_Securitydoorswitch11 :BOOL;//外罩门禁11
+P3_Securitydoorswitch12 :BOOL;//外罩门禁12
+P3_Securitydoorswitch13 :BOOL;//外罩门禁13
+P3_Securitydoorswitch14 :BOOL;//外罩门禁14
+P3_Securitydoorswitch15 :BOOL;//外罩门禁15
+P3_Securitydoorswitch16 :BOOL;//外罩门禁16
+P3_ShortTest_Start      :BOOL;//短路测试测量开始
+P3_ShortTest_UpperFall  :BOOL;//短路测试结果超上限
+P3_ShortTest_LowerFall  :BOOL;//短路测试结果超下限
+P3_ShortTest_Testing    :BOOL;// 短路测试中
+P3_ShortTest_Pass       :BOOL;//短路测试OK
+P3_Cold_clear           :BOOL;//冷压清零
+P3_Hot_clear            :BOOL;//热压清零
+P3_Tricolorlamp_Yellow  :BOOL;//后段三色灯-黄
+P3_Tricolorlamp_Red		:BOOL;//后段三色灯-红
+P3_Tricolorlamp_Green	:BOOL;//后段三色灯-绿
+P3_Tricolorlamp_Buzzer	:BOOL;//后段三色灯-蜂鸣器
+
+P3_InLayOffPer1:BOOL;//下料1位允许放料
+P3_InLayOffPer2:BOOL;//下料2位允许放料
+P3_OutSafe:BOOL;//下料位置安全
+P3_OutSendFinish:BOOL;//下料放料完成
+
+P3_Lyslgy:BOOL;//冷压上料夹电芯有无
+P3_Kxslgy:BOOL;//烤箱夹电芯有无
+P3_Czslgy:BOOL;//称重上料夹电芯有无
+P3_Fxjgy:BOOL;//分选夹电芯有无
+P3_Xljgy:BOOL;//下料夹电芯有无
+
+P3_Oven_Power1   	:BOOL;//烤箱电源1
+P3_Oven_Power2   	:BOOL;//烤箱电源2
+P3_Oven_Power3   	:BOOL;//烤箱电源3
+P3_Hotpress_Power   :BOOL;//热压电源
+
+//新增
+P3_IDMark:BOOL;//二维码胶Mark孔检测
+P3_IDHavetape:BOOL;//二维码胶胶卷有料检测
+P3_BuleHavetape:BOOL;//蓝胶胶卷有料检测
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

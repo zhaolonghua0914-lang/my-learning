@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_MoQiePar" Id="{fa5ad93b-10b7-4aa6-9437-98f3342d0940}">
+    <Declaration><![CDATA[TYPE ST_MoQiePar :  //模切部分参数
+STRUCT
+(***张力参数*)
+	TenCcw_WindL                            :BOOL;  //左放卷放卷方向
+	TenCcw_WindR                            :BOOL;  //右放卷放卷方向
+	bWindSelect								:BOOL;//放卷选择ON=使用左放卷
+	WindPidSwitch                         :BOOL;  //放卷PID使能开关
+	WindTenMinPos                      :REAL;//放卷摆杆最小角度
+	WindTenMaxPos                     :REAL; //放卷摆杆最大角度
+	WindTenBlancePos                  :REAL ;//放卷摆杆平衡角度
+	WindTenTable                        :ARRAY[0..105,1..2]OF REAL;	//放卷摆杆采样数据
+	
+	TenCcw_AuxDriver                            :BOOL;  //辅驱放卷方向
+	AuxDriverPidSwitch                         :BOOL;  //辅驱PID使能开关
+	AuxDriverTenMinPos                      :REAL;//辅驱摆杆最小角度
+	AuxDriverTenMaxPos                     :REAL; //辅驱摆杆最大角度
+	AuxDriverTenBlancePos                  :REAL ;//辅驱摆杆平衡角度
+	AuxDriverTenTable                        :ARRAY[0..105,1..2]OF REAL;	//辅驱摆杆采样数据		
+	
+	BufferPidSwitch                         :BOOL;  //缓存PID使能开关
+	BufferMinPos                            :REAL;//缓存最小角度
+	BufferMaxPos                           :REAL; //缓存最大角度
+	BufferBlancePos                        :REAL ;//缓存平衡角度
+
+
+   
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

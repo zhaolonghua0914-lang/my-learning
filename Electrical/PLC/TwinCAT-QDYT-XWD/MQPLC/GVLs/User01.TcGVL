@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="User01" Id="{3563c144-0c79-4f42-bca7-ebcff4f35bae}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+	 stSysState :ST_SystemPublic;//系统状态机(整机公用)
+	 AnSys:ST_SystemPart;//系统状态机(正极)
+	 CaSys:ST_SystemPart;//系统状态机(负极)
+	 P2Interaction:ST_P2InteractPub;//叠片公共交互
+	 AnInter:ST_P2InteractPart;//正极交互
+	 CaInter:ST_P2InteractPart;//负极交互
+	 AnCCDCom:ST_CCDCom;
+	 CaCCDCom:st_CCDCom;
+	 AnCCDIO:ST_CCDIO;
+	 CaCCDIO:st_CCDIO;
+      arrda1:                         UINTARR2;
+      fbPulseCtrl                  :ARRAY[1..10]   OF      PulseGeneratorCtrl;
+	  bytePower: BYTE:=16#01;
+	  
+	PLC_wYear:UINT;//PLC时间年
+	PLC_wMonth:UINT;//PLC时间月
+	PLC_wDay:UINT;//PLC时间日
+	PLC_wHour:UINT;//PLC时间时
+	PLC_wMinute:UINT;//PLC时间分
+	PLC_wSecond:UINT;//PLC时间秒
+	PLC_wMilliseconds:WORD;//PLC时间毫秒
+	AnSysNgMark:ST_NGMark;
+	CaSysNgMark:ST_NGMark;
+	fbAnProductLocal: ProductLocal;
+	fbCaProductLocal: ProductLocal;
+	
+	MQQuery:BOOL;//时间查询
+	MQdate:INT;//查询日期
+	
+	MQ_Mes1	:DTM_Mes1;	//XFP20240315
+END_VAR
+
+
+VAR_GLOBAL PERSISTENT
+	An_Production	:LocalProduction; //正极产能；
+	Ca_Production	:LocalProduction;//负极产能；
+	//aAnDay_date: Day_date; //正极产能；
+	//aCaDay_date: Day_date; //负极产能；
+	Antimedata:FB_DataTime;//运行时间
+	Catimedata:FB_DataTime;//运行时间
+	cCn_An:REAL;
+	cCn_Ca:REAL;
+	PoleData:ST_Data;
+	AnMQ_FingerprintKey:ST_FingerprintKey; //指纹解锁	 
+	CaMQ_FingerprintKey:ST_FingerprintKey; //指纹解锁		 
+ 	YL_GVL2: ARRAY [1..60] OF DINT ;//内部预留；//  1、正极R角已经切的次数;  2、正极R角设置清废报警次数；3、负极R角已经切的次数;  4、负极R角设置清废报警次数；
+	CS:ARRAY[0..2] OF INT;//切刀报警角度调整；
+(*产能统计*)	
+	HMI_AnTodayNGClass_AM		:ARRAY[1..30 ] 	OF REAL;(*当天白班各类NG数量ARRAY[1..30 ]-----正极*)
+	HMI_AnTodayNGClass_PM		:ARRAY[1..30 ] 	OF REAL;(*当天夜班各类NG数量ARRAY[1..30 ]-----正极*)
+	HMI_AnTodayNG_AM:REAL;(*当天白班生产NG总数-----正极*)
+	HMI_AnTodayNG_PM:REAL;(*当天夜班生产NG总数-----正极*)
+	
+	HMI_CaTodayNGClass_AM		:ARRAY[1..30 ] 	OF REAL;(*当天白班各类NG数量ARRAY[1..30 ]-----负极*)
+	HMI_CaTodayNGClass_PM		:ARRAY[1..30 ] 	OF REAL;(*当天夜班各类NG数量ARRAY[1..30 ]-----负极*)
+	HMI_CaTodayNG_AM:REAL;(*当天白班生产NG总数-----负极*)
+	HMI_CaTodayNG_PM:REAL;(*当天夜班生产NG总数-----负极*)
+END_VAR
+
+
+VAR_GLOBAL CONSTANT
+     	DD2: INT := 1;
+		//PI:REAL:=3.1415926;
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	(* 
+  
+   	 scRecipe :            CS_Recipe;
+	 iRecipe:               IRecipe;
+	 arriVirSingle:    ARRAY  [1..30] OF INT:=[30(1)] ;  //虚拟仿真信号
+	 arriVirSingle2:  ARRAY [1..30] OF INT:=[30(1)] ;  //虚拟仿真信号
+	 arriVirSingle3:  ARRAY [1..30] OF INT:=[30(1)] ;  //虚拟仿真信号
+
+
+	arrAxisError :                ARRAY[1..MaxAxes] OF BOOL;//轴报警
+	arrActuatorsError :        ARRAY[1..20] OF BOOL;//气缸
+	arrFunctionError :         ARRAY[1..20] OF BOOL;//功能
+
+
+	 cmd: CMD;
+	 ShortDataShow:ShortDataShow; 
+	 csShortTest :CS_ShortTest;
+	 csCodeTcp: CS_CodeTcp;
+	 IShort:IShortTest;
+	 iCode:ICode;
+	csCcdTcp:CS_CcdTcp_V2;
+	iCCD:ICCD;
+	ccdData:STCcdData;
+	*)
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_Par" Id="{e11f1485-0a03-4017-8dc1-ba934d3b4795}">
+    <Declaration><![CDATA[VAR_GLOBAL    //参数
+         
+	         
+
+END_VAR
+
+
+
+
+VAR_GLOBAL PERSISTENT
+//VAR_GLOBAL
+	ProductPar:ST_Parameter;	
+	iPersistentDataTese:INT;
+	bDataValid:BOOL;//数据有效标志位
+END_VAR
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

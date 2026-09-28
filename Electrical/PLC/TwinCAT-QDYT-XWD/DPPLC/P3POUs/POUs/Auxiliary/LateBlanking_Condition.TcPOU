@@ -1,0 +1,1833 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Condition" Id="{d1858302-98fb-4be1-aaba-8c59745cfe3c}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Condition
+VAR
+	aaa :BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+//烤箱电芯记忆 
+IF CellMemory[CellNo.Oven_M1].Cell THEN
+	P3User2_Par.Oven_cell[1]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[1]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M2].Cell THEN
+	P3User2_Par.Oven_cell[2]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[2]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M3].Cell THEN
+	P3User2_Par.Oven_cell[3]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[3]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M4].Cell THEN
+	P3User2_Par.Oven_cell[4]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[4]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M5].Cell THEN
+	P3User2_Par.Oven_cell[5]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[5]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M6].Cell THEN
+	P3User2_Par.Oven_cell[6]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[6]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M7].Cell THEN
+	P3User2_Par.Oven_cell[7]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[7]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M8].Cell THEN
+	P3User2_Par.Oven_cell[8]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[8]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M9].Cell THEN
+	P3User2_Par.Oven_cell[9]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[9]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M10].Cell THEN
+	P3User2_Par.Oven_cell[10]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[10]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M11].Cell THEN
+	P3User2_Par.Oven_cell[11]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[11]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M12].Cell THEN
+	P3User2_Par.Oven_cell[12]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[12]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M13].Cell THEN
+	P3User2_Par.Oven_cell[13]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[13]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M14].Cell THEN
+	P3User2_Par.Oven_cell[14]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[14]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M15].Cell THEN
+	P3User2_Par.Oven_cell[15]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[15]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M16].Cell THEN
+	P3User2_Par.Oven_cell[16]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[16]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M17].Cell THEN
+	P3User2_Par.Oven_cell[17]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[17]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M18].Cell THEN
+	P3User2_Par.Oven_cell[18]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[18]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M19].Cell THEN
+	P3User2_Par.Oven_cell[19]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[19]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M20].Cell THEN
+	P3User2_Par.Oven_cell[20]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[20]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M21].Cell THEN
+	P3User2_Par.Oven_cell[21]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[21]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M22].Cell THEN
+	P3User2_Par.Oven_cell[22]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[22]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M23].Cell THEN
+	P3User2_Par.Oven_cell[23]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[23]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M24].Cell THEN
+	P3User2_Par.Oven_cell[24]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[24]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M25].Cell THEN
+	P3User2_Par.Oven_cell[25]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[25]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M26].Cell THEN
+	P3User2_Par.Oven_cell[26]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[26]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M27].Cell THEN
+	P3User2_Par.Oven_cell[27]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[27]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M28].Cell THEN
+	P3User2_Par.Oven_cell[28]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[28]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M29].Cell THEN
+	P3User2_Par.Oven_cell[29]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[29]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M30].Cell THEN
+	P3User2_Par.Oven_cell[30]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[30]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M31].Cell THEN
+	P3User2_Par.Oven_cell[31]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[31]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M32].Cell THEN
+	P3User2_Par.Oven_cell[32]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[32]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M33].Cell THEN
+	P3User2_Par.Oven_cell[33]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[33]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M34].Cell THEN
+	P3User2_Par.Oven_cell[34]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[34]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M35].Cell THEN
+	P3User2_Par.Oven_cell[35]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[35]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M36].Cell THEN
+	P3User2_Par.Oven_cell[36]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[36]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M37].Cell THEN
+	P3User2_Par.Oven_cell[37]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[37]:=FALSE;	
+END_IF
+
+IF CellMemory[CellNo.Oven_M38].Cell THEN
+	P3User2_Par.Oven_cell[38]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[38]:=FALSE;	
+END_IF
+
+IF CellMemory[CellNo.Oven_M39].Cell THEN
+	P3User2_Par.Oven_cell[39]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[39]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M40].Cell THEN
+	P3User2_Par.Oven_cell[40]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[40]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M41].Cell THEN
+	P3User2_Par.Oven_cell[41]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[41]:=FALSE;	
+END_IF
+IF CellMemory[CellNo.Oven_M42].Cell THEN
+	P3User2_Par.Oven_cell[42]:=TRUE;
+	ELSE
+	P3User2_Par.Oven_cell[42]:=FALSE;	
+END_IF
+
+//烤箱屏蔽
+IF P3User2_Par.Oven_Shield[1] THEN
+	P3User2_Par.Oven_cell_Shield[1]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[2]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[1]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[2]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[2] THEN
+	P3User2_Par.Oven_cell_Shield[3]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[4]:=TRUE;
+	ELSE
+   P3User2_Par. Oven_cell_Shield[3]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[4]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[3] THEN
+	P3User2_Par.Oven_cell_Shield[5]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[6]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[5]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[6]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[4] THEN
+	P3User2_Par.Oven_cell_Shield[7]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[8]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[7]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[8]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[5] THEN
+	P3User2_Par.Oven_cell_Shield[9]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[10]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[9]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[10]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[6] THEN
+	P3User2_Par.Oven_cell_Shield[11]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[12]:=TRUE;
+	ELSE
+   P3User2_Par. Oven_cell_Shield[11]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[12]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[7] THEN
+	P3User2_Par.Oven_cell_Shield[13]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[14]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[13]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[14]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[8] THEN
+	P3User2_Par.Oven_cell_Shield[15]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[16]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[15]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[16]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[9] THEN
+	P3User2_Par.Oven_cell_Shield[17]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[18]:=TRUE;
+	ELSE
+   P3User2_Par. Oven_cell_Shield[17]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[18]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[10] THEN
+	P3User2_Par.Oven_cell_Shield[19]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[20]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[19]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[20]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[11] THEN
+	P3User2_Par.Oven_cell_Shield[21]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[22]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[21]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[22]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[12] THEN
+	P3User2_Par.Oven_cell_Shield[23]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[24]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[23]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[24]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[13] THEN
+	P3User2_Par.Oven_cell_Shield[25]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[26]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[25]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[26]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[14] THEN
+	P3User2_Par.Oven_cell_Shield[27]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[28]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[27]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[28]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[15] THEN
+	P3User2_Par.Oven_cell_Shield[29]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[30]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[29]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[30]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[16] THEN
+	P3User2_Par.Oven_cell_Shield[31]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[32]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[31]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[32]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[17] THEN
+	P3User2_Par.Oven_cell_Shield[33]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[34]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[33]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[34]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[18] THEN
+	P3User2_Par.Oven_cell_Shield[35]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[36]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[35]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[36]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[19] THEN
+	P3User2_Par.Oven_cell_Shield[37]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[38]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[37]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[38]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[20] THEN
+	P3User2_Par.Oven_cell_Shield[39]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[40]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[39]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[40]:=FALSE;
+END_IF
+IF P3User2_Par.Oven_Shield[21] THEN
+	P3User2_Par.Oven_cell_Shield[41]:=TRUE;
+	P3User2_Par.Oven_cell_Shield[42]:=TRUE;
+	ELSE
+    P3User2_Par.Oven_cell_Shield[41]:=FALSE;
+	P3User2_Par.Oven_cell_Shield[42]:=FALSE;
+END_IF
+
+
+
+
+
+//贴胶下料冷压
+IF NOT Permit_Cold_Press  AND NOT Cold_Press_Finish THEN
+	PermitColdPressRack:=TRUE;//冷压允许上料信号
+	ELSE
+	PermitColdPressRack:=FALSE;	
+END_IF
+//烤箱下料至热压及冷压上料至烤箱
+IF NOT Permit_Hot_Press AND NOT Hot_Press_Finish THEN
+	PermitHotPressRack:=TRUE;//热压允许上料信号
+	ELSE
+	PermitHotPressRack:=FALSE;	
+END_IF
+
+//测厚平台上料
+IF NOT Permit_Thickness AND NOT Thickness_Finish THEN
+	Permit_ThicknessRack:=TRUE;
+	ELSE
+	Permit_ThicknessRack:=FALSE;
+END_IF
+//分拣放料
+IF NOT Permit_TakeMaterial THEN
+	Permit_BlankingRack:=TRUE;
+	ELSE
+	Permit_BlankingRack:=FALSE;
+END_IF
+
+//冷压下压条件
+IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed 
+AND P3Senser.P3_ColdEmptyPress AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[44] THEN
+	b_Press_condition[1]:=TRUE;
+	ELSE
+	b_Press_condition[1]:=FALSE;		
+END_IF
+
+//热压下压条件
+IF  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed 
+AND P3Senser.P3_HotEmptyPress AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[45] THEN
+	b_Press_condition[2]:=TRUE;
+	ELSE
+	b_Press_condition[2]:=FALSE;		
+END_IF
+
+//轴回原、点动、走定位条件
+/////////////////////////////冷压上料夹平移电机条件
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.JogN_Condition:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+(*OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]   OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] )*) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+(*OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]   OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] *) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+(*OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]   OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] *) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+(*OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]   OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] *) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+ 
+     IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]  AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[5] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 	
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+ 
+      IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]   OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] ) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[7]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.GoPoint_Condition[7]:=FALSE;
+ END_IF
+  
+ 
+//////////////////冷压上料夹进退电机条件
+
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[3]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[4]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1]
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[5] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[7] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+ 
+//////////////////冷压上料夹升降电机条件
+
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.JogN_Condition:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]  THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[2]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[7]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[2]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[7]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[3]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[8]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[3]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[8]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[4]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[9]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[4]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[9]:=FALSE;
+ END_IF
+
+  IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[5]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[10]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[5]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[10]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[6]AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6]
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+
+//////////////////冷压上料夹旋转电机条件
+
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1]
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6]
+OR (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]AND  arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6])
+OR (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]AND  arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Cmd.arrbRealPoint[6])
+OR (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]AND  arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Cmd.arrbRealPoint[6])) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[2]
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[3] 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]AND arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Cmd.arrbRealPoint[6]THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+ 
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[4] 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Cmd.arrbRealPoint[6]THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1] 
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] 
+OR (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]AND  arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6])
+OR (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]AND  arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Cmd.arrbRealPoint[6])
+OR (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]AND  arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Cmd.arrbRealPoint[6]))THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1]
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6]) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+
+//////////////////冷压托板开合电机条件
+
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)>=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[1])) 
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] OR (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[2])) 
+AND  arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)>=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[1]) 
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] OR LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[2])
+AND  arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1]  THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+//////////////////冷压驱动电机条件
+
+
+IF P3_SystemRUN.iMode=3 AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)>=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[1]) 
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] OR LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[2]) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving  
+  THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+ 
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)>=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[1]) 
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] OR LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos)<=(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[4]+1))
+AND  arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+
+//////////////////烤箱上料夹搬运电机条件
+
+
+
+IF P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogN_Condition:=FALSE;
+ END_IF
+//烤箱上料夹搬运电机烤箱位
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+ AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN//1-42位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[1]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[2]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[3]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[4]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[5]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[6]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[7]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[8]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[9]:=TRUE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[10]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[1]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[2]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[3]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[4]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[5]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[6]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[7]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[8]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[9]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[10]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[11]:=FALSE;
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[12]:=FALSE;
+ END_IF
+
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43]
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3]  THEN//43位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[43]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[43]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+ AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN//44位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[44]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[44]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43]
+AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN//45位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[45]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[45]:=FALSE;
+ END_IF
+
+  IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN//44位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[46]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[46]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] THEN//44位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[47]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.GoPoint_Condition[47]:=FALSE;
+ END_IF
+//////////////////烤箱上料夹进退电机条件
+
+
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogN_Condition:=FALSE;
+ END_IF
+ 
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving  THEN//1-42位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving   THEN//43位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[43]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[43]:=FALSE;
+ END_IF
+ 
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[44] THEN//44位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[44]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[44]:=FALSE;
+ END_IF
+ 
+ 
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[45] THEN//45位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[45]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[45]:=FALSE;
+ END_IF
+
+  IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[46] THEN//46位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[46]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[46]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[47] THEN//47位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[47]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.GoPoint_Condition[47]:=FALSE;
+ END_IF
+//////////////////烤箱上料夹升降电机条件
+
+
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogN_Condition:=FALSE;
+ END_IF 
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_CYOFF_condition THEN//1-42位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_CYOFF_condition THEN//43位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[43]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[43]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  THEN//44位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[44]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[44]:=FALSE;
+ END_IF
+ 
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN//45位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[45]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[45]:=FALSE;
+ END_IF
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  THEN//46位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[46]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[46]:=FALSE;
+ END_IF
+ 
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  THEN//47位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[47]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[47]:=FALSE;
+ END_IF
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[45]  THEN//48位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[48]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[48]:=FALSE;
+ END_IF
+ 
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[44]  THEN//49位置的条件
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[49]:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.GoPoint_Condition[49]:=FALSE;
+ END_IF
+//////////////////热压托板开合电机条件
+
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving 
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[6]) 
+AND (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1]) AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving 
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[6]) 
+AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+
+
+//////////////////热压驱动电机条件
+
+
+IF P3_SystemRUN.iMode=3 AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[6]) 
+AND  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[2] THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving  THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+ 
+IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.NoMoving AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[6]) 
+AND  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)<=(arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[4]+1) AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed  AND  arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Homed   THEN
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+
+
+//////////////////称重上料夹平移电机条件
+
+
+IF P3_SystemRUN.iMode=3 AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND  
+   LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos)<=arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[3]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving 
+//AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[2] OR arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3]) 
+THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.arrbRealPoint[1] 
+AND LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[6] 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed  
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[2]
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[2]
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[2]:=TRUE;
+ELSE
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[2]:=FALSE;
+END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving  
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1]
+AND  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos)<=arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[3]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+  
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled //称重上料避让位
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+AND P3_SystemRUN.iMode=3             
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving   
+AND LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[6]+10
+THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+ 
+//////////////////称重上料夹升降电机条件
+
+
+IF P3_SystemRUN.iMode=3 AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving 
+AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1]  OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4])THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving 
+AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1]  OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4]) THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving 
+AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1]  OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4]) THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving 
+AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1]  OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[2]) THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving 
+AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[3] OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4]) THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+ 
+ 
+ 
+ 
+//////////////////称重上料夹旋转电机条件
+
+
+IF P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1]
+AND  (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[5]+5))//安全条件
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed  THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1] 
+AND (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[5]+5))//安全条件
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+  IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1]
+AND (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[5]+5))//安全条件
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+
+ 
+ 
+//////////////////电芯分选夹搬运电机条件
+
+	
+IF P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[1]
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[1]
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1]
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState  THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1]-1 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1]   
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState 
+AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[8] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.arrbRealPoint[1] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1]  
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState  THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[7]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.GoPoint_Condition[7]:=FALSE;
+ END_IF
+
+//////////////////电芯分选夹升降电机条件
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2]
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState  THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3]
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[4] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.ONState 
+AND arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[5] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+ 
+ 
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[6] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[7]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[7]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[8]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[8]:=FALSE;
+ END_IF
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[9]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.GoPoint_Condition[9]:=FALSE;
+ END_IF
+//////////////////电芯下料夹搬运电机条件
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1]THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1]    THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[5] 
+AND  arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState 
+AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos)<=arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+ 
+ IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+ 
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[5] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+ 
+//////////////////电芯下料夹升降电机条件
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+ IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+  IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.arrbRealPoint[2] 
+AND arrCyCtrl[P3CYNo.P3TapeSpin].Status.OFFState THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[2]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[2]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+
+  IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.arrbRealPoint[3] 
+AND arrCyCtrl[P3CYNo.P3TapeSpin].Status.ONState  THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[3]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[3]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+
+
+   IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.NoMoving  THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[5]:=TRUE;
+		ELSE 
+			arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.GoPoint_Condition[5]:=FALSE;
+		END_IF
+    
+
+//////////////////电芯平移电机条件
+IF P3_SystemRUN.iMode=3 AND  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1]  THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.JogN_Condition:=FALSE;
+ END_IF
+
+IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF
+ 
+IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF
+
+IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+   ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF
+ 
+ IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+    ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+    ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF
+
+ IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+    ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+    ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[6]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[6]:=FALSE;
+ END_IF
+
+ IF  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4] AND 
+    ((*arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+    ((*arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.arrbRealPoint[1] OR*) LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[7]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[7]:=FALSE;
+ END_IF
+
+ IF  P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[8]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.GoPoint_Condition[8]:=FALSE;
+ END_IF
+ ///////////////////贴胶头进退电机条件
+///////////////////贴胶头进退电机条件
+ IF  P3_SystemRUN.iMode=3 AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+     AND arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2 AND NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.biPosLimit THEN
+  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.JogP_Condition:=FALSE;
+ END_IF	 
+
+ IF  P3_SystemRUN.iMode=3 AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+     AND  arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2 AND NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Io.biNegLimit THEN
+  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.JogN_Condition:=FALSE;
+ END_IF	 
+ 
+ IF  P3_SystemRUN.iMode=3 AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+     AND  arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2 THEN
+     arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[1]:=TRUE;
+  ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF	 
+ 
+ IF  P3_SystemRUN.iMode=3 AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+     AND  arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2 THEN
+     arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[2]:=TRUE;
+  ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF	  
+ 
+ IF  (arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[1] OR  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[2] OR 
+     arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[3]) AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState 
+     AND  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState  AND  arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2 THEN
+     arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[3]:=TRUE;
+  ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF	 
+ 
+ IF  P3_SystemRUN.iMode=3 AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState 
+     AND  arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus2 THEN
+     arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[4]:=TRUE;
+  ELSE 
+   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.GoPoint_Condition[4]:=FALSE;
+ END_IF	 
+ 
+//电芯平移气缸条件
+IF arrCyCtrl[P3CYNo.P3CellPush].Status.OFFState  AND 
+   LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[4]+5) AND
+   (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos) >= (arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[7]-1)) AND
+   (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[3]+1)) THEN
+	arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.OnCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.OnCondition:=FALSE;	
+END_IF
+	arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.OFFCondition:=TRUE;	
+
+IF arrCyCtrl[P3CYNo.P3CellPush].Status.OFFState  THEN
+   arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.OFFCondition:=TRUE;
+ELSE  
+   arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.OFFCondition:=FALSE;
+END_IF	
+	
+//拉胶气缸条件
+IF arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos <= arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[1]+0.5 AND
+   arrCyCtrl[P3CYNo.P3TapeCut].Status.OFFState THEN
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.OnCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.OnCondition:=FALSE;
+END_IF
+ 
+//切胶气缸条件
+IF  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState THEN
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.OnCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.OnCondition:=FALSE;
+END_IF
+
+//电芯旋转气缸条件
+IF  arrCyCtrl[P3CYNo.P3CellPushSpin].Io.DIOnSwitch OR arrCyCtrl[P3CYNo.P3CellPush].Io.DIOFFSwitch  THEN
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.OnCondition:=TRUE;
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.OFFCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.OnCondition:=FALSE;
+	arrCyCtrl[P3CYNo.P3CellSpin].Cmd.OFFCondition:=FALSE;
+END_IF
+
+//拉胶气缸条件
+IF   arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1]   THEN
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.OnCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.OnCondition:=FALSE;
+END_IF
+
+//测厚台托板气缸条件
+IF   arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Io.DIOnSwitch  THEN
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.OnCondition:=TRUE;
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.OFFCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.OnCondition:=FALSE;
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.OFFCondition:=FALSE;
+END_IF
+//测厚台切换气缸条件
+IF   arrCyCtrl[P3CYNo.P3ThicknessSupport].Io.DIOFFSwitch AND arrCyCtrl[P3CYNo.P3ThicknessPressure].Io.DIOFFSwitch THEN
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.OnCondition:=TRUE;
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.OFFCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.OnCondition:=FALSE;
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.OFFCondition:=FALSE;
+END_IF
+//测厚台压板气缸条件
+IF   arrCyCtrl[P3CYNo.P3ThicknessSupport].Io.DIOFFSwitch AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Io.DIOFFSwitch THEN
+	arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.OnCondition:=TRUE;
+ELSE
+	arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.OnCondition:=FALSE;
+END_IF
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlanking_Condition">
+      <LineId Id="23594" Count="1783" />
+      <LineId Id="25399" Count="1" />
+      <LineId Id="25408" Count="19" />
+      <LineId Id="25401" Count="6" />
+      <LineId Id="3230" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

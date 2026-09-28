@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_GearInPos" Id="{486e0791-0f66-41ef-a3fb-38ac9c58648a}">
+    <Declaration><![CDATA[TYPE ST_GearInPos : //
+STRUCT
+	bEnable		                        :BOOL;	
+   	bEnable2                       :BOOL;	
+
+	bGearOutMode                 :BOOL;
+    fMasterSyncPosition           :LREAL;  
+    fSlaveSyncPosition              :LREAL;  
+
+	bReady                            :BOOL;  
+    bStartSync		 	               :BOOL;	
+	bInSync		 	                   :BOOL;	
+    bBusy                               :BOOL;	
+	bError				               :BOOL;		
+
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

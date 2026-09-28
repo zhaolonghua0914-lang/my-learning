@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="DToM_Process" Id="{9ba197c1-cc5d-4c11-9c9a-925acc9ed35d}">
+    <Declaration><![CDATA[TYPE DToM_Process ://叠片→模切  生产过程数据
+STRUCT
+	bAn_M1Done:BOOL;//1号叠台正极取料完成
+	bAn_M2Done:BOOL;//2号叠台正极取料完成
+	bAn_M3Done:BOOL;//3号叠台正极取料完成
+	
+	bAn_M1Safety:BOOL;//1号叠台正极安全(取料运行时:=FALSE)
+	bAn_M2Safety:BOOL;//2号叠台正极安全(取料运行时:=FALSE)
+	bAn_M3Safety:BOOL;//3号叠台正极安全(取料运行时:=FALSE)
+	
+	bCa_M1Done:BOOL;//1号叠台负极取料完成
+	bCa_M2Done:BOOL;//2号叠台负极取料完成
+	bCa_M3Done:BOOL;//3号叠台负极取料完成
+	
+	bCa_M1Safety:BOOL;//1号叠台负极安全(取料运行时:=FALSE)
+	bCa_M2Safety:BOOL;//2号叠台负极安全(取料运行时:=FALSE)
+	bCa_M3Safety:BOOL;//3号叠台负极安全(取料运行时:=FALSE)	
+	
+	
+	bAn_M1LockReady:BOOL;//1号叠台正极锁定准备好
+	bAn_M2LockReady:BOOL;//2号叠台正极锁定准备好
+	bAn_M3LockReady:BOOL;//3号叠台正极锁定准备好
+		
+	bCa_M1LockReady:BOOL;//1号叠台负极锁定准备好
+	bCa_M2LockReady:BOOL;//2号叠台负极锁定准备好
+	bCa_M3LockReady:BOOL;//3号叠台负极锁定准备好
+
+	bAn_M1JumpReady:BOOL;//1号叠台正极锁定 未准备好
+	bAn_M2JumpReady:BOOL;//2号叠台正极锁定 未准备好
+	bAn_M3JumpReady:BOOL;//3号叠台正极锁定 未准备好
+		
+	bCa_M1JumpReady:BOOL;//1号叠台负极锁定 未准备好
+	bCa_M2JumpReady:BOOL;//2号叠台负极锁定 未准备好
+	bCa_M3JumpReady:BOOL;//3号叠台负极锁定 未准备好	
+	
+	bAn_M1LockingCancel:BOOL;//叠台1锁定中取消
+	bAn_M2LockingCancel:BOOL;//叠台2锁定中取消
+	bAn_M3LockingCancel:BOOL;//叠台3锁定中取消
+	
+	bCa_M1LockingCancel:BOOL;//叠台1锁定中取消
+	bCa_M2LockingCancel:BOOL;//叠台2锁定中取消
+	bCa_M3LockingCancel:BOOL;//叠台3锁定中取消	
+	
+	bAn_M1PoleHave:BOOL;//叠台1正极取料位无片
+	bAn_M2PoleHave:BOOL;//叠台2正极取料位无片
+	bAn_M3PoleHave:BOOL;//叠台3正极取料位无片
+	
+	bCa_M1PoleHave:BOOL;//叠台1负极取料位无片
+	bCa_M2PoleHave:BOOL;//叠台2负极取料位无片
+	bCa_M3PoleHave:BOOL;//叠台3负极取料位无片
+	
+
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

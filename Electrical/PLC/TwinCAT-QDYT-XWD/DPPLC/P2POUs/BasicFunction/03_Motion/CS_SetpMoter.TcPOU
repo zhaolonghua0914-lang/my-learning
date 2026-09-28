@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_SetpMoter" Id="{888c1896-6976-4e40-8b43-4c3aee983767}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CS_SetpMoter
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	
+	
+END_VAR
+
+VAR_IN_OUT
+stSetpMotor:ST_SetpMotor;//电芯出料步进电机	
+END_VAR
+	
+
+VAR
+iSensorCount: INT;
+//R_TRIG10:R_TRIG;
+//F_TRIG10:F_TRIG;
+R_trig20:R_TRIG;
+R_trig21:R_TRIG;
+R_trig23:R_TRIG;
+R_trig22:R_TRIG;
+TON50:TON;
+TON51:TON;
+TON52:TON;
+TON53:TON;
+TON54:TON;
+iSetp3:INT;   //电芯转移流程
+
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*********************步进电机控制*****************************)
+//步进点动
+stSetpMotor.bo_Up:=stSetpMotor.bJog_Up AND NOT stSetpMotor.biUpSensor ; //步进点动上升   
+stSetpMotor.bo_Down:=stSetpMotor.bJog_Down AND NOT stSetpMotor.biDownSensor ;   //步进点动下降   
+
+//步进回原点
+iSensorCount:=BOOL_TO_INT(stSetpMotor.biUpSensor)+ BOOL_TO_INT(stSetpMotor.biDownSensor);
+R_trig20(CLK:=stSetpMotor.bHome , Q=> );
+IF R_trig20.Q  AND iSensorCount<=1 THEN
+   iSetp3:=88;
+   stSetpMotor.bHome:=FALSE;
+   stSetpMotor.HomeDone:=FALSE;
+   stSetpMotor.bPoleFull:=FALSE;
+END_IF
+
+R_trig21(CLK:=stSetpMotor.bGoWorkPos , Q=> ); //GO工作位置  
+IF R_trig21.Q  THEN  //AND iSensorCount<=1
+   stSetpMotor.bJog_Down:=FALSE;
+   stSetpMotor.bJog_Up:=FALSE;
+   iSetp3:=99;	
+   stSetpMotor.HomeDone:=FALSE;
+   stSetpMotor.bGoWorkPos:=FALSE;
+   stSetpMotor.WorkPosDone:=FALSE;
+   stSetpMotor.bPoleFull:=FALSE;
+END_IF
+
+R_trig23(CLK:=stSetpMotor.bLeaveWorkPos , Q=> ); //离开工作位置  
+IF R_trig23.Q  THEN  //AND iSensorCount<=1
+   stSetpMotor.bJog_Down:=FALSE;
+     stSetpMotor.bJog_Up:=FALSE;
+    iSetp3:=97;	
+	stSetpMotor.HomeDone:=FALSE;
+   stSetpMotor.bLeaveWorkPos:=FALSE;
+   stSetpMotor.WorkPosDone:=FALSE;
+   stSetpMotor.bPoleFull:=FALSE;
+END_IF
+
+TON50(IN:= , PT:=T#20MS , Q=> , ET=> );  //感应原点后延时
+TON51(IN:= , PT:=T#20MS , Q=> , ET=> );  //对射感应原点后延时
+TON52(IN:= , PT:=T#10S , Q=> , ET=> );  //感应电芯报警
+TON53(IN:= , PT:=T#300MS , Q=> , ET=> );  //感
+TON54(IN:=iSetp3=200 , PT:=T#20S , Q=> , ET=> );  //回原超时
+R_trig22(CLK:=iSensorCount=1 , Q=> );  
+
+IF TON54.Q THEN
+	//stSetpMotor.bError[1]:=TRUE;//回原超时
+	stSetpMotor.bJog_Down:=FALSE;
+	stSetpMotor.bJog_Up:=FALSE; 	
+	iSetp3:=0;
+END_IF
+
+CASE iSetp3 OF   	
+88:  
+   IF stSetpMotor.biDownSensor THEN  //本来就在原点  回原完成
+	   TON50.IN:=TRUE; 
+	   TON52.IN:=FALSE;
+	   IF TON50.Q THEN
+		   stSetpMotor.HomeDone:=TRUE;
+		   stSetpMotor.bJog_Down:=FALSE;
+		   stSetpMotor.bJog_Up:=FALSE; 		   
+		   TON50.IN:=FALSE;  
+		   iSetp3:=666;   
+	   END_IF
+   //ELSIF  stSetpMotor.biDownSensor THEN  
+	    // iSetp3:=100; 
+   ELSIF  stSetpMotor.biUpSensor THEN 	   
+	      iSetp3:=200;    
+   ELSE                //没在任何感应 
+       iSetp3:=200;    //默认往参考点回原点
+   END_IF
+ (* 
+100:  //上升
+	   stSetpMotor.bJog_Down:=FALSE;
+	   stSetpMotor.bJog_Up:=TRUE;      //下限位 往上  碰到 mid2停
+	    IF stSetpMotor.biRefSensor THEN
+		  iSetp3:=88;	
+		END_IF*)   
+200:   //下降
+	   stSetpMotor.bJog_Down:=TRUE;
+	   stSetpMotor.bJog_Up:=FALSE; 
+	   IF  R_trig22.Q THEN   //下将过程中碰到限位
+		   iSetp3:=88;	 
+	   END_IF   
+  
+(*************************对射位置***********************)   
+99:    //在原位先上升    
+	   stSetpMotor.bJog_Down:=FALSE;
+	    stSetpMotor.bJog_Up:=TRUE;  
+		TON52.IN:=TRUE;
+		 iSetp3:=300;    	   
+300: //对射检测
+	 IF stSetpMotor.biUpSensor  THEN 
+	    stSetpMotor.bJog_Down:=TRUE;
+	    stSetpMotor.bJog_Up:=FALSE; 
+	 END_IF
+
+		IF stSetpMotor.biSensor   THEN //stSetpMotor.biSensor
+		   TON51.IN:=TRUE; 
+		   IF TON51.Q THEN 
+			   stSetpMotor.WorkPosDone:=TRUE;
+               stSetpMotor.bJog_Down:=FALSE;
+			   stSetpMotor.bJog_Up:=FALSE; 
+		       TON51.IN:=FALSE; 
+			   iSetp3:=666;   
+			END_IF   	
+		END_IF
+		
+(**************************离开对射位置********************************)  		
+97:     
+     IF  NOT stSetpMotor.bJog_Down AND NOT stSetpMotor.bJog_Up   THEN //升降轴上升到位 
+		 stSetpMotor.bJog_Down:=TRUE;
+		 stSetpMotor.bJog_Up:=FALSE;
+         TON53.IN:=TRUE;
+		 iSetp3:=400; 
+	 END_IF		
+		
+400:  //步进电机回原位
+	     IF TON53.Q AND NOT stSetpMotor.biSensor THEN//stSetpMotor.biSensor
+		   stSetpMotor.WorkPosDone:=TRUE;
+		    stSetpMotor.bJog_Down:=FALSE;
+		    stSetpMotor.bJog_Up:=FALSE;	 
+		     TON53.IN:=FALSE;
+		   iSetp3:=666; 
+		 END_IF
+	     IF stSetpMotor.biDownSensor  THEN
+		     stSetpMotor.bJog_Down:=FALSE;
+		      stSetpMotor.bJog_Up:=FALSE;	
+             TON53.IN:=FALSE; 
+		   // bAlarm:=TRUE;  
+            stSetpMotor.bPoleFull:=TRUE;  
+		    iSetp3:=666; 
+		 END_IF							
+END_CASE
+]]></ST>
+    </Implementation>
+    <LineIds Name="CS_SetpMoter">
+      <LineId Id="199" Count="132" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

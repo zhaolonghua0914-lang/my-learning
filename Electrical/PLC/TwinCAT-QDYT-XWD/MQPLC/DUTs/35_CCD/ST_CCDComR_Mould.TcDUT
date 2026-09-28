@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDComR_Mould" Id="{ba98123d-6e62-4ecf-b491-7c18632fe471}">
+    <Declaration><![CDATA[TYPE ST_CCDComR_Mould :
+STRUCT
+    fTabXOffset:REAL;  //冲R角定位CCD结果(极片行进方向偏移)
+	fTabYOffset:REAL;  //冲R角定位CCD结果(极片横幅方向偏移)
+	iFinish:INT;  //冲R角定位CCD结果指示(1=视野内抓到极耳任意一个边   ;   2=视野内存在极耳，但极耳两个边都抓不到   ;   3:视野内不存在极耳;   )
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

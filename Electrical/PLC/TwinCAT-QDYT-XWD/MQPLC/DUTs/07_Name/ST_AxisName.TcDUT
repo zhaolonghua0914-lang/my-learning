@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AxisName" Id="{bcae5b38-f6a4-4594-a3e9-9dcd25107386}">
+    <Declaration><![CDATA[TYPE ST_AxisName :   //轴名称
+STRUCT
+UnWind_L	:INT;//模切左放卷
+UnWind_R	:INT;//模切右放卷
+PoleTension	:INT;//模切前摆杆张力
+DriverAux	:INT;//模切辅助驱动
+BuffeLine	:INT;//模切极片缓存1:初始位 2：正极限位 3：负极限位
+Mould	:INT;//倒角模具
+MouldRectify_X	:INT;//模具纠偏X轴(肩宽补偿)
+MouldRectify_Y	:INT;//模具纠偏Y轴(切刀深度)
+DriverDDR	:INT;//模切主驱动
+Cuter	:INT;//裁切切刀
+CuterDegRectify	:INT;//裁切角度纠偏
+CuterBelt	:INT;//裁切输送皮带
+CuterBeltChange	:INT;//裁切输送带换型
+CCDPressPush	:INT;//尺寸CCD压片升降
+NGPushReverseBelt	:INT;//踢废倒装皮带
+NGPush1	:INT;//踢连续废料
+NGPush2	:INT;//踢单张废料
+DedustBelt	:INT;//上表面除尘皮带
+DedustReverseBelt	:INT;//下表面除尘倒装皮带
+SubBelt1	:INT;//送料分段皮带1
+SubBelt2	:INT;//送料分段皮带2
+SubBelt3	:INT;//送料分段皮带3
+Ready1	:INT;//备用1
+Ready2	:INT;//备用2
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

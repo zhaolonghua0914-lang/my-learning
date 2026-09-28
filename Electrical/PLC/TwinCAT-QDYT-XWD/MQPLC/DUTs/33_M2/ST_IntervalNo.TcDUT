@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_IntervalNo" Id="{e9ca582d-f634-4fa9-b0d5-138c33df6c94}">
+    <Declaration><![CDATA[TYPE ST_IntervalNo ://极耳间距工位（裁断前）
+STRUCT
+First	:INT:=1;		//	首工位（蓝胶检测位）1
+Mould	:INT:=5;		//冲R角位  5
+Cuter	:INT:=10;		//	裁切位    10
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

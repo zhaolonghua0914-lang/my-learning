@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Tension" Id="{98a43eb4-7b45-4522-9467-23815eb0e507}">
+    <Declaration><![CDATA[TYPE ST_Tension :  //张力FB 接口信号
+STRUCT
+	fWindDiameter           :REAL:=20;
+    fDanserDegree           :REAL;
+   
+   	bTenExecute		        :BOOL;	
+	bStudyExecute           :BOOL;       
+   	fStudyDiameter          :REAL;  
+	
+	bReady                    :BOOL;  
+	bTensionOK		       :BOOL;	
+
+	bError			           :BOOL;	
+                         
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

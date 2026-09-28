@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="conCa_date" Id="{763f6fd2-c24d-4965-bee9-2a5e911c8d8d}">
+    <Declaration><![CDATA[TYPE conCa_date ://负极取片
+STRUCT
+	
+	Ca_GohomeHMI:BOOL;//负极回原点启动
+	Ca_GohomeDone:BOOL;//负极回原点完成
+	
+	Ca_BeltGohomeHMI:BOOL;//负极回原点启动
+	Ca_BeltGohomeDone:BOOL;//负极回原点完成
+	
+	Ca_Quantited:UINT;//负极已叠数量
+	Ca_KDQuantited:UINT;//负极空叠隔膜已叠片数
+	Ca_EmptyRunKDQuantited:UINT;//负极空跑模式空叠隔膜已叠层数
+	Ca_CarryingFalg:BOOL;//负极搬运吸盘有无料标记
+	Ca_SegbeltFalg:BOOL;//负极段皮带取模切机械手有无料标记
+	Ca_deviationFalg:BOOL;//负极纠偏平台有无料标记
+	Ca_DPCarryingFalg:BOOL;//负极叠台搬运吸盘有无料标记
+	Ca_DPRequest:BOOL;//负极叠片请求
+	//Ca_deviationCCDOK:BOOL;//负极纠偏平台拍照OK
+	//Ca_deviationCCDNG:BOOL;//负极纠偏平台拍照NG	
+	Ca_deviationCCDDone:BOOL;//负极纠偏平台拍照完成
+	Ca_CCDStart:BOOL;//CCD拍照启动
+	//Ca_BlueflagingKDSet:UINT;//负极接带空叠隔膜设定片数
+	//Ca_YellowmarkKDSet:UINT;//负极色标空叠隔膜设定片数
+	Ca_Blueflaging_TF:UINT;//负极蓝胶标记空叠层数		
+
+	Ca_deviationFPOK:BOOL;//负极纠偏平台允许放极片
+	Ca_deviationDPOK:BOOL;//负极纠偏平台允许取极片
+	Ca_deviationDone:BOOL;//负极纠偏平台纠偏完成
+	Ca_CacheBeltDLOK:BOOL;//负极流水线缓存皮带允许取极片
+	Ca_CacheBelting:BOOL;//负极流水线缓存皮带取极片中
+	Ca_CacheBeltFLOK:BOOL;//负极流水线缓存皮带允许放极片
+	Ca_CacheBeltFLing:BOOL;//负极流水线缓存皮带放极片中
+	Ca_MainBeltOK:BOOL;//负极流水线主分料皮带允许取极片
+	Ca_MainBelting:BOOL;//负极流水线主分料皮带取极片中
+	Ca_betlMoveOK:BOOL;//负极搬运升降1在安全位、负极搬运升降2在安全位允许负极流水线线皮带移动
+	Ca_AxisCarrying:BOOL;//负极各轴正在运行到初始位中	
+	Ca_BeltDone:BOOL;//正极取主分料流水线极片完成
+	Ca_BeltSafe:BOOL;//正极取主分料流水线极片安全位
+	GetPiceReady:BOOL;//负  极 准备好取分段流水线上的极片
+	JumpPiceReady:BOOL;//负  极 放弃取分段流水线上的极片
+	bCa_PoleHave:BOOL;//负极取料位无片
+	
+	Ca_StandbyStep:ARRAY[0..9] OF UINT;//负极备极片程序步
+	CarryingSafepos:ARRAY[0..9] OF BOOL;//负极搬动轴在安全位置指示
+	Error:ARRAY[0..80] OF BOOL;//报警
+		Error_tips	:ARRAY[0..60] OF BOOL;//报警提示
+	
+	RectifydevStart:BOOL; //纠偏启动
+	RectifydevDone:BOOL; //纠偏完成
+	//CCD_X1:REAL; //纠偏平台X1的纠偏量
+	//CCD_X2:REAL;//纠偏平台X2的纠偏量
+	//CCD_Y:REAL;//纠偏平台Y的纠偏量	
+	
+	DemarcateStart:BOOL; //标定启动	
+	DemarcateDone:BOOL; //CCD标定完成
+	Demarcateing:BOOL;//CCD标定中
+	
+	CreateCamStart:BOOL;//负极取片凸轮创建启动
+	CreateCamDone:BOOL;//负极取片凸轮创建完成
+	
+	bCaCCD_TestDo:BOOL;//负极CCD测试开始
+	iCaCCD_PhotoCT:INT;//负极拍照取图时间
+	iCaCCD_RectifyCT:INT;//负极纠偏时间	
+	Ca_CCD_amount :INT;//负极连续NG计数
+	Ca_DTqr :BOOL;//负极极片掉片人工确认按钮
+	Ca_Rectifydev_CQ :BOOL;//负极纠偏平台除尘
+	Ca_Rectifydev_CS :INT;//纠偏计数
+	
+	Ca_Rectifydev_PB :BOOL;//二次纠偏屏蔽 OFF:屏蔽二次纠偏
+	Ca_VacuumErrorNG :BOOL;//负极抛真空NG料标志
+	//新增，首层隔膜
+	Ca_FirstFoldCnt:INT;//负极首层隔膜已叠次数
+	Ca_FirstFoldSet:INT:=1;//负极首层隔膜设定次数
+	//20240414WCZ
+	RectifyTryStart:BOOL;//CCD重复精度测试启动
+	SuckerTestStart:BOOL;//吸盘重复精度测试启动
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

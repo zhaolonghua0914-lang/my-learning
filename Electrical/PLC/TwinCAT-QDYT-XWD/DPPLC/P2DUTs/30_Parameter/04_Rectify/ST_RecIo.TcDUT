@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_RecIo" Id="{1eb70062-dea3-4b4e-a765-30b1167e9edf}">
+    <Declaration><![CDATA[TYPE ST_RecIo ://过程纠偏
+STRUCT
+	biError:				BOOL;	//纠偏报警
+	biCentre:           BOOL;	//纠偏居中状态  
+
+	
+    boLock:				BOOL;	//纠偏外部锁定
+	boAuto:				BOOL;	//纠偏自动
+	boManual:           BOOL;  //纠偏手动
+	boCentre:           BOOL;	//纠偏居中
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

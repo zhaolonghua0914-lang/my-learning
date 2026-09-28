@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_SysCmd" Id="{323ead89-332c-4006-b2e6-ee5d2a6d351d}">
+    <Declaration><![CDATA[TYPE ST_SysCmd :
+STRUCT
+
+(*主页面指令*)
+	bInit							:BOOL;	(*初始化*)
+
+	bShutDownPc					:BOOL;	(*关机，程序做延迟*)
+	bRebootPc						:BOOL;	(*重启PC*)
+	bSaveData						:BOOL;	(*保存所有参数*)
+    bReadData						:BOOL;	(*读取所有参数*)
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

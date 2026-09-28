@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Program_1" Id="{3462f304-2f38-4913-8834-243414921665}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Program_1
+VAR
+Step0:INT;
+TON1:Tc2_Standard.TON;
+DemarcateStart,DemarcateDone,Demarcateing,CCDStart:BOOL;
+	i: UINT;	
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// scRecipe(iRecipe2:=iRecipe );
+ 
+ TON1(IN:= , PT:=T#5S , Q=> , ET=> );//拍照延时复位
+
+
+CASE Step0 OF
+		0://等待CCD标定启动信号
+		        P2M1_CCD.AnRec.Start.iPhotoDo:=0;
+		        P2M1_CCD.AnRec.iDemarcatResult:=0;
+			IF DemarcateStart THEN
+				i:=0;//标定点位记数
+			    P2M1_CCD.AnRec.Start.iPhotoDo:=1;
+				DemarcateStart:=FALSE;//复位标定启动
+				DemarcateDone:=FALSE;//CCD标定完成
+				Demarcateing:=TRUE;//CCD标定中
+				Step0:=5;
+			END_IF
+	5:
+IF 		P2M1_CCD.AnRec.iDemarcatResult=1 AND  P2M1_CCD.AnRec.Start.iPhotoDo=0 THEN 
+         P2M1_CCD.AnRec.iDemarcatResult:=0;
+		 	i:=1;
+			Step0:=10;
+ELSIF 	P2M1_CCD.AnRec.iDemarcatResult=2 AND  P2M1_CCD.AnRec.Start.iPhotoDo=0 THEN 
+	P2M1_CCD.AnRec.iDemarcatResult:=0;
+	Step0:=999;
+END_IF
+		10://判断CCD标定走到第几个点位
+					IF  i=1 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+									//i:=i+1;
+									Step0:=20;
+					ELSIF i=2 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));
+									//i:=i+1;
+									Step0:=20;
+					ELSIF i=3 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+									//i:=i+1;
+									Step0:=20;									
+					ELSIF i=4 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=5 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+							//	i:=i+1;
+								Step0:=20;		
+					ELSIF i=6 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=7 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));
+								//	i:=i+1;
+									Step0:=20;		
+					ELSIF i=8 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+									//i:=i+1;
+									Step0:=20;		
+					ELSIF i=9 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=10 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=11 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(2+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(2+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(2+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=12 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(1+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(1+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(1+135))-103.94*COS(DEG_TO_RAD(135)));
+									//i:=i+1;
+									Step0:=20;		
+					
+					ELSIF i=130 THEN
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+									arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+									//i:=i+1;
+									Step0:=20;		
+					ELSIF i=140 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-1+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-1+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-1+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=150 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-2+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+135))-103.94*COS(DEG_TO_RAD(135)));	
+								//i:=i+1;
+								Step0:=20;		
+					ELSIF i=160 THEN
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+								arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));		
+								//i:=i+1;
+								Step0:=20;													
+					END_IF	
+		(*
+	FOR i:=0 TO 15 DO 
+					arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX1].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+					arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationX2].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+					arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[3]:=arrAxisPar[P2M1_Axise.AxisName.AndeviationY].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));				
+	END_FOR
+	*)
+	20:
+
+	P2M1_CCD.AnRec.Start.iPhotoDo:=1; 
+	Step0:=25;				
+	25:
+IF P2M1_CCD.AnRec.Start.iPhotoDo=0  AND P2M1_CCD.AnRec.iDemarcatResult=1     THEN
+	P2M1_CCD.AnRec.iDemarcatResult:=0; 
+	Step0:=30;		
+ELSIF P2M1_CCD.AnRec.Start.iPhotoDo=0  AND P2M1_CCD.AnRec.iDemarcatResult=2     THEN	
+	P2M1_CCD.AnRec.iDemarcatResult:=0;
+	Step0:=999;		
+ END_IF
+	30://移动至标定位
+			IF arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Status.Homed OR (arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Status.NoMoving AND NOT arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Status.Error )THEN
+						IF arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Cmd.arrbRealPoint[3] THEN
+							;//arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Cmd.iGoSetPos:=0;
+						ELSE
+							arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Cmd.iGoSetPos:=3;
+						END_IF 
+			END_IF
+			IF arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX2].Status.Homed OR  (arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX2].Status.NoMoving AND NOT arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX2].Status.Error) THEN
+						IF arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX2].Cmd.arrbRealPoint[3] THEN
+						;	//arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX2].Cmd.iGoSetPos:=0;
+						ELSE
+							arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX2].Cmd.iGoSetPos:=3;
+						END_IF
+			END_IF	
+			IF arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Status.Homed OR (arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Status.NoMoving AND NOT arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Status.Error) THEN
+						IF arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Cmd.arrbRealPoint[3] THEN
+							;//arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Cmd.iGoSetPos:=0;
+						ELSE
+							arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Cmd.iGoSetPos:=3;
+						END_IF
+			END_IF
+			IF  arrAxisCtrl[P2M1_Axise.AxisName.AndeviationX1].Cmd.arrbRealPoint[3]  AND 	arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Cmd.arrbRealPoint[3] AND  arrAxisCtrl[P2M1_Axise.AxisName.AndeviationY].Cmd.arrbRealPoint[3] THEN
+				TON1.IN:=TRUE;	
+            Step0:=40;
+			END_IF		
+	40://延时拍照
+			IF 	 TON1.Q  THEN
+				TON1.IN:=FALSE;	
+				i:=i+1;
+				Step0:=50;
+				END_IF
+ 
+			
+	50://
+			IF i>=13 THEN	
+				Step0:=60;
+			ELSE
+				Step0:=10;
+			END_IF	
+	60:
+	P2M1_CCD.AnRec.Start.iPhotoDo:=1; 
+	Step0:=70;		
+70:
+IF P2M1_CCD.AnRec.Start.iPhotoDo=0  AND P2M1_CCD.AnRec.iDemarcatResult=1     THEN
+	P2M1_CCD.AnRec.iDemarcatResult:=0; 
+	DemarcateDone:=TRUE;//CCD标定完成
+	Demarcateing:=FALSE;//CCD标定中
+	Step0:=666;		
+ELSIF P2M1_CCD.AnRec.Start.iPhotoDo=0  AND P2M1_CCD.AnRec.iDemarcatResult=2     THEN	
+	P2M1_CCD.AnRec.iDemarcatResult:=0;
+	Step0:=999;		
+ END_IF				
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="Program_1">
+      <LineId Id="3" Count="198" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

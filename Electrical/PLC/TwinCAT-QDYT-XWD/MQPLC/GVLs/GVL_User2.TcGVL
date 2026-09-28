@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_User2" Id="{cb4d0fa8-da69-4579-bdb7-bef8f68e25b7}">
+    <Declaration><![CDATA[VAR_GLOBAL
+		stAnUwindTen		:	ST_Tension;//正极放卷张力
+		stAnAuxDriverTen	:	ST_Tension;//正极张力辅助驱动
+			
+		stCaUwindTen		:	ST_Tension;//负极放卷张力										
+		stCaAuxDriverTen	:	ST_Tension;//负极张力辅助驱动
+(*
+           stAnUwindLTen                                :ST_Tension;//正极张力左放卷
+           stAnUwindRTen                             :ST_Tension;//正极张力右放卷
+          stAnAuxDriverTen:						ST_Tension;//正极张力辅助驱动			
+		   				
+           stCaUwindLTen                                :ST_Tension;//负极张力左放卷						
+           stCaUwindRTen                             :ST_Tension;//负极张力右放卷						
+          stCaAuxDriverTen:						ST_Tension;//负极张力辅助驱动
+
+*)
+		
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

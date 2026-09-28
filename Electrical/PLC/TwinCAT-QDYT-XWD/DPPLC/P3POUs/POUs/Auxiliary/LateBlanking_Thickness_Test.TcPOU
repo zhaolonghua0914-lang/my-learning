@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Thickness_Test" Id="{20ed6e66-f5f4-4a05-8567-207799087a55}" SpecialFunc="None">
+    <Declaration><![CDATA[//测厚测试
+PROGRAM LateBlanking_Thickness_Test
+VAR
+b_Thickness_TON :Tc2_Standard.TON;
+b_Thickness_TON2 :TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*IF Permit_Thickness OR Shield[3]  THEN
+	CellMemory[CellNo.Thickness].Thickness:=1;
+    Thickness_Finish:=TRUE;
+	Permit_Thickness:=FALSE;
+END_IF*)
+b_Thickness_TON(PT:=T#5S);
+b_Thickness_TON2(PT:=T#1S);
+Thickness_Par_Z:=DINT_TO_REAL(ThicknessPar)/1000;
+P3User2_Par.Thick_Cell_Par:=P3User2_Par.Thick_Par - Thickness_Par_Z;
+P3User2_Par.Thick_min;//:=Thick_Par-Thick_MN;
+P3User2_Par.Thick_max;//:=Thick_Par+Thick_MN;
+
+IF P3_SystemRUN.iMode=1 THEN
+CASE  Thickness_Step OF
+
+1://测厚压板打开和测厚托板缩回
+	b_Thickness_TON.IN:=FALSE;
+	b_Thickness_TON2.IN:=FALSE;
+	IF arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND  arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState  
+		AND arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState THEN
+		Thickness_Step:=30;
+	ELSE
+		Thickness_Step:=5;
+	END_IF
+		
+5:
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.bOFF:=TRUE;
+	IF 
+	   arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error2 AND
+	   arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 THEN
+	   Thickness_Step:=10;
+	END_IF
+
+10://测厚切换气缸伸出
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.bON:=TRUE;
+ 
+	IF   arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 THEN
+		Thickness_Step:=20;
+	END_IF
+
+20://测厚托板伸出
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.bON:=TRUE;
+	IF 
+	   arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1  THEN
+	   Thickness_Step:=30;
+	END_IF
+
+30://判断是否有允许测厚信号
+		IF Permit_Thickness AND NOT Thickness_Finish
+		AND arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND  arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState  
+		AND arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState THEN
+		Thickness_Step:=40;
+		ELSIF Step35=100 AND(NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState OR NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState OR NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState) THEN
+		Thickness_Step:=1;
+		END_IF 
+		
+	
+40://测厚托板缩回
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.bOFF:=TRUE;
+	IF 	   arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error2  THEN
+	   			Thickness_Step:=50;
+	END_IF  
+    
+50://测厚切换气缸缩回
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.bOFF:=TRUE;
+ 
+IF   arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error2 THEN
+   Thickness_Step:=55;
+END_IF
+
+55://检测电芯有无
+b_Thickness_TON2.IN:=TRUE;
+IF b_Thickness_TON2.Q AND  NOT P3Senser.P3_ThicknessSensor THEN
+	P3_Error[55]:=TRUE;//测厚台有记忆无电芯报警
+	b_Thickness_TON2.IN:=FALSE;
+	Thickness_Step:=100;
+ELSE
+	b_Thickness_TON2.IN:=FALSE;
+	 Thickness_Step:=60;
+END_IF
+
+60://测厚压板下压
+	b_Thickness_TON.IN:=FALSE;
+	arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.bON:=TRUE;
+		IF    arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error1 THEN
+	   			Thickness_Step:=70;
+		END_IF
+
+70:
+     b_Thickness_TON.IN:=TRUE;
+	 IF b_Thickness_TON.Q THEN
+		Thickness_Step:=80;
+		b_Thickness_TON.IN:=FALSE;
+	END_IF
+		
+80:
+IF 	(P3User2_Par.Thick_Cell_Par<=P3User2_Par.Thick_max AND P3User2_Par.Thick_Cell_Par>=P3User2_Par.Thick_min) OR P3User2_Par.Shield[3] THEN
+			CellMemory[CellNo.Thickness].Thickness:=1;
+			CellMemory[CellNo.Thickness].Cell_Thickness:=P3User2_Par.Thick_Cell_Par;
+			P3par.P3_Thickness_HMIStuas:=1;
+			P3par.P3_Thickness_HMIThick:=P3User2_Par.Thick_Cell_Par;
+			Thickness_Step:=90;
+	ELSIF 	P3User2_Par.Thick_Cell_Par>P3User2_Par.Thick_max OR P3User2_Par.Thick_Cell_Par<P3User2_Par.Thick_min THEN
+			CellMemory[CellNo.Thickness].Thickness:=2;
+			CellMemory[CellNo.Thickness].Cell_Thickness:=P3User2_Par.Thick_Cell_Par;
+			P3par.P3_Thickness_HMIStuas:=2;
+			P3par.P3_Thickness_HMIThick:=P3User2_Par.Thick_Cell_Par;		
+			Thickness_Step:=90;		
+END_IF
+
+90:
+		arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.bOFF:=TRUE;
+		IF    arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 THEN
+	   			Thickness_Step:=100;
+		END_IF
+
+
+100://测厚切换气缸伸出
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.bON:=TRUE;
+ 
+IF   arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 THEN
+   Thickness_Step:=110;
+END_IF
+
+110://测厚托板伸出
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.bON:=TRUE;
+	IF 
+	   arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1  THEN
+	   Thickness_Step:=120;
+	END_IF
+
+
+120:
+	Permit_Thickness:=FALSE;
+	Thickness_Finish:=TRUE;
+	 Thickness_Step:=1;
+	
+
+
+		
+END_CASE
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlanking_Thickness_Test">
+      <LineId Id="526" Count="141" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

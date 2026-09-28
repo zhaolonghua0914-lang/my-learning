@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_SystemPublic" Id="{da637919-a20e-4127-a382-7070a1656772}">
+    <Declaration><![CDATA[TYPE ST_SystemPublic ://系统功能块UDT
+STRUCT
+
+(***btn***)
+	 btnStart                      :BOOL;  //启动按钮汇总
+     btnStop                      :BOOL;  //停止按钮汇总
+	 btnReset                     :BOOL;  //复位按钮汇总
+     btnAuto                      :BOOL;//true=自动；false=手动 按钮汇总
+	 btnEstop                    :BOOL;//急停按钮汇总	 
+
+(***IO***)
+   boRedLight                     :BOOL;           (***三色红灯***)
+   boYellowLight                     :BOOL;           (***三色黄灯***)
+   boGreenLight                      :BOOL;           (***三色绿灯***)
+   boBuzzer							:BOOL;(***蜂鸣器***)
+   
+(***HMI*) 
+	 iModehmi                  :INT;  //设备状态  1:自动中   2:自动-Ready  3:手动   4:急停    5：报警    6.自动-NoReady
+	 hmiStart                    :BOOL;  
+     hmiStop                    :BOOL;   
+	 hmiReset                   :BOOL;  
+     hmiAutoSwitch           :BOOL;
+     hmiAuto                    :BOOL;
+     hmiManul                  :BOOL;	 
+	 hmiEstop                   :BOOL;
+     hmiTest                     :BOOL;
+	 //hmiGoHomeAll			:BOOL;
+	 //hmiAllHomed			:BOOL;
+(**Status**)
+	 FlgAuto                     :BOOL;       //自动中标志位 硬件状态
+	 FlgManua                  :BOOL;      //手动状态硬件状态
+     iMode                       :INT;  //整机状态  1:自动中   2:暂停  3:手动   4:急停   
+	   
+	
+     Autoing                     :BOOL;   //自动运行中
+	 Manuling                   :BOOL;  //手动运行中
+	 Stoping                     :BOOL;   //停止中
+	 Alarming                   :BOOL;   //报警中
+	 bErrorStop                :BOOL;//报警停机
+
+     bAutoCondition         :BOOL;
+     bStopFinished            :BOOL;
+	 
+	 bReset                      :BOOL; 
+(*(***INIT***)
+    bAnInit                        :BOOL;
+    bCaInit                        :BOOL;
+//    bP3Init                        :BOOL;
+//    bP4Init                        :BOOL;
+    bAnInitDone                :BOOL;
+    bCaInitDone                :BOOL;
+//    bP3InitDone                :BOOL;
+//    bP4InitDone                :BOOL;
+*)
+	bInit							:BOOL;
+    bInitDone                    :BOOL;
+(**监控**)
+	
+   bwindow	          :BOOL;  // 弹窗         
+   bAnccdstate        :BOOL;  //状态
+   bCaccdstate        :BOOL;  //状态
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

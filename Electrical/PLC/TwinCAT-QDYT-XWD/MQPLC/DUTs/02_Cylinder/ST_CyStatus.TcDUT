@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CyStatus" Id="{e7d068ec-c012-4203-84aa-21d6e7f9832a}">
+    <Declaration><![CDATA[TYPE ST_CyStatus ://
+STRUCT
+	ONState:	        BOOL;//开状态
+	OFFState:	        BOOL;//关状态
+	Error1:	            BOOL;//气缸ON报警
+	Error2:	            BOOL;//气缸OFF报警
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

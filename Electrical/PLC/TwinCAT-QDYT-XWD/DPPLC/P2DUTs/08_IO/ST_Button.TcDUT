@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Button" Id="{99c6b2ea-11f0-4d9d-aa51-494b32799634}">
+    <Declaration><![CDATA[TYPE ST_Button :
+STRUCT
+Tricolorlamp_Yellow 	:BOOL;		//		三色灯_黄
+Tricolorlamp_Red 	:BOOL;		//		三色灯_绿
+Tricolorlamp_Green 	:BOOL;		//		三色灯_红
+Tricolorlamp_Buzzer	:BOOL;		//		三色灯_蜂鸣器
+PoleInflationLights	:BOOL;		//		隔膜气胀轴按钮灯
+PoleTapeSplicerLLights	:BOOL;		//		隔膜左压板气缸按钮灯
+PoleTapeSplicerRLights	:BOOL;		//		隔膜右压板气缸按钮灯
+BlueGlueLights	:BOOL;		//		压蓝胶按钮灯
+codeGlueLights	:BOOL;		//		压二维码胶按钮灯
+PoleInflationbtn	:BOOL;		//		隔膜气胀轴按钮
+PoleTapeSplicerLbtn	:BOOL;		//		隔膜左压板气缸按钮
+PoleTapeSplicerRbtn	:BOOL;		//		隔膜右压板气缸按钮
+BlueGluebtn	:BOOL;		//		一键备蓝胶按钮
+BlueGluebtnLights	:BOOL;		//		一键备蓝胶按钮灯
+BlueGluePressbtn	:BOOL;		//		压蓝胶按钮
+codeGluebtn	:BOOL;		//		一键备二维码胶按钮
+codeGluebtnLights	:BOOL;		//		一键备二维码胶按钮灯
+codeGluePressbtn	:BOOL;		//		压二维码胶按钮
+EmStopbtn1	:BOOL;		//		外罩急停1
+EmStopbtn2	:BOOL;		//		外罩急停2
+EmStopbtn3	:BOOL;		//		外罩急停3
+EmStopbtn4	:BOOL;		//		外罩急停4
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

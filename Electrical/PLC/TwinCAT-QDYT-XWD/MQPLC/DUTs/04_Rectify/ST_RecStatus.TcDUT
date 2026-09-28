@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_RecStatus" Id="{3e872998-4d7d-4ce4-903a-12e6bf235113}">
+    <Declaration><![CDATA[TYPE ST_RecStatus ://纠偏系统
+STRUCT
+    bError             :BOOL;     //纠偏故障
+    bRuning           :BOOL;    //纠偏运行中
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

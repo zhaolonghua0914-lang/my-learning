@@ -1,0 +1,890 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="CS_AxisCtrl" Id="{93b0b165-c7dc-44e7-a39b-c7055d5fd3ce}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CS_AxisCtrl
+VAR_INPUT
+    bReset   :BOOL;
+	AutoRun:BOOL;//自动
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	//pAxisArr				: POINTER TO AXIS_REF;
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	aMC_Power				: MC_Power;
+	aMC_Jog				    : MC_Jog;
+	//aMC_InchingJog			: MC_Jog;
+	aMC_Reset				: MC_Reset;
+	aMC_Halt				: MC_Halt;
+	aMC_Stop				: MC_Stop;
+	aMC_SetPos				: MC_SetPosition;
+	aMC_MoveAbsolute		: MC_MoveAbsolute;
+	aMC_MoveAbsolute2		: MC_MoveAbsolute;
+	aMC_MoveRelative		: MC_MoveRelative;
+	aMC_MoveVelocity		: MC_MoveVelocity;
+	aMC_MoveModulo			: MC_MoveModulo;
+	aMC_GearOut              : MC_GearOut;
+	fbEncodeHome:            FB_EcCoeSdoWrite;
+	rtGearOut:              R_TRIG;
+	
+	stMcOut :Tc2_MC2.ST_McOutputs;
+	bMoveVeloDir	:MC_Direction := MC_Positive_Direction ;	 //MC_Negative_Direction
+	
+	rtReset1:Tc2_Standard.R_TRIG;
+	
+	bMAGearOut: BOOL;
+	fPosition_of_Rel: LREAL;
+END_VAR
+
+VAR	    
+	iK2:INT;
+    iRealDiscretePointTemp:ARRAY[1..15]OF BOOL;	
+//	TON1 :Tc2_Standard.TON;
+//	TON2 :Tc2_Standard.TON;
+	TON22:Tc2_Standard.TON;
+	TON30:Tc2_Standard.TON;
+	absExecute :BOOL;
+	
+	wEnHome:WORD:=6;
+	
+	arrTargetPoint : ARRAY [0..15] OF REAL; 
+
+       fbFindHome:                Ax_FindHomeV3;
+     rtMoveAbs    :ARRAY[0..15] OF  Tc2_Standard.R_TRIG;
+     ftMoveAbs    :ARRAY[0..15] OF  Tc2_Standard.F_TRIG;
+
+
+   rtReset                          :Tc2_Standard.R_TRIG;
+   rtReset2                         :Tc2_Standard.R_TRIG;
+     fVelMax                                :LREAL;           
+	fADcTime: REAL;
+	AccDec: LREAL;
+	Jerk: LREAL;
+     rtPostiveLimit  :Tc2_Standard.R_TRIG;
+     rtNegativeLimit  :Tc2_Standard.R_TRIG;
+
+	step:INT ;
+	rRun : R_TRIG;
+	fRun: F_TRIG;
+	sTON:  TON;
+	Handautomark:BOOL;//手自动对比标志
+	Pause_CMD:LREAL ; //手自动对比位置
+END_VAR
+
+
+VAR_IN_OUT
+	Axis			: AXIS_REF;
+	stAxisCtrl     : ST_AxisCtrl;
+    stAxisPar		: ST_Axis_Par;	
+
+
+END_VAR
+
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****轴状态**)
+Axis.ReadStatus();
+
+  stAxisCtrl.Status.AxisID:=Axis.NcToPlc.AxisId;
+
+ stAxisCtrl.Status.Enabled:=Axis.Status.ControlLoopClosed;
+ stAxisCtrl.Status.Moving:=Axis.Status.Moving;
+ stAxisCtrl.Status.NoMoving:=Axis.Status.NotMoving;
+ stAxisCtrl.Status.Homed:=fbFindHome.Done;    //Axis.Status.Homed;
+ stAxisCtrl.Status.Coupled:=Axis.Status.Coupled;
+
+ stAxisCtrl.Status.fActPos:=Axis.NcToPlc.ActPos;
+ stAxisCtrl.Status.fSetPos:=Axis.NcToPlc.SetPos;
+ stAxisCtrl.Status.fModuloActPos:=Axis.NcToPlc.ModuloActPos;
+ stAxisCtrl.Status.fModuloSetPos:=Axis.NcToPlc.ModuloSetPos;
+ stAxisCtrl.Status.fActVelo:=Axis.NcToPlc.ActVelo;
+ stAxisCtrl.Status.fSetVelo:=Axis.NcToPlc.SetVelo;
+ stAxisCtrl.Status.Error:=Axis.Status.Error  ;// OR  stAxisCtrl.Status.ErrorLimitSwitch
+ stAxisCtrl.Status.ErrorID:=Axis.Status.ErrorID;
+
+
+ IF  stAxisCtrl.Cmd.bMoveAbs OR stAxisCtrl.Cmd.iGoSetPos>=1  OR  stAxisCtrl.Cmd.bMoveRel  THEN
+
+        IF stAxisCtrl.Cmd.bDynamitcsParSel=1 THEN
+               AccDec:=0;
+               Jerk:=0;
+       END_IF
+    
+      IF stAxisCtrl.Cmd.bDynamitcsParSel=2 THEN
+         IF stAxisCtrl.Cmd.bMoveRel THEN
+			  fADcTime:=stAxisPar.fTagatTime*(1-stAxisPar.fConVelPercentage)/2;
+			  fVelMax:=ABS(stAxisCtrl.Cmd.fPosition_of_Rel)/(stAxisPar.fTagatTime-fADcTime*2+fADcTime*0.84 );//*1.01
+			  AccDec:=fVelMax*2/fADcTime  ;
+			  Jerk:=AccDec*2/ fADcTime   ;
+
+             stAxisPar.fVelocity_of_Rel :=fVelMax;
+            IF AccDec>=stAxisPar.fMaxAccDec OR fVelMax>= stAxisPar.fMaxVel THEN
+                 AccDec:=0;
+			     Jerk:=0 ;
+                 stAxisPar.fVelocity_of_Rel :=fVelMax*0.8;
+                stAxisCtrl.Status.WarningDynamitcsPar:=TRUE;
+            END_IF
+          END_IF
+
+        IF stAxisCtrl.Cmd.bMoveAbs  THEN
+
+              fPosition_of_Rel:= Axis.NcToPlc.SetPos-stAxisCtrl.Cmd.fPositon_of_Abs;
+			  fADcTime:=stAxisPar.fTagatTime*(1-stAxisPar.fConVelPercentage)/2;
+			  fVelMax:=ABS(fPosition_of_Rel)/(stAxisPar.fTagatTime-fADcTime*2+fADcTime*0.84 );//*1.01
+			  AccDec:=fVelMax*2/fADcTime  ;
+			  Jerk:=AccDec*2/ fADcTime   ;
+
+             stAxisPar.fVelocity_of_Abs :=fVelMax;
+            IF  AccDec>=stAxisPar.fMaxAccDec OR  fVelMax>= stAxisPar.fMaxVel THEN
+                 AccDec:=0;
+			     Jerk:=0 ;
+                 stAxisPar.fVelocity_of_Abs :=fVelMax*0.8;
+                  stAxisCtrl.Status.WarningDynamitcsPar:=TRUE;
+            END_IF
+          END_IF
+
+        IF stAxisCtrl.Cmd.iGoSetPos>=1  THEN
+              fPosition_of_Rel:= Axis.NcToPlc.SetPos-stAxisPar.arrTargetPoint[stAxisCtrl.Cmd.iGoSetPos];
+			  fADcTime:=stAxisPar.fTagatTime*(1-stAxisPar.fConVelPercentage)/2;
+			  fVelMax:=ABS(fPosition_of_Rel)/(stAxisPar.fTagatTime-fADcTime*2+fADcTime*0.84 );//*1.01
+			  AccDec:=fVelMax*2/fADcTime  ;
+			  Jerk:=AccDec*2/ fADcTime   ;
+
+             stAxisPar.fVelocity_of_Abs :=fVelMax;
+            IF  AccDec>=stAxisPar.fMaxAccDec OR  fVelMax>= stAxisPar.fMaxVel THEN
+                 AccDec:=0;
+			     Jerk:=0 ;
+                 stAxisPar.fVelocity_of_Abs :=fVelMax*0.8;
+               stAxisCtrl.Status.WarningDynamitcsPar:=TRUE;
+            END_IF
+          END_IF
+
+      END_IF
+   END_IF
+
+      
+(*
+		//1:加减速时间
+		fADcTime:=fTagatTime*(1-fConVelPercentage)/2;
+		fVelMax:=ABS(fTagatPos) /(fTagatTime-fADcTime*2+fADcTime*0.84 );//*1.0;
+		AccDec:=fVelMax*2/fADcTime  ;
+		Jerk:=AccDec*2/ fADcTime   ;
+*)
+
+
+(****使能***)
+aMC_Power(
+	Axis:= Axis, 
+	Enable:=stAxisCtrl.Cmd.bEnable , 
+	Enable_Positive:= stAxisCtrl.Cmd.bEnableFw, 
+	Enable_Negative:= stAxisCtrl.Cmd.bEnableBw, 
+	Override:=stAxisCtrl.Cmd.fOverride , 
+	BufferMode:= , 
+	Options:= , 
+	Status=> , 
+	Busy=> , 
+	Active=> , 
+	Error=> , 
+	ErrorID=> );	
+
+(****轴复位***)
+aMC_Reset(
+	Axis:=       Axis , 
+	Execute:=   ( stAxisCtrl.Cmd.bReset OR bReset ) AND  stAxisCtrl.Status.Error  , 
+	Done=>       , 
+	Busy=>       , 
+	Error=>       , 
+	ErrorID=>     );	
+
+rtReset(CLK:=(stAxisCtrl.Cmd.bReset OR bReset )AND stAxisCtrl.Status.WarningDynamitcsPar , Q=> );
+ IF rtReset.Q THEN
+       stAxisCtrl.Status.WarningDynamitcsPar:=FALSE;
+END_IF
+
+rtReset2(CLK:=(stAxisCtrl.Cmd.bReset OR bReset )AND stAxisCtrl.Status.ErrorLimitSwitch , Q=> );
+ IF rtReset2.Q THEN
+       stAxisCtrl.Status.ErrorLimitSwitch:=FALSE;
+END_IF
+
+
+
+
+(****轴解耦***)
+
+aMC_GearOut(
+	Slave:=             Axis , 
+	Execute:=         stAxisCtrl.Cmd.bGearOut , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Error=> , 
+	ErrorID=> );
+
+rtGearOut(CLK:= aMC_GearOut.Done, Q=> );
+IF rtGearOut.Q THEN
+   bMAGearOut:=TRUE;
+END_IF
+
+(****轴复停止***)
+aMC_Halt(
+	Axis:=               Axis , 
+	Execute:=         stAxisCtrl.Cmd.bHalt  OR  bMAGearOut    , 
+	Deceleration:=    , 
+	Jerk:=                , 
+	BufferMode:= , 
+	Options:= , 
+	Done=>             , 
+	Busy=>           , 
+	Active=>         , 
+	CommandAborted=>, 
+	Error=>          , 
+	ErrorID=>         );
+IF aMC_Halt.Done THEN
+	stAxisCtrl.Cmd.bHalt:=FALSE;
+    bMAGearOut:=FALSE;
+    stAxisCtrl.Cmd.bGearOut:=FALSE;
+END_IF
+
+aMC_Stop(
+	Axis:=               Axis, 
+	Execute:=            stAxisCtrl.Cmd.bStop, 
+	Deceleration:=       , 
+	Jerk:=                  , 
+	Options:= , 
+	Done=>                 , 
+	Busy=>                  , 
+	Active=>               , 
+	CommandAborted=>       , 
+	Error=>               , 
+	ErrorID=>             );
+
+IF aMC_Stop.Done THEN
+	 stAxisCtrl.Cmd.bStop:=FALSE;
+END_IF
+
+
+
+
+
+
+(****轴复点动***)
+aMC_Jog(
+	Axis:=          Axis, 
+	JogForward:=      stAxisCtrl.Cmd.bJog_Fw   AND  stAxisCtrl.Cmd.JogP_Condition , 
+	JogBackwards:=  stAxisCtrl.Cmd.bJog_Bw AND  stAxisCtrl.Cmd.JogN_Condition , 
+	Mode:=          MC_JOGMODE_CONTINOUS, 
+	Position:= , 
+	Velocity:=      stAxisPar.fVelocity_of_Jog, 
+	Acceleration:=     , 
+	Deceleration:=    , 
+	Jerk:=                 , 
+	Done=>            , 
+	Busy=>            , 
+	Active=>         , 
+	CommandAborted=>  , 
+	Error=>           , 
+	ErrorID=>          );		
+
+(****轴绝对**)
+aMC_MoveAbsolute2(
+	Axis:=              Axis, 
+	Execute:=           stAxisCtrl.Cmd.bMoveAbs, 
+	Position:=          stAxisCtrl.Cmd.fPositon_of_Abs, 
+	Velocity:=          stAxisPar.fVelocity_of_Abs, 
+	Acceleration:=    AccDec , 
+	Deceleration:=    AccDec , 
+	Jerk:=                Jerk , 
+	BufferMode:= , 
+	Options:= , 
+	Done=>            , 
+	Busy=>             , 
+	Active=>            , 
+	CommandAborted=>    , 
+	Error=>             , 
+	ErrorID=>            );
+IF aMC_MoveAbsolute2.Done THEN
+	stAxisCtrl.Cmd.bMoveAbs:=FALSE;
+END_IF
+
+
+
+(****轴定位**)
+   FOR iK2:=1 TO 15 BY 1 DO	
+         rtMoveAbs[iK2](CLK:= stAxisCtrl.Cmd.arrbGoSetPos[iK2]  AND  stAxisCtrl.Cmd.GoPoint_Condition[iK2]  , Q=> );
+         ftMoveAbs[iK2](CLK:= stAxisCtrl.Cmd.arrbGoSetPos[iK2]           , Q=> );
+	   IF rtMoveAbs[iK2].Q THEN
+		   stAxisCtrl.Cmd.iGoSetPos:=iK2;
+	   ELSIF ftMoveAbs[iK2].Q THEN
+			 stAxisCtrl.Cmd.iGoSetPos:=0;
+	  END_IF
+  END_FOR
+
+
+    arrTargetPoint:= stAxisPar.arrTargetPoint;
+	IF stAxisCtrl.Cmd.iGoSetPos>0 AND stAxisCtrl.Cmd.iGoSetPos<=15 THEN   
+		aMC_MoveAbsolute.Position:= REAL_TO_LREAL(arrTargetPoint[stAxisCtrl.Cmd.iGoSetPos]);//+2
+	END_IF	
+stAxisCtrl.Cmd.iRealPoint:=0;
+FOR iK2:=1 TO 15 BY 1 DO	
+	 IF  ABS(arrTargetPoint[iK2]-LREAL_TO_REAL(Axis.NcToPlc.SetPos))<=stAxisCtrl.Cmd.Axis_R  (* AND arrTargetPoint[iK2]<>0 *)
+         AND ABS(Axis.NcToPlc.SetPos-Axis.NcToPlc.SetPos )<=2 AND  Axis.Status.NotMoving THEN //Axis.NcToPlc.ActPos
+			 iRealDiscretePointTemp[iK2]:=TRUE;	//-2
+           stAxisCtrl.Cmd.arrbRealPoint[iK2]:=TRUE;
+     ELSE
+            iRealDiscretePointTemp[iK2]:=FALSE;	//-2
+            stAxisCtrl.Cmd.arrbRealPoint[iK2]:=FALSE;
+	 END_IF
+	 
+	  IF iRealDiscretePointTemp[iK2] THEN  
+		  stAxisCtrl.Cmd.iRealPoint:=iK2;
+	  END_IF 	  
+END_FOR
+
+IF   stAxisCtrl.Cmd.iGoSetPos>0  AND stAxisCtrl.Cmd.iGoSetPos<=15 AND ABS( aMC_MoveAbsolute.Position - Axis.NcToPlc.SetPos )>stAxisCtrl.Cmd.Axis_R  AND// Axis.NcToPlc.SetPos 
+     Axis.Status.NotMoving AND NOT absExecute   THEN    
+	 aMC_MoveAbsolute.Position:= REAL_TO_LREAL(arrTargetPoint[stAxisCtrl.Cmd.iGoSetPos]);//+2
+	 absExecute:=TRUE;  
+	 stAxisCtrl.Cmd.iGoSetPos:=0; 
+ELSIF stAxisCtrl.Cmd.iGoSetPos>0  AND stAxisCtrl.Cmd.iGoSetPos<=15 AND ABS( aMC_MoveAbsolute.Position - Axis.NcToPlc.SetPos )<=stAxisCtrl.Cmd.Axis_R  AND  Axis.Status.NotMoving  THEN//Axis.NcToPlc.ActPos
+	stAxisCtrl.Cmd.iGoSetPos:=0;
+END_IF	
+TON22(IN:= , PT:=T#10MS , Q=> , ET=> );	//一般一次启动就可以  如果没启动可以延时0.4秒后再次触发
+
+IF absExecute AND Axis.Status.NotMoving THEN
+		IF NOT TON22.Q THEN
+			TON22.IN:=TRUE;			
+		ELSE
+			absExecute:=FALSE;
+	 		stAxisCtrl.Cmd.iGoSetPos:=0;
+			TON22.IN:=FALSE;
+		END_IF
+		
+
+
+ELSE
+	TON22.IN:=FALSE;
+END_IF
+
+IF aMC_MoveAbsolute.Done THEN
+	absExecute:=FALSE;
+	stAxisCtrl.Cmd.iGoSetPos:=0;
+	TON22.IN:=FALSE;					
+END_IF
+
+
+aMC_MoveAbsolute(
+	Axis:=              Axis, 
+	Execute:=           absExecute, 
+	Position:= , 
+	Velocity:=          stAxisPar.fVelocity_of_Abs , 
+	Acceleration:=   AccDec , 
+	Deceleration:=  AccDec , 
+	Jerk:=              Jerk , 
+	BufferMode:= , 
+	Options:= , 
+	Done=>            stMcOut.Done, 
+	Busy=>            stMcOut.Busy , 
+	Active=>          stMcOut.Active          , 
+	CommandAborted=>  stMcOut.CommandAborted  , 
+	Error=>           stMcOut.Error           , 
+	ErrorID=>         stMcOut.ErrorID       );
+
+(****轴相对**)
+aMC_MoveRelative(
+	Axis:=                      Axis, 
+	Execute:=                   stAxisCtrl.Cmd.bMoveRel , 
+	Distance:=                  stAxisCtrl.Cmd.fPosition_of_Rel, 
+	Velocity:=                  stAxisPar.fVelocity_of_Rel , 
+	Acceleration:=            AccDec , 
+	Deceleration:=           AccDec , 
+	Jerk:=                       Jerk , 
+	BufferMode:= , 
+	Options:= , 
+	Done=>                     , 
+	Busy=>                     , 
+	Active=>                   , 
+	CommandAborted=>            , 
+	Error=>                      , 
+	ErrorID=>                   );
+
+	
+IF 	aMC_MoveRelative.Done THEN 
+    stAxisCtrl.Cmd.bMoveRel:=FALSE; 
+END_IF
+
+(****轴速度**)
+aMC_MoveVelocity(
+	Axis:=            Axis , 
+	Execute:=         stAxisCtrl.Cmd.bMoveVelo , 
+	Velocity:=        stAxisPar.fVelocity_of_Velo, 
+	Acceleration:=    , 
+	Deceleration:=   , 
+	Jerk:=                , 
+	Direction:=       bMoveVeloDir, 
+	BufferMode:=      MC_BlendingNext , 
+	Options:= , 
+	InVelocity=> , 
+	Busy=>             , 
+	Active=>         , 
+	CommandAborted=>   , 
+	Error=>                    , 
+	ErrorID=>              );		
+		
+	IF aMC_MoveVelocity.InVelocity THEN
+		stAxisCtrl.Cmd.bMoveVelo:=FALSE;
+	END_IF
+(****轴模长定位**)
+aMC_MoveModulo(
+	Axis:=              Axis, 
+	Execute:=           stAxisCtrl.Cmd.bMoveModulo, 
+	Position:=          stAxisCtrl.Cmd.fPositon_of_Mod, 
+	Velocity:=          stAxisPar.fVelocity_of_Mod , 
+	Acceleration:=            , 
+	Deceleration:=             , // Tc2_MC2.MC_Shortest_Way 
+	Jerk:=                   , 
+	Direction:=      Tc2_MC2.MC_Shortest_Way   , 
+	BufferMode:= , 
+	Options:= , 
+	Done=>              , 
+	Busy=>              , 
+	Active=>             , 
+	CommandAborted=>    , 
+	Error=>             , 
+	ErrorID=>           );
+
+IF aMC_MoveModulo.Done THEN
+	stAxisCtrl.Cmd.bMoveModulo:=FALSE;
+END_IF
+(****轴位置设定**)
+aMC_SetPos(
+	Axis:=        Axis, 
+	Execute:=     stAxisCtrl.Cmd.bSetPos, 
+	Position:=    stAxisCtrl.Cmd.fSetPos , 
+	Mode:= , 
+	Options:=     , 
+	Done=>         , 
+	Busy=>        , 
+	Error=>          , 
+	ErrorID=>      );
+	
+ IF aMC_SetPos.Done THEN
+	 stAxisCtrl.Cmd.bSetPos:=FALSE;
+ END_IF
+
+(*********************轴Home**************************)
+fbFindHome(
+	Execute:=                stAxisCtrl.Cmd.bHome AND stAxisCtrl.Cmd.Home_Condition , 
+	bDirection:=                stAxisPar.bHomeDirection,
+	HomePositionOffset:=   stAxisPar.fHomePosition, 
+	HomeFastSpeed:=    stAxisPar.fHomeFastSpeed , 
+	HomeSlowSpeed:=   stAxisPar.fHomeSlowSpeed , 
+     HomeLimitDis:=       stAxisPar.HomeLimitDis , 
+	HomeSwitch:=          stAxisCtrl.Io.biHomeSwitch , 
+	PosLimitSwitch:=      stAxisCtrl.Io.biPosLimit , 
+	NegLimitSwitch:=     stAxisCtrl.Io.biNegLimit , 
+	pAxis:=                    ADR(Axis)          , 
+	Done=> , 
+	Busy=> , 
+	Error=> );
+
+IF fbFindHome.Done THEN    
+     stAxisCtrl.Cmd.bHome:=FALSE;
+END_IF
+
+(*********************轴限位保护**************************)
+rtPostiveLimit(CLK:=stAxisCtrl.Io.biPosLimit            , Q=> );
+rtNegativeLimit(CLK:=stAxisCtrl.Io.biNegLimit         , Q=> );
+IF stAxisPar.bLimitSwitchEn  THEN  //限位保护开启
+
+	  IF ( rtPostiveLimit.Q OR rtNegativeLimit.Q  ) AND   NOT  fbFindHome.Busy    THEN
+		  stAxisCtrl.Cmd.bStop:=TRUE;
+		  stAxisCtrl.Status.ErrorLimitSwitch:=TRUE;
+	  END_IF
+
+ELSE 
+    ;
+
+END_IF
+
+ //控制信号复位
+ rtReset1(CLK:= aMC_Halt.Done OR aMC_Stop.Done OR aMC_Reset.Done  OR  stAxisCtrl.Status.ErrorLimitSwitch   , Q=> );
+ IF rtReset1.Q THEN
+    stAxisCtrl.Cmd. bHome:=FALSE;
+    stAxisCtrl.Cmd.bHalt:=FALSE;
+ 
+    stAxisCtrl.Cmd.bSetPos:=FALSE;	
+    stAxisCtrl.Cmd.bMoveAbs:=FALSE;	
+    stAxisCtrl.Cmd.bMoveRel:=FALSE;		
+    stAxisCtrl.Cmd.bMoveModulo:=FALSE;		
+    stAxisCtrl.Cmd.bMoveVelo:=FALSE;
+	stAxisCtrl.Cmd.bJog_Bw:=FALSE;
+	stAxisCtrl.Cmd.bJog_Fw:=FALSE;
+	absEXecute:=FALSE;	
+//	stAxisCtrl.Cmd.bEnableFw:=FALSE;	
+	stAxisCtrl.Cmd.iGoSetPos:=0;
+    stAxisCtrl.Cmd.bGearOut:=FALSE;
+   bMAGearOut:=FALSE;
+
+	 IF  NOT  stAxisCtrl.Status.ErrorLimitSwitch THEN
+		stAxisCtrl.Cmd.bStop:=FALSE;
+	 END_IF
+
+ END_IF 
+ 
+
+ 
+ 
+  rRun(CLK:= AutoRun , Q=> );
+  fRun(CLK:= AutoRun , Q=> );
+  sTON(PT:=T#100MS);
+
+		IF fRun.Q THEN
+			step:=100; 
+		END_IF
+		
+	CASE step OF	
+		100:
+			 sTON.IN:=FALSE; 
+		     step:=110;   
+		110:  
+		   IF stAxisCtrl.Status.NoMoving THEN
+			 sTON.IN:=TRUE;  
+			 step:=120;  
+		   END_IF
+		   
+		 120:
+		   IF sTON.Q THEN
+		     step:=130;  
+			 sTON.IN:=FALSE;  
+		  END_IF 
+	    130:    
+	        Handautomark:=TRUE;	
+			Pause_CMD:=stAxisCtrl.Status.fActPos;
+	        step:=140;    
+	END_CASE
+		
+
+	   IF rRun.Q AND Handautomark THEN
+				IF  ABS(Pause_CMD-stAxisCtrl.Status.fActPos)>=0.2 THEN
+				    stAxisCtrl.Status.Errorcomp:=TRUE;
+				END_IF
+				Handautomark:=FALSE;
+		END_IF
+		
+		IF bReset  THEN
+			  stAxisCtrl.Status.Errorcomp:=FALSE;
+		END_IF
+		
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ]]></ST>
+    </Implementation>
+    <LineIds Name="CS_AxisCtrl">
+      <LineId Id="1858" Count="244" />
+      <LineId Id="3386" Count="0" />
+      <LineId Id="2103" Count="29" />
+      <LineId Id="2660" Count="1" />
+      <LineId Id="2663" Count="0" />
+      <LineId Id="2133" Count="2" />
+      <LineId Id="3028" Count="0" />
+      <LineId Id="3022" Count="0" />
+      <LineId Id="3025" Count="2" />
+      <LineId Id="3023" Count="1" />
+      <LineId Id="2136" Count="146" />
+      <LineId Id="3385" Count="0" />
+      <LineId Id="3384" Count="0" />
+      <LineId Id="2283" Count="13" />
+      <LineId Id="3749" Count="39" />
+      <LineId Id="2297" Count="7" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

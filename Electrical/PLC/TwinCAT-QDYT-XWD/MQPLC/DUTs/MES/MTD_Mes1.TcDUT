@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="MTD_Mes1" Id="{9b41086a-e67b-483d-ae75-de9328cbe2b8}">
+    <Declaration><![CDATA[TYPE MTD_Mes1 :
+STRUCT
+	rExcelRate	:ARRAY[0..99] OF REAL;	//优报表real	
+	uOther		:ARRAY[0..19] OF DINT;	//信号交互	
+    bFuncEN     :ARRAY[0..20] OF BOOL;	//功能开关状态
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

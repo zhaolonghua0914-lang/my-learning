@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="SystemInfoCtrl" Id="{f3ef8782-bdfd-41c6-b694-0db832f02048}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK SystemInfoCtrl
+VAR_INPUT
+	Reset					: BOOL;
+	RTCSyncCylce		:	DWORD := 5; (* in seconds *)
+	TimeStampTrig		:	BOOL;
+END_VAR
+VAR_OUTPUT
+//	RunTimeNo			: BYTE;
+//	ProjectName			: STRING(32);
+//	NumberOfTasks		: BYTE;
+//	OnlineChangeCount	: UINT;
+	RetainVarErr		: BOOL;
+	PersistenVarErr	: BOOL;
+	TimeStampDT			:	DATE_AND_TIME;
+	TimeStamp			:	STRING(25); (* DD.MM.YY-Stunde:Minute:Sekunde:xxx *)
+	TimeStr				:	STRING(15);	(* hh.mm.ss.xxms *)
+	DateStr				:	STRING(15);	(* dd.mm.jj *)
+	TimeStamp2			:	STRING(25); (* YYYY-MM-DD_HHMMSS for example YYYY-MM-DD_HHMMSS_Name.txt *)
+	TimeStruct			:	TIMESTRUCT;
+	MonthDays			:	WORD;
+	LeapYear				:	BOOL;
+	WeekOfYear			:	WORD;
+	timezoneId			: 	E_TimeZoneID;
+END_VAR
+
+VAR
+	(* Inst. Get Taskindex *)
+	InstGETCURTASKINDEX	: 	GETCURTASKINDEX;
+	InstLocalSystemTime	:	FB_LocalSystemTime;
+
+	(* Info: SystemInfo.bootDataFlags
+	Bit
+	0 RETAIN Variablen: LOADED (fehlerfrei geladen)
+	1 RETAIN Variablen: INVALID (es wurde die Sicherungskopie geladen, weil keine g黮tige Datei vorhanden war)
+	2 RETAIN Variablen: REQUESTED (RETAIN Variablen sollten geladen werden, Einstellung im TwinCAT System Control))
+	3 reserviert
+	4 PERSISTENT Variablen: LOADED (fehlerfrei geladen)
+	5 PERSISTENT Variablen: INVALID (es wurde die Sicherungskopie geladen, weil keine g黮tige Datei vorhanden war)
+	6 reserviert
+	7 reserviert *)
+
+	RetainVarLoaded			: BOOL;
+	RetainVarInvalid		: BOOL;
+	RetainVarRequested		: BOOL;
+	PersistentVarLoaded		: BOOL;
+	PersistentVarInvalid	: BOOL;
+
+	(* Info: SystemTaskInfoArr	(* Ist ein Array von 1-4 *)
+	active					:	BOOL; 		(* Diese Variable zeigt an, ob die Task aktiv ist.*)
+	taskName					:	STRING(16);	(* Der Taskname.*)
+	firstCycle				:	BOOL;			(* Diese Variable hat im ersten Zyklus der SPS-Task den Wert: TRUE.*)
+	cycleTimeExceeded		:	BOOL;			(* In dieser Variablen wird ein 躡erschreiten der eingestellten Taskzykluszeit gemeldet*)
+	cycleTime				:	UDINT;		(* Eingestellte Taskzykluszeit in Vielfachen von 100ns*)
+	lastExecTime			:	UDINT;		(* Ben鰐igte Zykluszeit f黵 den letzten Zyklus in Vielfachen von 100 ns*)
+	priority					:	BYTE;			(* Eingestellte Prioritaet der Task*)
+	cycleCount				: 	UDINT;		(* Zykluszaehler*) *)
+	_sec						:	WORD;
+//	_hour						:	WORD;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Get Current Task Index ************************************************************************)
+	InstGETCURTASKINDEX();
+
+(* Read System Info Current Task *****************************************************************)
+	(* Task Info *)
+//	RunTimeNo				:=  _AppInfo.runTimeNo;
+//	ProjectName				:=  _AppInfo.ProjectName;
+//	NumberOfTasks 			:=  _AppInfo.TaskCnt;
+//	OnlineChangeCount		:=  _AppInfo.OnlineChangeCnt;
+
+	(* System Boot Flags *)
+//	RetainVarLoaded		:= SystemInfo.bootDataFlags.0;
+//	RetainVarInvalid		:= SystemInfo.bootDataFlags.1 ;
+//	RetainVarRequested 	:= SystemInfo.bootDataFlags.2 ;
+//	PersistentVarLoaded	:= SystemInfo.bootDataFlags.4;
+//	PersistentVarInvalid	:= SystemInfo.bootDataFlags.5;
+
+
+	(* Retein/Persisten Data Err *)
+	IF  _TaskInfo[InstGETCURTASKINDEX.Index].FirstCycle THEN
+		RetainVarErr		:= NOT RetainVarLoaded AND RetainVarRequested OR RetainVarInvalid;
+		PersistenVarErr	:= NOT PersistentVarLoaded OR PersistentVarInvalid;
+	ELSIF Reset THEN
+		M_Reset();
+	ELSE
+		;
+	END_IF
+
+(* Systemzeit auslesen ************************************************************************)
+	InstLocalSystemTime(
+		sNetID		:= '',
+		bEnable		:= TRUE,
+		dwCycle		:= RTCSyncCylce,
+		dwOpt			:= (* Default *),
+		tTimeout		:= (* Default *),
+		bValid		=> ,
+		systemTime	=> TimeStruct,
+		tzID			=> timezoneId);
+
+	IF TimeStampTrig
+		AND InstLocalSystemTime.bValid
+	THEN
+		(* Date dd.mm.jj ********************)
+		IF TimeStruct.wDay < 10 THEN
+			DateStr := CONCAT('0',WORD_TO_STRING(TimeStruct.wDay));
+		ELSE
+			DateStr := WORD_TO_STRING(TimeStruct.wDay);
+		END_IF
+		DateStr := CONCAT(DateStr,'.');
+		IF TimeStruct.wMonth < 10 THEN
+			DateStr := CONCAT(DateStr,CONCAT('0',WORD_TO_STRING(TimeStruct.wMonth)));
+		ELSE
+			DateStr := CONCAT(DateStr,WORD_TO_STRING(TimeStruct.wMonth));
+		END_IF
+		DateStr := CONCAT(DateStr,'.');
+		DateStr := CONCAT(DateStr,RIGHT(WORD_TO_STRING(TimeStruct.wYear),2));
+	
+		(* Time hh.mm.ss.xxms ***************)
+		IF TimeStruct.wHour < 10 THEN
+			TimeStr := CONCAT('0',WORD_TO_STRING(TimeStruct.wHour));
+		ELSE
+			TimeStr := WORD_TO_STRING(TimeStruct.wHour);
+		END_IF
+		TimeStr := CONCAT(TimeStr,':');
+		IF TimeStruct.wMinute < 10 THEN
+			TimeStr := CONCAT(TimeStr,CONCAT('0',WORD_TO_STRING(TimeStruct.wMinute)));
+		ELSE
+			TimeStr := CONCAT(TimeStr,WORD_TO_STRING(TimeStruct.wMinute));
+		END_IF
+		TimeStr := CONCAT(TimeStr,':');
+		IF TimeStruct.wSecond < 10 THEN
+			TimeStr := CONCAT(TimeStr,CONCAT('0',WORD_TO_STRING(TimeStruct.wSecond)));
+		ELSE
+			TimeStr := CONCAT(TimeStr,WORD_TO_STRING(TimeStruct.wSecond));
+		END_IF
+	
+		(* TimeStamp Format DE: DD.MM.YY-Stunde:Minute:Sekunde:xxx,*)
+		TimeStamp := CONCAT(DateStr,'-');
+		TimeStamp := CONCAT(TimeStamp,TimeStr);
+		TimeStamp := CONCAT(TimeStamp,':');
+		IF TimeStruct.wMilliseconds > 100 THEN
+			TimeStamp:=CONCAT(TimeStamp,WORD_TO_STRING(TimeStruct.wMilliseconds));
+		ELSIF TimeStruct.wMilliseconds > 10 THEN
+			TimeStamp:=CONCAT(CONCAT(TimeStamp,'0'),WORD_TO_STRING(TimeStruct.wMilliseconds));
+		ELSE
+			TimeStamp:=CONCAT(CONCAT(TimeStamp,'00'),WORD_TO_STRING(TimeStruct.wMilliseconds));
+		END_IF
+	
+		(* Timestamp Format ENG: YYYY-MM-DD-hh:mm:ss.xxx *)
+		(* TimeStamp := SYSTEMTIME_TO_STRING(TimeStruct); *)
+	
+		(* TimeStamp2 FileName YYYY-MM-DD_HHMMSS *)
+		IF _sec <> TimeStruct.wSecond THEN
+			TimeStamp2 := CONCAT(WORD_TO_STRING(TimeStruct.wYear),'-');
+			IF TimeStruct.wMonth < 10 THEN
+				TimeStamp2 := CONCAT(TimeStamp2,CONCAT('0',WORD_TO_STRING(TimeStruct.wMonth)));
+			ELSE
+				TimeStamp2 := CONCAT(TimeStamp2,WORD_TO_STRING(TimeStruct.wMonth));
+			END_IF
+			TimeStamp2 := CONCAT(TimeStamp2,'-');
+			IF TimeStruct.wDay < 10 THEN
+				TimeStamp2 := CONCAT(TimeStamp2,CONCAT('0',WORD_TO_STRING(TimeStruct.wDay)));
+			ELSE
+				TimeStamp2 := CONCAT(TimeStamp2,WORD_TO_STRING(TimeStruct.wDay));
+			END_IF
+			TimeStamp2 := CONCAT(TimeStamp2,'_');
+			IF TimeStruct.wHour < 10 THEN
+				TimeStamp2 := CONCAT(TimeStamp2,CONCAT('0',WORD_TO_STRING(TimeStruct.wHour)));
+			ELSE
+				TimeStamp2 := CONCAT(TimeStamp2,WORD_TO_STRING(TimeStruct.wHour));
+			END_IF
+			IF TimeStruct.wMinute < 10 THEN
+				TimeStamp2 := CONCAT(TimeStamp2,CONCAT('0',WORD_TO_STRING(TimeStruct.wMinute)));
+			ELSE
+				TimeStamp2 := CONCAT(TimeStamp2,WORD_TO_STRING(TimeStruct.wMinute));
+			END_IF
+			IF TimeStruct.wSecond < 10 THEN
+				TimeStamp2 := CONCAT(TimeStamp2,CONCAT('0',WORD_TO_STRING(TimeStruct.wSecond)));
+			ELSE
+				TimeStamp2 := CONCAT(TimeStamp2,WORD_TO_STRING(TimeStruct.wSecond));
+			END_IF
+			_sec := TimeStruct.wSecond;
+	
+			(* Jahresinformationen *)
+			TimeStampDT := SYSTEMTIME_TO_DT(TimeStruct);
+			MonthDays	:= F_GetMaxMonthDays(TimeStruct.wYear,TimeStruct.wMonth);
+			LeapYear		:= F_YearIsLeapYear(TimeStruct.wYear) ;
+			WeekOfYear	:= F_GetWeekOfTheYear(TimeStampDT);
+	
+		END_IF
+	END_IF
+
+(**************************************************************************************************)]]></ST>
+    </Implementation>
+    <Action Name="M_Reset" Id="{a503a7b0-40ac-490e-85dc-df17f8457fee}">
+      <Implementation>
+        <ST><![CDATA[RetainVarErr := PersistenVarErr := FALSE;]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="SystemInfoCtrl">
+      <LineId Id="3" Count="131" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="SystemInfoCtrl.M_Reset">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

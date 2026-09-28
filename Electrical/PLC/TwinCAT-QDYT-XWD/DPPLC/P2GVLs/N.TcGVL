@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="N" Id="{0ba0e0b2-27e9-4705-a889-7e4cb5ec432f}">
+    <Declaration><![CDATA[
+VAR_GLOBAL  //常量
+(**轴**)  
+	P2AxisNo:      ST_P2AxisName;
+    VirAxisNo:      ST_P2VirAxisName;
+(**气缸**)
+	P2CYNo:        ST_P2CylinderName;
+(**电磁阀**)
+	P2EVNo:        ST_P2ElectValveName;
+
+(***纠偏**)
+     RecNo:         ST_RecName;
+
+(***温控*)
+  //  TempNo:      ST_TempName;
+
+(******凸轮表****)
+    P2TableNo:      ST_TableName;
+
+	//毛刷
+	DustNo        :ST_Dust;
+
+END_VAR
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

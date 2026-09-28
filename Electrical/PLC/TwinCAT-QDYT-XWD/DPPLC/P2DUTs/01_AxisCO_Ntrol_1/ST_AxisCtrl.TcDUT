@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_AxisCtrl" Id="{54e8f5d1-f42b-422f-a236-3fa14f984f9f}">
+    <Declaration><![CDATA[TYPE ST_AxisCtrl :
+STRUCT
+    Io                        :ST_AxisIo;  (*轴IO信号*)
+    Status                  :ST_AxisStatus;  
+    Cmd                    :ST_AxisCmd;  
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

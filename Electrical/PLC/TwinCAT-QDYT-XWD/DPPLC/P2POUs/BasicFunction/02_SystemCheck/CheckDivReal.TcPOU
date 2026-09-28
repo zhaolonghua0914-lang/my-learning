@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CheckDivReal" Id="{74a1bb2a-808c-4b05-9afb-6bf88c4a98e9}" SpecialFunc="CheckDivReal32">
+    <Declaration><![CDATA[// 隐含生成代码：不要编辑
+FUNCTION CheckDivReal : REAL
+VAR_INPUT
+	divisor:REAL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 隐含生成代码：这里只是对代码实现的建议
+{noflow}
+IF divisor = 0 THEN
+	CheckDivReal:=1;
+ELSE
+	CheckDivReal:=divisor;
+END_IF;
+{flow}]]></ST>
+    </Implementation>
+    <LineIds Name="CheckDivReal">
+      <LineId Id="7" Count="6" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

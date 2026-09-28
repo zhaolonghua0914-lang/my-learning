@@ -1,0 +1,439 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Scan" Id="{ce93b600-106b-40b8-920f-d09054d889b5}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Scan
+VAR
+	CS_CodeTcp_cold: CS_CodeTcp;
+	Cold_step :UINT;
+	scan_TON1 :Tc2_Standard.TON;
+	Scan_TON :ARRAY[1..7] OF Tc2_Standard.TON;
+	Scan_code_Z : R_TRIG;
+	I:INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//扫码
+
+
+
+Saoma();
+P3User2_Par.Scan_IP:='192.168.10.26';
+Scan_TON[1](PT:=T#1MS);
+Scan_TON[2](PT:=T#1MS);
+Scan_TON[3](PT:=T#1MS);
+Scan_TON[4](PT:=T#100MS);
+
+Scan_code_Z (CLK:=Cold_Scan_code, Q=>);
+
+IF Scan_code_Z.Q AND  Cold_step=0 THEN
+	 Cold_step:=10;
+END_IF
+
+
+
+
+CASE Cold_step OF
+0:
+	IF Scan_start AND NOT bCodeError AND NOT bCodeConError AND NOT P3User2_Par.Shield[4] THEN
+	 Cold_step:=10;
+	 Code_State:=0;
+	ELSIF P3User2_Par.Shield[4] THEN
+	 Cold_step:=70;
+	END_IF
+10:
+	Scan_TON[1].IN:=FALSE;
+	Scan_TON[2].IN:=FALSE;
+	Scan_TON[3].IN:=FALSE;
+	Cold_step:=20;
+	
+20:
+	bScan_init:=TRUE;
+	Scan_TON[1].IN:=TRUE;
+	IF Scan_TON[1].Q THEN
+		bScan_init:=FALSE;
+		Scan_TON[1].IN:=FALSE;
+		Cold_step:=30;
+	END_IF
+
+30:
+	bTcpOpen:=TRUE;
+	Scan_TON[2].IN:=TRUE;
+	IF Scan_TON[2].Q THEN
+		bTcpOpen:=FALSE;
+		Scan_TON[2].IN:=FALSE;
+		Cold_step:=40;
+	END_IF
+
+40:
+	IF bTcpOpen_OK THEN
+		Cold_step:=50;
+	END_IF
+
+50:
+	bScan_start:=TRUE;
+	Scan_TON[3].IN:=TRUE;
+	IF Scan_TON[3].Q THEN
+		bScan_start:=FALSE;
+		Scan_TON[3].IN:=FALSE;
+		Cold_step:=60;
+	END_IF
+60:
+	Scan_TON[4].IN:=TRUE;
+	IF 	Scan_TON[4].Q THEN
+		Cold_step:=70;
+		Scan_TON[4].IN:=FALSE;
+	END_IF
+
+70:
+IF NOT P3User2_Par.Shield[4] THEN
+	IF Code_State=1 AND (strCode<>'') THEN
+		CellMemory[CellNo.OvenMoveClip1].Cell_number1:=strCode;
+		IF strCode=CellMemory[CellNo.OvenMoveClip1].Cell_number THEN
+			CellMemory[CellNo.OvenMoveClip1].ScanCode:=1;
+			Scan_start:=FALSE;
+			Scan_finish:=TRUE;
+			Cold_step:=80;				
+			I:=0;
+		ELSIF strCode<>CellMemory[CellNo.OvenMoveClip1].Cell_number THEN
+			CellMemory[CellNo.OvenMoveClip1].ScanCode:=2;
+			P3_Error[79]:=TRUE;//冷压扫码第二次扫码校验NG
+			Scan_start:=FALSE;
+			Scan_finish:=TRUE;
+			Cold_step:=80;
+			I:=0;
+		END_IF
+	ELSIF  Code_State=2 AND I<3 THEN
+			Cold_step:=10;
+			I:=I+1;		
+	ELSIF Code_State=2 AND I>=3 THEN
+		CellMemory[CellNo.ColdpressClip].Cell_number1:=strCode;
+		CellMemory[CellNo.ColdpressClip].ScanCode:=2;
+		P3_Error[16]:=TRUE;//冷压扫码NG报警
+		Scan_start:=FALSE;
+		Scan_finish:=TRUE;
+		Cold_step:=80;
+		I:=0;
+	END_IF
+ELSIF P3User2_Par.Shield[4] THEN
+		CellMemory[CellNo.OvenMoveClip1].Cell_number1:='A1234567890ABCDEF';
+		CellMemory[CellNo.OvenMoveClip1].ScanCode:=1;
+		Scan_start:=FALSE;
+		Scan_finish:=TRUE;
+		Cold_step:=80;				
+		I:=0;
+END_IF
+80:
+	IF NOT Scan_finish THEN
+		Cold_step:=0;
+	END_IF
+END_CASE]]></ST>
+    </Implementation>
+    <Action Name="Saoma" Id="{45f5bdef-7600-46ac-a803-74a1b2ec8b7c}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"bTcpOpen_OK"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">17L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"CS_CodeTcp"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"CS_CodeTcp_cold"</v>
+                            <v n="Type">"CS_CodeTcp"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">2L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems" cet="Operand">
+                              <n />
+                              <o>
+                                <v n="Operand">"bCodeConError"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">4L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"Scan_bDone"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">5L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"bCodeError"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">6L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"strCode"</v>
+                                <v n="Type">"STRING"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">7L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"Code_State"</v>
+                                <v n="Type">"INT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">8L</v>
+                              </o>
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"bScan_start"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">10L</v>
+                              </o>
+                              <v n="Id">9L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"P3User2_Par.Scan_IP"</v>
+                                <v n="Type">"T_IPv4Addr"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">12L</v>
+                              </o>
+                              <v n="Id">11L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"bTcpOpen"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">14L</v>
+                              </o>
+                              <v n="Id">13L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"bScan_init"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">16L</v>
+                              </o>
+                              <v n="Id">15L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>bLON</v>
+                              <v>sRemoteHost</v>
+                              <v>bComOpen</v>
+                              <v>binit_tcp</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>T_IPv4Addr</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>bComOpenDone</v>
+                              <v>bCodeConError</v>
+                              <v>bDone</v>
+                              <v>bCodeError</v>
+                              <v>strCode</v>
+                              <v>Code_State</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>STRING</v>
+                              <v>INT</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">3L</v>
+                        </o>
+                        <v n="Id">18L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Scan">
+      <LineId Id="343" Count="113" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

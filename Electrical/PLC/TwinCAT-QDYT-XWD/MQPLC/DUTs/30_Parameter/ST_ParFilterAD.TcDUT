@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ParFilterAD" Id="{9bbd7520-faac-4eaa-9fc6-f9749bb73a17}">
+    <Declaration><![CDATA[TYPE ST_ParFilterAD :  //P1部分参数
+STRUCT
+	iLimitH             :REAL;//转换前高限值
+	iLimitL             :REAL;//转换前低限值
+	fRangeH         :REAL;//量程高限
+	fRangeL          :REAL;//量程低限
+	Out_Value        :REAL;//转换后
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

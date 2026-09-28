@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FunctionTest" Id="{83ca99b2-e9dc-4e3b-8c9b-e3f9a1174828}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM FunctionTest
+VAR
+
+
+
+
+
+ fbCamPTPTest   :FB_CamPTPTest;
+
+ fbCamPTPTest2   :FB_CamPTPTestV2;
+	bMoveExecute: BOOL;
+
+    fbCamTrapezoid:FB_CamTrapezoid;
+
+	bMoveExecute2: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//P2M1_Auto();
+//P2M2_Auto();
+//P2M3_Auto();
+
+TEST();
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="P2M1_Auto" Id="{766485ba-d8d0-49e8-8840-89202a14b3dd}">
+      <Implementation>
+        <ST><![CDATA[// 1号叠台自动
+//P2M1_program(Sys_Control:=P2_sysControl , Mach_Control:=P2M1_MachCtrl , arrCyNo:=P2M1_CycNo , AxiseNo:=P2M1_Axise , TableNo:=P2M1_TableNo,Par:=P2M1_Par );
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M2_Auto" Id="{ade93b27-48b3-47cf-be3c-6b29ae46f1e2}">
+      <Implementation>
+        <ST><![CDATA[// 2号叠台自动
+//P2M2_program(Sys_Control:=P2_sysControl , Mach_Control:=P2M2_MachCtrl , arrCyNo:=P2M2_CycNo , AxiseNo:=P2M2_Axise ,TableNo:=P2M2_TableNo, Par:=P2M2_Par );
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M3_Auto" Id="{8e6150ca-3296-4aab-bea9-8b0a7a455a42}">
+      <Implementation>
+        <ST><![CDATA[// 3号叠台自动
+//P2M3_program(Sys_Control:=P2_sysControl , Mach_Control:=P2M3_MachCtrl , arrCyNo:=P2M3_CycNo , AxiseNo:=P2M3_Axise ,TableNo:=P2M3_TableNo ,Par:=P2M3_Par );
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="TEST" Id="{edc86639-e6e1-47fe-bd9f-afc9dd7f3a79}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+fbCamPTPTest(
+	bMoveCamAbsExecute:=fbCamPTPTest.bMoveCamAbsExecute , 
+	Reset:=                          stSysState.bReset  ,  
+	iTable:=                         29   , 
+	fTagatPos:=                  360 , 
+	fTagatTime:=                 fbCamPTPTest.fTagatTime , 
+    axisTimer:=                  arrAxis[140]  , 
+	axisSlave:=                   arrAxis[141]  , 
+	
+	bCreatTableDone=> , 
+	bCreatTableError=> , 
+	bError=> , 
+	bReady=> , 
+	Done=> , 
+	bInSync=> );
+
+fbCamPTPTest.bCreatTableDone;
+fbCamPTPTest.bCreatTableError;
+fbCamPTPTest.bError;
+fbCamPTPTest.bReady;
+fbCamPTPTest.Done;
+fbCamPTPTest.bInSync;
+
+
+
+
+fbCamPTPTest2(
+	fTagatPos:=                 360, 
+	fTagatTime:=               fbCamPTPTest2.fTagatTime        , 
+	fConVelPercentage:=    fbCamPTPTest2.fConVelPercentage      , 
+	bMoveExecute:=          bMoveExecute , 
+	axisSlave:=                   arrAxis[141] , 
+	Done=> , 
+	Busy=> , 
+	Alm=> );
+fbCamPTPTest2.Done;
+fbCamPTPTest2.Busy;
+fbCamPTPTest2.Alm;
+
+
+
+fbCamTrapezoid(
+	fTagatPos:=             360 , 
+	fTagatTime:=           fbCamTrapezoid.fTagatTime  , 
+	fConVelPercentage:=fbCamTrapezoid.fConVelPercentage , 
+	bMoveExecute:=      bMoveExecute2 , 
+	axisSlave:=            arrAxis[141] , 
+	Done=> , 
+	Busy=> , 
+	Alm=> );
+
+fbCamTrapezoid.Done;
+fbCamTrapezoid.Busy;
+fbCamTrapezoid.Alm;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="FunctionTest">
+      <LineId Id="31" Count="0" />
+      <LineId Id="58" Count="1" />
+      <LineId Id="37" Count="4" />
+      <LineId Id="36" Count="0" />
+    </LineIds>
+    <LineIds Name="FunctionTest.P2M1_Auto">
+      <LineId Id="2" Count="2" />
+    </LineIds>
+    <LineIds Name="FunctionTest.P2M2_Auto">
+      <LineId Id="2" Count="1" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FunctionTest.P2M3_Auto">
+      <LineId Id="2" Count="1" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FunctionTest.TEST">
+      <LineId Id="2" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="113" Count="5" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="119" Count="6" />
+      <LineId Id="102" Count="9" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="128" Count="7" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="136" Count="2" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="182" Count="7" />
+      <LineId Id="154" Count="27" />
+      <LineId Id="141" Count="9" />
+      <LineId Id="139" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

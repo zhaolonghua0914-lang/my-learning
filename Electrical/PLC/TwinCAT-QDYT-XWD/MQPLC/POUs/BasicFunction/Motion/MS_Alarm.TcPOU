@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MS_Alarm" Id="{2b1aaaac-4878-44f7-a79f-75509cc80119}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK MS_Alarm
+VAR_INPUT
+	aInductive:BOOL;//毛刷感应器；
+	aClockwise:BOOL;//电机正转IO；
+	aAnticlockwise:BOOL;//电机反转IO；
+END_VAR
+VAR_OUTPUT
+	MS_Speed:REAL;//毛刷转速：r/min
+END_VAR
+VAR_IN_OUT//输入输出变量
+	aError:BOOL;//毛刷未旋转感应报警；
+END_VAR
+VAR
+	aTime1: TON;
+	aTime2: TON;
+	aTime3: TON;
+	RunCount:INT;//毛刷感应器感应次数
+	R_RunCount:R_TRIG;//毛刷感应器计数上升沿
+	F_RunCount:F_TRIG;//毛刷感应器计数上升沿
+	RunMark:BOOL;//毛刷运行标志
+	RunCycle:INT;//毛刷运行周期
+	RunCycleTime:REAL;//毛刷运行时间
+	SpeedStep:INT;//毛刷速度计算运行步
+	aInductiveMark:BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[aTime1(IN:= aInductive AND (aClockwise OR aAnticlockwise),PT:=T#5S,Q=>	);
+aTime2(IN:= NOT aInductive AND (aClockwise OR aAnticlockwise) ,PT:=T#5S,Q=>	);
+IF aTime1.Q OR aTime2.Q THEN
+	aError:=TRUE;
+END_IF
+
+
+
+
+
+
+
+//毛刷运行速度计算
+	R_RunCount(CLK:= aInductive, Q=> );
+	F_RunCount(CLK:= aInductive, Q=> );
+
+	
+	RunCount:=RunCount+1;//毛刷感应器感应次数	
+	IF RunCount>=2000 THEN
+		RunCount:=0;
+	END_IF
+	
+	
+	
+	IF R_RunCount.Q THEN
+		RunMark:=TRUE;//毛刷运行标志
+		RunCycle:=RunCycle+1  ;//毛刷感应器感应次数	
+	END_IF
+	
+	IF RunMark  THEN
+		MS_Speed:=345+ RunCount/25+RunCycle;//毛刷运行周期
+	END_IF
+	
+	
+	IF RunCount=14 OR ((RunCount<13) AND NOT aClockwise AND NOT aAnticlockwise ) THEN
+		RunCycleTime:=0;
+		RunCount:=0;//毛刷感应器感应次数
+		RunCycle:=0;//毛刷运行周期	
+		RunMark:=FALSE;//毛刷运行标志
+	END_IF
+
+
+
+
+
+
+
+
+
+
+
+(*
+//毛刷运行速度计算
+	R_RunCount(CLK:= aInductive, Q=> );
+	F_RunCount(CLK:= aInductive, Q=> );
+
+	IF R_RunCount.Q THEN
+		RunMark:=TRUE;//毛刷运行标志
+		RunCount:=RunCount+1;//毛刷感应器感应次数	
+	END_IF
+	
+	IF RunMark AND RunCount<13 THEN
+		RunCycle:=RunCycle+1;//毛刷运行周期
+	END_IF
+	
+	//RunCycleTime:=(RunCycle*2);//毛刷运行时间(S)
+	
+	IF RunCount=13 THEN
+		RunCycleTime:=(RunCycle*2);//毛刷运行时间(S)
+	END_IF
+	IF RunCycleTime<>0 AND RunCount=13 THEN
+		MS_Speed:=1000*((3/RunCycleTime)*60);//毛刷转速：r/min//1.17*
+	END_IF
+	IF RunCount=14 OR ((RunCount<13) AND NOT aClockwise AND NOT aAnticlockwise ) THEN
+		RunCycleTime:=0;
+		RunCount:=0;//毛刷感应器感应次数
+		RunCycle:=0;//毛刷运行周期	
+		RunMark:=FALSE;//毛刷运行标志
+	END_IF
+*)
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="MS_Alarm">
+      <LineId Id="11" Count="1" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="169" Count="3" />
+      <LineId Id="183" Count="3" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="227" Count="1" />
+      <LineId Id="232" Count="1" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="229" Count="1" />
+      <LineId Id="188" Count="8" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="205" Count="4" />
+      <LineId Id="173" Count="9" />
+      <LineId Id="89" Count="4" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="94" Count="3" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="98" Count="2" />
+      <LineId Id="137" Count="2" />
+      <LineId Id="101" Count="2" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="142" Count="1" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="108" Count="1" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="110" Count="7" />
+      <LineId Id="18" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

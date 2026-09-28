@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_UserControl" Id="{c9bc4f9e-06ed-4d5a-883a-bb75eaa2b71a}">
+    <Declaration><![CDATA[TYPE ST_UserControl :
+STRUCT
+	DT_iMode:UINT;//叠台控制模式  1自动  2停止    3手动 	4急停
+	WJ_iMode:UINT;//尾卷控制模式  1自动  2停止    3手动 	4急停
+	TJ_iMode:UINT;//帖胶控制模式  1自动  2停止    3手动 	4急停
+	
+	Funselection:UINT;//功能选择    1、空跑  
+	Step:ARRAY[0..9] OF UINT;//程序步
+	//ALLIniti_Done:BOOL;//始化完成
+	P2Init:BOOL;//上电初始化
+	P2InitDone:BOOL;//上电初始化完成
+	EmptyRunMode:BOOL;//空跑模式
+	DT_ModelChees:BOOL;//叠台是否启用选择，0：启用  1：屏蔽
+	
+	CCD_ChosesHMI:BOOL;//CCD屏蔽
+	
+	
+	//当前产量
+	//当前节拍
+	//当前速度
+	
+	
+	
+	//Ca_StandbyStep:ARRAY[0..9] OF UINT;//负极备极片程序步
+	//An_StandbyStep:ARRAY[0..9] OF UINT;//正极备极片程序步
+	//TailCurlStep:ARRAY[0..9] OF UINT;//尾卷贴胶程序步
+	
+	//DTIniti_Hbtn:BOOL;//叠台初始化，触摸屏按钮
+	//WZIniti_Hbtn:BOOL;//尾卷初始化，触摸屏按钮
+	//TJIniti_Hbtn:BOOL;//贴胶初始化，触摸屏按鋕
+	//ALLIniti_Hbtn:BOOL;//1号叠片初始化，触摸屏按M钮
+
+	//DTIniti_Done:BOOL;//叠台初始化完成
+	//WZIniti_Done:BOOL;//尾卷初始化完成
+	//TJIniti_Done:BOOL;//贴胶初始化完成
+	
+
+	
+	
+	//DP_Done:BOOL;//叠台叠片完成
+	
+	//TailCultOffloading:BOOL;//尾卷下电芯请求
+	//TailCultOffloadingDone:BOOL;//尾卷下电芯完成	
+	(*
+	Stickerragree:BOOL;//贴胶允许尾卷下电芯
+	StickerFlag:BOOL;//贴胶夹爪有无电芯标志
+	StickerDone:BOOL;//贴胶完成
+	StickerOffloading:BOOL;//贴胶下电芯请求
+	StickerOffloadingDone:BOOL;//贴胶下电芯完成	
+	
+	StickerStandbyDone:BOOL;//贴胶备胶完成
+	
+	StickerStandbyCode:BOOL;//备二维码胶请求
+	StickerStandbyBule:BOOL;//备蓝胶请求
+	*)
+
+	
+	
+	
+	//HotCut:BOOL;//热切丝启动
+	
+	//TailCurlStart:BOOL;//尾卷启动
+	//TailCurlDone:BOOL;//尾卷完成
+	(*
+	An_Quantited:UINT;//正极已叠数量
+	An_CarryingFalg:BOOL;//正极搬运吸盘有无料标记
+	An_QuLiaoOK:BOOL;//正极取流水线极片允许
+	An_deviationFalg:BOOL;//正极纠偏平台有无料标记
+	An_DPCarryingFalg:BOOL;//正极叠台搬运 吸盘有无料标记
+	An_DPRequest:BOOL;//正极叠片请求
+	An_deviationCCDOK:BOOL;//正极纠偏平台拍照OK
+	An_deviationCCDNG:BOOL;//正极纠偏平台拍照NG
+	An_deviationFPOK:BOOL;//正极纠偏平台允许放极片
+	An_deviationDPOK:BOOL;//正极纠偏平台允许取极片
+	An_deviationDone:BOOL;//正极纠偏平台纠偏完成
+	An_MainBeltOK:BOOL;//正极流水线主分料皮带允许取极片
+	An_MainBelting:BOOL;//正极流水线主分料皮带取极片中
+	AN_AxisCarrying:BOOL;//正极各轴正在运行到初始位中
+	*)
+	(*
+	Ca_Quantited:UINT;//负极已叠数量
+	Ca_CarryingFalg:BOOL;//负极搬运吸盘有无料标记
+	Ca_SegbeltFalg:BOOL;//负极段皮带取模切机械手有无料标记
+	Ca_deviationFalg:BOOL;//负极纠偏平台有无料标记
+	Ca_DPCarryingFalg:BOOL;//负极叠台搬运吸盘有无料标记
+	Ca_DPRequest:BOOL;//负极叠片请求
+	Ca_deviationCCDOK:BOOL;//负极纠偏平台拍照OK
+	Ca_deviationCCDNG:BOOL;//负极纠偏平台拍照NG	
+	Ca_deviationFPOK:BOOL;//负极纠偏平台允许放极片
+	Ca_deviationDPOK:BOOL;//负极纠偏平台允许取极片
+	Ca_deviationDone:BOOL;//负极纠偏平台纠偏完成
+	Ca_CacheBeltDLOK:BOOL;//负极流水线缓存皮带允许取极片
+	Ca_CacheBeltFLOK:BOOL;//负极流水线缓存皮带允许放极片
+	Ca_MainBeltOK:BOOL;//负极流水线主分料皮带允许取极片
+	Ca_MainBelting:BOOL;//负极流水线主分料皮带取极片中
+	Ca_betlMoveOK:BOOL;//负极搬运升降1在安全位、负极搬运升降2在安全位允许负极流水线线皮带移动
+	Ca_AxisCarrying:BOOL;//负极各轴正在运行到初始位中
+	
+*)
+
+	
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

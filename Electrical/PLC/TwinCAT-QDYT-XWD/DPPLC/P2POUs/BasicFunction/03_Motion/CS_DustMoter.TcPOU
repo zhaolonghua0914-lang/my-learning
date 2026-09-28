@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_DustMoter" Id="{a6f1a4b3-e028-44a6-81e9-8e10da8abcf2}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CS_DustMoter
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+
+VAR_IN_OUT
+stSetpMotor:ST_Dust_Motor;
+END_VAR
+	
+
+VAR
+R_trig20:R_TRIG;
+R_trig21:R_TRIG;
+F_trig23:F_TRIG;
+F_trig22:F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*********************毛刷步进电机控制*****************************)
+//步进点动
+stSetpMotor.bo_Pul:=stSetpMotor.bJog_FW OR stSetpMotor.bJog_BW ;   //步进点动正转
+stSetpMotor.bo_Dir:=stSetpMotor.bJog_BW ; //步进点动反转   
+
+R_trig20(CLK:=stSetpMotor.bRun_FW , Q=> );
+R_trig21(CLK:=stSetpMotor.bRun_BW , Q=> );
+F_trig22(CLK:=stSetpMotor.bRun_FW , Q=> );
+F_trig23(CLK:=stSetpMotor.bRun_BW , Q=> );
+IF R_trig20.Q THEN
+   stSetpMotor.bJog_FW:=TRUE;
+   stSetpMotor.bJog_BW:=FALSE;
+END_IF
+IF R_trig21.Q THEN
+   stSetpMotor.bJog_FW:=FALSE;
+   stSetpMotor.bJog_BW:=TRUE;
+END_IF
+IF F_trig22.Q OR F_trig23.Q THEN
+   stSetpMotor.bJog_FW:=FALSE;
+   stSetpMotor.bJog_BW:=FALSE;
+END_IF
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="CS_DustMoter">
+      <LineId Id="184" Count="1" />
+      <LineId Id="555" Count="0" />
+      <LineId Id="186" Count="2" />
+      <LineId Id="549" Count="0" />
+      <LineId Id="556" Count="0" />
+      <LineId Id="551" Count="0" />
+      <LineId Id="557" Count="6" />
+      <LineId Id="552" Count="0" />
+      <LineId Id="564" Count="2" />
+      <LineId Id="553" Count="0" />
+      <LineId Id="448" Count="2" />
+      <LineId Id="441" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

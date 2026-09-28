@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="User01" Id="{306eee12-b04f-4d49-aa52-4f306e3e7980}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+    stSysState :ST_SystemRUN;//系统状态机
+	P2M1_DTSysState :ST_SystemRUN;//一号叠台系统状态机
+	P2M1_WJSysState :ST_SystemRUN;//一号尾卷系统状态机
+	
+	
+	 P2M2_DTSysState :ST_SystemRUN;//二号叠台系统状态机
+	  P2M2_WJSysState :ST_SystemRUN;//二号叠台系统状态机
+	 
+	 P2M3_DTSysState :ST_SystemRUN;//三号叠台系统状态机
+	 P2M3_WJSysState :ST_SystemRUN;//三号叠台系统状态机
+	 
+      arrda1:                         UINTARR2;
+      fbPulseCtrl                  :ARRAY[1..10]   OF      PulseGeneratorCtrl;
+	  Machine_No        :STRING;//机台编号
+	 //系统信号
+	P2_sysControl: System_Control;
+	//1号叠片
+	P2M1_program: P2Program_FB;
+	P2M1_MachCtrl: ControlSignal;
+	P2M1_sysControl: System_Control;
+	P2M1_CycNo: EleControlNo;
+	P2M1_Axise: P2_AxiseNo;
+    P2M1_TableNo  : P2_TableNo;
+	P2M1_CCD:ST_CCDCom;
+	P2M1_Torque:ST_Torque;
+	//2号叠片
+	P2M2_program: P2Program_FB;
+	P2M2_MachCtrl: ControlSignal;
+	P2M2_sysControl: System_Control;
+	P2M2_CycNo: EleControlNo;
+	P2M2_Axise: P2_AxiseNo;
+     P2M2_TableNo  : P2_TableNo;
+	P2M2_CCD:ST_CCDCom;
+	P2M2_Torque:ST_Torque;
+	//3号叠片
+	P2M3_program: P2Program_FB;
+	P2M3_MachCtrl: ControlSignal;
+	P2M3_sysControl: System_Control;
+	P2M3_CycNo: EleControlNo;
+	P2M3_Axise: P2_AxiseNo;	
+    P2M3_TableNo  : P2_TableNo;
+	P2M3_CCD:ST_CCDCom;
+	P2M3_Torque:ST_Torque;
+	
+
+	bDiffVel:ARRAY [1..3] OF BOOL;//叠片速度不同标志位
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	(* 
+  
+   	 scRecipe :            CS_Recipe;
+	 iRecipe:               IRecipe;
+	 arriVirSingle:    ARRAY  [1..30] OF INT:=[30(1)] ;  //虚拟仿真信号
+	 arriVirSingle2:  ARRAY [1..30] OF INT:=[30(1)] ;  //虚拟仿真信号
+	 arriVirSingle3:  ARRAY [1..30] OF INT:=[30(1)] ;  //虚拟仿真信号
+
+
+	arrAxisError :                ARRAY[1..MaxAxes] OF BOOL;//轴报警
+	arrActuatorsError :        ARRAY[1..20] OF BOOL;//气缸
+	arrFunctionError :         ARRAY[1..20] OF BOOL;//功能
+
+
+	 cmd: CMD;
+	 ShortDataShow:ShortDataShow; 
+	 csShortTest :CS_ShortTest;
+	 csCodeTcp: CS_CodeTcp;
+	 IShort:IShortTest;
+	 iCode:ICode;
+	csCcdTcp:CS_CcdTcp_V2;
+	iCCD:ICCD;
+	ccdData:STCcdData;
+	*)
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

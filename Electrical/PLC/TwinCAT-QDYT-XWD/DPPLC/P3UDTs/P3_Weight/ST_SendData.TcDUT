@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_SendData" Id="{0f825008-5b56-4f17-ba24-bb57ddea3291}">
+    <Declaration><![CDATA[TYPE ST_SendData :
+STRUCT
+	  Status      AT  %Q*     : ST_SendStatus;   
+      Data        AT  %Q*     : ARRAY[0..31]OF USINT;
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

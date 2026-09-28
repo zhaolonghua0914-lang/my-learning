@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Vacuum" Id="{3a77ae25-5422-43c4-b585-e2abf0f96210}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Vacuum
+VAR_INPUT
+	Vacuumsel:BYTE:=0;//0=真空和破真空都关，1=真空开，2=破真空开。
+	tPTtime:TIME:=T#600MS;
+END_VAR
+
+VAR_IN_OUT
+	VarrCyCtrl1			                  :ST_CyCtrl;//真空
+	VarrCyCtrl2			                  :ST_CyCtrl;//破真空		
+END_VAR
+
+VAR
+	ton:TON;	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ton(IN:= , PT:=tPTtime , Q=> , ET=> );
+IF Vacuumsel=0  THEN
+	VarrCyCtrl1.Cmd.bON:=VarrCyCtrl2.Cmd.bON:=FALSE;
+	VarrCyCtrl1.Cmd.bOFF:=VarrCyCtrl2.Cmd.bOFF:=TRUE;
+	ton.IN:=FALSE;
+	Vacuumsel:=3;
+ELSIF Vacuumsel=1 THEN
+	VarrCyCtrl1.Cmd.bON:=VarrCyCtrl2.Cmd.bOFF:=TRUE;
+	VarrCyCtrl1.Cmd.bOFF:=VarrCyCtrl2.Cmd.bON:=FALSE;
+	ton.IN:=FALSE;
+	Vacuumsel:=3;	
+ELSIF Vacuumsel=2  THEN
+	VarrCyCtrl1.Cmd.bON:=VarrCyCtrl2.Cmd.bOFF:=FALSE;
+	VarrCyCtrl1.Cmd.bOFF:=VarrCyCtrl2.Cmd.bON:=TRUE;
+	ton.IN:=TRUE;
+	IF ton.Q THEN
+		ton.IN:=FALSE;
+		Vacuumsel:=0;
+	END_IF	
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Vacuum">
+      <LineId Id="23" Count="0" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="120" Count="1" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="212" Count="1" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="26" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

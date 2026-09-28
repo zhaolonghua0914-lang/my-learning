@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="IData" Id="{7757fe07-b474-465a-9cda-8e32fa1faaa0}">
+    <Declaration><![CDATA[TYPE IData :
+STRUCT
+	strBetryName:STRING;//CCD给电芯名称 
+	bNGOverHang :BOOL;  //
+	bHaveBetry :BOOL;   //当前工位是否有电芯
+    
+	
+	bNGShort:BOOL;  //短路NG
+	strShortData:STRING; //短路测试数据
+	
+	strCode:STRING;//二维码
+    bNGCode:BOOL;   //二维码NG
+	
+	strHotPress:STRING;//热压参数
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

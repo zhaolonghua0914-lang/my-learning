@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="IRecipe" Id="{f3d25308-9369-4ecd-8e75-48dae62282c3}">
+    <Declaration><![CDATA[TYPE IRecipe :
+STRUCT
+	bCreate:BOOL;
+	bSave:BOOL;
+	bLoad:BOOL;
+
+     
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

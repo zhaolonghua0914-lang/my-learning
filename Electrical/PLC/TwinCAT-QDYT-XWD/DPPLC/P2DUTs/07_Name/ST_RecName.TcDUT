@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_RecName" Id="{f2c83ac4-8ac3-4330-8602-387ad7ffd53e}">
+    <Declaration><![CDATA[TYPE ST_RecName :   //  整机纠偏名称
+STRUCT
+      P1PoleWind          :INT:=1; (***P1极片放卷纠偏*)
+      P1PoleProcess      :INT:=2; (***P1极片放卷纠偏*)
+      P1GMWind_U         :INT:=3; (***P1上隔膜纠偏*)
+      P1GMWind_D         :INT:=4; (***P1下隔膜纠偏*)
+
+      P2PoleWind_U          :INT:=5; (***P2上极片放卷纠偏*)
+      P2PoleProcess_U      :INT:=6; (***P2上极片放卷纠偏*)
+      P2PoleWind_D          :INT:=7; (***P2下极片放卷纠偏*)
+      P2PoleProcess_D      :INT:=8; (***P2下极片放卷纠偏*)
+      P2GMWind_U         :INT:=9; (***P2上隔膜纠偏*)
+      P2GMWind_D         :INT:=10; (***P2下隔膜纠偏*)
+
+      P3PoleWind_U          :INT:=11; (***P2上极片放卷纠偏*)
+      P3PoleProcess_U      :INT:=12; (***P2上极片放卷纠偏*)
+      P3PoleWind_D          :INT:=13; (***P2下极片放卷纠偏*)
+      P3PoleProcess_D      :INT:=14; (***P2下极片放卷纠偏*)
+
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

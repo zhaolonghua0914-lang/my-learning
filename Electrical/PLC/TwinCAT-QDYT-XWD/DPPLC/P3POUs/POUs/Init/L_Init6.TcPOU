@@ -1,0 +1,248 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="L_Init6" Id="{f691a7ed-38c9-40ae-ae11-be3cd6a55da5}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM L_Init6
+VAR
+	INIT_TON2  :ARRAY[1..20] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[INIT_TON2[1](PT:=T#2S);
+INIT_TON2[2](PT:=T#2S);
+INIT_TON2[3](PT:=T#2S);
+INIT_TON2[4](PT:=T#2S);
+INIT_TON2[5](PT:=T#2S);
+INIT_TON2[6](PT:=T#2S);
+INIT_TON2[7](PT:=T#2S);
+INIT_TON2[8](PT:=T#2S);
+INIT_TON2[9](PT:=T#2S);
+INIT_TON2[10](PT:=T#3S);
+INIT_TON2[20](PT:=T#120S);//电芯分选回原计时超时
+IF INIT_TON2[20].Q THEN
+	Init_step[6]:=0;
+	P3_Error[125]:=TRUE;//电芯分选回原超时报警
+	INIT_TON2[20].IN:=FALSE;
+END_IF
+//电芯分选夹搬运回原条件
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND  arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState 
+AND NOT arrCyCtrl[P3CYNo.P3CellAdvance].Status.ONState
+AND  LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos)<=arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+//电芯分选夹升降回原条件
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+//分选初始化
+IF P3_SystemRUN.iMode=3 THEN
+IF LateBlanking_init_start[6]  THEN
+	Init_step[6]:=1;
+	LateBlanking_init_OK[6]:=FALSE;
+	LateBlanking_init_start[6]:=FALSE;
+END_IF
+END_IF
+
+IF P3_SystemRUN.iMode=3 AND LateBlanking_init_OK[7]THEN
+CASE Init_step[6] OF
+
+1://信号复位，分选夹及平台电芯记忆清除
+	INIT_TON2[20].IN:=TRUE;
+	Cold_finish:=FALSE;
+	Cold_start:=FALSE;
+	PC_start:=FALSE;
+	PC_finish:=FALSE;
+	Permit_Weigh :=FALSE;       
+	Permit_Thickness:=FALSE;    
+	Weigh_Finish:=FALSE;      
+	Thickness_Finish:=FALSE; 
+	P3_Weight_gross.Init:=TRUE;
+	Step35:=0;
+	MEMSET(ADR(CellMemory[CellNo.SortClip1]),0,SIZEOF(CellMemory[CellNo.SortClip1]));
+	MEMSET(ADR(CellMemory[CellNo.SortClip2]),0,SIZEOF(CellMemory[CellNo.SortClip2]));
+	MEMSET(ADR(CellMemory[CellNo.Weight]),0,SIZEOF(CellMemory[CellNo.Weight]));
+	MEMSET(ADR(CellMemory[CellNo.Thickness]),0,SIZEOF(CellMemory[CellNo.Thickness]));
+	MEMSET(ADR(CellMemory[CellNo.BlankingPlatform]),0,SIZEOF(CellMemory[CellNo.BlankingPlatform]));
+	Init_step[6]:=5;//信号复位	
+
+5:
+IF P3Senser.P3_PoleMotor2_Reach THEN
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Cmd.bON:=TRUE;
+END_IF
+IF P3Senser.P3_PoleMotor3_Reach THEN
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Cmd.bON:=TRUE;
+END_IF
+IF P3Senser.P3_PoleMotor4_Reach THEN
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Cmd.bON:=TRUE;
+END_IF
+
+IF arrCyCtrl[P3CYNo.P3BoxLock1_NG].Status.ONState 
+AND arrCyCtrl[P3CYNo.P3BoxLock2_NG].Status.ONState
+AND arrCyCtrl[P3CYNo.P3BoxLock3_NG].Status.ONState THEN
+		stP3NgPushMoter[2].bHome:=TRUE;
+		stP3NgPushMoter[3].bHome:=TRUE;
+		stP3NgPushMoter[4].bHome:=TRUE;
+		Init_step[6]:=10;
+END_IF
+	
+	
+10://电芯分选夹开合、测厚台托板气缸张开，测厚压板气缸关闭,分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.bON:=TRUE;//测厚台切换气缸打开
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1  
+	AND arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 
+	AND arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState 
+	AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1
+	AND arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error2  THEN
+	   Init_step[6]:=20;
+	END_IF
+
+20://电芯分选夹升降气缸张开
+arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1  THEN
+ Init_step[6]:=30;
+ END_IF
+ 
+30://
+arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.bON:=TRUE;
+IF arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1  THEN
+ Init_step[6]:=40;
+END_IF
+
+40:
+    arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bStop:=TRUE;       //轴停止
+	INIT_TON2[1].IN:=TRUE;
+	IF INIT_TON2[1].Q THEN
+		Init_step[6]:=50;
+		INIT_TON2[1].IN:=FALSE;
+        arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bStop:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bStop:=FALSE;       
+	END_IF
+
+50://电芯分选各轴复位
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bReset:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bReset:=TRUE;       //轴复位
+	INIT_TON2[2].IN:=TRUE;
+	IF INIT_TON2[2].Q THEN
+		Init_step[6]:=60;
+		INIT_TON2[2].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bReset:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bReset:=FALSE;     
+	END_IF	
+
+60://电芯分选各轴上使能
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bEnable:=TRUE;
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bEnable:=TRUE;       //轴上使能
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled THEN
+	Init_step[6]:=70;
+END_IF
+
+70://电芯分选夹升降开始回零
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bHome:=TRUE;
+Init_step[6]:=80;
+
+80://电芯分选夹升降回零完成
+	INIT_TON2[3].IN:=TRUE;
+	IF INIT_TON2[3].Q AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		Init_step[6]:=90;
+		INIT_TON2[3].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bHome:=FALSE;
+	END_IF
+
+90://电芯分选夹升降到初始位
+
+IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;//P3_M4电芯分拣夹升降去初始位
+END_IF
+
+IF 		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		Init_step[6]:=95;
+END_IF
+
+95://
+arrCyCtrl[P3CYNo.P3CellPush].Cmd.bOFF:=TRUE;
+IF arrCyCtrl[P3CYNo.P3CellPush].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3CellPush].Status.Error2 THEN
+Init_step[6]:=100;	
+END_IF
+
+100://电芯分选夹旋转气缸关,电芯分选夹搬运开始回零
+arrCyCtrl[P3CYNo.P3SortRotate].Cmd.bOFF:=TRUE;
+arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.bOFF:=TRUE;
+IF arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortRotate].Status.Error2 
+AND arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortRotate].Status.Error2 THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bHome:=TRUE;
+	Init_step[6]:=110;
+END_IF
+
+
+110://电芯分选夹搬运回零完成
+	INIT_TON2[5].IN:=TRUE;
+	IF INIT_TON2[5].Q AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving	THEN
+		Init_step[6]:=120;
+		INIT_TON2[5].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bHome:=FALSE;
+	END_IF
+		
+120://电芯分选夹搬运到初始位
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;//电芯分选夹搬运电机回初始位
+	SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+END_IF
+
+IF 
+   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+   SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+	Init_step[6]:=130;
+END_IF
+
+
+
+130:
+	Step35:=1;
+	Thickness_Step:=1;
+	Init_step[6]:=999;
+	
+999://电芯分选初始化完成
+IF Init_step[6]=999 THEN
+LateBlanking_init_OK[6]:=TRUE;
+INIT_TON2[20].IN:=FALSE;
+END_IF
+
+END_CASE
+END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error OR arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error THEN
+	Init_step[6]:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="L_Init6">
+      <LineId Id="895" Count="88" />
+      <LineId Id="1125" Count="0" />
+      <LineId Id="984" Count="0" />
+      <LineId Id="986" Count="0" />
+      <LineId Id="1119" Count="0" />
+      <LineId Id="987" Count="1" />
+      <LineId Id="1123" Count="1" />
+      <LineId Id="1120" Count="0" />
+      <LineId Id="1126" Count="0" />
+      <LineId Id="992" Count="11" />
+      <LineId Id="1005" Count="109" />
+      <LineId Id="598" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

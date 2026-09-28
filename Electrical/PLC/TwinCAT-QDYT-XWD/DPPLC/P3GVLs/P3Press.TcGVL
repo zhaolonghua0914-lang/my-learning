@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="P3Press" Id="{beadeae0-25f4-42fb-a245-cc9d0a14e9be}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+	
+//	bStickStart:BOOL;//贴胶允许
+//	bStickFinish:BOOL;//贴胶完成
+
+	P3_Oven: ARRAY[1..21] OF INT;//烤箱名称映射	
+	Oven_full: BOOL;//烤箱满电芯信号
+	Oven_empty :BOOL;//烤箱全空信号
+	Permit_Cold_Press   :BOOL;//允许冷压信号
+	Permit_Hot_Press    :BOOL;//允许热压信号
+	Permit_Weigh        :BOOL;//允许称重信号
+	Permit_Thickness    :BOOL;//允许测厚信号
+	
+    Cold_Press_Finish   :BOOL;//冷压完成信号
+	Hot_Press_Finish   :BOOL;//热压完成信号
+	Weigh_Finish        :BOOL;//称重完成信号
+	Thickness_Finish     :BOOL;//测厚完成信号
+	ShortTest_Finish     :BOOL;//短路测试
+    Coldbusy  :BOOL;//冷压z中
+	Hotbusy  :BOOL;//热压中
+	
+	PermitColdPressRack :BOOL;//冷压允许上料信号
+	PermitHotPressRack  :BOOL;//热压允许上料信号
+	Permit_WeighRack     :BOOL;//允许称重上料信号
+	Permit_ThicknessRack :BOOL;//允许测厚上料信号
+	Permit_BlankingRack  :BOOL;//允许放料信号
+	Permit_TakeMaterial  :BOOL;//允许取料
+	Permit_ShortTest     :BOOL;//允许短路测试
+	Permit_Blow:ARRAY[1..2] OF BOOL;//允许冷热压吹气，1：冷压，2：热压
+	
+	
+	
+	GlueFinish          :ARRAY[1..3] OF BOOL;//贴胶完成可下料信号
+	Press_Clear         :ARRAY[1..2] OF BOOL;//1、冷压清零  2、热压清零
+	Step30 :UINT;//贴胶下料流程
+	Step31 :UINT;//冷压流程
+	Step32 :UINT;//烤箱上下料流程
+	Step33 :UINT;//热压流程
+	Step34 :UINT;//称重上料流程
+	Step35 :UINT;//分选流程
+	Step36 :UINT;//下料流程
+	Step37 :UINT;//备胶流程
+	Step38 :UINT;//贴胶流程
+	Step39 :UINT;//贴二维码胶流程
+	TestOne:BOOL;//手动放料进冷压确定
+	
+	weight_step :UINT;//称重流程
+	Step_Short :UINT;//短路测试
+	P3_Press_PV: ARRAY [1..2] OF REAL;// 当前压力值
+	P3_Torque_Act: ARRAY [1..2] OF REAL;// 扭矩当前值
+	P3_T_achieve :ARRAY[1..42] OF BOOL;//烤箱温度达到信号
+	P3_Hot_press :BOOL;//热压温度达到
+	b_Alarm         :ARRAY[1..19] OF BOOL;//1、叠台1报警  2、叠台2报警  3、叠台3报警  4、尾段报警
+	Alarm_bReset    :BOOL;//报警复位
+	P3_SystemRUN    :ST_SystemRUN;//尾段系统
+	LateBlanking_init_start :ARRAY[0..10] OF BOOL;//初始位开始,0、后段初始化 1、冷压上料初始化 2、冷压初始化 3、烤箱上下料初始化 4、热压初始化 5、称重上料初始化 6、分选初始化 7、下料初始化
+	LateBlanking_init_OK 	:ARRAY[0..10] OF BOOL;//初始位完成,0、后段初始化 1、冷压上料初始化 2、冷压初始化 3、烤箱上下料初始化 4、热压初始化 5、称重上料初始化 6、分选初始化 7、下料初始化
+	SingleStep           :ARRAY[1..10] OF BOOL;//单步
+	StepModel            :ARRAY[1..10] OF BOOL;//单步模式 ON:单步中 OFF:连动中
+	//Oven_cell_Shield     :ARRAY[1..42] OF BOOL;//烤箱电芯屏蔽
+	//Oven_Shield          :ARRAY[1..21] OF BOOL;//烤箱屏蔽
+	P3_Oven_Button          :ARRAY[1..42] OF BOOL;//烤箱位置一键按钮 
+	P3_Oven_Flow            :ARRAY[1..42] OF BOOL;//烤箱位置到位显示 
+	P3_Start                    :ARRAY[1..10] OF BOOL;//启动按钮
+	ColdPress_start              :BOOL;//冷压开始
+	HotPress_start              :BOOL;//热压开始
+	b_Thickness                 :ST_Thickness;//测厚信号
+	Thickness_Step  			:UINT;
+	HD_Error           :ARRAY[1..99] OF BOOL; //后段其它报警
+	b_Press_condition  :ARRAY[1..2] OF BOOL;//下压安全条件
+	WeighLine_1 :REAL;//称重安全位置1
+	WeighLine_2  :REAL;//称重安全位置2
+	OvenCarrying_1 :REAL;//烤箱搬运安全位
+	Sort_1         :REAL;//分选安全位1
+	Sort_2         :REAL;//分选安全位2
+	Offloading_1    :REAL;//下料平移安全位置
+	Push_NG         :ARRAY[1..4] OF BOOL;//踢NG中信号
+	Thickness_Par_Z		:REAL;//测厚参数(转化后)
+	P3_Weight_clear	:ST_Gross;
+	Pressing       : ARRAY[1..2] OF BOOL;//压力压合中
+	P3_Error		:ARRAY[1..200] OF BOOL;//后段报警
+	P3_Tem_Error    :ARRAY[1..96] OF BOOL;//温度未在范围内
+	Tem_HOT			:BOOL;//一键加热
+	Tem_Cold		:BOOL;//一键关闭加热
+	T_Residue:   ARRAY[1..42] OF UDINT;
+	Door_error : ARRAY[1..40] OF BOOL;//后段门禁报警
+	bTcpOpen :BOOL;//扫码Tcp 连接
+	bScan_init :BOOL;//扫码初始化
+	bTcpOpen_OK :BOOL;//扫码Tcp 连接OK
+	bScan_start :BOOL;//扫码启动
+	bCodeConError :BOOL;//扫码Tcp报错
+	bCodeError  :BOOL;//扫码故障
+	strCode   :STRING;//冷压上料扫码码条
+	Code_State :INT;//1、OK,2、NG
+	Scan_bDone :BOOL;//扫码完成
+	Scan_start	:BOOL;//扫码开始--扫码枪
+	Scan_finish	:BOOL;//扫码完成--扫码枪
+	
+	FSY_An_bTcpOpen :BOOL;//负极风速仪Tcp 连接
+	FSY_An_bScan_init :BOOL;//负极风速仪初始化
+	FSY_An_bTcpOpen_OK :BOOL;//负极风速仪Tcp 连接OK
+	FSY_An_bScan_start :BOOL;//负极风速仪读取启动
+	FSY_An_bCodeConError :BOOL;//负极风速仪Tcp报错
+	FSY_An_bCodeError  :BOOL;//负极风速仪故障
+	FSY_An_Scan_bDone :BOOL;//负极风速仪读取完成
+	FSY_An_Scan_start	:BOOL;//负极风速仪读取开始--风速仪
+	FSY_An_Scan_finish:BOOL;//负极风速仪读取完成--风速仪
+
+	FSY_Ca_bTcpOpen :BOOL;//正极风速仪Tcp 连接
+	FSY_Ca_bScan_init :BOOL;//正极风速仪初始化
+	FSY_Ca_bTcpOpen_OK :BOOL;//正极风速仪Tcp 连接OK
+	FSY_Ca_bScan_start :BOOL;//正极风速仪读取启动
+	FSY_Ca_bCodeConError :BOOL;//正极风速仪Tcp报错
+	FSY_Ca_bCodeError  :BOOL;//正极风速仪故障
+	FSY_Ca_Scan_bDone :BOOL;//正极风速仪读取完成
+	FSY_Ca_Scan_start	:BOOL;//正极风速仪读取开始--风速仪
+	FSY_Ca_Scan_finish:BOOL;//正极风速仪读取完成--风速仪
+	
+	IDStickStart:BOOL;//二维码贴胶开始
+	IDStickFinish:BOOL;//二维码贴胶完成
+	StickIDGlue			:ST_StickIDGlue_date;//二维码平台信号
+	
+	SHORT_HOT :ShortTestCtrl;//短路测试的控制
+	
+	Pressure_Alarm  : ARRAY[1..2] OF BOOL;//1.冷压压力报警  2.热压压力报警
+	PC_start :BOOL;//上位机上传数据开始
+	PC_finish :BOOL;//上位机上传数据完成
+	PC_heart :BOOL;//上位机心跳
+	PLC_heart :BOOL;//PLC心跳
+	P3_manual :BOOL;//后段手动状态（用于HMI）
+	Init_step :ARRAY[1..10] OF UINT;//初始化步
+	Sampling_finish :ARRAY [1..2] OF BOOL;//采集完成
+	Sampling_mean :ARRAY[1..2] OF REAL;//采集平均值
+	PC_start1 :BOOL;//上位机上传数据开始1
+	PC_finish1 :BOOL;//上位机上传数据完成1
+	Cold_start :BOOL;//上位机判断开始
+	Cold_finish :BOOL;//上位机判断完成
+	Puttime :STRING;//投入时间
+	Outtime :STRING;//产出时间
+	PC_alarm :ARRAY[1..18] OF BOOL;//物料信息 1、正极膜卷用完，请更换物料号 2、负极膜卷用完，请更换物料号 3、蓝胶已经用完，请更换物料号 4、二维码胶已经用完，请更换物料号 5、隔膜1已经用完 6、隔膜2已经用完 7、隔膜3已经用完
+	
+	
+	HMI_Year	:INT;//触摸屏时间（年）
+	HMI_Month 	:INT;//触摸屏时间（月）
+	HMI_day  	:INT;//触摸屏时间（日）
+	HMI_Hour 	:INT ;//触摸屏时间（时）
+	HMI_Minute 	:INT ;//触摸屏时间（分）
+	HMI_Second 	:INT ;//触摸屏时间（秒）
+	
+	Day_Output :UINT;//白班总产量
+	Night_Output :UINT;//夜班总产量
+	Output_step :UINT;//产量统计
+	Time_Output :ARRAY[0..23] OF UINT;//时段产量
+	Day_Output_OK :UINT;//白班良品数
+	Day_Output_NG :UINT;//白班不良品数
+	Night_Output_OK :UINT;//夜班良品数
+	Night_Output_NG :UINT;//夜班不良品数
+	Day_Clear		:BOOL;//白班数量清零
+	Night_Clear		:BOOL;//夜班数量清零
+	Push_NG_condition :ARRAY[1..4] OF BOOL;//放NG料安全条件,1、放对齐度NG料安全条件,2、放短路NG料盒安全条件 3、放测厚NG料盒安全条件 4、放扫码NG或者MES的NG料盒安全条件
+	Push_NG_Full :ARRAY[1..4] OF BOOL;//NG料盒满料信号 1、对齐度 2、短路 3、测厚 4、扫码或者MES
+	PC_Error :BOOL;//上位机读取数据异常
+	Day_NG    :Statistics;//白班NG分类
+	Night_NG  :Statistics;//夜班NG分类
+	Day_Yield   :REAL;//白班良率
+	Night_Yield :REAL;//夜班良率
+	Cold_Scan_code :BOOL;//冷压扫码复扫
+	Oven_CYOFF_condition :BOOL;//烤箱已经全部关闭条件
+	Oven_CYON_condition  :BOOL;//烤箱已经全部打开条件
+	Oven_CY_STOP :BOOL;//烤箱气缸报警烤箱轴急停
+	QY_error :BOOL;//总气压报警
+	Oven_POS1 :BOOL;//烤箱进退初始位
+	tip_1     :ARRAY[1..50] OF BOOL;//冷压上料提示
+	tip_2     :ARRAY[1..50] OF BOOL;//冷压提示
+	tip_3     :ARRAY[1..50] OF BOOL;//烤箱上下料提示
+	tip_4     :ARRAY[1..50] OF BOOL;//热压提示
+	tip_5     :ARRAY[1..50] OF BOOL;//称重上料提示
+	tip_6     :ARRAY[1..50] OF BOOL;//1分选单步中 2.电芯NG1料盒锁定气缸未锁定 3.电芯NG2料盒锁定气缸未锁定 4.电芯NG3料盒锁定气缸未锁定
+	tip_7     :ARRAY[1..50] OF BOOL;//下料提示
+	tip_8     :ARRAY[1..30] OF BOOL;//烤箱上料时，对应烤箱门未打开
+	tip_9     :ARRAY[1..30] OF BOOL;//烤箱下料时，对应烤箱门未打开
+	tip_10     :ARRAY[1..21] OF BOOL;//烤箱上下料时，有门未关闭
+	
+	Oven_PB_condition :BOOL;//烤箱屏蔽条件
+	fDataMax  :UDINT;//
+	
+	Make_sure : BOOL ;//确认
+    Bullet_window : BOOL ;//弹窗触发
+    Device_Status_code :INT ;//设备状态代码
+    Manual_click_code  :INT ;//手动点选代码 
+    Equipment_parameter_check :INT ;//设备参数校对
+	
+	ColdpreLineTorMark:BOOL;//冷呀上料夹平移力矩超限报警标志
+	ColdpreRetractTorMark:BOOL;//冷压上料夹进退力矩超限报警标志
+	ColdpreWhirlTorMark:BOOL;//冷压上料夹旋转力矩超限报警标志
+	ColdpreActTorMark:BOOL;//冷压驱动力矩超限报警标志
+	OvenCarryTorMark:BOOL;//烤箱上料夹搬运力矩超限报警标志
+	OvenRetractTorMark:BOOL;//烤箱上料夹进退力矩超限报警标志
+	HotpreActTorMark:BOOL;//热压驱动力矩超限报警标志
+	WeighLineTorMark:BOOL;//称重上料夹平移力矩超限报警标志
+	WeighWhirlTorMark:BOOL;//称重上料夹旋转力矩超限报警标志
+	SortingCarryTorMark:BOOL;//电芯分选夹搬运力矩超限报警标志
+	OffloadCarryTorMark:BOOL;//电芯下料夹搬运报警力矩设定
+	
+	StickerStandbyDone : BOOL;//备胶完成
+	stickGlueDone : BOOL;//贴胶完成
+	Uppercorepermit : BOOL;//放电芯允许
+	Bottomsignal : BOOL;//贴胶下料信号
+	StickerDoneNo1:ARRAY[0..9] OF BOOL;//已贴胶的道数
+	Gluebtn	:BOOL;		//		拉胶按钮
+	Cutbtn	:BOOL;		//		切胶按钮
+	Readybtn	:BOOL;		//		备胶按钮
+	
+	HDQuery:BOOL;//时间查询
+	HDdate:INT;//查询日期
+	OEE:REAL;//稼动率	
+	MQstate:INT;//模切状态   1:自动中   2:自动-Ready  3:手动   4:急停    5：报警    6.自动-NoReady
+	OEE1:                             FB_OEE;//稼动率
+	
+	 P2SaveParDone      :BOOL;
+	 P2ReadParDone     :BOOL;
+	 
+	 BlueGlueNumberOK:BOOL;//蓝胶条码校验OK
+END_VAR
+
+
+	]]></Declaration>
+  </GVL>
+</TcPlcObject>

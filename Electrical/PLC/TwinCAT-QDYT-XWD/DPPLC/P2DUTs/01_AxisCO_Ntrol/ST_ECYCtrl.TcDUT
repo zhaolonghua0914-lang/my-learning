@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ECYCtrl" Id="{e8628950-8b86-4f9b-9c47-317199bef85a}">
+    <Declaration><![CDATA[TYPE ST_ECYCtrl :
+STRUCT
+    bServON   :BOOL;   
+    bHome      :BOOL;   
+    bReset      :BOOL;   
+    bStop         :BOOL;   
+   bJog_P         :BOOL;   
+   bJog_N        :BOOL;   
+   Pos_Start      :BOOL;   
+   fTagetPos     :REAL;
+   fVel:           REAL;
+   fAcc        :REAL;  
+   fDec        :REAL;  
+  // Delay_Time  :TIME;
+
+
+     bHomed         :BOOL; 
+     Pos_Done       :BOOL;   //定位完成
+     Home_Alm      :BOOL;  //回零超时报警
+     Pos_Alm         :BOOL; //定位超时报警
+
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

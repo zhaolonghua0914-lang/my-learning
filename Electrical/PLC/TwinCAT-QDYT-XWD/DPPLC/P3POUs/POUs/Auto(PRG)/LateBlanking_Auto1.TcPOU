@@ -1,0 +1,1901 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto1" Id="{3fccca41-4ba8-4847-9635-bc4899585cc2}" SpecialFunc="None">
+    <Declaration><![CDATA[/////叠台贴胶工位下料到冷压工位
+//贴胶下料冷压
+PROGRAM LateBlanking_Auto1
+VAR
+	GlueBlanking :ARRAY[1..3] OF BOOL;//贴胶下料中
+	Hough_NG :ARRAY[1..3]OF BOOL;
+	Hough_NG_Push: CS_SetpMoterV2;
+	SingleStep_1 : R_TRIG;
+	EE			:INT;
+	NG_Auto: FB_SetMoter_auto;
+	NG_Auto_1: FB_SetMoter_auto;
+	Overhang_TON : TON ;
+	PullGlueModelCyBaseTon	:TON;	//贴胶夹具原位延时
+
+
+	
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	//排杆电机a
+	P3Senser.P3_PoleMotor1_JogP := stP3NgPushMoter[1].bo_Up;
+	P3Senser.P3_PoleMotor1_JogN := stP3NgPushMoter[1].bo_Down;
+	stP3NgPushMoter[1].biSensor:=P3Senser.P3_PoleMotor1_Height;
+	stP3NgPushMoter[1].biBoxSensor:=P3Senser.P3_PoleMotor1_Reach;
+	stP3NgPushMoter[1].biUpSensor:=P3Senser.P3_PoleMotor1_P_OT;
+	stP3NgPushMoter[1].biDownSensor:=P3Senser.P3_PoleMotor1_N_OT;
+	stP3NgPushMoter[1].bHave:=P3Senser.P3_PoleMotor1_bHave;
+	Push_NG_condition[1]:=stP3NgPushMoter[1].biBoxSensor AND NOT Push_NG_Full[1] AND stP3NgPushMoter[1].HomeDone;
+	Push_NG[1]:=(Step30>=4050 AND Step30<=4090); 
+	
+	
+	ACT();
+	SingleStep_1 (CLK:=P3_Start[1], Q=>);
+	IF  SingleStep_1.Q OR NOT StepModel[1] THEN
+		SingleStep[1]:=FALSE;
+	END_IF
+	
+	EE:=EE+1;
+	IF EE<1 OR EE>120 THEN
+		EE:=1;
+	END_IF
+	CellMemory[10].Sequeue[EE]:=INT_TO_REAL(EE);
+	
+	Overhang_TON(PT:=T#2S , Q=> , ET=> );//夹NG电芯时，厚度不够,不判断到位延时跳步
+	PullGlueModelCyBaseTon(PT:=T#0.3S,Q=>,ET=>);
+	
+	/////叠台贴胶工位下料到冷压工位
+	IF P3_SystemRUN.iMode=1 AND LateBlanking_init_OK[1] AND NOT tip_1[6] THEN
+	CASE Step30 OF
+	1://冷压上料轴和气缸回初始状态
+	IF NOT SingleStep[1] THEN
+		Scan_finish:=FALSE;
+		PC_finish:=FALSE;
+		arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bOFF:=TRUE;//冷压上料夹气缸张开
+		
+		IF NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;	//冷压上料夹进退回初始位
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=1;//冷压上料夹升降回初始位	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+		AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] 
+		OR (P2Senser.P2M1_Coldpressingesensor AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2])
+		OR (P2Senser.P2M2_Coldpressingesensor AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3])
+		OR (P2Senser.P2M3_Coldpressingesensor AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4])
+		OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6])
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=1;//冷压上料夹旋转回初始位	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+		AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+		OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]
+		OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6])
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=1;//冷压上料夹平移回初始位	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1]  
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1]	
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=10;
+		END_IF
+	END_IF
+	
+	
+	10://判断是否有贴胶完成信号
+	IF P2M1_MachCtrl.TJ_b.StickerDone AND CellMemory[CellNo.Gluing1].Cell AND (P2Senser.P2M1_GluebHave OR 	CellMemory[CellNo.Gluing1].Overhang_TF) THEN//判断是否有贴胶1完成信号
+		Step30:=20;
+	ELSIF P2M1_MachCtrl.TJ_b.StickerDone AND CellMemory[CellNo.Gluing1].Cell AND NOT P2Senser.P2M1_GluebHave 
+		AND  arrAxisCtrl[41].Cmd.arrbRealPoint[9]  AND  arrAxisCtrl[42].Cmd.arrbRealPoint[6]  AND NOT CellMemory[CellNo.Gluing1].Overhang_TF THEN
+		P3_Error[64]:=TRUE;//1号贴胶夹爪有记忆无信号报警
+		END_IF
+	IF (*NOT P2M1_MachCtrl.TJ_b.StickerDone AND*) 
+		P2M2_MachCtrl.TJ_b.StickerDone AND  CellMemory[CellNo.Gluing2].Cell AND (P2Senser.P2M2_GluebHave  OR 	CellMemory[CellNo.Gluing2].Overhang_TF) THEN//判断是否有贴胶2完成信号
+		Step30:=1020;
+	ELSIF(* NOT P2M1_MachCtrl.TJ_b.StickerDone AND*) 
+		P2M2_MachCtrl.TJ_b.StickerDone AND  CellMemory[CellNo.Gluing2].Cell AND NOT P2Senser.P2M2_GluebHave
+		AND  arrAxisCtrl[87].Cmd.arrbRealPoint[9]  AND  arrAxisCtrl[88].Cmd.arrbRealPoint[6]  AND NOT CellMemory[CellNo.Gluing2].Overhang_TF THEN
+		P3_Error[65]:=TRUE;//2号贴胶夹爪有记忆无信号报警
+		END_IF	
+	IF (*NOT P2M1_MachCtrl.TJ_b.StickerDone AND NOT P2M2_MachCtrl.TJ_b.StickerDone AND*) 
+		P2M3_MachCtrl.TJ_b.StickerDone AND  CellMemory[CellNo.Gluing3].Cell AND (P2Senser.P2M3_GluebHave   OR 	CellMemory[CellNo.Gluing3].Overhang_TF) THEN//贴胶3完成信号
+		Step30:=2020;
+	ELSIF (*NOT P2M1_MachCtrl.TJ_b.StickerDone AND NOT P2M2_MachCtrl.TJ_b.StickerDone AND*) 
+		P2M3_MachCtrl.TJ_b.StickerDone AND CellMemory[CellNo.Gluing3].Cell 
+		AND NOT P2Senser.P2M3_GluebHave AND  arrAxisCtrl[133].Cmd.arrbRealPoint[9]  AND  arrAxisCtrl[134].Cmd.arrbRealPoint[6]  AND NOT CellMemory[CellNo.Gluing3].Overhang_TF THEN
+		P3_Error[66]:=TRUE;//3号贴胶夹爪有记忆无信号报警
+		END_IF	
+	
+	
+	///////////////////////去贴胶1平台的电芯	
+	
+		
+	20://冷压上料夹平移去贴胶1位
+	IF NOT SingleStep[1] THEN
+		
+		IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=2;
+			ColdpreLineTorMark:=TRUE;//冷压上料夹平移力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+			AND P2Senser.P2M1_Coldpressingesensor THEN
+			ColdpreLineTorMark:=FALSE;//冷压上料夹平移力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+			Step30:=30;
+		END_IF	
+	END_IF
+//		
+	30://冷压上料夹升降去贴胶1位
+	IF NOT SingleStep[1] THEN
+		
+		IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[2] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]
+		AND P2Senser.P2M1_Coldpressingesensor	THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=2;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=35;
+		END_IF	
+	END_IF
+
+	35://1#侧贴夹平移在下电芯位，1#侧贴夹旋转在下电芯位
+	IF NOT SingleStep[1] THEN
+		IF arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Cmd.arrbRealPoint[9] 
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Status.NoMoving 
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Status.Homed 
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6] 
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.NoMoving  
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.Homed (*AND  P2Senser.P2M1_GluebHave*) THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=40;
+		END_IF	
+	END_IF
+	
+//	
+	40://冷压上料夹旋转去贴胶1位
+	IF NOT SingleStep[1] THEN		
+		IF NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[2] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]
+		AND P2Senser.P2M1_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[2]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=2;
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=50;
+		END_IF
+	END_IF
+	
+	
+	
+//		
+	50://冷压上料夹进退去贴胶1位
+	IF NOT SingleStep[1] THEN	
+		IF NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[2] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[2]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]
+		AND P2Senser.P2M1_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[2]
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6]   
+		AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Cmd.arrbRealPoint[9] THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=2;
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN	
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=60;
+		END_IF	
+	END_IF
+		
+	60://冷压上料夹气缸夹紧
+	IF NOT SingleStep[1] THEN	
+		arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bON:=TRUE;
+		PullGlueModelCyBaseTon.IN:=FALSE;
+		IF CellMemory[CellNo.Gluing1].Overhang_TF THEN
+			Overhang_TON.IN :=TRUE;
+			IF Overhang_TON.Q THEN
+				Step30:=70;
+			END_IF
+		ELSE
+			IF arrCyCtrl[P3CYNo.P3ColdPressClip].Status.ONState (*AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error1*) THEN
+				IF  StepModel[1] THEN
+					SingleStep[1]:=TRUE;
+				ELSE
+					SingleStep[1]:=FALSE;
+				END_IF	
+			Step30:=70;
+			END_IF
+		END_IF	
+	END_IF
+	
+	70://贴胶1治具气缸打开
+	IF NOT SingleStep[1] THEN
+		Overhang_TON.IN :=FALSE;
+		arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Cmd.bON:=TRUE;
+		IF arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Status.ONState THEN
+			PullGlueModelCyBaseTon.IN:=TRUE;
+			IF arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Status.ONState AND NOT arrCyCtrl[P2CYNo.P2M1_PullGlueModelCy].Status.Error1 
+				AND PullGlueModelCyBaseTon.Q THEN
+				IF  StepModel[1] THEN
+					SingleStep[1]:=TRUE;
+				ELSE
+					SingleStep[1]:=FALSE;
+				END_IF	
+			PullGlueModelCyBaseTon.IN:=FALSE;	
+			Step30:=75;	
+			END_IF
+		END_IF
+	END_IF
+	
+	
+	75://冷压上料夹升降去贴胶1辅助位
+	IF NOT SingleStep[1] THEN
+		
+		IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[7] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=7;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[7] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=80;
+		END_IF	
+	END_IF
+	
+	
+	80://冷压上料夹进退回初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=90;
+	
+		END_IF
+	END_IF
+	
+
+	90:	//复位贴胶1完成信号及把贴胶1记忆转移冷压上料夹子
+	P2M1_MachCtrl.TJ_b.StickerDone:=FALSE;
+	CellMemory[CellNo.ColdpressClip]:=CellMemory[CellNo.Gluing1];
+	MEMSET(ADR(CellMemory[CellNo.Gluing1]),0,SIZEOF(CellMemory[CellNo.Gluing1]));	
+	Step30:=100;	 
+	
+	
+	100://冷压上料夹进退在初始位，冷压上料夹旋转去冷压位
+	IF NOT SingleStep[1] THEN
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+		AND P2Senser.P2M1_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2]   THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=5;	
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=110;	
+		P2M1_MachCtrl.TJ_b.StickerOffloadingDone:=TRUE;	
+		END_IF	
+	END_IF
+	
+	
+	110:
+	IF  CellMemory[CellNo.ColdpressClip].Overhang_TF THEN//判断该电芯是否有对齐度NG信号
+		Step30:=4000;
+		P3_Production.NGFlag[7]:=TRUE;//一号叠台对齐度NG
+	ELSE
+		Step30:=3000;
+	END_IF
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	///////////////////去取贴胶2平台的电芯
+	
+		
+	1020://冷压上料夹平移去贴胶2位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=3;
+			ColdpreLineTorMark:=TRUE;//冷压上料夹平移力矩超限报警标志	
+		END_IF
+		
+		IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+			AND P2Senser.P2M2_Coldpressingesensor THEN
+			ColdpreLineTorMark:=FALSE;//冷压上料夹平移力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=1030;
+		END_IF	
+	END_IF
+		
+	1030://冷压上料夹升降去贴胶2位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[3]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]
+		AND P2Senser.P2M2_Coldpressingesensor THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=3;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[3]  AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=1035;
+		END_IF	
+	END_IF
+		
+	1035://2#侧贴夹平移在下电芯位，2#侧贴夹旋转在下电芯位
+	IF NOT SingleStep[1] THEN
+		IF arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Status.NoMoving AND arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Status.Homed 
+		   AND arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Status.NoMoving  
+			AND arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Status.Homed (*AND P2Senser.P2M2_GluebHave*) THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=1040;
+		END_IF	
+	END_IF
+	
+	
+	
+	
+	
+	
+	1040://冷压上料旋转去贴胶2位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[3]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]
+		AND P2Senser.P2M2_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[3] THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=3;
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=1050;
+		END_IF
+	END_IF
+	
+	
+	
+	1050://冷压上料夹进退去贴胶2位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[3]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[3]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]
+		AND P2Senser.P2M2_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[3]
+		AND arrAxisCtrl[P2AxisNo.P2M2_GluingWhirling].Cmd.arrbRealPoint[6]   
+		AND arrAxisCtrl[P2AxisNo.P2M2_GluingLine].Cmd.arrbRealPoint[9] THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=3;	
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF			
+		Step30:=1060;
+		END_IF	
+	END_IF
+		
+	1060://冷压上料夹气缸夹紧
+	IF NOT SingleStep[1] THEN
+		arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bON:=TRUE;
+		PullGlueModelCyBaseTon.IN:=FALSE;
+		IF CellMemory[CellNo.Gluing2].Overhang_TF THEN
+			Overhang_TON.IN :=TRUE;
+			IF Overhang_TON.Q THEN
+				Step30:=1070;
+			END_IF
+		ELSE
+			IF arrCyCtrl[P3CYNo.P3ColdPressClip].Status.ONState (*AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error1 *)THEN
+				IF  StepModel[1] THEN
+					SingleStep[1]:=TRUE;
+				ELSE
+					SingleStep[1]:=FALSE;
+				END_IF		
+			Step30:=1070;
+			END_IF
+		END_IF
+	END_IF
+	
+	1070://贴胶2治具气缸打开
+	IF NOT SingleStep[1] THEN
+		Overhang_TON.IN :=FALSE;
+		arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Cmd.bON:=TRUE;
+		IF arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Status.ONState THEN
+			PullGlueModelCyBaseTon.IN:=TRUE;
+			IF arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Status.ONState AND NOT arrCyCtrl[P2CYNo.P2M2_PullGlueModelCy].Status.Error1 
+				AND PullGlueModelCyBaseTon.Q THEN
+				IF  StepModel[1] THEN
+					SingleStep[1]:=TRUE;
+				ELSE
+					SingleStep[1]:=FALSE;
+				END_IF	
+				PullGlueModelCyBaseTon.IN:=FALSE;
+				Step30:=1075;
+			END_IF		
+		END_IF	
+	END_IF
+	
+	
+	1075://冷压上料夹升降去贴胶2辅助位
+	IF NOT SingleStep[1] THEN
+		
+		IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[8] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=8;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[8] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=1080;
+		END_IF	
+	END_IF
+	
+	
+	
+	
+	1080://冷压上料夹进退回初始位	
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=1090;
+		END_IF	
+	END_IF
+	
+	1090://复位贴胶2完成信号及把贴胶2记忆转移冷压上料夹子
+	P2M2_MachCtrl.TJ_b.StickerDone:=FALSE;	
+	CellMemory[CellNo.ColdpressClip]:=CellMemory[CellNo.Gluing2];
+	MEMSET(ADR(CellMemory[CellNo.Gluing2]),0,SIZEOF(CellMemory[CellNo.Gluing2]));	
+	Step30:=1100;
+		
+	
+	1100://冷压上料夹旋转去冷压位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+		AND P2Senser.P2M2_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3]   THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=5;
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=1110;
+		P2M2_MachCtrl.TJ_b.StickerOffloadingDone:=TRUE;	//贴胶下料完成
+		END_IF	
+	END_IF
+	
+	
+	
+		
+	1110:
+		//Step30:=3000;
+	IF  CellMemory[CellNo.ColdpressClip].Overhang_TF THEN
+		Step30:=4000;//冷压上料夹电芯记忆有对齐度NG信号
+		P3_Production.NGFlag[8]:=TRUE;//二号叠台对齐度NG
+		ELSE
+		Step30:=3000;
+	END_IF
+	
+	
+	
+	
+	
+	
+	
+	////////////////////去取贴胶3平台的电芯
+	
+		
+	2020://冷压上料夹平移去贴胶3位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=4;	
+			ColdpreLineTorMark:=TRUE;//冷呀上料夹平移力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+			AND P2Senser.P2M3_Coldpressingesensor THEN
+			ColdpreLineTorMark:=FALSE;//冷呀上料夹平移力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=2030;
+		END_IF	
+	END_IF
+		
+	2030://冷压上料夹升降去贴胶3位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[4]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]
+		AND P2Senser.P2M3_Coldpressingesensor THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=4;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=2035;
+		END_IF	
+	END_IF
+		
+	
+	
+	2035://3#侧贴夹平移在下电芯位，3#侧贴夹旋转在下电芯位
+	IF NOT SingleStep[1] THEN
+		IF arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Status.NoMoving AND arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Status.Homed 
+		   AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Status.NoMoving  
+			AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Status.Homed (*AND P2Senser.P2M3_GluebHave*) THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=2040;
+		END_IF	
+	END_IF
+	
+	
+	
+	2040://冷压上料夹旋转去贴胶3位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[4]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]
+		AND P2Senser.P2M3_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[4]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=4;	
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF			
+		Step30:=2050;
+		END_IF	
+	END_IF
+	
+	
+	2050://冷压上料夹进退去贴胶3位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[4]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[4]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]
+		AND P2Senser.P2M3_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[4]
+		AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Cmd.arrbRealPoint[6]   
+		AND arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Cmd.arrbRealPoint[9] THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=4;
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF			
+		Step30:=2060;
+		END_IF	
+	END_IF
+		
+	2060://冷压上料夹气缸夹紧
+	IF NOT SingleStep[1] THEN
+		arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bON:=TRUE;
+		PullGlueModelCyBaseTon.IN:=FALSE;
+		IF CellMemory[CellNo.Gluing3].Overhang_TF THEN
+			Overhang_TON.IN :=TRUE;
+			IF Overhang_TON.Q THEN
+				Step30:=2070;
+			END_IF
+		ELSE
+			IF arrCyCtrl[P3CYNo.P3ColdPressClip].Status.ONState(* AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error1 *)THEN
+				IF  StepModel[1] THEN
+					SingleStep[1]:=TRUE;
+				ELSE
+					SingleStep[1]:=FALSE;
+				END_IF	
+			Step30:=2070;
+			END_IF
+		END_IF
+	END_IF
+	
+	2070://贴胶3治具气缸打开
+	IF NOT SingleStep[1] THEN
+		Overhang_TON.IN :=FALSE;
+		arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Cmd.bON:=TRUE;
+		IF arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Status.ONState THEN
+			PullGlueModelCyBaseTon.IN:=TRUE;
+			IF arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Status.ONState AND NOT arrCyCtrl[P2CYNo.P2M3_PullGlueModelCy].Status.Error1 
+				AND PullGlueModelCyBaseTon.Q THEN
+				IF  StepModel[1] THEN
+					SingleStep[1]:=TRUE;
+				ELSE
+					SingleStep[1]:=FALSE;
+				END_IF		
+				Step30:=2075;
+				PullGlueModelCyBaseTon.IN:=FALSE;
+			END_IF
+		END_IF
+	END_IF
+	
+	
+	2075://冷压上料夹升降去贴胶3辅助位
+	IF NOT SingleStep[1] THEN
+		
+		IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[9] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=9;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+		Step30:=2080;
+		END_IF	
+	END_IF
+	
+	
+	
+	2080://冷压上料夹进退回初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;	
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=2090;
+		END_IF	
+	END_IF
+	
+	2090://复位贴胶3完成信号及把贴胶3记忆转移冷压上料夹子
+	P2M3_MachCtrl.TJ_b.StickerDone:=FALSE;	
+	CellMemory[CellNo.ColdpressClip]:=CellMemory[CellNo.Gluing3];
+	MEMSET(ADR(CellMemory[CellNo.Gluing3]),0,SIZEOF(CellMemory[CellNo.Gluing3]));	
+	Step30:=2100;	
+			
+	2100://冷压上料夹旋转去冷压位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+		AND P2Senser.P2M3_Coldpressingesensor
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]   THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=5;	
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+			Step30:=2110;
+			P2M3_MachCtrl.TJ_b.StickerOffloadingDone:=TRUE;	//3#贴胶下料完成
+		END_IF	
+	END_IF
+		
+	2110:
+		IF  CellMemory[CellNo.ColdpressClip].Overhang_TF THEN
+			Step30:=4000;//冷压上料夹有对齐度NG信号
+			P3_Production.NGFlag[9]:=TRUE;//三号叠台对齐度NG
+		ELSE
+			Step30:=3000;
+		END_IF
+	
+	
+	
+	
+	
+	
+	
+	//////////////冷压上料
+	3000://冷压上料夹旋转去冷压位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND ((P2Senser.P2M1_Coldpressingesensor AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[2])
+		OR (P2Senser.P2M2_Coldpressingesensor AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[3])
+		OR (P2Senser.P2M3_Coldpressingesensor AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[4]))THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=5;	
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=3007;
+		//PC_finish1:=FALSE;
+		END_IF	
+	END_IF
+		
+	(*
+	3003://上位机上传数据
+		IF NOT SingleStep[1] THEN
+			IF P3User2_Par.Shield[5] THEN
+				Step30:=3005;
+			ELSE			
+				PC_start1:=TRUE;
+				Step30:=3005;
+			END_IF
+		END_IF
+	
+	3005://上位机上传数据完成
+		IF NOT SingleStep[1] THEN
+			IF  P3User2_Par.Shield[5] THEN
+				Step30:=3007;
+			ELSIF PC_finish1 THEN
+					IF  StepModel[1] THEN
+						SingleStep[1]:=TRUE;
+					ELSE
+						SingleStep[1]:=FALSE;
+					END_IF	
+				PC_finish1:=FALSE;
+				Step30:=3007;
+			END_IF
+		END_IF
+	*)
+	
+	3007://冷压上料夹升降回冷压位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=5;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=3010;
+		END_IF	
+	END_IF
+	3010://冷压上料夹气缸打开状态，判断有无料	
+	IF NOT SingleStep[1] THEN
+		IF  arrCyCtrl[P3CYNo.P3ColdPressClip].Status.ONState AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			   IF  StepModel[1] THEN
+				   SingleStep[1]:=TRUE;
+			   ELSE
+				   SingleStep[1]:=FALSE;
+			  END_IF
+			Step30:=3015;
+			END_IF
+	END_IF
+	3015://冷压上料夹平移去冷压位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrCyCtrl[P3CYNo.P3ColdPressClip].Status.ONState THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=5;	
+			ColdpreLineTorMark:=TRUE;//冷呀上料夹平移力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+			ColdpreLineTorMark:=FALSE;//冷呀上料夹平移力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=3035;
+		END_IF	
+	END_IF
+	
+	3035://如果有冷压允许上料信号、冷压驱动在初始位、冷压托板开合在初始位、没有冷压电芯记忆则跳3040步
+	IF  PermitColdPressRack 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1] 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+	AND NOT CellMemory[CellNo.Coldpress].Cell  THEN
+						Step30:=3050;
+(*	ELSIF PermitColdPressRack 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+	AND NOT CellMemory[CellNo.Coldpress].Cell THEN
+					Step30:=3050;//如果有冷压允许上料信号、冷压驱动在初始位、冷压托板开合在张开位、没有冷压电芯记忆则跳3040步*)
+	END_IF
+	
+	3050://冷压上料夹进退去冷压位
+	IF NOT SingleStep[1] THEN
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[5]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[5]
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1]  THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=5;	
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF   
+		Step30:=3055;
+		Scan_finish:=FALSE;
+		END_IF	
+	END_IF
+	
+	
+	3055://如果有冷压允许上料信号、冷压驱动在初始位、冷压托板开合在初始位、没有冷压电芯记忆则跳3057步
+	IF PermitColdPressRack AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving 
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+			AND NOT CellMemory[CellNo.Coldpress].Cell THEN
+		Step30:=3057;
+	END_IF
+	
+	
+	
+		
+	3057://冷压上料夹升降去冷压辅助位//////////
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[10]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+			 AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=10;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[10] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=3060;
+		END_IF	
+	END_IF
+	
+	
+	3060://冷压上料夹气缸打开
+	IF NOT SingleStep[1] THEN
+		
+		arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bOFF:=TRUE;
+		
+		IF arrCyCtrl[P3CYNo.P3ColdPressClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error2 THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=3065;
+		END_IF
+	END_IF
+	
+	3065://20240514DYK
+	IF NOT SingleStep[1] THEN
+		IF  arrCyCtrl[P3CYNo.P3ColdPressClip].Status.OFFState 
+		AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+			  AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+					arrAxisPar[P3AxisNo.P3M1_ColdpreUpDown].fVelocity_of_Rel := 20   ;
+					arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.fPosition_of_Rel :=4 ;
+					arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bMoveRel :=  TRUE ;
+		
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=3067;
+		END_IF
+	END_IF	
+	
+	3067://20240514DYK
+		IF NOT SingleStep[1] THEN
+		IF arrAxis[P3AxisNo.P3M1_ColdpreUpDown].NcToPlc.ActPos-arrAxisPar[P3AxisNo.P3M1_ColdpreUpDown].arrTargetPoint[10] >=(4-0.1)  
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+			Step30:=3070;	
+		END_IF
+	END_IF	
+	
+	3070://冷压上料夹进退回初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;	
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving  THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=3080;
+		END_IF	
+	END_IF
+	
+	3080://把冷压上料记忆转移到冷压工位
+	CellMemory[CellNo.Coldpress]:=CellMemory[CellNo.ColdpressClip];
+	MEMSET(ADR(CellMemory[CellNo.ColdpressClip]),0,SIZEOF(CellMemory[CellNo.ColdpressClip]));
+	Step30:=3090;	
+	
+	3090:
+		Permit_Cold_Press:=TRUE;
+		Step30:=3100;
+	
+	
+	
+	3100://冷压升降回初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=1;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=1;
+		END_IF	
+	END_IF
+	
+		
+		
+	
+	//////////////////踢对齐度NG料
+	
+	4000://冷压上料夹平移去排NG料1位
+	IF NOT SingleStep[1] THEN
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=6;
+			ColdpreLineTorMark:=TRUE;//冷呀上料夹平移力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+			ColdpreLineTorMark:=FALSE;//冷呀上料夹平移力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=4005;
+		END_IF	
+	END_IF
+	
+	4005://冷压升降回初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=1;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=4010;
+		END_IF	
+	END_IF
+	
+	
+	4010://冷压上料夹旋转去排NG料位
+	IF NOT SingleStep[1] THEN
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[6]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=6;
+			ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+			ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=4020;
+		END_IF	
+	END_IF
+	
+	4020://冷压上料夹平移去排NG2位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[7]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=7;
+			ColdpreLineTorMark:=TRUE;//冷呀上料夹平移力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[7] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+			ColdpreLineTorMark:=FALSE;//冷呀上料夹平移力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=4030;
+		END_IF	
+	END_IF
+	
+	4030://放对齐度NG料安全条件满足
+	IF Push_NG_condition[1] THEN
+		Step30:=4050;
+		P3_Production.NGFlag[7]:=FALSE;//1号叠台对齐度NG
+		P3_Production.NGFlag[8]:=FALSE;//2号叠台对齐度NG
+		P3_Production.NGFlag[9]:=FALSE;//3号叠台对齐度NG
+	END_IF
+		
+	
+		
+	4050://冷压上料夹进退去排NG料位
+	IF NOT SingleStep[1] THEN
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[6]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[7] THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=6;	
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=4060;
+		END_IF	
+	END_IF
+		
+	4060://冷压上料夹升降去排NG料位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[6]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[6]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=6;	
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=4070;
+		END_IF	
+	END_IF
+	
+	4070://冷压上料夹气缸打开
+	IF NOT SingleStep[1] THEN
+		
+		arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bOFF:=TRUE;
+		
+		IF  arrCyCtrl[P3CYNo.P3ColdPressClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error2 THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF		
+		Step30:=4080;
+		END_IF
+	END_IF
+	
+	4080://冷压上料夹进退回初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]) AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error) AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+			AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;	
+			ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+			ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF
+				
+		Step30:=4090;
+		END_IF	
+	END_IF
+		
+	4090://处理冷压上料夹电芯记忆
+	MEMSET(ADR(CellMemory[CellNo.ColdpressClip]),0,SIZEOF(CellMemory[CellNo.ColdpressClip]));
+	Step30:=4100;
+	
+	
+	
+	
+	4100://冷压上料夹平移到初始位
+	IF NOT SingleStep[1] THEN
+		
+		IF  (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1]) 
+		AND (NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error) 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6]THEN
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=1;
+		END_IF
+		
+		IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+			IF  StepModel[1] THEN
+				SingleStep[1]:=TRUE;
+			ELSE
+				SingleStep[1]:=FALSE;
+			END_IF	
+		Step30:=4110;
+		END_IF	
+	END_IF
+	
+	
+	4110:
+	Step30:=1;
+	
+	END_CASE
+	END_IF
+	
+	
+	
+]]></ST>
+    </Implementation>
+    <Action Name="ACT" Id="{7f83fa6a-1873-4e6b-be09-f119bbce7791}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"CS_SetpMoterV2"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"Hough_NG_Push"</v>
+                          <v n="Type">"CS_SetpMoterV2"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">6L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" />
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"stP3NgPushMoter[1]"</v>
+                              <v n="Type">"ST_SetpMotor"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">5L</v>
+                            </o>
+                            <v n="Id">4L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>stSetpMotor</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>ST_SetpMotor[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" />
+                          <l2 n="Types" />
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">7L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"Push_NG_Full[1]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">50L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"FB_SetMoter_auto"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"NG_Auto_1"</v>
+                            <v n="Type">"FB_SetMoter_auto"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">24L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].HomeDone"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">27L</v>
+                              </o>
+                              <v n="Id">26L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].biSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">29L</v>
+                              </o>
+                              <v n="Id">28L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].biUpSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">31L</v>
+                              </o>
+                              <v n="Id">30L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].biDownSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">33L</v>
+                              </o>
+                              <v n="Id">32L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].bHave"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">35L</v>
+                              </o>
+                              <v n="Id">34L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].biBoxSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">37L</v>
+                              </o>
+                              <v n="Id">36L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].bHome"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">39L</v>
+                              </o>
+                              <v n="Id">38L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"Push_NG[1]"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">41L</v>
+                              </o>
+                              <v n="Id">40L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].bGoWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">43L</v>
+                              </o>
+                              <v n="Id">42L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].bLeaveWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">45L</v>
+                              </o>
+                              <v n="Id">44L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].bJog_Down"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">47L</v>
+                              </o>
+                              <v n="Id">46L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[1].bJog_Up"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">49L</v>
+                              </o>
+                              <v n="Id">48L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Home_done</v>
+                              <v>biSensor</v>
+                              <v>P_OT</v>
+                              <v>N_OT</v>
+                              <v>bHave</v>
+                              <v>Box</v>
+                              <v>bHome</v>
+                              <v>Push_NG</v>
+                              <v>bGoWorkPos</v>
+                              <v>bLeaveWorkPos</v>
+                              <v>JOG_N</v>
+                              <v>JOG_P</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Full</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">25L</v>
+                        </o>
+                        <v n="Id">51L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">8L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Auto1">
+      <LineId Id="14150" Count="1099" />
+      <LineId Id="15541" Count="30" />
+      <LineId Id="15539" Count="1" />
+      <LineId Id="15250" Count="270" />
+      <LineId Id="1670" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

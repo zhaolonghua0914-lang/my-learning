@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_DATA_NEED_BE_PERSIS" Id="{648294be-569a-4002-bbf9-6eccd5c584f2}">
+    <Declaration><![CDATA[TYPE ST_DATA_NEED_BE_PERSIS :(*需要断电保持的参数*)(*中间变量，只用在判断用*)
+STRUCT
+
+	strSetLevelPassword: 	ARRAY [0..3] OF STRING(80) := ['0','1','2','3'];
+	strInputReceipeName: 	STRING(80);
+	strCurrentReceipeName: 	STRING(80);
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

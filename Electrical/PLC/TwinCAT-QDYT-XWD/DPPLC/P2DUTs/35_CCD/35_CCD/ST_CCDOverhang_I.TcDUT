@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDOverhang_I" Id="{a0a27464-35db-41eb-b399-3d89781f62fe}">
+    <Declaration><![CDATA[TYPE ST_CCDOverhang_I :
+STRUCT
+	OverhandResult	:	INT	    ;// 对齐度结果（1:OK ,2:NG,3:无料 4:极耳顶宽NG）
+	OverhandiPliesNo:   INT     ;// 返回极片层数
+	PoleOverhandX1	:	REAL	;//	极片与隔膜X1
+	PoleOverhandY1	:	REAL	;//	极片与隔膜Y1
+	PoleOverhandX2	:	REAL    ;// 极片与隔膜X2
+	PoleOverhandY2	:	REAL    ;// 极片与隔膜Y2
+	PoleOverhandX3	:	REAL    ;// 极片与隔膜X3
+	PoleOverhandY3	:	REAL    ;// 极片与隔膜Y3
+	PoleOverhandX4	:	REAL	;//	极片与隔膜X4
+	PoleOverhandY4	:	REAL	;//	极片与隔膜Y4
+	AnCaOverhandX1	:	REAL	;//	负极与正极X1
+	AnCaOverhandY1	:	REAL	;//	负极与正极Y1
+	AnCaOverhandX2	:	REAL	;// 负极与正极X2
+	AnCaOverhandY2	:	REAL	;//	负极与正极Y2
+	AnCaOverhandX3	:	REAL	;// 负极与正极X3
+	AnCaOverhandY3	:	REAL	;//	负极与正极Y3
+	AnCaOverhandX4	:	REAL	;// 负极与正极X4
+	AnCaOverhandY4	:	REAL	;//	负极与正极Y4
+	AddOverhangX1	:	REAL	;//	极片整体对齐度X1
+	AddOverhangY1	:	REAL	;//	极片整体对齐度Y1
+	AddOverhangX2	:	REAL	;//	极片整体对齐度X2
+	AddOverhangY2	:	REAL	;// 极片整体对齐度Y2
+	AddOverhangX3	:	REAL	;//	极片整体对齐度X3
+	AddOverhangY3	:	REAL	;// 极片整体对齐度Y3
+	AddOverhangX4	:	REAL	;//	极片整体对齐度X4
+	AddOverhangY4	:	REAL	;//	极片整体对齐度Y4
+	OverhangXY_Warm	:	INT		;//连续10片对齐度超限报警	
+	stCellNo		:	STRING(256);//电芯编号	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

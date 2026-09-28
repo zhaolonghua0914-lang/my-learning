@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_Rectify" Id="{8bfb5d02-e483-4b13-99f1-553398c5db9a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Rectify
+VAR_INPUT
+	
+END_VAR
+VAR_IN_OUT
+     RecCtrl:     ST_RecCtrl;
+END_VAR
+VAR
+   rtRec  :ARRAY[1..4] OF Tc2_Standard.R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+
+
+
+
+
+rtRec[1](CLK:=RecCtrl.Cmd.bLock , Q=> );
+rtRec[2](CLK:=RecCtrl.Cmd.bAuto , Q=> );
+rtRec[3](CLK:=RecCtrl.Cmd.bManual , Q=> );
+rtRec[4](CLK:=RecCtrl.Cmd.bCentre , Q=> );
+
+IF rtRec[1].Q   THEN  //外部锁定
+    RecCtrl.Io.boLock:=TRUE;
+    RecCtrl.Io.boAuto:=FALSE;
+    RecCtrl.Io.boManual:=FALSE;
+    RecCtrl.Io.boCentre:=FALSE;
+END_IF
+
+IF rtRec[2].Q   THEN  //自动
+    RecCtrl.Io.boLock:=FALSE;
+    RecCtrl.Io.boAuto:=TRUE;
+    RecCtrl.Io.boManual:=FALSE;
+    RecCtrl.Io.boCentre:=FALSE;
+END_IF
+
+IF rtRec[3].Q   THEN  //手动
+    RecCtrl.Io.boLock:=FALSE;
+    RecCtrl.Io.boAuto:=FALSE;
+    RecCtrl.Io.boManual:=TRUE;
+    RecCtrl.Io.boCentre:=FALSE;
+END_IF
+
+IF rtRec[4].Q   THEN  //居中
+    RecCtrl.Io.boLock:=FALSE;
+    RecCtrl.Io.boAuto:=FALSE;
+    RecCtrl.Io.boManual:=FALSE;
+    RecCtrl.Io.boCentre:=TRUE;
+END_IF
+
+
+RecCtrl.Status.bError:=RecCtrl.Io.biError;
+RecCtrl.Status.bRuning:=RecCtrl.Io.biCentre;
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Rectify">
+      <LineId Id="3" Count="55" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

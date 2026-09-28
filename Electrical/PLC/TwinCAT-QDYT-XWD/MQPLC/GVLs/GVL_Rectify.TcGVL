@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="GVL_Rectify" Id="{ed3dd6c1-6094-4202-b1cb-e9add5101f36}">
+    <Declaration><![CDATA[VAR_GLOBAL
+    arrRecCtrl                : ARRAY[1..MaxRec]  OF  ST_RecCtrl;(*纠偏*)
+	AnRecY:ST_RecY;//正极模具
+	CaRecY:ST_RecY;//负极模具
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	  MaxRec			                  	:UINT:=4;		(*纠偏数量*)
+END_VAR
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

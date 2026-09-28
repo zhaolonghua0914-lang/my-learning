@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Temperature" Id="{3d4477e7-f25f-4f37-ba31-b462b409dba0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Temperature    //温控功能块
+VAR_INPUT
+    bReset          :BOOL;
+	ParTemp      : ST_ParTemperature;
+END_VAR
+
+VAR_IN_OUT
+     TempCtrl:     STTempCtrl;
+END_VAR
+VAR_OUTPUT
+    
+END_VAR
+
+
+
+
+VAR
+       fTempMax                                :REAL;     //温度上限
+      fTempMin                                 :REAL;     //温度下限
+
+
+       rtTemp  :ARRAY[1..4] OF Tc2_Standard.R_TRIG;
+	  iCountShow: INT;  //使用的显示通道数量
+	  TemTON :Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ParTemp.fTempArea:=5;
+TemTON(PT:=T#300S);
+
+TempCtrl.Tem_fPV:=TempCtrl.In.fPV-ParTemp.Tem_Offset;
+TempCtrl.fPVShow_1:=TempCtrl.fPVShow1-ParTemp.Tem_Offset;
+TempCtrl.In.fPV:=TempCtrl.In.iPV/10; //当前温度显示
+
+TempCtrl.Out.iSV:=           REAL_TO_INT(ParTemp.fTempSet+ParTemp.Tem_Offset)*10; //控制温度设定值
+//TempCtrl.Out.iPV_Offset:= REAL_TO_INT(ParTemp.fTempSet)*10;//控制温度设定值
+
+//启动加热时候   如果当前温度到达设定温度 范围内则开始 判断温度超温和低温报警     
+//启动加热5分钟  当前温度还未到达设定温度范围  则报警低温报警
+//控制温度和显示温度实时检测差值并判断报警
+
+
+(**自整定报警**)
+TempCtrl.bTuningError:=TempCtrl.In.AutoTuningerr;  //
+(**超温报警**)
+//IF TempCtrl.In.AutoTuningON OR TempCtrl.In.HeatingON THEN
+      rtTemp[1](CLK:=TempCtrl.Tem_fPV>ParTemp.fTempMax , Q=> );  //超温报警
+      IF  (*rtTemp[1].Q*) TempCtrl.Tem_fPV>ParTemp.fTempMax+5 OR TempCtrl.fPVShow_1 >ParTemp.fTempMax+10 THEN
+          TempCtrl.bTempError_HI:=TRUE;
+      END_IF
+//END_IF
+
+
+(**传感器检测异常报警**)
+  iCountShow:=SEL(TempCtrl.fPVShow_1<>999.9, 0,1)+SEL(TempCtrl.fPVShow2<>999.9, 0,1) +SEL(TempCtrl.fPVShow3<>999.9, 0,1) + SEL(TempCtrl.fPVShow4<>999.9, 0,1) ;
+
+CASE  iCountShow OF 
+1:
+IF TempCtrl.In.PIDON AND  ABS (ParTemp.fTempSet-TempCtrl.Tem_fPV)<ParTemp.fTempArea AND NOT TempCtrl.bSenserError AND NOT TempCtrl.bTempError_HI  THEN
+	iCountShow:=10;
+END_IF
+
+ 
+ 
+10:
+    
+      rtTemp[2](CLK:=ABS (TempCtrl.Tem_fPV-TempCtrl.fPVShow_1)>=ParTemp.fTempArea , Q=> );  //超温报警
+       IF ABS (TempCtrl.Tem_fPV-TempCtrl.fPVShow_1)>=ParTemp.fTempArea THEN
+             TempCtrl.bSenserError:=TRUE;
+      END_IF
+	  IF NOT TempCtrl.In.PIDON THEN
+		  iCountShow:=0;
+	  END_IF
+	  
+(*2:
+      rtTemp[2](CLK:=ABS (TempCtrl.In.fPV-TempCtrl.fPVShow1)>=ParTemp.fTempArea  OR   
+                              ABS (TempCtrl.In.fPV-TempCtrl.fPVShow2)>=ParTemp.fTempArea, Q=> );  //超温报警
+       IF rtTemp[2].Q THEN
+             TempCtrl.bSenserError:=TRUE;
+      END_IF
+3:
+      rtTemp[2](CLK:=ABS (TempCtrl.In.fPV-TempCtrl.fPVShow1)>=ParTemp.fTempArea  OR   
+                              ABS (TempCtrl.In.fPV-TempCtrl.fPVShow2)>=ParTemp.fTempArea  OR   
+                              ABS (TempCtrl.In.fPV-TempCtrl.fPVShow3)>=ParTemp.fTempArea, Q=> );  //超温报警
+       IF rtTemp[2].Q THEN
+             TempCtrl.bSenserError:=TRUE;
+      END_IF
+4:
+      rtTemp[2](CLK:=ABS (TempCtrl.In.fPV-TempCtrl.fPVShow1)>=ParTemp.fTempArea  OR   
+                              ABS (TempCtrl.In.fPV-TempCtrl.fPVShow2)>=ParTemp.fTempArea  OR   
+                              ABS (TempCtrl.In.fPV-TempCtrl.fPVShow3)>=ParTemp.fTempArea  OR   
+                              ABS (TempCtrl.In.fPV-TempCtrl.fPVShow4)>=ParTemp.fTempArea, Q=> );  //超温报警
+       IF rtTemp[2].Q THEN
+             TempCtrl.bSenserError:=TRUE;
+      END_IF*)
+END_CASE
+
+ IF TempCtrl.In.PIDON AND ABS (ParTemp.fTempSet-TempCtrl.Tem_fPV)>=ParTemp.fTempArea THEN
+	 TemTON.IN:=TRUE;
+	 ELSE
+    TemTON.IN:=FALSE;	 
+ END_IF
+IF TemTON.Q THEN
+	TempCtrl.bTempError_LI:=TRUE;
+END_IF
+
+IF bReset AND ( TempCtrl.bTempError_HI OR TempCtrl.bSenserError OR TempCtrl.bTempError_LI ) THEN
+    TempCtrl.bTempError_HI:=FALSE;
+    TempCtrl.bSenserError:=FALSE;
+	TempCtrl.bTempError_LI:=FALSE;
+END_IF
+
+
+IF TempCtrl.bTempError_HI OR TempCtrl.bSenserError OR TempCtrl.bTempError_LI THEN
+	TempCtrl.Out.PIDRun:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*
+rtRec[1](CLK:=RecCtrl.Cmd.bLock , Q=> );
+rtRec[2](CLK:=RecCtrl.Cmd.bAuto , Q=> );
+rtRec[3](CLK:=RecCtrl.Cmd.bManual , Q=> );
+rtRec[4](CLK:=RecCtrl.Cmd.bCentre , Q=> );
+
+IF rtRec[1].Q   THEN  //外部锁定
+    RecCtrl.Io.boLock:=TRUE;
+    RecCtrl.Io.boAuto:=FALSE;
+    RecCtrl.Io.boManual:=FALSE;
+    RecCtrl.Io.boCentre:=FALSE;
+END_IF
+
+IF rtRec[2].Q   THEN  //自动
+    RecCtrl.Io.boLock:=FALSE;
+    RecCtrl.Io.boAuto:=TRUE;
+    RecCtrl.Io.boManual:=FALSE;
+    RecCtrl.Io.boCentre:=FALSE;
+END_IF
+
+IF rtRec[3].Q   THEN  //手动
+    RecCtrl.Io.boLock:=FALSE;
+    RecCtrl.Io.boAuto:=FALSE;
+    RecCtrl.Io.boManual:=TRUE;
+    RecCtrl.Io.boCentre:=FALSE;
+END_IF
+
+IF rtRec[4].Q   THEN  //居中
+    RecCtrl.Io.boLock:=FALSE;
+    RecCtrl.Io.boAuto:=FALSE;
+    RecCtrl.Io.boManual:=FALSE;
+    RecCtrl.Io.boCentre:=TRUE;
+END_IF
+
+
+RecCtrl.Status.bError:=RecCtrl.Io.biError;
+RecCtrl.Status.bRuning:=RecCtrl.Io.biCentre;
+
+
+*)
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Temperature">
+      <LineId Id="156" Count="2" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="3" Count="7" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="11" Count="17" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="169" Count="0" />
+      <LineId Id="29" Count="5" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="162" Count="1" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="35" Count="21" />
+      <LineId Id="175" Count="7" />
+      <LineId Id="57" Count="4" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="62" Count="3" />
+      <LineId Id="173" Count="1" />
+      <LineId Id="66" Count="63" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

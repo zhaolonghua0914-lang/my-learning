@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDOverhang_O" Id="{c0833572-bc50-4b12-b03a-33e90136154e}">
+    <Declaration><![CDATA[TYPE ST_CCDOverhang_O :
+STRUCT
+	iPhotoDo:INT;//1为正常对齐度拍照，2为叠台检测有无拍照
+	iPliesNo:INT;  //当前层数
+	OverhangXY_Warm_Reset : INT; //超限预警返回值
+	stPoleNo:STRING(256);  //极片编号
+	
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

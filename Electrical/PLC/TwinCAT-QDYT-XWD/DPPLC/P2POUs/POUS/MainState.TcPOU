@@ -1,0 +1,2350 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MainState" Id="{a206b14c-720d-45cc-a380-a7b0911432bc}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MainState
+VAR
+	iMainSetp :INT;
+	bEstop: BOOL;
+	fbDustMotor       :ARRAY[1..Max_Dust]   OF   CS_DustMoter;
+	P2M1iMainSetp :INT;
+	P2M2iMainSetp :INT;	
+	P2M3iMainSetp :INT;	
+	
+	I1: UINT;
+	iErrorSetp: INT;
+	iLightSel: INT;
+	bTurnOn: BOOL;
+	bDoor_Stop: BOOL;
+	I2: INT;
+	I4: INT;
+	I5: INT;
+	i: UINT;
+	iCode2: ICode;
+	ExtSetVel: LREAL;
+	ExtSetPos: LREAL;
+	ExtSetAcc: LREAL;
+	ExtSetDec: DINT;
+	InitSetp: INT;
+	
+	rtStoping: R_TRIG;
+	iMainInitSetp: INT;
+	iMainEStopSetp: INT;
+	K1: UINT;
+	bInitReset: BOOL;
+	DA1: INT;
+	Code1: BOOL;
+	Code2: BOOL;
+	Code3: BOOL;
+	Code4: BOOL;
+	CyCtrl: INT;
+	bWaterOn: BOOL;
+	
+	Execute: BOOL;
+	bCoeWrite_GlueFeed: BOOL;
+	bWaterOn2: BOOL;
+	//i10: UINT;
+	// 一号叠台
+	P2M1_Step0: INT;
+	// 二号叠台
+	P2M2_Step0: INT;
+	// 三号叠台
+	P2M3_Step0: INT;
+	// 一号尾卷
+	P2M1_Step1: INT;
+	// 二号尾卷
+	P2M2_Step1: INT;
+	// 三号尾卷
+	P2M3_Step1: INT;
+	P2M1DT_R_TRIG: ARRAY[0..5] OF R_TRIG;
+	// 二号叠台
+	P2M2DT_R_TRIG: ARRAY[0..9] OF R_TRIG;
+	// 一号尾卷
+	P2M1WJ_R_TRIG: ARRAY[0..9] OF  R_TRIG;
+	// 二号尾卷
+	P2M2WJ_R_TRIG: ARRAY[0..9] OF  R_TRIG;
+	// 三号叠台
+	P2M3DT_R_TRIG: ARRAY[0..9] OF R_TRIG;
+	// 三号尾卷
+	P2M3WJ_R_TRIG: ARRAY[0..9] OF R_TRIG;
+	K2: UINT;
+	// 二号叠台报警
+	K3: UINT;
+	P2M3_Step2: INT;
+	P2M2_Step2: INT;
+	P2M1_Step2: INT;
+	P2M3TJ_R_TRIG: R_TRIG;
+	P2M1TJ_R_TRIG: R_TRIG;
+	P2M2TJ_R_TRIG: R_TRIG;
+	I3: INT;
+	I6: INT;
+	P2M1_tonEStop1: TON;
+	P2M1_tonEStop2: TON;
+	P2M1_tonEStop3: TON;
+	P2M2_tonEStop1: TON;
+	P2M2_tonEStop3: TON;
+	P2M2_tonEStop2: TON;
+	P2M3_tonEStop1: TON;
+	P2M3_tonEStop2: TON;
+	P2M3_tonEStop3: TON;
+	P2M1_AutobtnR_TRIG: R_TRIG;
+	P2M1_AutobtnF_TRIG: F_TRIG;
+	P2M2_AutobtnR_TRIG: R_TRIG;
+	P2M2_AutobtnF_TRIG: F_TRIG;
+	P2M3_AutobtnR_TRIG: R_TRIG;
+	P2M3_AutobtnF_TRIG: F_TRIG;
+	tCycleTimer: TON;
+	bSave: BOOL;
+	rt10: R_TRIG;
+	bReadDataFirstCyle: BOOL;
+	testii: INT;
+	testii2: INT;
+	bSaveDataTest: BOOL;
+	bReadDataCyle2: BOOL;
+	rtSaveData: R_TRIG;
+	tDecideTim: ARRAY[1..20] OF TON;
+END_VAR
+
+VAR
+	R_TRIG_Bt: 			ARRAY[1..10]OF R_TRIG;
+	TON20:Tc2_Standard.TON;	
+//	TON21:Tc2_Standard.TON;	
+	rt100:Tc2_Standard.R_TRIG;
+	rt101:Tc2_Standard.R_TRIG;
+	
+	tDelayBuzze:TON;
+
+	RT200:ARRAY[1..4] OF Tc2_Standard.R_TRIG;
+
+	
+	csAxis                 :ARRAY[1..MaxP2Axes] OF   CS_AxisCtrl;
+	fbCy                   :ARRAY[1..MaxP2Cy]    OF   FB_Cylinder;
+    //fbRec                 :ARRAY[1..MaxRec]   OF   FB_Rectify;
+  //  fbTemp             :ARRAY[1..MaxTemp]   OF   FB_Temperature;
+
+
+
+    csCodeTcp:CS_CodeTcp;
+    fbCamInTest: MC_CamIn;//主轴与驱动凸轮耦合
+
+//速度模式验证
+	MC_ExtSetPointGenDisable: MC_ExtSetPointGenDisable;
+	MC_ExtSetPointGenEnable: MC_ExtSetPointGenEnable;
+    MC_ExtSetPointGenOut:        Tc2_MC2.ST_McOutputs;
+    MC_ExtSetPointGenOut2:        Tc2_MC2.ST_McOutputs;
+
+    tonEStop:                     Tc2_Standard.TON;
+
+   
+  fbP4NGSetpMoter  : CS_SetpMoter;
+
+
+
+        mc_Home    :MC_Home;
+
+        fbCoeWrite_GlueFeed:       FB_EcCoeSdoWrite;
+     	wEncodeHome                    :WORD:=6;
+      //fbDataXML  :FB_DataXML;  
+	  
+	   AxisHandautomatic:ARRAY[1..6] OF FB_AxisHandautomatic;
+
+//叠台调度	   
+	   P2M1AutoRuning: BOOL;
+	P2M2AutoRuning: BOOL;
+	P2M3AutoRuning: BOOL;
+	P2M1ReadyTemp: BOOL;
+	P2M2ReadyTemp: BOOL;
+	P2M3ReadyTemp: BOOL;
+	P2M1ReadyAllow: BOOL;
+	P2M2ReadyAllow: BOOL;
+	P2M3ReadyAllow: BOOL;
+	// 调度模式  TRUE：调度模式     FALSE：独立模式
+	iDispatchMode: BOOL;
+	iDispatchSetp: INT;
+	iDispatchSetp2: INT;
+	iDPAutoRuningSEL: INT;
+	
+	rDoorAlarm :ARRAY[1..3]OF R_TRIG;
+	
+	iSyncStep:INT;//叠台同步启动调度步序 20240504CF
+	fMinTime:REAL;//最快的叠片时间
+	
+	i11:ARRAY[1..10]   OF UINT;
+	i10:ARRAY[1..10]   OF UINT;
+END_VAR
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[stSysState.btnAuto;
+stSysState.btnManul;
+stSysState.btnStart;
+stSysState.btnStop;
+stSysState.btnReset;
+stSysState.btnEstop;//常开  
+
+AA1;
+
+IF NOT P2Btn.P2M1_EmStopbtn1 OR NOT P2Btn.P2M2_EmStopbtn1 OR NOT P2Btn.P2M3_EmStopbtn1 THEN
+		stSysState.btnEstop:=TRUE;
+ELSE
+		stSysState.btnEstop:=FALSE;
+END_IF
+
+R_TRIG_Bt[1](CLK:= stSysState.btnStart   OR  stSysState.hmiStart);//启动按钮
+R_TRIG_Bt[2](CLK:= stSysState.btnStop   OR  stSysState.hmiStop);//停止按钮
+R_TRIG_Bt[4](CLK:=   stSysState.btnAuto OR  stSysState.hmiAuto);//切换到自动
+R_TRIG_Bt[5](CLK:=  NOT stSysState.btnAuto);//
+R_TRIG_Bt[6](CLK:=stSysState.btnEstop);
+R_TRIG_Bt[7](CLK:=stSysState.btnReset OR  stSysState.hmiReset OR P2Btn.P2M1_Resetebtn OR P2Btn.P2M2_Resetebtn OR P2Btn.P2M3_Resetebtn );//复位
+R_TRIG_Bt[8](CLK:=  NOT stSysState.hmiAuto);
+//复位时判断时间主轴是否启动
+IF R_TRIG_Bt[7].Q THEN
+		  IF  arrAxis[VirAxisNo.P2M1_VirTimeWind].Status.ControlLoopClosed THEN
+			  arrAxisPar[VirAxisNo.P2M1_VirTimeWind].fVelocity_of_Velo:=100;
+			  arrAxisCtrl[VirAxisNo.P2M1_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+		  END_IF
+		  
+		  IF  arrAxis[VirAxisNo.P2M1_VirGM].Status.ControlLoopClosed THEN
+			  arrAxisPar[VirAxisNo.P2M1_VirGM].fVelocity_of_Velo:=100;
+			  arrAxisCtrl[VirAxisNo.P2M1_VirGM].Cmd.bMoveVelo:=TRUE;
+		  END_IF
+		  
+		  IF  arrAxis[VirAxisNo.P2M2_VirTimeWind].Status.ControlLoopClosed THEN
+			  arrAxisPar[VirAxisNo.P2M2_VirTimeWind].fVelocity_of_Velo:=100;
+			  arrAxisCtrl[VirAxisNo.P2M2_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+		  END_IF
+		  IF  arrAxis[VirAxisNo.P2M2_VirGM].Status.ControlLoopClosed THEN
+			  arrAxisPar[VirAxisNo.P2M2_VirGM].fVelocity_of_Velo:=100;
+			  arrAxisCtrl[VirAxisNo.P2M2_VirGM].Cmd.bMoveVelo:=TRUE;
+		  END_IF
+		  
+		  IF  arrAxis[VirAxisNo.P2M3_VirTimeWind].Status.ControlLoopClosed THEN
+			  arrAxisPar[VirAxisNo.P2M3_VirTimeWind].fVelocity_of_Velo:=100;
+			  arrAxisCtrl[VirAxisNo.P2M3_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+		  END_IF
+		  IF  arrAxis[VirAxisNo.P2M3_VirGM].Status.ControlLoopClosed THEN
+			  arrAxisPar[VirAxisNo.P2M3_VirGM].fVelocity_of_Velo:=100;
+			  arrAxisCtrl[VirAxisNo.P2M3_VirGM].Cmd.bMoveVelo:=TRUE;
+		  END_IF 
+		  
+  END_IF
+
+
+IF R_TRIG_Bt[4].Q THEN  //自动
+	stSysState.FlgAuto:=TRUE;
+	stSysState.FlgManua:=FALSE;
+END_IF
+IF R_TRIG_Bt[5].Q  OR  R_TRIG_Bt[8].Q   THEN  //手动
+	stSysState.FlgAuto:=FALSE;
+	stSysState.FlgManua:=TRUE;
+END_IF
+stSysState.bReset:=R_TRIG_Bt[7].Q  OR  bInitReset    ;  //复位
+
+IF R_TRIG_Bt[7].Q OR stSysState.bReset THEN
+	FOR i:=1 TO 159 DO
+		HMI_TorAlarm_D[i]:=FALSE;
+	END_FOR
+END_IF
+
+IF R_TRIG_Bt[7].Q OR stSysState.bReset THEN
+	FOR i5:=1 TO 30 DO
+		P2M1_MachCtrl.DT_b.Error_tips[i5]:=FALSE ;
+		P2M2_MachCtrl.DT_b.Error_tips[i5]:=FALSE ; 
+		P2M3_MachCtrl.DT_b.Error_tips[i5]:=FALSE ; 
+	END_FOR
+END_IF
+
+(**********************************************************************************************************一号叠台面板控制********************************************************************************************)
+P2M1_AutobtnR_TRIG(CLK:=P2Btn.P2M1_Autobtn , Q=> );//一号手自动切换上升沿
+P2M1_AutobtnF_TRIG(CLK:=P2Btn.P2M1_Autobtn , Q=> );//一号手自动切换下降沿
+IF P2M1_AutobtnR_TRIG.Q THEN
+	P2M1_DTSysState.hmiAuto:=TRUE;//叠台自动标志
+	P2M1_WJSysState.hmiAuto:=TRUE;//贴胶自动标志
+	//P2M1_DTSysState.bwindow:=TRUE;//触发弹窗
+END_IF
+IF P2M1_AutobtnF_TRIG.Q THEN
+	P2M1_DTSysState.hmiAuto:=FALSE;//叠台自动标志
+	P2M1_WJSysState.hmiAuto:=FALSE;//贴胶自动标志
+	P2M1_DTSysState.bwindow:=FALSE;//触发弹窗
+END_IF
+
+P2M1_DTSysState.bccdstate:=NOT P2M1_MachCtrl.DT_b.Error[20] AND ((NOT P2M1_Par.iModeEN.CCD_ChosesHMIEN AND 
+                           NOT P2M1_Par.iModeEN.DT_CCD_TwoModelEN AND NOT P2M1_Par.iModeEN.DT_OverhangEN)OR P2M1_Par.iModeEN.EmptyRunModeEN);
+P2M1_MachCtrl.DT_b.DT_Start:=(*P2M1_DTSysState.hmiStart OR*) P2Btn.P2M1_Startbtn ;//1号叠台启动
+P2M1_sysControl.btn.System_Rrestbtn:=stSysState.hmiReset OR P2Btn.P2M1_Resetebtn ;//系统复位
+
+
+//一号叠台
+P2M1DT_R_TRIG[0](CLK:=(*P2M1_DTSysState.hmiStart OR*) P2Btn.P2M1_Startbtn , Q=> );//一号叠台自动启动
+IF (*P2M1_DTSysState.hmiAuto OR*)P2Btn.P2M1_Autobtn THEN
+	P2M1_DTSysState.FlgManua:=FALSE;//叠台手动标志
+	P2M1_DTSysState.FlgAuto:=TRUE;//叠台自动标志
+ELSE
+	P2M1_DTSysState.FlgManua:=TRUE;//叠台手动标志
+	P2M1_DTSysState.FlgAuto:=FALSE;//叠台自动标志	
+END_IF
+
+IF P2M1DT_R_TRIG[0].Q THEN
+	IF NOT P2M1_MachCtrl.DT_b.DiaphragmPartNumberOK AND NOT P2M1_MachCtrl.DT_b.PartNumberOff THEN
+		P2M1_MachCtrl.DT_b.Error_tips[1]:=TRUE ;   //叠台1隔膜料号未OK
+	ELSE
+		P2M1_MachCtrl.DT_b.Error_tips[1]:=FALSE ;   //叠台1隔膜料号未OK
+	END_IF
+	IF NOT P2M1_MachCtrl.DT_b.BluePartNumberOK AND NOT P2M1_MachCtrl.DT_b.PartNumberOff THEN
+		P2M1_MachCtrl.DT_b.Error_tips[2]:=TRUE ;   //叠台1蓝胶料号未OK
+	ELSE
+		P2M1_MachCtrl.DT_b.Error_tips[2]:=FALSE ;   //叠台1蓝胶料号未OK
+	END_IF
+END_IF
+
+
+
+
+
+//一号尾卷贴胶
+//P2M1_MachCtrl.TJ_b.StickerStart_HMI:=P2M1_WJSysState.hmiStart;
+P2M1WJ_R_TRIG[0](CLK:=P2M1_MachCtrl.WJ_b.TailCurlStart OR P2Btn.P2M1_Startbtn , Q=> );//一号尾尾卷自动启动
+P2M1TJ_R_TRIG(CLK:=P2M1_MachCtrl.TJ_b.StickerStart_HMI OR P2Btn.P2M1_Startbtn , Q=> );//一号尾尾卷自动启动
+IF P2M1_WJSysState.hmiAuto THEN
+	P2M1_WJSysState.FlgManua:=FALSE;//尾卷贴胶手动标志
+	P2M1_WJSysState.FlgAuto:=TRUE;//尾卷贴胶自动标志
+ELSE
+	P2M1_WJSysState.FlgManua:=TRUE;//尾卷贴胶手动标志
+	P2M1_WJSysState.FlgAuto:=FALSE;//尾卷贴胶自动标志	
+END_IF
+
+
+
+(**********************************************************************************************************二号叠台面板控制********************************************************************************************)
+P2M2_AutobtnR_TRIG(CLK:=P2Btn.P2M2_Autobtn , Q=> );//二号手自动切换上升沿
+P2M2_AutobtnF_TRIG(CLK:=P2Btn.P2M2_Autobtn , Q=> );//二号手自动切换下降沿
+IF P2M2_AutobtnR_TRIG.Q THEN
+	P2M2_DTSysState.hmiAuto:=TRUE;//叠台自动标志
+	P2M2_WJSysState.hmiAuto:=TRUE;//贴胶自动标志
+	//P2M2_DTSysState.bwindow:=TRUE;//触发弹窗
+END_IF
+IF P2M2_AutobtnF_TRIG.Q THEN
+	P2M2_DTSysState.hmiAuto:=FALSE;//叠台自动标志
+	P2M2_WJSysState.hmiAuto:=FALSE;//贴胶自动标志
+	P2M2_DTSysState.bwindow:=FALSE;//触发弹窗
+END_IF
+
+P2M2_DTSysState.bccdstate:=NOT P2M2_MachCtrl.DT_b.Error[20] AND ((NOT P2M2_Par.iModeEN.CCD_ChosesHMIEN AND 
+                           NOT P2M2_Par.iModeEN.DT_CCD_TwoModelEN AND NOT P2M2_Par.iModeEN.DT_OverhangEN) OR P2M2_Par.iModeEN.EmptyRunModeEN);
+P2M2_MachCtrl.DT_b.DT_Start:=(*P2M2_DTSysState.hmiStart OR *) P2Btn.P2M2_Startbtn;//系统启动
+P2M2_sysControl.btn.System_Rrestbtn:=stSysState.hmiReset OR P2Btn.P2M2_Resetebtn ;//系统复位
+//二号叠台
+P2M2DT_R_TRIG[0](CLK:=(*P2M2_DTSysState.hmiStart OR*) P2Btn.P2M2_Startbtn , Q=> );//二号叠台启动
+IF (*P2M2_DTSysState.hmiAuto*)P2Btn.P2M2_Autobtn THEN
+	P2M2_DTSysState.FlgManua:=FALSE;//叠台手动标志
+	P2M2_DTSysState.FlgAuto:=TRUE;//叠台自动标志
+ELSE
+	P2M2_DTSysState.FlgManua:=TRUE;//叠台手动标志
+	P2M2_DTSysState.FlgAuto:=FALSE;//叠台自动标志	
+END_IF
+IF P2M2DT_R_TRIG[0].Q THEN
+	IF NOT P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK AND NOT P2M2_MachCtrl.DT_b.PartNumberOff THEN
+		P2M2_MachCtrl.DT_b.Error_tips[1]:=TRUE ;   //叠台2隔膜料号未OK
+	ELSE
+		P2M2_MachCtrl.DT_b.Error_tips[1]:=FALSE ;   //叠台2隔膜料号未OK
+	END_IF
+	IF NOT P2M2_MachCtrl.DT_b.BluePartNumberOK AND NOT P2M2_MachCtrl.DT_b.PartNumberOff THEN
+		P2M2_MachCtrl.DT_b.Error_tips[2]:=TRUE ;   //叠台2蓝胶料号未OK
+	ELSE
+		P2M2_MachCtrl.DT_b.Error_tips[2]:=FALSE ;   //叠台2蓝胶料号未OK
+	END_IF
+END_IF
+
+//二号叠台尾卷贴胶
+P2M2WJ_R_TRIG[0](CLK:=P2M2_MachCtrl.WJ_b.TailCurlStart OR P2Btn.P2M2_Startbtn  , Q=> );//一号尾尾卷贴胶自动启动
+P2M2TJ_R_TRIG(CLK:=P2M2_MachCtrl.TJ_b.StickerStart_HMI OR P2Btn.P2M2_Startbtn , Q=> );//三号尾尾卷自动启动
+IF P2M2_WJSysState.hmiAuto THEN
+	P2M2_WJSysState.FlgManua:=FALSE;//尾卷贴胶手动标志
+	P2M2_WJSysState.FlgAuto:=TRUE;//尾卷贴胶自动标志
+ELSE
+	P2M2_WJSysState.FlgManua:=TRUE;//尾卷贴胶手动标志
+	P2M2_WJSysState.FlgAuto:=FALSE;//尾卷贴胶自动标志	
+END_IF
+
+(**********************************************************************************************************三号叠台面板控制********************************************************************************************)
+P2M3_AutobtnR_TRIG(CLK:=P2Btn.P2M3_Autobtn , Q=> );//三号手自动切换上升沿
+P2M3_AutobtnF_TRIG(CLK:=P2Btn.P2M3_Autobtn , Q=> );//三号手自动切换下降沿
+IF P2M3_AutobtnR_TRIG.Q THEN
+	P2M3_DTSysState.hmiAuto:=TRUE;//叠台自动标志
+	P2M3_WJSysState.hmiAuto:=TRUE;//贴胶自动标志
+	//P2M3_DTSysState.bwindow:=TRUE;//触发弹窗
+END_IF
+IF P2M3_AutobtnF_TRIG.Q THEN
+	P2M3_DTSysState.hmiAuto:=FALSE;//叠台自动标志
+	P2M3_WJSysState.hmiAuto:=FALSE;//贴胶自动标志
+	P2M3_DTSysState.bwindow:=FALSE;//触发弹窗
+END_IF
+
+P2M3_DTSysState.bccdstate:=NOT P2M3_MachCtrl.DT_b.Error[20] AND ((NOT P2M3_Par.iModeEN.CCD_ChosesHMIEN AND 
+                           NOT P2M3_Par.iModeEN.DT_CCD_TwoModelEN AND NOT P2M3_Par.iModeEN.DT_OverhangEN) OR P2M3_Par.iModeEN.EmptyRunModeEN);
+P2M3_MachCtrl.DT_b.DT_Start:=(*P2M3_DTSysState.hmiStart OR *) P2Btn.P2M3_Startbtn ;//系统启动
+P2M3_sysControl.btn.System_Rrestbtn:=stSysState.hmiReset OR P2Btn.P2M3_Resetebtn ;//系统复位
+
+//三号叠台
+P2M3DT_R_TRIG[0](CLK:=(*P2M3_DTSysState.hmiStart OR*) P2Btn.P2M3_Startbtn , Q=> );//三号叠台自动启动
+IF (*P2M3_DTSysState.hmiAuto*)P2Btn.P2M3_Autobtn THEN
+	P2M3_DTSysState.FlgManua:=FALSE;//叠台手动标志
+	P2M3_DTSysState.FlgAuto:=TRUE;//叠台自动标志
+ELSE
+	P2M3_DTSysState.FlgManua:=TRUE;//叠台手动标志
+	P2M3_DTSysState.FlgAuto:=FALSE;//叠台自动标志	
+END_IF
+IF P2M3DT_R_TRIG[0].Q THEN
+	IF NOT P2M3_MachCtrl.DT_b.DiaphragmPartNumberOK AND NOT P2M3_MachCtrl.DT_b.PartNumberOff THEN
+		P2M3_MachCtrl.DT_b.Error_tips[1]:=TRUE ;   //叠台3隔膜料号未OK
+	ELSE
+		P2M3_MachCtrl.DT_b.Error_tips[1]:=FALSE ;   //叠台3隔膜料号未OK
+	END_IF
+	IF NOT P2M3_MachCtrl.DT_b.BluePartNumberOK AND NOT P2M3_MachCtrl.DT_b.PartNumberOff THEN
+		P2M3_MachCtrl.DT_b.Error_tips[2]:=TRUE ;   //叠台3蓝胶料号未OK
+	ELSE
+		P2M3_MachCtrl.DT_b.Error_tips[2]:=FALSE ;   //叠台3蓝胶料号未OK
+	END_IF
+END_IF
+
+
+//三号尾卷贴胶自动启动
+P2M3WJ_R_TRIG[0](CLK:=P2M3_MachCtrl.WJ_b.TailCurlStart OR P2Btn.P2M3_Startbtn  , Q=> );//三号尾尾卷自动启动
+P2M3TJ_R_TRIG(CLK:=P2M3_MachCtrl.TJ_b.StickerStart_HMI OR P2Btn.P2M3_Startbtn  , Q=> );//三号尾尾卷自动启动
+
+IF P2M3_WJSysState.hmiAuto THEN
+	P2M3_WJSysState.FlgManua:=FALSE;//尾卷贴胶手动标志
+	P2M3_WJSysState.FlgAuto:=TRUE;//尾卷贴胶自动标志
+ELSE
+	P2M3_WJSysState.FlgManua:=TRUE;//尾卷贴胶手动标志
+	P2M3_WJSysState.FlgAuto:=FALSE;//尾卷贴胶自动标志	
+END_IF
+
+
+//TON20(IN:=stSysState.btnReset AND stSysState.btnStop , PT:=T#5S , Q=> , ET=> ); //长按复位和停止5秒系统复位
+
+CASE iMainSetp OF 
+		0:// 初始化
+					Init();
+					stSysState.iMode:=0;
+				 IF  stSysState.bInitDone THEN
+					 iMainSetp:=88;	
+				  END_IF
+		88:  //1号、2号、3号叠台切换手动模式
+			IF P2M1_DTSysState.FlgManua AND P2Btn.P2M1_EmStopbtn1 THEN//一号叠台
+				P2M1_Step0:=300;
+			END_IF
+			IF P2M1_WJSysState.FlgManua AND P2Btn.P2M1_EmStopbtn1 THEN//一号尾卷
+				P2M1_Step1:=300;
+				P2M1_Step2:=300;
+			END_IF			
+		
+	
+			IF P2M2_DTSysState.FlgManua AND P2Btn.P2M2_EmStopbtn1 THEN//二号叠台
+				P2M2_Step0:=300;
+			END_IF
+			IF P2M2_WJSysState.FlgManua AND P2Btn.P2M2_EmStopbtn1 THEN//二号尾卷
+				P2M2_Step1:=300;
+				P2M2_Step2:=300;
+			END_IF
+			
+			
+			IF P2M3_DTSysState.FlgManua AND P2Btn.P2M3_EmStopbtn1 THEN//三号叠台
+				P2M3_Step0:=300;
+			END_IF  
+  			IF P2M3_WJSysState.FlgManua AND P2Btn.P2M3_EmStopbtn1 THEN//三号尾卷
+				P2M3_Step1:=300;
+				P2M3_Step2:=300;
+			END_IF  
+
+			(*
+ (************************急停********************************) 
+400://Stoping
+   stSysState.iMode:=4;
+    P2M1_EStop();  
+   iMainSetp:=450;  
+      
+450: //急停跳出 
+	IF  NOT  stSysState.btnEstop   THEN  
+        tonEStop(IN:=FALSE , PT:=T#50MS );
+	    iMainSetp:=0;
+    ELSE
+         tonEStop(IN:=TRUE , PT:=T#50MS );
+         IF  tonEStop.Q THEN
+              tonEStop(IN:=FALSE , PT:=T#50MS );
+              iMainSetp:=400;   
+         END_IF
+   	 END_IF
+*)
+END_CASE
+
+(**************************************************************************************一号叠台******************************************************************************)
+CASE  P2M1_Step0 OF
+		300://手动状态
+				P2M1_MachCtrl.U.DT_iMode:=3;//手动状态
+				P2M1_Step0:=310;
+		310://等待切换到自动启动  
+				IF  P2M1_DTSysState.FlgAuto AND P2M1_MachCtrl.DT_b.ALLIniti_Done AND NOT P2M1_DTSysState.bErrorStop 
+					AND  P2M1_MachCtrl.DT_b.DiaphragmPartNumberOK (*AND P2M1_MachCtrl.DT_b.BluePartNumberOK  *)THEN//在自动下、在轴回原点完成、没有报警
+							IF P2M1DT_R_TRIG[0].Q THEN
+								P2M1_DTSysState.bwindow:=TRUE;//触发弹窗
+								P2M1_Step0:=315;
+							END_IF
+				END_IF
+				
+		315:
+				IF  P2M1_DTSysState.FlgAuto AND P2M1_MachCtrl.DT_b.ALLIniti_Done AND NOT P2M1_DTSysState.bErrorStop 
+					AND  P2M1_MachCtrl.DT_b.DiaphragmPartNumberOK AND P2M1_DTSysState.bccdstate  THEN//在自动下、在轴回原点完成、没有报警
+							IF P2M1DT_R_TRIG[0].Q AND NOT P2M1_DTSysState.bwindow  THEN
+								P2M1_MachCtrl.U.DT_iMode:=1;//自动状态
+								P2M1_Step0:=320;
+							END_IF
+							
+				ELSIF P2M1_DTSysState.FlgManua OR P2M1_DTSysState.bErrorStop OR NOT P2M1_DTSysState.bccdstate  THEN//
+					P2M1_DTSysState.hmiAuto:=FALSE;
+					P2M1_Step0:=300;		
+				END_IF		    
+				
+				
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M1_DTSysState.FlgManua OR P2M1_DTSysState.bErrorStop OR P2Btn.P2M1_Stopbtn  THEN//
+					P2M1_DTSysState.hmiAuto:=FALSE;
+					P2M1_Step0:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		   P2M1_MachCtrl.U.DT_iMode:=4;
+			P2M1_EStop();  
+		   P2M1_Step0:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M1_EmStopbtn1   THEN  
+				P2M1_tonEStop1(IN:=FALSE , PT:=T#50MS );
+				P2M1_Step0:=300;
+			ELSE
+				 P2M1_tonEStop1(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M1_tonEStop1.Q THEN
+					  P2M1_tonEStop1(IN:=FALSE , PT:=T#50MS );
+					  P2M1_Step0:=400;   
+				 END_IF
+			 END_IF						
+				
+				
+				
+END_CASE
+(**************************************************************************************一号尾卷******************************************************************************)
+CASE  P2M1_Step1 OF
+		300://手动状态
+				P2M1_MachCtrl.U.WJ_iMode:=3;//手动状态
+				P2M1_Step1:=310;
+		310://等待切换到自动启动
+				IF  P2M1_WJSysState.FlgAuto AND P2M1_MachCtrl.WJ_b.WZIniti_Done  AND NOT P2M1_WJSysState.bErrorStop THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M1WJ_R_TRIG[0].Q THEN  
+						P2M1_MachCtrl.U.WJ_iMode:=1;//自动状态
+						P2M1_Step1:=320;
+					END_IF
+				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M1_WJSysState.FlgManua OR P2M1_WJSysState.bErrorStop  THEN
+					P2M1_Step1:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		   P2M1_MachCtrl.U.WJ_iMode:=4;
+			P2M1_EStop();  
+		   P2M1_Step1:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M1_EmStopbtn1   THEN  
+				P2M1_tonEStop2(IN:=FALSE , PT:=T#50MS );
+				P2M1_Step1:=300;
+			ELSE
+				 P2M1_tonEStop1(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M1_tonEStop1.Q THEN
+					  P2M1_tonEStop1(IN:=FALSE , PT:=T#50MS );
+					  P2M1_Step1:=400;   
+				 END_IF
+			 END_IF						
+END_CASE
+(**************************************************************************************一号贴胶******************************************************************************)
+CASE  P2M1_Step2 OF
+		300://手动状态
+				P2M1_MachCtrl.U.TJ_iMode:=3;//手动状态
+				P2M1_Step2:=310;
+		310://等待切换到自动启动
+				IF  P2M1_WJSysState.FlgAuto AND P2M1_MachCtrl.TJ_b.TJIniti_Done AND NOT P2M1_WJSysState.bErrorStop THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M1TJ_R_TRIG.Q THEN
+						P2M1_MachCtrl.U.TJ_iMode:=1;//自动状态
+						P2M1_Step2:=320;
+					END_IF
+				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M1_WJSysState.FlgManua OR P2M1_WJSysState.bErrorStop  THEN
+					P2M1_Step2:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		   P2M1_MachCtrl.U.TJ_iMode:=4;
+			P2M1_EStop();  
+		   P2M1_Step2:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M1_EmStopbtn1   THEN  
+				P2M1_tonEStop3(IN:=FALSE , PT:=T#50MS );
+				P2M1_Step2:=300;
+			ELSE
+				 P2M1_tonEStop3(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M1_tonEStop3.Q THEN
+					  P2M1_tonEStop3(IN:=FALSE , PT:=T#50MS );
+					  P2M1_Step2:=400;   
+				 END_IF
+			 END_IF						
+				
+END_CASE
+
+
+
+
+(*************************************************************************************	二号叠台******************************************************************************)
+CASE  P2M2_Step0 OF
+		300://手动态
+				P2M2_MachCtrl.U.DT_iMode:=3;//手动状态
+				P2M2_Step0:=310;
+		310://等待切换到自动启动
+				IF  P2M2_DTSysState.FlgAuto AND P2M2_MachCtrl.DT_b.ALLIniti_Done AND NOT P2M2_DTSysState.bErrorStop  
+					AND  P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK (*AND P2M2_MachCtrl.DT_b.BluePartNumberOK *)	THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M2DT_R_TRIG[0].Q THEN
+						P2M2_DTSysState.bwindow:=TRUE;//触发弹窗
+						P2M2_Step0:=315;
+					END_IF
+				END_IF
+		315://等待切换到自动启动
+				IF  P2M2_DTSysState.FlgAuto AND P2M2_MachCtrl.DT_b.ALLIniti_Done AND NOT P2M2_DTSysState.bErrorStop  
+					AND  P2M2_MachCtrl.DT_b.DiaphragmPartNumberOK AND P2M2_DTSysState.bccdstate 	THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M2DT_R_TRIG[0].Q AND NOT P2M2_DTSysState.bwindow THEN
+						P2M2_MachCtrl.U.DT_iMode:=1;//自动状态
+						P2M2_Step0:=320;
+					END_IF	
+				ELSIF P2M2_DTSysState.FlgManua OR P2M2_DTSysState.bErrorStop OR NOT  P2M2_DTSysState.bccdstate  THEN
+					P2M2_DTSysState.hmiAuto:=FALSE;
+					P2M2_Step0:=300;	
+				END_IF				
+				
+				
+				
+				
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M2_DTSysState.FlgManua OR P2M2_DTSysState.bErrorStop OR P2Btn.P2M2_Stopbtn THEN
+					P2M2_Step0:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		  	P2M2_MachCtrl.U.DT_iMode:=4;
+			P2M2_EStop();  
+		   	P2M2_Step0:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT P2Btn.P2M2_EmStopbtn1   THEN  
+				P2M2_tonEStop1(IN:=FALSE , PT:=T#50MS );
+				P2M2_Step0:=300;
+			ELSE
+				 P2M2_tonEStop1(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M2_tonEStop1.Q THEN
+					  P2M2_tonEStop1(IN:=FALSE , PT:=T#50MS );
+					  P2M2_Step0:=400;   
+				 END_IF
+			 END_IF						
+								
+				
+				
+END_CASE
+(**************************************************************************************二号尾卷******************************************************************************)
+CASE  P2M2_Step1 OF
+		300://2
+				P2M2_MachCtrl.U.WJ_iMode:=3;//手动状态
+				P2M2_Step1:=310;
+		310://等待切换到自动启动
+				IF  P2M2_WJSysState.FlgAuto AND P2M2_MachCtrl.WJ_b.WZIniti_Done  AND NOT P2M2_WJSysState.bErrorStop THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M2WJ_R_TRIG[0].Q THEN
+						P2M2_MachCtrl.U.WJ_iMode:=1;//自动状态
+						P2M2_Step1:=320;
+					END_IF				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M2_WJSysState.FlgManua OR P2M2_WJSysState.bErrorStop  THEN
+					P2M2_Step1:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		  	P2M2_MachCtrl.U.WJ_iMode:=4;
+			P2M2_EStop();  
+		   	P2M2_Step1:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M2_EmStopbtn1   THEN  
+				P2M2_tonEStop2(IN:=FALSE , PT:=T#50MS );
+				P2M2_Step1:=300;
+			ELSE
+				 P2M2_tonEStop2(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M2_tonEStop2.Q THEN
+					  P2M2_tonEStop2(IN:=FALSE , PT:=T#50MS );
+					  P2M2_Step1:=400;   
+				 END_IF
+			 END_IF							
+END_CASE
+(**************************************************************************************二号贴胶******************************************************************************)
+CASE  P2M2_Step2 OF
+		300://2
+				P2M2_MachCtrl.U.TJ_iMode:=3;//手动状态
+				P2M2_Step2:=310;
+		310://等待切换到自动启动
+				IF  P2M2_WJSysState.FlgAuto AND P2M2_MachCtrl.TJ_b.TJIniti_Done AND NOT P2M2_WJSysState.bErrorStop THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M2TJ_R_TRIG.Q THEN
+						P2M2_MachCtrl.U.TJ_iMode:=1;//自动状态
+						P2M2_Step2:=320;
+					END_IF				
+				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M2_WJSysState.FlgManua OR P2M2_WJSysState.bErrorStop  THEN
+					P2M2_Step2:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		  	P2M2_MachCtrl.U.TJ_iMode:=4;
+			P2M2_EStop();  
+		   	P2M2_Step2:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M2_EmStopbtn1   THEN  
+				P2M2_tonEStop3(IN:=FALSE , PT:=T#50MS );
+				P2M2_Step2:=300;
+			ELSE
+				 P2M2_tonEStop3(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M2_tonEStop3.Q THEN
+					  P2M2_tonEStop3(IN:=FALSE , PT:=T#50MS );
+					  P2M2_Step2:=400;   
+				 END_IF
+			 END_IF						
+END_CASE
+
+
+(*************************************************************************************	三号叠台******************************************************************************)
+CASE  P2M3_Step0 OF
+		300://手动态
+				P2M3_MachCtrl.U.DT_iMode:=3;//手动状态
+				P2M3_Step0:=310;
+		310://等待切换到自动启动
+				IF  P2M3_DTSysState.FlgAuto AND P2M3_MachCtrl.DT_b.ALLIniti_Done AND NOT P2M3_DTSysState.bErrorStop 
+					AND  P2M3_MachCtrl.DT_b.DiaphragmPartNumberOK(* AND P2M3_MachCtrl.DT_b.BluePartNumberOK *) THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M3DT_R_TRIG[0].Q THEN
+						P2M3_DTSysState.bwindow:=TRUE;//触发弹
+						P2M3_Step0:=315;
+					END_IF
+				END_IF
+
+		315://等待切换到自动启动
+				IF  P2M3_DTSysState.FlgAuto AND P2M3_MachCtrl.DT_b.ALLIniti_Done AND NOT P2M3_DTSysState.bErrorStop 
+					AND  P2M3_MachCtrl.DT_b.DiaphragmPartNumberOK AND P2M3_DTSysState.bccdstate  THEN//在自动下、在轴回原点完成、没有报警
+					IF P2M3DT_R_TRIG[0].Q AND NOT P2M3_DTSysState.bwindow THEN
+						P2M3_MachCtrl.U.DT_iMode:=1;//自动状态
+						P2M3_Step0:=320;
+					END_IF
+					
+				ELSIF P2M3_DTSysState.FlgManua OR P2M3_DTSysState.bErrorStop OR NOT P2M3_DTSysState.bccdstate  THEN
+					P2M3_DTSysState.hmiAuto:=FALSE;
+					P2M3_Step0:=300;	
+				END_IF								
+				
+				
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M3_DTSysState.FlgManua OR P2M3_DTSysState.bErrorStop OR P2Btn.P2M3_Stopbtn THEN
+					P2M3_Step0:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		  	P2M3_MachCtrl.U.DT_iMode:=4;
+			P2M3_EStop();  
+		   	P2M3_Step0:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M3_EmStopbtn1   THEN  
+				P2M3_tonEStop1(IN:=FALSE , PT:=T#50MS );
+				P2M3_Step0:=300;
+			ELSE
+				 P2M3_tonEStop1(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M3_tonEStop1.Q THEN
+					  P2M3_tonEStop1(IN:=FALSE , PT:=T#50MS );
+					  P2M3_Step0:=400;   
+				 END_IF
+			 END_IF					
+END_CASE
+(**************************************************************************************三号尾卷******************************************************************************)
+CASE  P2M3_Step1 OF
+		300://
+				P2M3_MachCtrl.U.WJ_iMode:=3;//手动状态
+				P2M3_Step1:=310;
+		310://等待切换到自动启动
+				IF  P2M3_WJSysState.FlgAuto AND P2M3_MachCtrl.WJ_b.WZIniti_Done  AND NOT P2M3_WJSysState.bErrorStop  THEN//在自动下、在轴回原点完成、没有报警
+						IF P2M3WJ_R_TRIG[0].Q THEN
+							P2M3_MachCtrl.U.WJ_iMode:=1;//自动状态
+							P2M3_Step1:=320;
+						END_IF
+				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M3_WJSysState.FlgManua OR P2M3_WJSysState.bErrorStop  THEN
+					P2M3_Step1:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		  	P2M3_MachCtrl.U.WJ_iMode:=4;
+			P2M3_EStop();  
+		   	P2M3_Step1:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M3_EmStopbtn1   THEN  
+				P2M3_tonEStop2(IN:=FALSE , PT:=T#50MS );
+				P2M3_Step1:=300;
+			ELSE
+				 P2M3_tonEStop2(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M3_tonEStop2.Q THEN
+					  P2M3_tonEStop2(IN:=FALSE , PT:=T#50MS );
+					  P2M3_Step1:=400;   
+				 END_IF
+			 END_IF						
+END_CASE
+(**************************************************************************************三号贴胶******************************************************************************)
+CASE  P2M3_Step2 OF
+		300://
+				P2M3_MachCtrl.U.TJ_iMode:=3;//手动状态
+				P2M3_Step2:=310;
+		310://等待切换到自动启动
+				IF  P2M3_WJSysState.FlgAuto AND P2M3_MachCtrl.TJ_b.TJIniti_Done AND NOT P2M3_WJSysState.bErrorStop   THEN//在自动下、在轴回原点完成、没有报警
+						IF P2M3TJ_R_TRIG.Q THEN
+							P2M3_MachCtrl.U.TJ_iMode:=1;//自动状态
+							P2M3_Step2:=320;
+						END_IF
+				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF P2M3_WJSysState.FlgManua OR P2M3_WJSysState.bErrorStop  THEN
+					P2M3_Step2:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		  	P2M3_MachCtrl.U.TJ_iMode:=4;
+			P2M3_EStop();  
+		   	P2M3_Step2:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P2Btn.P2M3_EmStopbtn1   THEN  
+				P2M3_tonEStop3(IN:=FALSE , PT:=T#50MS );
+				P2M3_Step2:=300;
+			ELSE
+				 P2M3_tonEStop3(IN:=TRUE , PT:=T#50MS );
+				 IF  P2M3_tonEStop3.Q THEN
+					  P2M3_tonEStop3(IN:=FALSE , PT:=T#50MS );
+					  P2M3_Step2:=400;   
+				 END_IF
+			 END_IF					
+END_CASE
+
+//一号叠片急停
+IF  NOT P2Btn.P2M1_EmStopbtn1  THEN
+	P2M1_EStop();  
+	P2M1_Step0:=400;   
+	P2M1_Step1:=400;   
+	P2M1_Step2:=400;   
+END_IF
+//二号叠片急停
+IF  NOT P2Btn.P2M2_EmStopbtn1  THEN
+	P2M2_EStop();  
+	P2M2_Step0:=400;   
+	P2M2_Step1:=400;   
+	P2M2_Step2:=400;   
+END_IF
+//二号叠片急停
+IF  NOT P2Btn.P2M3_EmStopbtn1  THEN
+	P2M3_EStop();  
+	P2M3_Step0:=400;   
+	P2M3_Step1:=400;   
+	P2M3_Step2:=400;   
+END_IF
+
+
+(*
+IF   stSysState.btnEstop  AND  stSysState.iMode<>4  THEN  //
+	  iMainSetp:=400;
+      stSysState.bInitDone:=FALSE;
+      stSysState.bStopFinished :=FALSE;
+      stSysState.Stoping:=FALSE;
+END_IF
+*)
+
+(***************程序调用*********************)
+    Condition();
+    MotionBasic();
+    CyBasic();
+    P2M1Alarm();
+	P2M2Alarm();
+    P2M3Alarm();
+    Pusle();
+	DPDispatch();
+   // Auto();
+
+ // PRG_FileOperation();
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="Condition" Id="{e2926472-23c9-4b17-ae43-484d70996bfe}">
+      <Implementation>
+        <ST><![CDATA[FOR i:=1 TO 185 DO 
+   IF  i<>14 AND i<>60 AND i<>106 THEN	
+			IF arrAxisCtrl[i].Io.biNegLimit=TRUE THEN
+				arrAxisCtrl[i].Cmd.JogN_Condition:=FALSE;
+				ELSE
+				arrAxisCtrl[i].Cmd.JogN_Condition:=TRUE;
+			END_IF
+			IF arrAxisCtrl[i].Io.biPosLimit=TRUE   THEN
+				arrAxisCtrl[i].Cmd.JogP_Condition:=FALSE;
+				ELSE
+				arrAxisCtrl[i].Cmd.JogP_Condition:=TRUE;
+			END_IF
+	END_IF
+END_FOR
+
+YL_Q[20]:=arrAxisCtrl[2].Cmd.arrbRealPoint[4];//叠台一正极送片流水线安全点动条件
+YL_Q[21]:=arrAxisCtrl[10].Cmd.arrbRealPoint[1];//叠台一负极送片流水线安全点动条件 
+YL_Q[22]:=arrAxisCtrl[48].Cmd.arrbRealPoint[4];//叠台二正极送片流水线安全点动条件 
+YL_Q[23]:=arrAxisCtrl[56].Cmd.arrbRealPoint[1];//叠台二负极送片流水线安全点动条件 
+YL_Q[24]:=arrAxisCtrl[94].Cmd.arrbRealPoint[4];//叠台三正极送片流水线安全点动条件 
+YL_Q[25]:=arrAxisCtrl[102].Cmd.arrbRealPoint[1];//叠台三负极送片流水线安全点动条件
+//增加相应的自动启动条件
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="CyBasic" Id="{77ceec0a-c831-4bb8-9be6-4c7cf4119d92}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+//叠台1
+FOR i11[1]:=1 TO 10 DO//
+    fbCy[i11[1]](bReset:=stSysState.bReset ,AutoRun:=P2M1_MachCtrl.U.DT_iMode=1, stCyCtrl:=arrCyCtrl[i11[1]] );
+END_FOR
+   fbCy[89](bReset:=stSysState.bReset ,AutoRun:=P2M1_MachCtrl.U.WJ_iMode=1, stCyCtrl:=arrCyCtrl[89] );
+
+FOR i11[2]:=11 TO 28 DO//
+    fbCy[i11[2]](bReset:=stSysState.bReset ,AutoRun:=P2M1_MachCtrl.U.WJ_iMode=1, stCyCtrl:=arrCyCtrl[i11[2]] );
+END_FOR
+ 
+//叠台2  
+FOR i11[3]:=29 TO 38 DO//
+    fbCy[i11[3]](bReset:=stSysState.bReset ,AutoRun:=P2M2_MachCtrl.U.DT_iMode=1, stCyCtrl:=arrCyCtrl[i11[3]] );
+END_FOR
+FOR i11[4]:=39 TO 56 DO//
+    fbCy[i11[4]](bReset:=stSysState.bReset ,AutoRun:=P2M2_MachCtrl.U.WJ_iMode=1, stCyCtrl:=arrCyCtrl[i11[4]] );
+END_FOR
+ fbCy[90](bReset:=stSysState.bReset ,AutoRun:=P2M2_MachCtrl.U.WJ_iMode=1, stCyCtrl:=arrCyCtrl[90] ); 
+ 
+//叠台3
+FOR i11[5]:=57 TO 66 DO//
+    fbCy[i11[5]](bReset:=stSysState.bReset ,AutoRun:=P2M3_MachCtrl.U.DT_iMode=1, stCyCtrl:=arrCyCtrl[i11[5]] );
+END_FOR
+FOR i11[6]:=67 TO 88 DO//
+    fbCy[i11[6]](bReset:=stSysState.bReset ,AutoRun:=P2M3_MachCtrl.U.WJ_iMode=1, stCyCtrl:=arrCyCtrl[i11[6]] );
+END_FOR
+fbCy[91](bReset:=stSysState.bReset ,AutoRun:=P2M3_MachCtrl.U.WJ_iMode=1, stCyCtrl:=arrCyCtrl[91] ); 
+  
+
+FOR i11[7]:=92 TO 229 DO//
+    fbCy[i11[7]](bReset:=stSysState.bReset ,AutoRun:=, stCyCtrl:=arrCyCtrl[i11[7]] );
+END_FOR
+(*
+//气缸控制   刷新周期可以慢
+FOR i:=1 TO MaxP2Cy DO//
+    fbCy[i](bReset:=stSysState.bReset , stCyCtrl:=arrCyCtrl[i] );
+END_FOR
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="DPDispatch" Id="{1812855a-1a39-4ba9-a18f-2f004c925cd7}">
+      <Implementation>
+        <ST><![CDATA[//20240504 CF
+fMinTime:=MIN(P2M1_Par.stDT_date.SinglePosTime,P2M2_Par.stDT_date.SinglePosTime,P2M3_Par.stDT_date.SinglePosTime);
+
+bDiffVel[1]:=P2M1_Par.stDT_date.SinglePosTime>fMinTime OR arrAxisCtrl[P2M1_Axise.VirAxisName.VirMain].Cmd.fOverride<100;//叠台1叠片速度不同标志位
+bDiffVel[2]:=P2M2_Par.stDT_date.SinglePosTime>fMinTime OR arrAxisCtrl[P2M2_Axise.VirAxisName.VirMain].Cmd.fOverride<100;//叠台2叠片速度不同标志位
+bDiffVel[3]:=P2M3_Par.stDT_date.SinglePosTime>fMinTime OR arrAxisCtrl[P2M3_Axise.VirAxisName.VirMain].Cmd.fOverride<100;//叠台3叠片速度不同标志位
+
+IF iSyncStep=0 THEN
+	IF P2User1_Par.bSyncMode=1 THEN
+		iSyncStep:=100;
+	ELSE
+		P2M1_MachCtrl.DTRunStatus.bSyncStart:=TRUE;
+		P2M2_MachCtrl.DTRunStatus.bSyncStart:=TRUE;
+		P2M3_MachCtrl.DTRunStatus.bSyncStart:=TRUE;
+	END_IF
+END_IF
+
+IF iSyncStep=100 THEN//复位启动信号
+	P2M1_MachCtrl.DTRunStatus.bSyncStart:=FALSE;
+	P2M2_MachCtrl.DTRunStatus.bSyncStart:=FALSE;
+	P2M3_MachCtrl.DTRunStatus.bSyncStart:=FALSE;
+	iSyncStep:=200;
+END_IF
+		
+IF iSyncStep=200 THEN//判断是否同步准备好或者放弃同步
+	IF (P2M1_MachCtrl.DTRunStatus.bSyncReady OR P2M1_MachCtrl.DTRunStatus.bJumpSync) 
+			AND  (P2M2_MachCtrl.DTRunStatus.bSyncReady OR P2M2_MachCtrl.DTRunStatus.bJumpSync)
+			AND  (P2M3_MachCtrl.DTRunStatus.bSyncReady OR P2M3_MachCtrl.DTRunStatus.bJumpSync) THEN
+			iSyncStep:=300;
+	END_IF
+END_IF
+	
+IF iSyncStep=300 THEN//开始同步启动
+	P2M1_MachCtrl.DTRunStatus.bSyncStart S=P2M1_MachCtrl.DTRunStatus.bSyncReady;
+	P2M2_MachCtrl.DTRunStatus.bSyncStart S=P2M2_MachCtrl.DTRunStatus.bSyncReady;
+	P2M3_MachCtrl.DTRunStatus.bSyncStart S=P2M3_MachCtrl.DTRunStatus.bSyncReady;
+	iSyncStep:=400;
+END_IF
+
+IF iSyncStep=400 THEN//启动完成
+	IF 	NOT P2M1_MachCtrl.DTRunStatus.bSyncStart AND NOT P2M2_MachCtrl.DTRunStatus.bSyncStart
+		AND NOT P2M3_MachCtrl.DTRunStatus.bSyncStart THEN
+		iSyncStep:=200;
+	END_IF
+END_IF
+
+
+
+
+
+P2M1_MachCtrl.DTRunStatus.ReadyAllow2;//模切给叠台1正极允许取料信号-------调度用
+(*
+(**********************************************叠片调度程序****************************************************)
+P2M1AutoRuning:=P2M1_MachCtrl.DTRunStatus.DT_AutoRuning;//叠台1自动运行中
+P2M2AutoRuning:=P2M2_MachCtrl.DTRunStatus.DT_AutoRuning;//叠台2自动运行中
+P2M3AutoRuning:=P2M3_MachCtrl.DTRunStatus.DT_AutoRuning;//叠台3自动运行中
+
+P2M1ReadyTemp:=P2M1_MachCtrl.DTRunStatus.DT_ReadyTemp;//叠台1输出取片准备好信号
+P2M2ReadyTemp:=P2M2_MachCtrl.DTRunStatus.DT_ReadyTemp;//叠台2输出取片准备好信号
+P2M3ReadyTemp:=P2M3_MachCtrl.DTRunStatus.DT_ReadyTemp;//叠台3输出取片准备好信号
+
+P2M1_MachCtrl.DTRunStatus.DT_ReadyAllow:=P2M1ReadyAllow;//模切调度让叠台1容许取片信号
+P2M2_MachCtrl.DTRunStatus.DT_ReadyAllow:=P2M2ReadyAllow;//模切调度让叠台2容许取片信号
+P2M3_MachCtrl.DTRunStatus.DT_ReadyAllow:=P2M3ReadyAllow;//模切调度让叠台3容许取片信号
+
+P2M1_MachCtrl.DTRunStatus.ReadyAllow2;//模切给叠台1正极允许取料信号-------调度用
+//P2M2_MachCtrl.DTRunStatus.ReadyAllow2;//模切给叠台1正极允许取料信号-------调度用
+//P2M3_MachCtrl.DTRunStatus.ReadyAllow2;//模切给叠台1正极允许取料信号-------调度用
+
+P2M1_MachCtrl.DT_b.iDTRunStatus;
+iDispatchMode;  //调度模式
+
+//
+IF P2M1_MachCtrl.An_b.AN_BeltDone THEN//DT1信号复位
+	P2M1ReadyAllow:=FALSE;
+END_IF
+IF P2M2_MachCtrl.An_b.AN_BeltDone THEN//DT2信号复位
+	P2M2ReadyAllow:=FALSE;
+END_IF
+IF P2M3_MachCtrl.An_b.AN_BeltDone THEN//DT3信号复位
+	P2M3ReadyAllow:=FALSE;
+END_IF
+
+
+
+
+
+   (*****************************当前叠台运行中状态******************************************)
+       IF  P2M1AutoRuning  AND NOT  P2M2AutoRuning   AND NOT  P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=1;
+       ELSIF  NOT P2M1AutoRuning  AND   P2M2AutoRuning   AND NOT  P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=2;
+       ELSIF  NOT P2M1AutoRuning  AND NOT  P2M2AutoRuning   AND   P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=3;		   
+       ELSIF   P2M1AutoRuning  AND   P2M2AutoRuning   AND  NOT  P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=12;				   
+       ELSIF   P2M1AutoRuning  AND  NOT P2M2AutoRuning   AND    P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=13;			   
+       ELSIF  NOT P2M1AutoRuning  AND   P2M2AutoRuning   AND    P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=23;			   
+       ELSIF   P2M1AutoRuning  AND   P2M2AutoRuning   AND    P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=123;			  
+       ELSIF  NOT  P2M1AutoRuning  AND NOT  P2M2AutoRuning   AND  NOT  P2M3AutoRuning  THEN 
+		   iDPAutoRuningSEL:=0;			   
+	END_IF
+iDispatchMode:=TRUE;
+CASE  iDispatchSetp   OF
+0:   
+	IF iDispatchMode  THEN  //     空跑模式是不是强制给调度信号
+		IF  P2M1_MachCtrl.DTRunStatus.ReadyAllow2  AND NOT P2M1ReadyAllow   AND NOT P2M2ReadyAllow  AND NOT P2M3ReadyAllow   THEN
+			iDispatchSetp:=100;   //调度模式
+		END_IF     
+	ELSE
+		iDispatchSetp:=500;  //独立模式
+	END_IF
+
+100:
+	FOR i:=1 TO 7 DO
+		tDecideTim[i].IN :=FALSE;
+	END_FOR
+       IF iDPAutoRuningSEL=1 THEN
+             iDispatchSetp:=110;
+	ELSIF  iDPAutoRuningSEL=2 THEN	  
+		   iDispatchSetp:=120;
+	ELSIF  iDPAutoRuningSEL=3 THEN	  
+		   iDispatchSetp:=130;		  
+	ELSIF  iDPAutoRuningSEL=12 THEN	  
+		   iDispatchSetp:=140;		  
+	ELSIF  iDPAutoRuningSEL=13 THEN	  
+		   iDispatchSetp:=150;
+	ELSIF  iDPAutoRuningSEL=23 THEN	  
+		   iDispatchSetp:=160;
+	ELSIF  iDPAutoRuningSEL=123 THEN      
+		   iDispatchSetp:=170;	  
+	ELSIF  iDPAutoRuningSEL=0 THEN	  
+		   iDispatchSetp:=0;	  	   
+    	END_IF
+   
+ 110:// iDPAutoRuningSEL=1
+	IF  P2M1ReadyTemp THEN
+		P2M1ReadyAllow:=TRUE;  
+		iDispatchSetp:=111;
+	ELSIF   iDPAutoRuningSEL<>1 THEN
+		 iDispatchSetp:=0;
+	END_IF
+ 111:
+ 	tDecideTim[1](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M1ReadyAllow  THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+	ELSIF tDecideTim[1].Q THEN
+		IF P2M1ReadyAllow  THEN//超时，当前周期放弃取片//AND P2M1AutoRuning
+			P2M1ReadyAllow:=FALSE;
+			tDecideTim[1](IN:=FALSE);
+			iDispatchSetp:=0;
+			//P2M1_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF 
+	END_IF
+
+ 120:// iDPAutoRuningSEL=2
+	IF  P2M2ReadyTemp THEN
+		P2M2ReadyAllow:=TRUE;  
+		iDispatchSetp:=121;
+	ELSIF   iDPAutoRuningSEL<>2 THEN
+		iDispatchSetp:=0;
+	END_IF
+ 121:
+ 	tDecideTim[2](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M2ReadyAllow  THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+	ELSIF tDecideTim[2].Q THEN
+		IF P2M2ReadyAllow  THEN//AND P2M2AutoRuning
+			tDecideTim[2](IN:=FALSE);
+			iDispatchSetp:=0;
+			//P2M2_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF 
+	END_IF
+
+	
+ 130:// iDPAutoRuningSEL=3
+	IF  P2M3ReadyTemp THEN
+		P2M3ReadyAllow:=TRUE;  
+		iDispatchSetp:=131;
+	ELSIF   iDPAutoRuningSEL<>3 THEN
+		iDispatchSetp:=0;
+	END_IF
+ 131:
+ 	tDecideTim[3](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M3ReadyAllow  THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+	ELSIF tDecideTim[3].Q THEN
+		IF P2M3ReadyAllow  THEN//AND P2M3AutoRuning
+			//P2M3_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+			tDecideTim[3](IN:=FALSE);
+			iDispatchSetp:=0;	
+		END_IF 
+	END_IF	
+	
+	
+ 140:// iDPAutoRuningSEL=12
+	IF  P2M1ReadyTemp  AND  P2M2ReadyTemp   THEN
+		P2M1ReadyAllow:=TRUE;  
+		P2M2ReadyAllow:=TRUE;  
+		iDispatchSetp:=141;
+	ELSIF   iDPAutoRuningSEL<>12 THEN
+		iDispatchSetp:=0;
+	END_IF 
+ 141:
+ 	tDecideTim[4](IN:=TRUE  , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M1ReadyAllow   AND  NOT  P2M2ReadyAllow   THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+	ELSIF tDecideTim[4].Q THEN
+		IF P2M1ReadyAllow  THEN
+			P2M1ReadyAllow:=FALSE;
+			//P2M1_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF P2M2ReadyAllow THEN
+			P2M2ReadyAllow:=FALSE;
+			//P2M2_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF NOT  P2M1ReadyAllow   AND  NOT  P2M2ReadyAllow   THEN    //如果没有复位怎么办？
+			tDecideTim[4](IN:=FALSE );
+			iDispatchSetp:=0;
+		END_IF
+	END_IF		
+	
+ 150:// iDPAutoRuningSEL=13
+	IF  P2M1ReadyTemp  AND  P2M3ReadyTemp   THEN
+		P2M1ReadyAllow:=TRUE;  
+		P2M3ReadyAllow:=TRUE;  
+		iDispatchSetp:=151;
+	ELSIF   iDPAutoRuningSEL<>13 THEN
+		iDispatchSetp:=0;
+	END_IF
+ 151:
+ 	tDecideTim[5](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M1ReadyAllow   AND  NOT  P2M3ReadyAllow   THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+	ELSIF tDecideTim[5].Q THEN 
+		IF P2M1ReadyAllow  THEN
+			P2M1ReadyAllow:=FALSE;
+			//P2M1_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF P2M3ReadyAllow THEN
+			P2M3ReadyAllow:=FALSE;
+			//P2M3_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF NOT  P2M1ReadyAllow   AND  NOT  P2M3ReadyAllow   THEN    //如果没有复位怎么办？
+			tDecideTim[5](IN:=FALSE );
+			iDispatchSetp:=0;
+		END_IF
+	END_IF			
+
+ 160:// iDPAutoRuningSEL=23
+	IF  P2M2ReadyTemp  AND  P2M3ReadyTemp   THEN
+		P2M2ReadyAllow:=TRUE;  
+		P2M3ReadyAllow:=TRUE;  
+		iDispatchSetp:=161;
+	ELSIF   iDPAutoRuningSEL<>23 THEN
+		iDispatchSetp:=0;
+	END_IF
+ 161:
+ 	tDecideTim[6](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M2ReadyAllow   AND  NOT  P2M3ReadyAllow   THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+
+	ELSIF tDecideTim[6].Q THEN
+		IF P2M2ReadyAllow  THEN
+			P2M2ReadyAllow:=FALSE;
+			//P2M2_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF P2M3ReadyAllow THEN
+			P2M3ReadyAllow:=FALSE;
+			//P2M3_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF NOT  P2M2ReadyAllow   AND  NOT  P2M3ReadyAllow   THEN    //如果没有复位怎么办？
+			tDecideTim[6](IN:=FALSE );
+			iDispatchSetp:=0;
+		END_IF
+
+	END_IF		
+	
+	
+ 170:// iDPAutoRuningSEL=123
+	IF  P2M1ReadyTemp  AND  P2M2ReadyTemp  AND  P2M3ReadyTemp  THEN
+		P2M1ReadyAllow:=TRUE;  
+		P2M2ReadyAllow:=TRUE;  
+		P2M3ReadyAllow:=TRUE;  
+		iDispatchSetp:=171;
+	ELSIF   iDPAutoRuningSEL<>123 THEN
+		iDispatchSetp:=0;
+	END_IF
+   
+ 171:
+ 	tDecideTim[7](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF  NOT  P2M1ReadyAllow   AND  NOT  P2M2ReadyAllow    AND  NOT  P2M3ReadyAllow      THEN    //如果没有复位怎么办？
+		iDispatchSetp:=0;
+	ELSIF tDecideTim[7].Q THEN
+		IF P2M1ReadyAllow  THEN
+			P2M1ReadyAllow:=FALSE;
+			//P2M1_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF P2M2ReadyAllow  THEN
+			P2M2ReadyAllow:=FALSE;
+			//P2M2_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF P2M3ReadyAllow THEN
+			P2M3ReadyAllow:=FALSE;
+			//P2M3_MachCtrl.DT_b.Error[63]:=TRUE ;//叠台卡流程
+		END_IF
+		IF NOT  P2M1ReadyAllow AND NOT  P2M2ReadyAllow   AND  NOT  P2M3ReadyAllow   THEN    //如果没有复位怎么办？
+			tDecideTim[7](IN:=FALSE );
+			iDispatchSetp:=0;
+		END_IF
+	END_IF			
+	
+
+
+500:
+	P2M1ReadyAllow:=TRUE;
+	P2M2ReadyAllow:=TRUE;
+	P2M3ReadyAllow:=TRUE;
+	iDispatchSetp:=0;
+END_CASE
+*)
+;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Init" Id="{7ac58c4b-5964-4af8-8022-f3c1cbdb1158}">
+      <Implementation>
+        <ST><![CDATA[
+//整机初始化
+(**
+1.P1INIT  
+2.P2INIT
+3.P3INIT
+4.P4INIT
+5.缓存凸轮表创建
+6.Time轴跑速度模式
+*)
+
+CASE iMainInitSetp OF
+0:
+    IF  NOT   stSysState.bInitDone THEN
+         iMainInitSetp:=10;
+    END_IF
+10:
+    FOR i:=1 TO MaxAxes DO 
+		arrAxisCtrl[i].Cmd.bEnable:=TRUE;
+		arrAxisCtrl[i].Cmd.bEnableFw:=TRUE;
+		arrAxisCtrl[i].Cmd.bEnableBw:=TRUE;
+	(*其他操作指令*)  
+		arrAxisCtrl[i].Cmd.bHome:=FALSE;
+		arrAxisCtrl[i].Cmd.bJog_Bw:=FALSE;
+		arrAxisCtrl[i].Cmd.bHalt:=FALSE;
+		arrAxisCtrl[i].Cmd.bJog_Fw:=FALSE;
+		arrAxisCtrl[i].Cmd.bMoveAbs:=FALSE;
+		arrAxisCtrl[i].Cmd.bMoveVelo:=FALSE;
+		arrAxisCtrl[i].Cmd.bMoveRel:=FALSE;
+		arrAxisCtrl[i].Cmd.bReset:=FALSE;
+		arrAxisCtrl[i].Cmd.bStop:=FALSE;
+		arrAxisCtrl[i].Cmd.bSetPos:=FALSE;
+		IF i=6 OR i=7 OR i=8 OR i=17 OR i=18 OR i=19 OR i=52 OR i=53 OR i=54 OR i=63 OR i=64 OR 
+			i=65 OR i=98 OR i=99 OR i=100 OR i=109 OR i=110 OR i=111  THEN
+				arrAxisCtrl[i].Cmd.Axis_R:=0.05;
+		ELSE
+				arrAxisCtrl[i].Cmd.Axis_R:=0.15;
+		END_IF
+    END_FOR
+      //stP4CutCtrl.bServON:=TRUE;  //P4切刀上使能
+    K1:=0;
+    iMainInitSetp:=20;
+20: //复位一次
+   bInitReset:=TRUE;
+   iMainInitSetp:=30;
+30:
+   K1:=K1+1;
+   IF  K1>=10 THEN
+        bInitReset:=FALSE;
+        iMainInitSetp:=40;
+   ELSE
+     iMainInitSetp:=20;
+   END_IF
+
+40://P1---P4 Init
+  P2M1_MachCtrl.U.P2Init:=TRUE;
+   P2M2_MachCtrl.U.P2Init:=TRUE;
+  P2M3_MachCtrl.U.P2Init:=TRUE;
+   P2M1_MachCtrl.U.P2InitDone:=FALSE;
+   P2M2_MachCtrl.U.P2InitDone:=FALSE;
+   P2M3_MachCtrl.U.P2InitDone:=FALSE;
+   iMainInitSetp:=42;
+42:
+   IF  P2M1_MachCtrl.U.P2InitDone AND   P2M2_MachCtrl.U.P2InitDone  AND P2M3_MachCtrl.U.P2InitDone   THEN //AND   stSysState.bP2InitDone  AND  stSysState.bP3InitDone AND   stSysState.bP4InitDone 	   
+		 P2M1_MachCtrl.U.P2Init:=FALSE;
+		 P2M2_MachCtrl.U.P2Init:=FALSE;
+   		P2M3_MachCtrl.U.P2Init:=FALSE;
+        iMainInitSetp:=50;
+    END_IF
+
+50: //复位一次
+   bInitReset:=TRUE;
+   iMainInitSetp:=54;
+
+54: //Time 轴跑速度
+  IF  arrAxis[VirAxisNo.P2M1_VirTimeWind].Status.ControlLoopClosed THEN
+	  arrAxisPar[VirAxisNo.P2M1_VirTimeWind].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2M1_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+  END_IF
+   IF  arrAxis[VirAxisNo.P2M1_VirGM].Status.ControlLoopClosed THEN
+	  arrAxisPar[VirAxisNo.P2M1_VirGM].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2M1_VirGM].Cmd.bMoveVelo:=TRUE;
+  END_IF
+  
+    IF  arrAxis[VirAxisNo.P2M2_VirTimeWind].Status.ControlLoopClosed THEN
+	  arrAxisPar[VirAxisNo.P2M2_VirTimeWind].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2M2_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+	END_IF
+	 IF  arrAxis[VirAxisNo.P2M2_VirGM].Status.ControlLoopClosed THEN
+	  arrAxisPar[VirAxisNo.P2M2_VirGM].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2M2_VirGM].Cmd.bMoveVelo:=TRUE;
+  END_IF
+	
+	
+	IF  arrAxis[VirAxisNo.P2M3_VirTimeWind].Status.ControlLoopClosed THEN
+	  arrAxisPar[VirAxisNo.P2M3_VirTimeWind].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2M3_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+	END_IF
+   IF  arrAxis[VirAxisNo.P2M3_VirGM].Status.ControlLoopClosed THEN
+	  arrAxisPar[VirAxisNo.P2M3_VirGM].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2M3_VirGM].Cmd.bMoveVelo:=TRUE;
+  END_IF
+	
+	bInitReset:=FALSE;
+	 iMainInitSetp:=55;
+55:
+   IF arrAxis[VirAxisNo.P2M1_VirTimeWind].Status.ConstantVelocity AND arrAxis[VirAxisNo.P2M2_VirTimeWind].Status.ConstantVelocity AND arrAxis[VirAxisNo.P2M3_VirTimeWind].Status.ConstantVelocity  AND
+       arrAxis[VirAxisNo.P2M1_VirGM].Status.ConstantVelocity    AND arrAxis[VirAxisNo.P2M2_VirGM].Status.ConstantVelocity  AND arrAxis[VirAxisNo.P2M3_VirGM].Status.ConstantVelocity   THEN
+        stSysState.bInitDone:=TRUE;
+        iMainInitSetp:=0;
+  END_IF
+
+END_CASE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="MotionBasic" Id="{fb8630d6-0a10-4874-9e9a-39faae64df62}">
+      <Implementation>
+        <ST><![CDATA[//伺服电机
+//叠台1
+FOR i10[1]:=1 TO 30 DO
+	arrAxisPar[i10[1]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[1]](bReset:=stSysState.bReset ,AutoRun:=P2M1_MachCtrl.U.DT_iMode=1, Axis:=arrAxis[i10[1]] , stAxisCtrl:=arrAxisCtrl[i10[1]] , stAxisPar:=arrAxisPar[i10[1]] ); 
+END_FOR
+FOR i10[2]:=31 TO 46 DO
+	arrAxisPar[i10[2]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[2]](bReset:=stSysState.bReset ,AutoRun:=P2M1_MachCtrl.U.WJ_iMode=1, Axis:=arrAxis[i10[2]] , stAxisCtrl:=arrAxisCtrl[i10[2]] , stAxisPar:=arrAxisPar[i10[2]] ); 
+END_FOR
+
+//叠台2
+FOR i10[3]:=47 TO 76 DO
+	arrAxisPar[i10[3]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[3]](bReset:=stSysState.bReset ,AutoRun:=P2M2_MachCtrl.U.DT_iMode=1, Axis:=arrAxis[i10[3]] , stAxisCtrl:=arrAxisCtrl[i10[3]] , stAxisPar:=arrAxisPar[i10[3]] ); 
+END_FOR
+FOR i10[4]:=77 TO 92 DO
+	arrAxisPar[i10[4]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[4]](bReset:=stSysState.bReset ,AutoRun:=P2M2_MachCtrl.U.WJ_iMode=1, Axis:=arrAxis[i10[4]] , stAxisCtrl:=arrAxisCtrl[i10[4]] , stAxisPar:=arrAxisPar[i10[4]] ); 
+END_FOR
+//叠台3
+
+FOR i10[5]:=93 TO 122 DO
+	arrAxisPar[i10[5]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[5]](bReset:=stSysState.bReset ,AutoRun:=P2M3_MachCtrl.U.DT_iMode=1, Axis:=arrAxis[i10[5]] , stAxisCtrl:=arrAxisCtrl[i10[5]] , stAxisPar:=arrAxisPar[i10[5]] ); 
+END_FOR
+FOR i10[6]:=123TO 138 DO
+	arrAxisPar[i10[6]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[6]](bReset:=stSysState.bReset ,AutoRun:=P2M3_MachCtrl.U.WJ_iMode=1, Axis:=arrAxis[i10[6]] , stAxisCtrl:=arrAxisCtrl[i10[6]] , stAxisPar:=arrAxisPar[i10[6]] ); 
+END_FOR
+
+//虚轴备用
+FOR i10[7]:=139 TO 159 DO
+	arrAxisPar[i10[7]].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10[7]](bReset:=stSysState.bReset ,AutoRun:=, Axis:=arrAxis[i10[7]] , stAxisCtrl:=arrAxisCtrl[i10[7]] , stAxisPar:=arrAxisPar[i10[7]] ); 
+END_FOR
+
+(*FOR i10:=1 TO MaxP2Axes DO
+	arrAxisPar[i10].bLimitSwitchEn:=FALSE;//限位报警
+  	csAxis[i10](bReset:=stSysState.bReset , Axis:=arrAxis[i10] , stAxisCtrl:=arrAxisCtrl[i10] , stAxisPar:=arrAxisPar[i10] ); 
+END_FOR
+*)
+//一号叠台主轴参数
+arrAxisPar[141].fMaxAccDec:=200000;
+arrAxisPar[141].fMaxVel:=8000;
+arrAxisPar[141].fConVelPercentage:=0.92;
+//二号叠台主轴参数
+arrAxisPar[145].fMaxAccDec:=200000;
+arrAxisPar[145].fMaxVel:=8000;
+arrAxisPar[145].fConVelPercentage:=0.92;
+//三号叠台主轴参数
+arrAxisPar[149].fMaxAccDec:=200000;
+arrAxisPar[149].fMaxVel:=8000;
+arrAxisPar[149].fConVelPercentage:=0.92;
+
+FOR i:=1 TO Max_Dust DO
+  fbDustMotor[i](stSetpMotor:=arrDustMotor[i]);
+END_FOR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M1_EStop" Id="{d8f62bd2-8222-4d9d-8ce8-bb3d89eb5599}">
+      <Implementation>
+        <ST><![CDATA[
+//CASE iMainEStopSetp OF
+
+
+
+
+ FOR I1:=1 TO 46 BY 1 DO
+	arrAxisCtrl[I1].Cmd. bHome:=FALSE;
+	arrAxisCtrl[I1].Cmd. bJog_Bw:=FALSE;	
+	arrAxisCtrl[I1].Cmd. bJog_Fw:=FALSE;		
+    arrAxisCtrl[I1].Cmd. bMoveAbs:=FALSE;		
+    arrAxisCtrl[I1].Cmd. bMoveRel:=FALSE;	
+    arrAxisCtrl[I1].Cmd. bMoveVelo:=FALSE;		
+    arrAxisCtrl[I1].Cmd.bMoveModulo:=FALSE;	
+    arrAxisCtrl[I1].Cmd. bSetPos:=FALSE;	    	
+    arrAxisCtrl[I1].Cmd. iGoSetPos:=0;	  		
+	//arrAxisCtrl[I1].bEnable:=TRUE;
+	IF  arrAxisCtrl[I1].Status.Moving  AND NOT arrAxisCtrl[I1].Cmd.bStop   AND  NOT arrAxis[I1] .Status.Coupled THEN   //对运动中的轴执行STOP
+	    arrAxisCtrl[I1].Cmd. bStop:=TRUE;	
+	END_IF;		
+END_FOR;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M1Alarm" Id="{ee04bc42-ca03-4a9c-924a-e0da2283e387}">
+      <Implementation>
+        <ST><![CDATA[
+(*****************************************************************************************一号叠台**************************************************************************************************)
+//气缸报警
+FOR K1:=1 TO 10 DO 
+     arrCYOnAlarm[K1]:=  arrCyCtrl[K1] .Status.Error1;
+     arrCYOFFAlarm[K1]:=  arrCyCtrl[K1] .Status.Error2;
+END_FOR
+P2M1_DTCYHaveAlarm:=FALSE;
+FOR K1:=1 TO 10 DO 
+      P2M1_DTCYHaveAlarm:=P2M1_DTCYHaveAlarm OR arrCYOnAlarm[K1] OR  arrCYOFFAlarm[K1];
+END_FOR
+//轴报警
+FOR K1:=1 TO 30 DO 
+	  arrAxisAlarm[K1]:=arrAxis[K1] .Status.Error AND  arrAxis[K1] .Status.ErrorID<>16#42A0;
+END_FOR
+P2M1_DTAxisHaveAlarm:=FALSE;//复位轴报警
+FOR K1:=1 TO 30 DO 
+	   P2M1_DTAxisHaveAlarm:= P2M1_DTAxisHaveAlarm  OR arrAxisAlarm[K1] OR HMI_TorAlarm_D[K1];
+END_FOR
+
+P2M1_AnHaveAlarm:=FALSE;//复位正极取极片有报警
+P2M1_CaHaveAlarm:=FALSE;//复位负极取极片有报警
+P2M1_DTHaveAlarm:=FALSE;//复位叠台有报警
+P2M1_DoorAlarm:=false;//复位安全门报警
+FOR K1:=0 TO 80 DO 
+      P2M1_AnHaveAlarm:=P2M1_AnHaveAlarm OR P2M1_MachCtrl.An_b.Error[K1] ;
+	  P2M1_CaHaveAlarm:=P2M1_CaHaveAlarm OR P2M1_MachCtrl.Ca_b.Error[K1] ;
+	  P2M1_DTHaveAlarm:=P2M1_DTHaveAlarm OR P2M1_MachCtrl.DT_b.Error[K1];
+	  P2M1_DoorAlarm:=P2M1_DoorAlarm OR P2M1_MachCtrl.DT_b.Door_error[K1];
+END_FOR
+
+P2M1_MachCtrl.DT_b.Error[64]:=NOT P3User2_Par.Shield[5] AND NOT P2M1_MachCtrl.DT_b.DT_DebugMode AND (Mes1.Error[8] OR Mes1.Error[11] OR Mes1.Error[14] OR Mes1.Error[17] OR Mes1.Error[20] OR Mes1.Error[23]);//功能开关状态报警
+
+//P3_Error[59] 清洁报警
+P2M1_DTSysState.bErrorStop:=P2M1_DTCYHaveAlarm OR P2M1_DTAxisHaveAlarm OR P2M1_AnHaveAlarm OR P2M1_CaHaveAlarm OR P2M1_DTHaveAlarm OR 
+                            P2M1_DoorAlarm (*OR NOT P2M1_MachCtrl.DT_b.bTensionOK *)OR QY_error OR (AxisHandautomatic[1].error OR P3_Error[59] AND 
+                            NOT Axis_error[20] AND NOT Axis_error[21] AND NOT Axis_error[22] AND NOT Axis_error[23] AND NOT Axis_error[24] AND NOT Axis_error[14] ) ;
+
+(*****************************************************************************************一号尾卷贴胶**************************************************************************************************)
+//气缸报警
+P2M1_WJCYHaveAlarm:=FALSE;
+FOR K1:=10 TO 28 DO 
+      P2M1_WJCYHaveAlarm:=P2M1_WJCYHaveAlarm OR (arrCyCtrl[K1] .Status.Error1 AND K3<>13) OR  arrCyCtrl[K1] .Status.Error2;;
+END_FOR
+//轴报警
+P2M1_WJAxisHaveAlarm:=FALSE;//复位轴报警
+FOR K1:=10 TO 28 DO 
+      P2M1_WJAxisHaveAlarm:=P2M1_WJAxisHaveAlarm OR P2M1_WJAxisHaveAlarm OR (arrAxis[K1] .Status.Error AND  arrAxis[K1] .Status.ErrorID<>16#42A0) OR HMI_TorAlarm_D[K1] ;
+END_FOR
+
+
+P2M1_WJHaveAlarm:=FALSE;//复位尾卷有报警
+P2M1_TJHaveAlarm:=FALSE;//复位贴胶有报警
+FOR K1:=0 TO 29 DO 
+	  P2M1_WJHaveAlarm:=P2M1_WJHaveAlarm OR P2M1_MachCtrl.WJ_b.Error[K1];
+	  P2M1_TJHaveAlarm:=P2M1_TJHaveAlarm OR P2M1_MachCtrl.TJ_b.Error[K1];
+END_FOR
+
+P2M1_WJSysState.bErrorStop:=P2M1_WJCYHaveAlarm OR P2M1_WJAxisHaveAlarm OR P2M1_WJHaveAlarm OR P2M1_TJHaveAlarm OR P2M1_DoorAlarm OR QY_error OR  AxisHandautomatic[2].error;
+
+//三色灯
+IF P2M1_MachCtrl.DT_b.Overhang_Warm THEN
+	P2Btn.P2M1_Tricolorlamp_Red:=FALSE;
+	P2Btn.P2M1_Tricolorlamp_Yellow:=TRUE;
+	P2Btn.P2M1_Tricolorlamp_Green:=FALSE;	
+ELSE
+	IF P2M1_WJSysState.bErrorStop THEN
+		P2Btn.P2M1_Tricolorlamp_Red:=TRUE;
+		P2Btn.P2M1_Tricolorlamp_Yellow:=FALSE;
+		P2Btn.P2M1_Tricolorlamp_Green:=FALSE;
+	ELSIF P2M1_MachCtrl.U.DT_iMode=3 OR P2M1_MachCtrl.U.WJ_iMode=3 OR P2M1_MachCtrl.U.TJ_iMode=3 THEN
+		P2Btn.P2M1_Tricolorlamp_Red:=FALSE;
+		P2Btn.P2M1_Tricolorlamp_Yellow:=TRUE;
+		P2Btn.P2M1_Tricolorlamp_Green:=FALSE;	
+	ELSIF  P2M1_MachCtrl.U.DT_iMode=1 AND P2M1_MachCtrl.U.WJ_iMode=1 AND P2M1_MachCtrl.U.TJ_iMode=1 THEN
+		P2Btn.P2M1_Tricolorlamp_Red:=FALSE;
+		P2Btn.P2M1_Tricolorlamp_Yellow:=FALSE;
+		P2Btn.P2M1_Tricolorlamp_Green:=TRUE;		
+	END_IF
+END_IF
+
+rDoorAlarm[1](CLK:= P2M1_DoorAlarm AND NOT  P2M1_DTCYHaveAlarm AND NOT P2M1_DTAxisHaveAlarm AND NOT P2M1_AnHaveAlarm AND NOT P2M1_CaHaveAlarm
+                             AND NOT P2M1_DTHaveAlarm AND NOT QY_error AND NOT P2M1_DError);
+  IF rDoorAlarm[1].Q THEN
+	  P2M1_DError:=TRUE;
+  END_IF
+  
+  IF NOT P2M1_DTSysState.bErrorStop AND P2M1_DError THEN
+	  P2M1_DError:=FALSE;
+  END_IF
+(*
+//轴手动对比报警
+AxisHandautomatic[1](
+	Notmoing:=arrAxis[141].Status.NotMoving AND arrAxis[1].Status.NotMoving AND arrAxis[2].Status.NotMoving AND arrAxis[3].Status.NotMoving AND
+              arrAxis[4].Status.NotMoving AND arrAxis[5].Status.NotMoving AND arrAxis[6].Status.NotMoving AND arrAxis[7].Status.NotMoving AND 
+              arrAxis[8].Status.NotMoving AND arrAxis[9].Status.NotMoving AND arrAxis[10].Status.NotMoving  AND arrAxis[11].Status.NotMoving AND 
+              arrAxis[12].Status.NotMoving AND arrAxis[13].Status.NotMoving AND arrAxis[14].Status.NotMoving   AND arrAxis[15].Status.NotMoving AND 
+              arrAxis[16].Status.NotMoving  AND arrAxis[17].Status.NotMoving AND arrAxis[18].Status.NotMoving   AND arrAxis[19].Status.NotMoving AND 
+              arrAxis[20].Status.NotMoving  AND arrAxis[21].Status.NotMoving AND arrAxis[22].Status.NotMoving   AND arrAxis[23].Status.NotMoving AND 
+               arrAxis[24].Status.NotMoving  AND arrAxis[25].Status.NotMoving AND arrAxis[26].Status.NotMoving   AND arrAxis[27].Status.NotMoving AND 
+              arrAxis[28].Status.NotMoving AND arrAxis[29].Status.NotMoving AND arrAxis[30].Status.NotMoving,  
+	Run:=P2M1_DTSysState.hmiAuto , 
+	i:=1 , 
+	j:= 30, 
+	Reset:=P2M1_MachCtrl.DT_b.DTIniti_Hbtn , 
+	error=> );
+
+AxisHandautomatic[2](
+	Notmoing:=arrAxis[31].Status.NotMoving AND arrAxis[32].Status.NotMoving AND arrAxis[33].Status.NotMoving AND arrAxis[34].Status.NotMoving AND
+              arrAxis[35].Status.NotMoving AND arrAxis[36].Status.NotMoving AND arrAxis[37].Status.NotMoving AND arrAxis[38].Status.NotMoving AND 
+              arrAxis[39].Status.NotMoving AND arrAxis[40].Status.NotMoving AND arrAxis[41].Status.NotMoving AND arrAxis[42].Status.NotMoving AND 
+              arrAxis[43].Status.NotMoving AND arrAxis[44].Status.NotMoving  , 
+	Run:=P2M1_WJSysState.hmiAuto , 
+	i:=31 , 
+	j:= 14, 
+	Reset:=P2M1_MachCtrl.WJ_b.WZIniti_Hbtn OR  P2M1_MachCtrl.TJ_b.TJIniti_Hbtn, 
+	error=> );
+*)]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M2_EStop" Id="{7499748d-a2f0-4ce4-aa94-08fa876b4a0f}">
+      <Implementation>
+        <ST><![CDATA[ FOR I3:=47 TO 92 BY 1 DO
+	arrAxisCtrl[I3].Cmd. bHome:=FALSE;
+	arrAxisCtrl[I3].Cmd. bJog_Bw:=FALSE;	
+	arrAxisCtrl[I3].Cmd. bJog_Fw:=FALSE;		
+    arrAxisCtrl[I3].Cmd. bMoveAbs:=FALSE;		
+    arrAxisCtrl[I3].Cmd. bMoveRel:=FALSE;	
+    arrAxisCtrl[I3].Cmd. bMoveVelo:=FALSE;		
+    arrAxisCtrl[I3].Cmd.bMoveModulo:=FALSE;	
+    arrAxisCtrl[I3].Cmd. bSetPos:=FALSE;	    	
+    arrAxisCtrl[I3].Cmd. iGoSetPos:=0;	  		
+	//arrAxisCtrl[I1].bEnable:=TRUE;
+	IF  arrAxisCtrl[I3].Status.Moving  AND NOT arrAxisCtrl[I3].Cmd.bStop   AND  NOT arrAxis[I3] .Status.Coupled THEN   //对运动中的轴执行STOP
+	    arrAxisCtrl[I3].Cmd. bStop:=TRUE;	
+	END_IF;		
+END_FOR;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M2Alarm" Id="{376174c7-0405-4bec-b984-b8d9eb3e097c}">
+      <Implementation>
+        <ST><![CDATA[(*****************************************************************************************二号叠台**************************************************************************************************)
+//气缸报警
+FOR K2:=29 TO 38 DO 
+     arrCYOnAlarm[K2]:=  arrCyCtrl[K2] .Status.Error1;
+     arrCYOFFAlarm[K2]:=  arrCyCtrl[K2] .Status.Error2;
+END_FOR
+P2M2_DTCYHaveAlarm:=FALSE;//复位气缸报警
+FOR K2:=29 TO 38 DO 
+      P2M2_DTCYHaveAlarm:=P2M2_DTCYHaveAlarm OR (arrCYOnAlarm[K2]  AND K3<>41) OR  arrCYOFFAlarm[K2];
+END_FOR
+//轴报警
+FOR K2:=47 TO 76 DO 
+     arrAxisAlarm[K2]:=  arrAxis[K2] .Status.Error AND  arrAxis[K2] .Status.ErrorID<>16#42A0 ;
+END_FOR
+P2M2_DTAxisHaveAlarm:=FALSE;//复位轴报警
+FOR K2:=47 TO 76 DO 
+      P2M2_DTAxisHaveAlarm:=P2M2_DTAxisHaveAlarm OR arrAxisAlarm[K2] OR HMI_TorAlarm_D[K2];
+END_FOR
+
+P2M2_AnHaveAlarm:=FALSE;//复位正极取极片有报警
+P2M2_CaHaveAlarm:=FALSE;//复位负极取极片有报警
+P2M2_DTHaveAlarm:=FALSE;//复位叠台有报警
+P2M2_DoorAlarm:=false;//复位安全门报警
+FOR K2:=0 TO 80 DO 
+      P2M2_AnHaveAlarm:=P2M2_AnHaveAlarm OR P2M2_MachCtrl.An_b.Error[K2] ;
+	  P2M2_CaHaveAlarm:=P2M2_CaHaveAlarm OR P2M2_MachCtrl.Ca_b.Error[K2] ;
+	  P2M2_DTHaveAlarm:=P2M2_DTHaveAlarm OR P2M2_MachCtrl.DT_b.Error[K2];
+	  P2M2_DoorAlarm:=P2M2_DoorAlarm OR P2M2_MachCtrl.DT_b.Door_error[K2];
+END_FOR
+
+P2M2_MachCtrl.DT_b.Error[64]:=NOT P3User2_Par.Shield[5] AND NOT P2M2_MachCtrl.DT_b.DT_DebugMode AND (Mes1.Error[9] OR Mes1.Error[12] OR Mes1.Error[15] OR Mes1.Error[18] OR Mes1.Error[21] OR Mes1.Error[24]);//功能开关状态报警	
+
+//P3_Error[59] 清洁报警
+P2M2_DTSysState.bErrorStop:=P2M2_DTCYHaveAlarm OR P2M2_DTAxisHaveAlarm OR P2M2_AnHaveAlarm OR P2M2_CaHaveAlarm OR P2M2_DTHaveAlarm OR 
+                            P2M2_DoorAlarm (*OR NOT P2M2_MachCtrl.DT_b.bTensionOK *)OR QY_error OR ( AxisHandautomatic[3].error OR P3_Error[59] AND  
+                            NOT Axis_error[66] AND NOT Axis_error[67] AND NOT Axis_error[68] AND NOT Axis_error[69] AND NOT Axis_error[70] AND NOT Axis_error[60]);
+(*****************************************************************************************二号尾卷贴胶**************************************************************************************************)
+//气缸报警
+FOR K2:=38 TO 56 DO 
+     arrCYOnAlarm[K2]:=  arrCyCtrl[K2] .Status.Error1;
+     arrCYOFFAlarm[K2]:=  arrCyCtrl[K2] .Status.Error2;
+END_FOR
+P2M2_WJCYHaveAlarm:=FALSE;//复位气缸报警
+FOR K2:=38 TO 56 DO 
+      P2M2_WJCYHaveAlarm:=P2M2_WJCYHaveAlarm OR arrCYOnAlarm[K2] OR  arrCYOFFAlarm[K2];
+END_FOR
+//轴报警
+FOR K2:=77 TO 90 DO 
+     arrAxisAlarm[K2]:=  arrAxis[K2] .Status.Error AND  arrAxis[K2] .Status.ErrorID<>16#42A0 ;
+END_FOR
+P2M2_WJAxisHaveAlarm:=FALSE;//复位轴报警
+FOR K2:=77 TO 90 DO 
+      P2M2_WJAxisHaveAlarm:=P2M2_WJAxisHaveAlarm OR arrAxisAlarm[K2] OR HMI_TorAlarm_D[K2];
+END_FOR
+
+P2M2_WJHaveAlarm:=FALSE;//复位尾卷有报警
+P2M2_TJHaveAlarm:=FALSE;//复位贴胶有报警
+FOR K2:=0 TO 29 DO 
+	  P2M2_WJHaveAlarm:=P2M2_WJHaveAlarm OR P2M2_MachCtrl.WJ_b.Error[K2];
+	  P2M2_TJHaveAlarm:=P2M2_TJHaveAlarm OR P2M2_MachCtrl.TJ_b.Error[K2];
+END_FOR
+
+P2M2_WJSysState.bErrorStop:=P2M2_WJCYHaveAlarm OR P2M2_WJAxisHaveAlarm OR P2M2_WJHaveAlarm OR P2M2_TJHaveAlarm OR P2M2_DoorAlarm OR QY_error OR AxisHandautomatic[4].error; 
+
+//三色灯
+IF P2M2_MachCtrl.DT_b.Overhang_Warm THEN
+	P2Btn.P2M2_Tricolorlamp_Red:=FALSE;
+	P2Btn.P2M2_Tricolorlamp_Yellow:=TRUE;
+	P2Btn.P2M2_Tricolorlamp_Green:=FALSE;	
+ELSE
+	IF P2M2_WJSysState.bErrorStop THEN
+		P2Btn.P2M2_Tricolorlamp_Red:=TRUE;
+		P2Btn.P2M2_Tricolorlamp_Yellow:=FALSE;
+		P2Btn.P2M2_Tricolorlamp_Green:=FALSE;
+	ELSIF P2M2_MachCtrl.U.DT_iMode=3 OR P2M2_MachCtrl.U.WJ_iMode=3 OR P2M2_MachCtrl.U.TJ_iMode=3 THEN
+		P2Btn.P2M2_Tricolorlamp_Red:=FALSE;
+		P2Btn.P2M2_Tricolorlamp_Yellow:=TRUE;
+		P2Btn.P2M2_Tricolorlamp_Green:=FALSE;	
+	ELSIF  P2M2_MachCtrl.U.DT_iMode=1 AND P2M2_MachCtrl.U.WJ_iMode=1 AND P2M2_MachCtrl.U.TJ_iMode=1 THEN
+		P2Btn.P2M2_Tricolorlamp_Red:=FALSE;
+		P2Btn.P2M2_Tricolorlamp_Yellow:=FALSE;
+		P2Btn.P2M2_Tricolorlamp_Green:=TRUE;		
+	END_IF
+END_IF
+
+rDoorAlarm[2](CLK:= P2M2_DoorAlarm AND NOT  P2M2_DTCYHaveAlarm AND NOT P2M2_DTAxisHaveAlarm AND NOT P2M2_AnHaveAlarm AND NOT P2M2_CaHaveAlarm
+                             AND NOT P2M2_DTHaveAlarm AND NOT QY_error AND NOT P2M2_DError);
+  IF rDoorAlarm[2].Q THEN
+	  P2M2_DError:=TRUE;
+  END_IF
+  
+  IF NOT P2M2_DTSysState.bErrorStop AND P2M2_DError THEN
+	  P2M2_DError:=FALSE;
+  END_IF
+(*
+//轴手动对比报警
+AxisHandautomatic[3](
+	Notmoing:=arrAxis[145].Status.NotMoving AND arrAxis[47].Status.NotMoving AND arrAxis[48].Status.NotMoving AND arrAxis[49].Status.NotMoving AND
+              arrAxis[50].Status.NotMoving AND arrAxis[51].Status.NotMoving AND arrAxis[52].Status.NotMoving AND arrAxis[53].Status.NotMoving AND 
+              arrAxis[54].Status.NotMoving AND arrAxis[55].Status.NotMoving AND arrAxis[56].Status.NotMoving  AND arrAxis[57].Status.NotMoving AND 
+              arrAxis[58].Status.NotMoving AND arrAxis[59].Status.NotMoving AND arrAxis[60].Status.NotMoving   AND arrAxis[61].Status.NotMoving AND 
+              arrAxis[62].Status.NotMoving  AND arrAxis[63].Status.NotMoving AND arrAxis[64].Status.NotMoving   AND arrAxis[65].Status.NotMoving AND 
+              arrAxis[66].Status.NotMoving  AND arrAxis[67].Status.NotMoving AND arrAxis[68].Status.NotMoving   AND arrAxis[69].Status.NotMoving AND 
+               arrAxis[70].Status.NotMoving  AND arrAxis[71].Status.NotMoving AND arrAxis[72].Status.NotMoving   AND arrAxis[73].Status.NotMoving AND 
+              arrAxis[74].Status.NotMoving AND arrAxis[75].Status.NotMoving AND arrAxis[76].Status.NotMoving,  
+	Run:=P2M2_DTSysState.hmiAuto , 
+	i:=47 , 
+	j:= 30, 
+	Reset:=P2M2_MachCtrl.DT_b.DTIniti_Hbtn , 
+	error=> );
+
+AxisHandautomatic[4](
+	Notmoing:=arrAxis[77].Status.NotMoving AND arrAxis[78].Status.NotMoving AND arrAxis[79].Status.NotMoving AND arrAxis[80].Status.NotMoving AND
+              arrAxis[81].Status.NotMoving AND arrAxis[82].Status.NotMoving AND arrAxis[83].Status.NotMoving AND arrAxis[84].Status.NotMoving AND 
+              arrAxis[85].Status.NotMoving AND arrAxis[86].Status.NotMoving AND arrAxis[87].Status.NotMoving AND arrAxis[88].Status.NotMoving AND 
+              arrAxis[89].Status.NotMoving AND arrAxis[90].Status.NotMoving  , 	
+	Run:=P2M2_WJSysState.hmiAuto , 
+	i:=77 , 
+	j:= 14, 
+	Reset:=P2M2_MachCtrl.WJ_b.WZIniti_Hbtn OR  P2M2_MachCtrl.TJ_b.TJIniti_Hbtn, 
+	error=> );
+*)
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M3_EStop" Id="{98c88f4e-3723-4076-b118-6c4180373e73}">
+      <Implementation>
+        <ST><![CDATA[ FOR I6:=93 TO 138 BY 1 DO
+	arrAxisCtrl[I6].Cmd. bHome:=FALSE;
+	arrAxisCtrl[I6].Cmd. bJog_Bw:=FALSE;	
+	arrAxisCtrl[I6].Cmd. bJog_Fw:=FALSE;		
+    arrAxisCtrl[I6].Cmd. bMoveAbs:=FALSE;		
+    arrAxisCtrl[I6].Cmd. bMoveRel:=FALSE;	
+    arrAxisCtrl[I6].Cmd. bMoveVelo:=FALSE;		
+    arrAxisCtrl[I6].Cmd.bMoveModulo:=FALSE;	
+    arrAxisCtrl[I6].Cmd. bSetPos:=FALSE;	    	
+    arrAxisCtrl[I6].Cmd. iGoSetPos:=0;	  		
+	//arrAxisCtrl[I1].bEnable:=TRUE;
+	IF  arrAxisCtrl[I6].Status.Moving  AND NOT arrAxisCtrl[I6].Cmd.bStop   AND  NOT arrAxis[I6] .Status.Coupled THEN   //对运动中的轴执行STOP
+	    arrAxisCtrl[I6].Cmd. bStop:=TRUE;	
+	END_IF;		
+END_FOR;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="P2M3Alarm" Id="{b9981034-c94f-46fe-bfe8-606eaa915b5f}">
+      <Implementation>
+        <ST><![CDATA[(*****************************************************************************************三号叠台**************************************************************************************************)
+//气缸报警
+FOR K3:=57 TO 66 DO 
+     arrCYOnAlarm[K3]:=  arrCyCtrl[K3] .Status.Error1;
+     arrCYOFFAlarm[K3]:=  arrCyCtrl[K3] .Status.Error2;
+END_FOR
+P2M3_DTCYHaveAlarm:=FALSE;//复位气缸报警
+FOR K3:=57 TO 66 DO 
+      P2M3_DTCYHaveAlarm:=P2M3_DTCYHaveAlarm OR arrCYOnAlarm[K3] OR  arrCYOFFAlarm[K3];
+END_FOR
+//轴报警
+FOR K3:=93 TO 122 DO 
+     arrAxisAlarm[K3]:=  arrAxis[K3] .Status.Error AND  arrAxis[K3] .Status.ErrorID<>16#42A0 ;
+END_FOR
+P2M3_DTAxisHaveAlarm:=FALSE;//复位轴报警
+FOR K3:=93 TO 122 DO 
+      P2M3_DTAxisHaveAlarm:=P2M3_DTAxisHaveAlarm OR arrAxisAlarm[K3] OR HMI_TorAlarm_D[K3];
+END_FOR
+
+P2M3_AnHaveAlarm:=FALSE;//复位正极取极片有报警
+P2M3_CaHaveAlarm:=FALSE;//复位负极取极片有报警
+P2M3_DTHaveAlarm:=FALSE;//复位叠台有报警
+P2M3_DoorAlarm:=FALSE;//复位安全门报警
+FOR K3:=0 TO 80 DO 
+      P2M3_AnHaveAlarm:=P2M3_AnHaveAlarm OR P2M3_MachCtrl.An_b.Error[K3] ;
+	  P2M3_CaHaveAlarm:=P2M3_CaHaveAlarm OR P2M3_MachCtrl.Ca_b.Error[K3] ;
+	  P2M3_DTHaveAlarm:=P2M3_DTHaveAlarm OR P2M3_MachCtrl.DT_b.Error[K3];
+	  P2M3_DoorAlarm:=P2M3_DoorAlarm OR P2M3_MachCtrl.DT_b.Door_error[K3];
+END_FOR
+
+P2M3_MachCtrl.DT_b.Error[64]:=NOT P3User2_Par.Shield[5] AND NOT P2M3_MachCtrl.DT_b.DT_DebugMode AND  (Mes1.Error[10] OR Mes1.Error[13] OR Mes1.Error[16] OR Mes1.Error[19] OR Mes1.Error[22] OR Mes1.Error[25]);//功能开关状态报警
+
+//P3_Error[59] 清洁报警
+P2M3_DTSysState.bErrorStop:=P2M3_DTCYHaveAlarm OR P2M3_DTAxisHaveAlarm OR P2M3_AnHaveAlarm OR P2M3_CaHaveAlarm OR P2M3_DTHaveAlarm OR
+                            P2M3_DoorAlarm (*OR NOT P2M3_MachCtrl.DT_b.bTensionOK*) OR QY_error OR (AxisHandautomatic[5].error  OR P3_Error[59] AND 
+                            NOT Axis_error[112] AND NOT Axis_error[113] AND NOT Axis_error[114] AND NOT Axis_error[115] AND NOT Axis_error[116] AND NOT Axis_error[106]);
+(*****************************************************************************************三号尾卷贴胶**************************************************************************************************)
+//气缸报警
+FOR K3:=66 TO 85 DO 
+     arrCYOnAlarm[K3]:=  arrCyCtrl[K3] .Status.Error1;
+     arrCYOFFAlarm[K3]:=  arrCyCtrl[K3] .Status.Error2;
+END_FOR
+P2M3_WJCYHaveAlarm:=FALSE;//复位气缸报警
+FOR K3:=66 TO 85 DO 
+      P2M3_WJCYHaveAlarm:=P2M3_WJCYHaveAlarm OR (arrCYOnAlarm[K3] AND K3<>69) OR  arrCYOFFAlarm[K3];
+END_FOR
+//轴报警
+FOR K3:=123 TO 136 DO 
+     arrAxisAlarm[K3]:=  arrAxis[K3] .Status.Error AND  arrAxis[K3] .Status.ErrorID<>16#42A0 ;
+END_FOR
+P2M3_WJAxisHaveAlarm:=FALSE;//复位轴报警
+FOR K3:=123 TO 136 DO 
+      P2M3_WJAxisHaveAlarm:=P2M3_WJAxisHaveAlarm OR arrAxisAlarm[K3]OR HMI_TorAlarm_D[K3];
+END_FOR
+
+P2M3_WJHaveAlarm:=FALSE;//复位尾卷有报警
+P2M3_TJHaveAlarm:=FALSE;//复位贴胶有报警
+FOR K2:=0 TO 29 DO 
+	  P2M3_WJHaveAlarm:=P2M3_WJHaveAlarm OR P2M3_MachCtrl.WJ_b.Error[K2];
+	  P2M3_TJHaveAlarm:=P2M3_TJHaveAlarm OR P2M3_MachCtrl.TJ_b.Error[K2];
+END_FOR
+
+P2M3_WJSysState.bErrorStop:=P2M3_WJCYHaveAlarm OR P2M3_WJAxisHaveAlarm OR P2M3_WJHaveAlarm OR P2M3_TJHaveAlarm OR P2M3_DoorAlarm OR QY_error OR AxisHandautomatic[6].error;
+
+
+//三色灯
+IF P2M3_MachCtrl.DT_b.Overhang_Warm THEN
+	P2Btn.P2M3_Tricolorlamp_Red:=FALSE;
+	P2Btn.P2M3_Tricolorlamp_Yellow:=TRUE;
+	P2Btn.P2M3_Tricolorlamp_Green:=FALSE;	
+ELSE
+	IF P2M3_WJSysState.bErrorStop THEN
+		P2Btn.P2M3_Tricolorlamp_Red:=TRUE;
+		P2Btn.P2M3_Tricolorlamp_Yellow:=FALSE;
+		P2Btn.P2M3_Tricolorlamp_Green:=FALSE;
+	ELSIF P2M3_MachCtrl.U.DT_iMode=3 OR P2M3_MachCtrl.U.WJ_iMode=3 OR P2M3_MachCtrl.U.TJ_iMode=3 THEN
+		P2Btn.P2M3_Tricolorlamp_Red:=FALSE;
+		P2Btn.P2M3_Tricolorlamp_Yellow:=TRUE;
+		P2Btn.P2M3_Tricolorlamp_Green:=FALSE;	
+	ELSIF  P2M3_MachCtrl.U.DT_iMode=1 AND P2M3_MachCtrl.U.WJ_iMode=1 AND P2M3_MachCtrl.U.TJ_iMode=1 THEN
+		P2Btn.P2M3_Tricolorlamp_Red:=FALSE;
+		P2Btn.P2M3_Tricolorlamp_Yellow:=FALSE;
+		P2Btn.P2M3_Tricolorlamp_Green:=TRUE;		
+	END_IF
+END_IF
+
+rDoorAlarm[3](CLK:= P2M3_DoorAlarm AND NOT  P2M3_DTCYHaveAlarm AND NOT P2M3_DTAxisHaveAlarm AND NOT P2M3_AnHaveAlarm AND NOT P2M3_CaHaveAlarm
+                             AND NOT P2M3_DTHaveAlarm AND NOT QY_error AND NOT P2M3_DError);
+  IF rDoorAlarm[3].Q THEN
+	  P2M3_DError:=TRUE;
+  END_IF
+  
+  IF NOT P2M3_DTSysState.bErrorStop AND P2M3_DError THEN
+	  P2M3_DError:=FALSE;
+  END_IF
+
+(*
+//轴手动对比报警
+AxisHandautomatic[5](
+	Notmoing:=arrAxis[149].Status.NotMoving AND arrAxis[93].Status.NotMoving AND arrAxis[94].Status.NotMoving AND arrAxis[95].Status.NotMoving AND
+              arrAxis[96].Status.NotMoving AND arrAxis[97].Status.NotMoving AND arrAxis[98].Status.NotMoving AND arrAxis[99].Status.NotMoving AND 
+              arrAxis[100].Status.NotMoving AND arrAxis[101].Status.NotMoving AND arrAxis[102].Status.NotMoving  AND arrAxis[103].Status.NotMoving AND 
+              arrAxis[104].Status.NotMoving AND arrAxis[105].Status.NotMoving AND arrAxis[106].Status.NotMoving   AND arrAxis[107].Status.NotMoving AND 
+              arrAxis[108].Status.NotMoving  AND arrAxis[109].Status.NotMoving AND arrAxis[110].Status.NotMoving   AND arrAxis[111].Status.NotMoving AND 
+              arrAxis[112].Status.NotMoving  AND arrAxis[113].Status.NotMoving AND arrAxis[114].Status.NotMoving   AND arrAxis[115].Status.NotMoving AND 
+               arrAxis[116].Status.NotMoving  AND arrAxis[117].Status.NotMoving AND arrAxis[118].Status.NotMoving   AND arrAxis[119].Status.NotMoving AND 
+              arrAxis[120].Status.NotMoving AND arrAxis[121].Status.NotMoving AND arrAxis[122].Status.NotMoving,  
+	Run:=P2M3_DTSysState.hmiAuto , 
+	i:=93 , 
+	j:= 30, 
+	Reset:=P2M3_MachCtrl.DT_b.DTIniti_Hbtn , 
+	error=> );
+
+AxisHandautomatic[6](
+	Notmoing:=arrAxis[123].Status.NotMoving AND arrAxis[124].Status.NotMoving AND arrAxis[125].Status.NotMoving AND arrAxis[126].Status.NotMoving AND
+              arrAxis[127].Status.NotMoving AND arrAxis[128].Status.NotMoving AND arrAxis[129].Status.NotMoving AND arrAxis[130].Status.NotMoving AND 
+              arrAxis[131].Status.NotMoving AND arrAxis[132].Status.NotMoving AND arrAxis[133].Status.NotMoving AND arrAxis[134].Status.NotMoving AND 
+              arrAxis[135].Status.NotMoving AND arrAxis[136].Status.NotMoving  , 		
+	Run:=P2M3_WJSysState.hmiAuto , 
+	i:=123 , 
+	j:= 14, 
+	Reset:=P2M3_MachCtrl.WJ_b.WZIniti_Hbtn OR  P2M3_MachCtrl.TJ_b.TJIniti_Hbtn, 
+	error=> );
+	*)]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Pusle" Id="{68750299-f42d-4f2a-9f43-16bde33b084d}">
+      <Implementation>
+        <ST><![CDATA[(*
+/////////////////////////////////////////时钟脉冲////////////////////////////////////////////////////////////
+//fbPulseCtrl1(PT_OFF:=T#2MS, PT_ON:=T#2MS, Q=>, RT=>);
+fbPulseCtrl[1](PT_OFF:=T#2MS, PT_ON:=T#2MS,   );
+fbPulseCtrl[2](PT_OFF:=T#4MS, PT_ON:=T#4MS,    );
+fbPulseCtrl[3](PT_OFF:=T#10MS, PT_ON:=T#10MS,   );
+
+fbPulseCtrl[4](PT_OFF:=T#300MS, PT_ON:=T#300MS,   );
+fbPulseCtrl[5](PT_OFF:=T#3S, PT_ON:=T#3S,    );
+fbPulseCtrl[6](PT_OFF:=T#5S, PT_ON:=T#5S,   );
+fbPulseCtrl[7](PT_OFF:=T#10S, PT_ON:=T#10S,  );
+fbPulseCtrl[8](PT_OFF:=T#250MS, PT_ON:=T#250MS,   );
+
+fbPulseCtrl[9](PT_OFF:=T#2S, PT_ON:=T#200MS,   );
+
+fbPulseCtrl[1].Q;
+fbPulseCtrl[1].RT;
+fbPulseCtrl[2].Q;
+fbPulseCtrl[2].RT;
+fbPulseCtrl[3].Q;
+fbPulseCtrl[3].RT;
+fbPulseCtrl[4].Q;
+fbPulseCtrl[4].RT;
+fbPulseCtrl[5].Q;
+fbPulseCtrl[5].RT;
+fbPulseCtrl[6].Q;
+fbPulseCtrl[6].RT;
+fbPulseCtrl[7].Q;
+fbPulseCtrl[7].RT;
+fbPulseCtrl[8].Q;
+fbPulseCtrl[8].RT;
+
+
+IF bWaterOn AND ( bWaterOn2   OR    ABS( arrAxisCtrl[P1AxisNo.GMWind_U].Status.fActVelo)>=5 AND  ABS (arrAxisCtrl[P1AxisNo.GMWind_D].Status.fActVelo)>=5 )   THEN
+  //P3EL2889S[3,5]:= fbPulseCtrl[9].Q;
+   P1EL2889S[3,1]:= fbPulseCtrl[9].Q;
+   P1EL2889S[3,2]:= fbPulseCtrl[9].Q;
+
+   P2EL2889S[4,1]:=fbPulseCtrl[9].Q	;	
+   P2EL2889S[4,2]:=fbPulseCtrl[9].Q;	
+
+   P2EL2889S[4,3]:=fbPulseCtrl[9].Q	;	
+   P2EL2889S[4,4]:=fbPulseCtrl[9].Q;	
+
+ELSE
+  //P3EL2889S[3,5]:= FALSE;
+   P1EL2889S[3,1]:= FALSE;
+   P1EL2889S[3,2]:= FALSE;
+   P2EL2889S[4,1]:= FALSE	;	
+   P2EL2889S[4,2]:= FALSE;	
+
+   P2EL2889S[4,3]:=FALSE	;	
+   P2EL2889S[4,4]:=FALSE;	
+END_IF
+
+
+//P1EL2889S[3,1]
+
+
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="MainState">
+      <LineId Id="3801" Count="27" />
+      <LineId Id="5165" Count="0" />
+      <LineId Id="5167" Count="2" />
+      <LineId Id="5166" Count="0" />
+      <LineId Id="3829" Count="4" />
+      <LineId Id="5171" Count="2" />
+      <LineId Id="5170" Count="0" />
+      <LineId Id="3834" Count="4" />
+      <LineId Id="5176" Count="2" />
+      <LineId Id="5174" Count="1" />
+      <LineId Id="3839" Count="17" />
+      <LineId Id="4600" Count="0" />
+      <LineId Id="3857" Count="0" />
+      <LineId Id="4596" Count="0" />
+      <LineId Id="4594" Count="0" />
+      <LineId Id="4598" Count="1" />
+      <LineId Id="4597" Count="0" />
+      <LineId Id="4595" Count="0" />
+      <LineId Id="3858" Count="6" />
+      <LineId Id="4764" Count="0" />
+      <LineId Id="3865" Count="3" />
+      <LineId Id="4765" Count="0" />
+      <LineId Id="3869" Count="2" />
+      <LineId Id="4998" Count="0" />
+      <LineId Id="3872" Count="16" />
+      <LineId Id="4581" Count="1" />
+      <LineId Id="3889" Count="2" />
+      <LineId Id="4583" Count="1" />
+      <LineId Id="3892" Count="26" />
+      <LineId Id="4767" Count="0" />
+      <LineId Id="3919" Count="3" />
+      <LineId Id="4768" Count="0" />
+      <LineId Id="3923" Count="0" />
+      <LineId Id="4771" Count="0" />
+      <LineId Id="3924" Count="0" />
+      <LineId Id="4999" Count="0" />
+      <LineId Id="3925" Count="13" />
+      <LineId Id="4585" Count="1" />
+      <LineId Id="3939" Count="2" />
+      <LineId Id="4587" Count="1" />
+      <LineId Id="3942" Count="19" />
+      <LineId Id="4769" Count="0" />
+      <LineId Id="3962" Count="3" />
+      <LineId Id="4770" Count="0" />
+      <LineId Id="3966" Count="0" />
+      <LineId Id="4772" Count="0" />
+      <LineId Id="3967" Count="0" />
+      <LineId Id="5000" Count="0" />
+      <LineId Id="3968" Count="14" />
+      <LineId Id="4589" Count="1" />
+      <LineId Id="3983" Count="2" />
+      <LineId Id="4591" Count="1" />
+      <LineId Id="3986" Count="82" />
+      <LineId Id="4773" Count="0" />
+      <LineId Id="4070" Count="2" />
+      <LineId Id="4774" Count="1" />
+      <LineId Id="4779" Count="2" />
+      <LineId Id="4783" Count="4" />
+      <LineId Id="4791" Count="0" />
+      <LineId Id="4790" Count="0" />
+      <LineId Id="4778" Count="0" />
+      <LineId Id="4776" Count="1" />
+      <LineId Id="4073" Count="107" />
+      <LineId Id="4797" Count="0" />
+      <LineId Id="4182" Count="2" />
+      <LineId Id="4798" Count="3" />
+      <LineId Id="4803" Count="2" />
+      <LineId Id="4807" Count="0" />
+      <LineId Id="4809" Count="0" />
+      <LineId Id="4808" Count="0" />
+      <LineId Id="4792" Count="4" />
+      <LineId Id="4185" Count="102" />
+      <LineId Id="4814" Count="0" />
+      <LineId Id="4289" Count="2" />
+      <LineId Id="4810" Count="0" />
+      <LineId Id="4823" Count="3" />
+      <LineId Id="4828" Count="4" />
+      <LineId Id="4834" Count="0" />
+      <LineId Id="4833" Count="0" />
+      <LineId Id="4811" Count="2" />
+      <LineId Id="4292" Count="130" />
+      <LineId Id="5349" Count="0" />
+      <LineId Id="4423" Count="10" />
+      <LineId Id="207" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.Condition">
+      <LineId Id="18" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="19" Count="9" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="2" Count="3" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="6" Count="11" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.CyBasic">
+      <LineId Id="2" Count="0" />
+      <LineId Id="50" Count="1" />
+      <LineId Id="53" Count="30" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="3" Count="45" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.DPDispatch">
+      <LineId Id="483" Count="44" />
+      <LineId Id="479" Count="0" />
+      <LineId Id="528" Count="2" />
+      <LineId Id="480" Count="0" />
+      <LineId Id="477" Count="0" />
+      <LineId Id="204" Count="271" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="476" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.Init">
+      <LineId Id="2" Count="31" />
+      <LineId Id="124" Count="4" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="34" Count="19" />
+      <LineId Id="55" Count="2" />
+      <LineId Id="59" Count="2" />
+      <LineId Id="110" Count="2" />
+      <LineId Id="62" Count="10" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="134" Count="2" />
+      <LineId Id="129" Count="1" />
+      <LineId Id="115" Count="1" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="139" Count="2" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="137" Count="1" />
+      <LineId Id="119" Count="2" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="142" Count="2" />
+      <LineId Id="132" Count="1" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="76" Count="1" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="78" Count="30" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.MotionBasic">
+      <LineId Id="4" Count="0" />
+      <LineId Id="153" Count="33" />
+      <LineId Id="152" Count="0" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="81" Count="1" />
+      <LineId Id="141" Count="2" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="145" Count="2" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="148" Count="1" />
+      <LineId Id="85" Count="16" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.P2M1_EStop">
+      <LineId Id="2" Count="19" />
+      <LineId Id="23" Count="14" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.P2M1Alarm">
+      <LineId Id="564" Count="29" />
+      <LineId Id="682" Count="0" />
+      <LineId Id="594" Count="0" />
+      <LineId Id="684" Count="0" />
+      <LineId Id="595" Count="27" />
+      <LineId Id="663" Count="0" />
+      <LineId Id="666" Count="1" />
+      <LineId Id="664" Count="0" />
+      <LineId Id="668" Count="0" />
+      <LineId Id="670" Count="11" />
+      <LineId Id="669" Count="0" />
+      <LineId Id="665" Count="0" />
+      <LineId Id="690" Count="0" />
+      <LineId Id="685" Count="0" />
+      <LineId Id="691" Count="0" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="692" Count="5" />
+      <LineId Id="636" Count="26" />
+      <LineId Id="400" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.P2M2_EStop">
+      <LineId Id="2" Count="13" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.P2M2Alarm">
+      <LineId Id="114" Count="28" />
+      <LineId Id="229" Count="1" />
+      <LineId Id="143" Count="33" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="227" Count="1" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="177" Count="12" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="231" Count="8" />
+      <LineId Id="190" Count="28" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.P2M3_EStop">
+      <LineId Id="2" Count="13" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.P2M3Alarm">
+      <LineId Id="156" Count="29" />
+      <LineId Id="270" Count="0" />
+      <LineId Id="186" Count="34" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="268" Count="1" />
+      <LineId Id="266" Count="0" />
+      <LineId Id="262" Count="0" />
+      <LineId Id="221" Count="12" />
+      <LineId Id="267" Count="0" />
+      <LineId Id="271" Count="0" />
+      <LineId Id="273" Count="7" />
+      <LineId Id="272" Count="0" />
+      <LineId Id="234" Count="27" />
+      <LineId Id="155" Count="0" />
+    </LineIds>
+    <LineIds Name="MainState.Pusle">
+      <LineId Id="2" Count="72" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

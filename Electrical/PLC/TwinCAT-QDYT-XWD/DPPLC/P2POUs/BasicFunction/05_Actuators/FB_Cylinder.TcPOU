@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Cylinder" Id="{5a8a82a3-10b3-4181-ab8f-d8f59e64a773}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Cylinder
+VAR_INPUT
+	bReset:BOOL;
+	AutoRun:BOOL;//自动
+END_VAR
+VAR_IN_OUT
+	stCyCtrl:ST_CyCtrl;
+END_VAR
+
+VAR
+	ton:ARRAY [1..10] OF TON;
+	rt:ARRAY [1..10] OF R_TRIG;
+	step:INT ;
+	rRun : R_TRIG;
+	fRun: F_TRIG;
+	sTON:  TON;
+	Handautomark:BOOL;//手自动对比标志
+	Pause1:BOOL ; //手自动对比位置
+	Pause2:BOOL ; //手自动对比位置
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stCyCtrl.Cmd.bFree THEN//泄压
+	stCyCtrl.Cmd.bON:=stCyCtrl.Io.DOStatus1:=FALSE;
+	stCyCtrl.Cmd.bOFF:=stCyCtrl.Io.DOStatus2:=FALSE;
+	stCyCtrl.Cmd.bFree:=FALSE;
+ELSIF stCyCtrl.Cmd.bOFF AND stCyCtrl.Cmd.OffCondition THEN//关
+	stCyCtrl.Io.DOStatus2:=TRUE;
+	stCyCtrl.Cmd.bON:=stCyCtrl.Io.DOStatus1:=FALSE;
+	stCyCtrl.Cmd.bOFF:=FALSE;
+ELSIF stCyCtrl.Cmd.bON AND stCyCtrl.Cmd.OnCondition THEN//开
+	stCyCtrl.Io.DOStatus1:=TRUE;
+	stCyCtrl.Cmd.bOFF:=stCyCtrl.Io.DOStatus2:=FALSE;
+	stCyCtrl.Cmd.bON:=FALSE;
+END_IF
+
+(********************气缸********************)
+IF stCyCtrl.Cmd.iType=1 OR stCyCtrl.Cmd.iType=2 THEN
+	ton[1](IN:=stCyCtrl.Io.DOStatus1 AND stCyCtrl.Io.DIOnSwitch AND NOT stCyCtrl.Io.DIOFFSwitch, PT:= T#8MS, Q=>stCyCtrl.Status.ONState);//开状态延时
+	ton[2](IN:=stCyCtrl.Io.DOStatus2 AND stCyCtrl.Io.DIOFFSwitch AND NOT stCyCtrl.Io.DIOnSwitch, PT:= T#8MS, Q=>stCyCtrl.Status.OFFState);//关状态延时
+	ton[3](IN:=stCyCtrl.Io.DOStatus1 AND (NOT stCyCtrl.Io.DIOnSwitch OR stCyCtrl.Io.DIOFFSwitch), PT:=INT_TO_TIME(stCyCtrl.Cmd.ErrorTime*1000));//开报警
+	ton[4](IN:=stCyCtrl.Io.DOStatus2 AND (NOT stCyCtrl.Io.DIOFFSwitch OR stCyCtrl.Io.DIOnSwitch), PT:=INT_TO_TIME(stCyCtrl.Cmd.ErrorTime*1000));//关报警
+
+	IF 	ton[3].Q THEN
+		stCyCtrl.Status.Error1:=TRUE;//开报警
+	END_IF
+	IF 	ton[4].Q THEN
+		stCyCtrl.Status.Error2:=TRUE;//关报警
+	END_IF
+	
+	rt[1](CLK:=bReset , Q=> );
+	IF rt[1].Q THEN
+		IF stCyCtrl.Status.Error1 AND NOT ton[3].Q THEN
+			stCyCtrl.Status.Error1:=FALSE;
+		END_IF
+		IF stCyCtrl.Status.Error2 AND NOT ton[4].Q THEN
+			stCyCtrl.Status.Error2:=FALSE;
+		END_IF	
+	END_IF	
+END_IF
+
+(********************电磁阀********************)
+IF stCyCtrl.Cmd.iType=3 OR stCyCtrl.Cmd.iType=4 THEN//电磁阀
+	ton[1](IN:=stCyCtrl.Io.DOStatus1 , PT:= T#8MS, Q=>stCyCtrl.Status.ONState );
+	ton[2](IN:=stCyCtrl.Io.DOStatus2 , PT:= T#8MS, Q=>stCyCtrl.Status.OFFState );
+END_IF
+
+
+ rRun(CLK:= AutoRun , Q=> );
+ fRun(CLK:= AutoRun , Q=> );
+ sTON(PT:=T#100MS);
+
+		IF fRun.Q THEN
+			step:=100; 
+		END_IF
+		
+	CASE step OF	
+		100:
+			 sTON.IN:=FALSE; 
+		     step:=110;   
+		110:  
+			 sTON.IN:=TRUE;  
+			 step:=120;     
+		 120:
+			   IF sTON.Q THEN
+				 step:=130;  
+				 sTON.IN:=FALSE;  
+				END_IF 
+	    130:    
+	        Handautomark:=TRUE;	
+			Pause1:=stCyCtrl.Io.DOStatus1 ;
+			Pause2:=stCyCtrl.Io.DOStatus2 ;
+	        step:=140;    
+	END_CASE
+		
+
+	   IF rRun.Q AND Handautomark THEN
+				IF  BOOL_TO_INT(stCyCtrl.Io.DOStatus1 )<>BOOL_TO_INT(Pause1) OR BOOL_TO_INT(stCyCtrl.Io.DOStatus2 )<>BOOL_TO_INT(Pause2) THEN
+				   	stCyCtrl.Status.Errorcomp:=TRUE;
+				END_IF
+				Handautomark:=FALSE;
+		END_IF
+		
+		IF bReset  THEN
+			  stCyCtrl.Status.Errorcomp:=FALSE;
+		END_IF
+		]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Cylinder">
+      <LineId Id="3" Count="3" />
+      <LineId Id="65" Count="2" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="7" Count="3" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="16" Count="5" />
+      <LineId Id="29" Count="3" />
+      <LineId Id="34" Count="2" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="101" Count="7" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="38" Count="4" />
+      <LineId Id="132" Count="39" />
+      <LineId Id="90" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

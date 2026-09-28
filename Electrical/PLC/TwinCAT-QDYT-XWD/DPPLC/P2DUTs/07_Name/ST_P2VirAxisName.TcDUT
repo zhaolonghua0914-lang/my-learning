@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_P2VirAxisName" Id="{280f74c6-7524-47b0-a7db-d7cc9026b946}">
+    <Declaration><![CDATA[TYPE ST_P2VirAxisName :   //虚轴名称
+STRUCT
+  
+P2M1_VirTimeWind   	:INT:=140;	//P2M1时间虚轴
+P2M1_VirMain	    :INT:=141;	//P2M1叠台主虚轴
+P2M1_VirDriver	    :INT:=142;	//P2M1放卷驱动虚轴
+P2M1_VirTailCurl	:INT:=143;	//P2M1尾卷虚轴
+P2M1_VirGM	        :INT:=144;	//P2M1隔膜虚轴
+
+
+P2M2_VirTimeWind   	:INT:=153;	//P2M2时间虚轴
+P2M2_VirMain	:INT:=145;	//P2M2叠台主虚轴
+P2M2_VirDriver	:INT:=146;	//P2M2放卷驱动虚轴
+P2M2_VirTailCurl	:INT:=147;	//P2M2尾卷虚轴
+P2M2_VirGM	        :INT:=148;	//P2M1隔膜虚轴			
+
+P2M3_VirTimeWind   	:INT:=154;	//P2M3时间虚轴
+P2M3_VirMain	:INT:=149;	//P2M3叠台主虚轴
+P2M3_VirDriver	:INT:=150;	//P2M3放卷驱动虚轴
+P2M3_VirTailCurl	:INT:=151;	//P2M3尾卷虚轴
+P2M3_VirGM	        :INT:=152;	//P2M3隔膜虚轴			
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

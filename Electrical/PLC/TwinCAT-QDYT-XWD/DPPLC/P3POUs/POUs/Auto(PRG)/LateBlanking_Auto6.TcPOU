@@ -1,0 +1,3536 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto6" Id="{b27f848f-d2f6-4c5c-97fc-57c645c0b415}" SpecialFunc="None">
+    <Declaration><![CDATA[//分拣中
+PROGRAM LateBlanking_Auto6
+VAR
+	ShortTest_NG_Push: CS_SetpMoterV2;
+	weigh_NG_Push: CS_SetpMoterV2;
+	Thickness_NG_Push: CS_SetpMoterV2;
+	SingleStep_6 : R_TRIG;
+	NG_Auto :ARRAY[1..4] OF FB_SetMoter_auto;
+	ScanNgCount :INT;
+	MesNgCount :INT;
+	Cold1Count :INT;
+	cold2Count :INT;
+	cold3Count :INT;
+	I:INT;
+	Step_Men :UINT;
+	P3SortLifting_TON :ARRAY[1..8] OF Tc2_Standard.TON;
+	PC_finish_ton :ton;
+	PC_finish_CS :INT;
+	P3MotionGoWorkTON :ARRAY[1..4] OF TON;
+	P3MotionHave:ARRAY[1..4] OF F_TRIG;
+	P3DelayTon:ARRAY[1..10] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+//排杆电机
+
+P3Senser.P3_PoleMotor2_JogP := stP3NgPushMoter[2].bo_Up;
+P3Senser.P3_PoleMotor2_JogN := stP3NgPushMoter[2].bo_Down;
+stP3NgPushMoter[2].biSensor:=P3Senser.P3_PoleMotor2_Height;
+stP3NgPushMoter[2].biBoxSensor:=P3Senser.P3_PoleMotor2_Reach;
+stP3NgPushMoter[2].biUpSensor:=P3Senser.P3_PoleMotor2_P_OT;
+stP3NgPushMoter[2].biDownSensor:=P3Senser.P3_PoleMotor2_N_OT;
+stP3NgPushMoter[2].bHave:=P3Senser.P3_PoleMotor2_bHave;
+
+
+P3Senser.P3_PoleMotor3_JogP := stP3NgPushMoter[3].bo_Up;
+P3Senser.P3_PoleMotor3_JogN := stP3NgPushMoter[3].bo_Down;
+stP3NgPushMoter[3].biSensor:=P3Senser.P3_PoleMotor3_Height;
+stP3NgPushMoter[3].biBoxSensor:=P3Senser.P3_PoleMotor3_Reach;
+stP3NgPushMoter[3].biUpSensor:=P3Senser.P3_PoleMotor3_P_OT;
+stP3NgPushMoter[3].biDownSensor:=P3Senser.P3_PoleMotor3_N_OT;
+stP3NgPushMoter[3].bHave:=P3Senser.P3_PoleMotor3_bHave;
+
+P3Senser.P3_PoleMotor4_JogP := stP3NgPushMoter[4].bo_Up;
+P3Senser.P3_PoleMotor4_JogN := stP3NgPushMoter[4].bo_Down;
+stP3NgPushMoter[4].biSensor:=P3Senser.P3_PoleMotor4_Height;
+stP3NgPushMoter[4].biBoxSensor:=P3Senser.P3_PoleMotor4_Reach;
+stP3NgPushMoter[4].biUpSensor:=P3Senser.P3_PoleMotor4_P_OT;
+stP3NgPushMoter[4].biDownSensor:=P3Senser.P3_PoleMotor4_N_OT;
+stP3NgPushMoter[4].bHave:=P3Senser.P3_PoleMotor4_bHave;
+
+Push_NG_condition[2]:=stP3NgPushMoter[2].biBoxSensor AND NOT Push_NG_Full[2] AND stP3NgPushMoter[2].HomeDone;
+Push_NG_condition[3]:=stP3NgPushMoter[3].biBoxSensor AND NOT Push_NG_Full[3] AND stP3NgPushMoter[3].HomeDone;
+Push_NG_condition[4]:=stP3NgPushMoter[4].biBoxSensor AND NOT Push_NG_Full[4] AND stP3NgPushMoter[4].HomeDone;
+
+Push_NG[2]:=(Step35>=1070 AND Step35<=1120); 
+Push_NG[3]:=((Step35>=2070 AND Step35<=2120) OR (Step35>=4130 AND Step35<=4180)); 
+Push_NG[4]:=(Step35>=3080 AND Step35<=3130); 
+
+
+P3SortLifting_TON[1](PT:=T#500MS);
+P3SortLifting_TON[2](PT:=T#500MS);
+P3SortLifting_TON[3](PT:=T#500MS);
+P3SortLifting_TON[4](PT:=T#500MS);
+P3SortLifting_TON[5](PT:=T#500MS);
+P3SortLifting_TON[6](PT:=T#500MS);
+P3SortLifting_TON[7](PT:=T#500MS);
+P3SortLifting_TON[8](PT:=T#500MS);
+PC_finish_ton(PT:=T#5S);
+P3MotionGoWorkTON[1](PT:=T#2S);
+P3MotionGoWorkTON[2](PT:=T#2S);
+P3MotionGoWorkTON[3](PT:=T#2S);
+P3MotionGoWorkTON[4](PT:=T#2S);
+P3DelayTon[1](PT:=T#1S);
+//对齐度NG料盒有料信号下降沿 计时2S 触发 上升定位
+P3MotionHave[1](CLK:=P3Senser.P3_PoleMotor1_bHave , Q=> );//
+IF  P3MotionHave[1].Q AND NOT  P3Senser.P3_PoleMotor1_bHave THEN
+	P3MotionGoWorkTON[1].IN:=TRUE;
+END_IF
+IF P3MotionGoWorkTON[1].Q THEN
+	P3Motion.stP3NgPushMoter[1].bGoWorkPos:=TRUE;
+	P3MotionGoWorkTON[1].IN:=FALSE;
+END_IF
+//对齐度NG料盒有料信号下降沿 触发 上升定位
+P3MotionHave[2](CLK:=P3Senser.P3_PoleMotor2_bHave , Q=> );
+IF  P3MotionHave[2].Q AND NOT  P3Senser.P3_PoleMotor2_bHave THEN
+	P3MotionGoWorkTON[2].IN:=TRUE;
+END_IF
+IF P3MotionGoWorkTON[2].Q THEN
+	P3Motion.stP3NgPushMoter[2].bGoWorkPos:=TRUE;
+	P3MotionGoWorkTON[2].IN:=FALSE;
+END_IF
+//对齐度NG料盒有料信号下降沿 触发 上升定位
+P3MotionHave[3](CLK:=P3Senser.P3_PoleMotor3_bHave , Q=> );
+IF  P3MotionHave[3].Q AND NOT  P3Senser.P3_PoleMotor3_bHave THEN
+	P3MotionGoWorkTON[3].IN:=TRUE;
+END_IF
+IF P3MotionGoWorkTON[3].Q THEN
+	P3Motion.stP3NgPushMoter[3].bGoWorkPos:=TRUE;
+	P3MotionGoWorkTON[3].IN:=FALSE;
+END_IF
+//对齐度NG料盒有料信号下降沿 触发 上升定位
+P3MotionHave[4](CLK:=P3Senser.P3_PoleMotor4_bHave , Q=> );
+IF  P3MotionHave[4].Q AND NOT  P3Senser.P3_PoleMotor4_bHave THEN
+	P3MotionGoWorkTON[4].IN:=TRUE;
+END_IF
+IF P3MotionGoWorkTON[4].Q THEN
+	P3Motion.stP3NgPushMoter[4].bGoWorkPos:=TRUE;
+	P3MotionGoWorkTON[4].IN:=FALSE;
+END_IF
+
+
+
+ACT1();
+WeighLine_2:=arrAxisPar[P3AxisNo.P3_M4_WeighLine].arrTargetPoint[1]-5;
+Offloading_1:=arrAxisPar[P3AxisNo.P3_M4_OffloadingCarrying].arrTargetPoint[1]+5;
+SingleStep_6 (CLK:=P3_Start[6] , Q=>);
+IF  SingleStep_6.Q OR NOT StepModel[6] THEN
+	SingleStep[6]:=FALSE;
+END_IF
+
+IF P3_SystemRUN.iMode=1  AND LateBlanking_init_OK[6]  THEN
+CASE Step35 OF
+1://电芯分选的气缸回初始状态
+    arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+    arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;//电芯分选夹开合气缸张开
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;//电芯分选夹升降气缸缩回
+	P3SortLifting_TON[1].IN:=FALSE;
+	P3SortLifting_TON[2].IN:=FALSE;
+	P3SortLifting_TON[3].IN:=FALSE;
+	P3SortLifting_TON[4].IN:=FALSE;
+	P3SortLifting_TON[5].IN:=FALSE;
+	P3SortLifting_TON[6].IN:=FALSE;
+	Thickness_Finish:=FALSE;	
+IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 AND arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState 
+	AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 AND arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState THEN 
+	Step35:=10;
+END_IF
+
+10://电芯分选的电机回初始状态
+IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;//P3_M4电芯分拣夹升降去初始位
+END_IF
+
+IF	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1]
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;	//P3_M4电芯分拣夹搬运去初始位
+	SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+	SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+	Step35:=15;	
+END_IF	
+
+15:
+PC_finish:=FALSE;
+arrCyCtrl[P3CYNo.P3SortRotate].Cmd.bOFF:=TRUE;//电芯分选夹旋转气缸回0度
+IF  arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortRotate].Status.Error2  THEN
+Step35:=20;	
+END_IF
+
+
+20://称重完成,允许测厚
+IF  Weigh_Finish AND Permit_ThicknessRack AND CellMemory[CellNo.Weight].Cell THEN
+	Step35:=30;
+	
+END_IF
+(*IF  Permit_Weigh AND NOT Weigh_Finish AND Permit_ThicknessRack AND CellMemory[CellNo.Weight].Cell AND NOT Shield[2] AND P3_SystemRUN.bReset THEN
+	weight_step:=10;
+END_IF*)
+
+30://P3_M4电芯分选夹搬运去称重位
+IF NOT SingleStep[6] THEN
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=WeighLine_2//安全条件
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=2;//电芯分选夹搬运去称重位	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=35;	
+	END_IF
+END_IF	
+
+35://P3_M4电芯分选夹升降去称重辅助位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[8] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[2] THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=8;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[8] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=60;	
+	END_IF
+END_IF	
+	
+60://电芯分选夹开合气缸闭合
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.OFFState AND arrCyCtrl[P3CYNo.P3SortPush].Status.ONState AND
+       NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=65;	
+	END_IF
+END_IF
+
+65://P3_M4电芯分拣夹升降去称重位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[2] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=2;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=70;	
+	P3SortLifting_TON[1].IN:=FALSE;
+	END_IF
+END_IF	
+
+70://电芯分选夹升降气缸缩回
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bOFF:=TRUE;
+	P3SortLifting_TON[1].IN:=TRUE;
+	IF P3SortLifting_TON[1].Q(* AND arrCyCtrl[P3CYNo.P3SortLifting].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2*) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF			
+	Step35:=75;	
+	P3SortLifting_TON[1].IN:=FALSE;
+	END_IF	
+END_IF
+
+
+	
+75://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=80;		
+	END_IF
+END_IF	
+
+
+80://电芯记忆从称重平台转移到分选夹子
+Weigh_Finish:=FALSE;
+CellMemory[CellNo.SortClip1]:=CellMemory[CellNo.Weight];
+MEMSET(ADR(CellMemory[CellNo.Weight]),0,SIZEOF(CellMemory[CellNo.Weight]));
+Step35:=90;	
+
+
+
+
+90://P3_M4电芯分拣夹搬运去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND 
+		NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+		AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState  THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=3;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=100;	
+	END_IF
+END_IF	
+
+100://判断是否有测厚允许上料信号
+IF Permit_ThicknessRack  AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 
+	AND  arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 AND
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1 THEN 
+	Step35:=150;
+END_IF
+
+
+150://P3_M4电芯分拣夹升降去测厚位
+IF NOT SingleStep[6] THEN
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回	
+
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=3;
+	END_IF
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=160;	
+	END_IF
+END_IF	
+
+160://电芯分选夹升降气缸上升
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=165;	
+	END_IF	
+END_IF
+
+165://P3_M4电芯分拣夹升降去测厚辅助位条件
+IF NOT SingleStep[6] THEN
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=9;//电芯分拣夹升降去测厚辅助位
+	END_IF
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=170;	
+	END_IF
+END_IF	
+	
+170://电芯分选夹开合气缸张开
+IF NOT SingleStep[6] THEN
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1  AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState    THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=185;
+
+	END_IF
+END_IF
+
+
+185://电芯记忆从分选夹子转移到测厚平台
+CellMemory[CellNo.Thickness]:=CellMemory[CellNo.SortClip1];
+MEMSET(ADR(CellMemory[CellNo.SortClip1]),0,SIZEOF(CellMemory[CellNo.SortClip1]));
+Step35:=190;
+
+	
+190://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+			IF NOT  P3User2_Par.Shield[3] THEN
+				Step35:=193;
+				PC_finish:=FALSE;	
+				Permit_Thickness := TRUE ;					
+			ELSE	
+				Step35:=193;
+				PC_finish:=FALSE;	
+				Permit_Thickness:=FALSE;
+				Thickness_Finish:=TRUE;
+			END_IF
+	END_IF	
+END_IF	
+
+193://测厚完成，记录产出时间
+IF Thickness_Finish OR  P3User2_Par.Shield[3] THEN
+CellMemory[CellNo.Thickness].Out_Time:=Outtime;
+Step35:=195;
+END_IF
+	
+200://NG料统计
+IF Thickness_Finish AND CellMemory[CellNo.Thickness].Hough=1 
+AND (CellMemory[CellNo.Thickness].ScanCode=1 OR P3User2_Par.Shield[4])  
+AND (CellMemory[CellNo.Thickness].ShortTest=1 OR P3User2_Par.Shield[1]) 
+(*AND (CellMemory[CellNo.Thickness].Weight=1 OR P3User2_Par.Shield[2] ) *)
+AND (CellMemory[CellNo.Thickness].Thickness=1 OR P3User2_Par.Shield[3]) 
+AND ((NOT P3User2_Par.Shield[11] AND CellMemory[CellNo.Thickness].DT_station_No='1#')
+OR (NOT P3User2_Par.Shield[12] AND CellMemory[CellNo.Thickness].DT_station_No='2#')
+OR (NOT P3User2_Par.Shield[13] AND CellMemory[CellNo.Thickness].DT_station_No='3#'))
+AND ((CellMemory[CellNo.Thickness].Cell_cold_result AND CellMemory[CellNo.Thickness].Cell_cold_result1 AND CellMemory[CellNo.Thickness].Cell_cold_result2) OR P3User2_Par.Shield[5]) 
+AND NOT CellMemory[CellNo.Thickness].DTDebugMode      THEN
+	Step35:=500;
+	P3_Production.OutFlag1:=TRUE;
+ELSIF (P3User2_Par.Shield[11] AND CellMemory[CellNo.Thickness].DT_station_No='1#' AND Thickness_Finish) OR
+      ((*P2M1_MachCtrl.DT_b.DT_DebugMode AND*) CellMemory[CellNo.Thickness].DT_station_No='1#' AND CellMemory[CellNo.Thickness].DTDebugMode AND Thickness_Finish) THEN
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[10]:=TRUE;//踢一号叠台首检料
+	IF CellMemory[CellNo.Thickness].DTDebugMode THEN
+	   P3_Error[83]:=TRUE ;//1号叠台调试模式踢料报警
+	END_IF
+	Step35:=1000;
+ELSIF (P3User2_Par.Shield[12] AND CellMemory[CellNo.Thickness].DT_station_No='2#' AND Thickness_Finish ) OR
+      ((*P2M2_MachCtrl.DT_b.DT_DebugMode AND*) CellMemory[CellNo.Thickness].DT_station_No='2#' AND CellMemory[CellNo.Thickness].DTDebugMode AND Thickness_Finish) THEN
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[11]:=TRUE;//踢二号叠台首检料
+	IF CellMemory[CellNo.Thickness].DTDebugMode THEN
+	   P3_Error[84]:=TRUE ;//2号叠台调试模式踢料报警
+	END_IF	
+	Step35:=1000;
+ELSIF (P3User2_Par.Shield[13] AND CellMemory[CellNo.Thickness].DT_station_No='3#' AND Thickness_Finish ) OR
+      ((*P2M3_MachCtrl.DT_b.DT_DebugMode AND*) CellMemory[CellNo.Thickness].DT_station_No='3#' AND CellMemory[CellNo.Thickness].DTDebugMode AND Thickness_Finish) THEN
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[12]:=TRUE;//踢三号叠台首检料
+	IF CellMemory[CellNo.Thickness].DTDebugMode THEN
+	   P3_Error[85]:=TRUE ;//3号叠台调试模式踢料报警
+	END_IF
+	Step35:=1000;		
+ELSIF  CellMemory[CellNo.Thickness].ShortTest<>1 AND Thickness_Finish THEN//踢短路NG料
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[2]:=TRUE;//踢短路NG料
+	Step35:=1000;
+ELSIF CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+	Step35:=1000;
+	P3_Production.OutFlag1:=TRUE;//对齐度NG料
+ELSIF Thickness_Finish AND CellMemory[CellNo.Thickness].Thickness<>1 THEN//踢测厚NG料
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[4]:=TRUE;//测厚NG料
+	Step35:=4000;
+ELSIF Thickness_Finish AND CellMemory[CellNo.Thickness].OvenShift_NG_T THEN//踢烤箱NG料
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[6]:=TRUE;//烤箱超时NG料
+	Step35:=4000;
+ELSIF (NOT CellMemory[CellNo.Thickness].Cell_cold_result OR NOT CellMemory[CellNo.Thickness].Cell_cold_result1 OR NOT CellMemory[CellNo.Thickness].Cell_cold_result2 ) 
+		AND NOT P3User2_Par.Shield[5] AND Thickness_Finish THEN //踢MES不良的NG料
+	IF NOT CellMemory[CellNo.Thickness].Cell_cold_result THEN//冷压上料MES判断
+		Cold1Count:=Cold1Count+1;
+	ELSIF NOT CellMemory[CellNo.Thickness].Cell_cold_result1 THEN//校对数据MES判断
+		Cold2Count:=Cold2Count+1;
+	ELSIF NOT CellMemory[CellNo.Thickness].Cell_cold_result2 THEN//热压下料MES判断
+		Cold3Count:=Cold3Count+1;	
+	END_IF
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[5]:=TRUE;	//MES卡站NG
+	Step35:=3000;
+ELSIF CellMemory[CellNo.Thickness].ScanCode<>1  AND Thickness_Finish THEN//踢扫码NG料
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[1]:=TRUE;//踢扫码NG料
+	Step35:=3000;
+(*ELSIF CellMemory[CellNo.Thickness].Weight<>1 AND Thickness_Finish THEN//踢称重NG料
+	P3_Production.OutFlag1:=TRUE;
+	P3_Production.NGFlag[3]:=TRUE;//踢称重NG料
+	Step35:=2000;*)
+END_IF
+
+
+500://测厚完成，测厚台切换气缸打开
+ IF Thickness_Finish  AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 
+	AND  arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 AND
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1 THEN 
+	Step35:=515;
+END_IF
+
+
+515://电芯分选夹升降去初始位
+
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=517;	
+	END_IF	
+END_IF
+
+517://电芯分选夹搬运去测厚位条件
+IF NOT SingleStep[6] THEN
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>=WeighLine_2//安全条件
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=3;	//电芯分选夹搬运去测厚位
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=520;	
+	END_IF
+END_IF
+
+520://P3_M4电芯分拣夹升降去测厚辅助位条件
+IF NOT SingleStep[6] THEN
+	
+	IF 	// NOT P3Senser.P3_CacheSensor AND
+	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9]
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=9;//P3_M4电芯分拣夹升降去测厚辅助位
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=530;	
+	END_IF
+END_IF	
+
+530://电芯分选夹开合气缸夹紧
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=FALSE;//分选夹归正气缸伸出
+	 arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.ONState   THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=550;	
+	END_IF
+END_IF
+	
+550://P3_M4电芯分拣夹升降去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=3;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=575;
+	P3SortLifting_TON[2].IN:=FALSE;	
+	END_IF
+END_IF	
+
+
+575://电芯分选夹升降气缸压紧
+IF NOT SingleStep[6] THEN
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bOFF:=TRUE;
+	P3SortLifting_TON[2].IN:=TRUE;	
+	IF P3SortLifting_TON[2].Q(*arrCyCtrl[P3CYNo.P3SortLifting].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2*) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=580;
+	P3SortLifting_TON[2].IN:=FALSE;		
+	END_IF	
+END_IF
+
+580://电芯记忆从测厚平台转移到分选夹子
+CellMemory[CellNo.SortClip2]:=CellMemory[CellNo.Thickness];
+MEMSET(ADR(CellMemory[CellNo.Thickness]),0,SIZEOF(CellMemory[CellNo.Thickness]));
+Step35:=585;	
+
+
+585://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		Thickness_Finish:=FALSE;	
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=590;
+	END_IF	
+END_IF	
+
+590://判断是否有允许放料信号
+IF NOT SingleStep[6] THEN
+IF (NOT P3User2_Par.Shield[22] AND Uppercorepermit) OR (P3User2_Par.Shield[22] AND Permit_BlankingRack) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=595;	
+END_IF
+END_IF
+
+595://P3_M4电芯分拣夹搬运去放料位
+IF NOT SingleStep[6] THEN
+	IF LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.fActPos)<=Offloading_1//电芯下料搬运夹安全条件
+		AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[4] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+		AND arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState 
+        AND NOT arrCyCtrl[P3CYNo.P3CellAdvance].Status.ONState 
+		//AND arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState 
+		AND  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[8] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.NoMoving
+		THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=4;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+		IF P3User2_Par.Shield[20] THEN
+			Step35:=605;
+		ELSE
+			Step35:=600;	
+		END_IF
+	END_IF	
+END_IF	
+
+600://电芯分选夹旋转气缸回90度
+IF NOT SingleStep[6] THEN
+	P3DelayTon[1].IN:=FALSE;
+	arrCyCtrl[P3CYNo.P3SortRotate].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortRotate].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF
+	P3DelayTon[1].IN:=TRUE;	
+	IF P3DelayTon[1].Q THEN
+		Step35:=605;
+	END_IF	
+	END_IF
+END_IF
+
+605://P3_M4电芯分拣夹升降去放料位
+IF NOT SingleStep[6] THEN	
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回	
+
+	IF 	NOT P3Senser.P3_CacheSensor 
+		AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[4] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving  
+		AND arrCyCtrl[P3CYNo.P3CellAdvance].Status.OFFState 
+        AND NOT arrCyCtrl[P3CYNo.P3CellAdvance].Status.ONState 
+		AND arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState 
+		AND arrCyCtrl[P3CYNo.P3SortRotate].Status.ONState
+		AND  arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.arrbRealPoint[8] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Homed
+		AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Enabled 
+		AND arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.NoMoving 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[4]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=4;
+	END_IF	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=610;	
+	END_IF
+END_IF		
+
+610://电芯分选夹升降气缸伸出
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=615;	
+	END_IF	
+END_IF
+
+615: //电芯分选夹升降走相对位置下降一定高度再打开开合气缸
+IF NOT SingleStep[6] THEN
+	
+	IF   arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[4] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed
+	 	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisPar[P3AxisNo.P3_M4_SortingoutUpDown].fVelocity_of_Rel := 20   ;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.fPosition_of_Rel := 3  ;
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bMoveRel :=  TRUE ;
+	END_IF
+	
+	IF arrAxis[P3AxisNo.P3_M4_SortingoutUpDown].NcToPlc.SetPos - arrAxisPar[P3AxisNo.P3_M4_SortingoutUpDown].arrTargetPoint[4] >=2.5  AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF
+	Step35:=620;
+	END_IF	
+END_IF
+	
+620://电芯分选夹开合气缸张开
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState   THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=635;	
+	END_IF
+END_IF
+
+
+
+635://电芯记忆从分选夹子转移到下料辅助平台
+P3_Production.OutFlag1:=FALSE;
+CellMemory[CellNo.BlankingPlatform]:=CellMemory[CellNo.SortClip2];
+MEMSET(ADR(CellMemory[CellNo.SortClip2]),0,SIZEOF(CellMemory[CellNo.SortClip2]));
+Step35:=640;	
+
+640://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		//Permit_TakeMaterial:=TRUE;//临时屏蔽放料	
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=650;
+	END_IF	
+END_IF	
+
+650://电芯分选夹旋转气缸回0度
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortRotate].Cmd.bOFF:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=660;	
+	END_IF
+END_IF
+
+660://P3_M4电芯分拣夹搬运去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1]
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	 Uppercorepermit:=FALSE;//复位贴胶平台允许放料信号
+	Step35:=670;	
+	END_IF
+END_IF
+
+670:
+    IF  P3User2_Par.Shield[21] THEN
+			Step35:=675; //流水线下料屏蔽
+     ELSE
+			Step35:=1;    
+	END_IF	 
+675:
+   IF (Bottomsignal OR P3User2_Par.Shield[22] OR P3User2_Par.Shield[21] ) AND NOT P3Senser.P3_CacheSensor THEN
+	  Step35:=680; 
+   END_IF
+  
+680:
+  Bottomsignal:=FALSE;//复位贴胶平台下料信号
+  Step35:=1;
+  
+//踢短路NG料
+1000://P3_M4电芯分拣夹搬运去测厚位
+IF NOT SingleStep[6] THEN
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	    arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=3;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=1005;	
+	END_IF
+END_IF	
+
+1005://测厚完成，测厚气缸到位
+IF NOT SingleStep[6] THEN
+ IF Thickness_Finish  AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 
+	AND  arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 AND
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF 
+	Step35:=1010;
+END_IF
+END_IF
+
+
+
+1010://P3_M4电芯分拣夹升降去测厚辅助位
+IF NOT SingleStep[6] THEN
+	IF  	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] 
+		AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+		AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=9;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=1020;	
+	END_IF
+END_IF
+
+
+1020://电芯分选夹开合气缸闭合
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=FALSE;//分选夹归正气缸伸出
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.ONState THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=1030;	
+	END_IF
+END_IF
+
+1030://P3_M4电芯分拣夹升降去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=3;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=1040;
+	P3SortLifting_TON[3].IN:=FALSE;	
+	END_IF
+END_IF	
+
+1040://电芯分选夹升降气缸缩回
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bOFF:=TRUE;
+	P3SortLifting_TON[3].IN:=TRUE;
+	IF P3SortLifting_TON[3].Q(*arrCyCtrl[P3CYNo.P3SortLifting].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2*) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF			
+	Step35:=1045;
+	P3SortLifting_TON[3].IN:=FALSE;	
+	END_IF	
+END_IF
+
+
+
+
+1045://电芯记忆从称重平台转移到分选夹子	
+CellMemory[CellNo.SortClip2]:=CellMemory[CellNo.Thickness];
+MEMSET(ADR(CellMemory[CellNo.Thickness]),0,SIZEOF(CellMemory[CellNo.Thickness]));
+Step35:=1050;
+	
+1050://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+	
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF
+	Step35:=1060;
+	Thickness_Finish:=FALSE;
+	END_IF	
+END_IF	
+
+1060://P3_M4电芯分拣夹搬运去短路对齐度NG位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[5] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=5;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=1065;	
+	END_IF
+END_IF
+
+1065:
+	IF Push_NG_condition[2] THEN
+		P3_Production.OutFlag1:=FALSE;
+		P3_Production.NGFlag[2]:=FALSE;//踢短路NG料
+		Step35:=1070;
+	END_IF
+
+
+1070://P3_M4电芯分拣夹升降去短路NG位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[5] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[5] THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=5;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[5] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=1080;	
+	END_IF
+END_IF
+
+1080://电芯分选夹升降气缸伸出
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=1090;	
+	END_IF	
+END_IF
+
+	
+1090://电芯分选夹开合气缸张开
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState   THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=1110;	
+	END_IF
+END_IF
+
+
+
+1110://清掉分选夹子的电芯记忆
+MEMSET(ADR(CellMemory[CellNo.SortClip2]),0,SIZEOF(CellMemory[CellNo.SortClip2]));
+Step35:=1120;
+	
+1120://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF
+	Step35:=1130;	
+	END_IF
+END_IF
+
+1130://P3_M4电芯分拣夹搬运去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志	
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF
+	
+	Step35:=1140;	
+	END_IF
+END_IF
+
+1140:
+IF P3User2_Par.Shield[11] AND P3_Production.NGFlag[10] THEN
+	P3_Error[80]:=TRUE ;//1号叠台首检模式报警弹窗
+END_IF
+IF P3User2_Par.Shield[12] AND P3_Production.NGFlag[11] THEN
+	P3_Error[81]:=TRUE ;//2号叠台首检模式报警弹窗
+END_IF
+IF P3User2_Par.Shield[13] AND P3_Production.NGFlag[12] THEN
+	P3_Error[82]:=TRUE ;//3号叠台首检模式报警弹窗
+END_IF
+P3_Production.NGFlag[10]:=FALSE;//踢一号叠台首检料
+P3_Production.NGFlag[11]:=FALSE;//踢二号叠台首检料
+P3_Production.NGFlag[12]:=FALSE;//踢三号叠台首检料
+Step35:=1;
+
+
+/////////////////////////////////踢称重NG料
+2000://P3_M4电芯分拣夹搬运去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=3;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=2005;	
+	END_IF	
+END_IF	
+
+2005://测厚完成信号，测厚气缸到位
+IF NOT SingleStep[6] THEN
+ IF Thickness_Finish  AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 
+	AND  arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 AND
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1 THEN 
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF 
+	Step35:=2007;
+ END_IF
+END_IF
+
+
+
+2007://P3_M4电芯分拣夹升降去测厚辅助位
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=9;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=2010;	
+	END_IF
+END_IF
+//////////////////////////////////////
+2010://电芯分选夹开合气缸闭合
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=FALSE;//分选夹归正气缸伸出
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.ONState THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=2020;	
+	END_IF
+END_IF
+
+2020://P3_M4电芯分拣夹升降去称重位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=3;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=2030;
+	P3SortLifting_TON[4].IN:=FALSE;		
+	END_IF
+END_IF	
+
+2030://电芯分选夹升降气缸缩回
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bOFF:=TRUE;
+	P3SortLifting_TON[4].IN:=TRUE;	
+	IF P3SortLifting_TON[4].Q(*arrCyCtrl[P3CYNo.P3SortLifting].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2*) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF			
+	Step35:=2040;
+	P3SortLifting_TON[4].IN:=FALSE;		
+	END_IF	
+END_IF
+
+2040:
+CellMemory[CellNo.SortClip2]:=CellMemory[CellNo.Thickness];
+MEMSET(ADR(CellMemory[CellNo.Thickness]),0,SIZEOF(CellMemory[CellNo.Thickness]));
+Step35:=2050;
+	
+2050://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+	
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=2060;
+	Thickness_Finish:=FALSE;
+	END_IF	
+END_IF	
+
+2060://P3_M4电芯分拣夹搬运去扫码称重MES NG位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=7;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=2065;	
+	END_IF
+END_IF
+
+
+2065:
+	IF Push_NG_condition[3] THEN
+		P3_Production.OutFlag1:=FALSE;
+		P3_Production.NGFlag[3]:=FALSE;//踢称重NG料
+		Step35:=2070;
+	END_IF
+
+2070://P3_M4电芯分拣夹升降去称重和测厚NG位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[6] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving  
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=6;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=2080;	
+	END_IF
+END_IF
+
+2080://电芯分选夹升降气缸伸出
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=2090;	
+	END_IF	
+END_IF
+
+	
+2090://电芯分选夹开合气缸张开
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState   THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=2110;	
+	END_IF
+END_IF
+
+2110://清掉分选夹子的电芯记忆
+MEMSET(ADR(CellMemory[CellNo.SortClip2]),0,SIZEOF(CellMemory[CellNo.SortClip2]));
+Step35:=2120;	
+	
+2120://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	
+	Step35:=2130;
+	END_IF	
+END_IF
+
+2130://P3_M4电芯分拣夹搬运去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+
+	Step35:=2140;
+	END_IF	
+END_IF
+	
+2140:
+Step35:=1;
+
+
+
+//////////////////////踢扫码NG料
+3000://P3_M4电芯分拣夹搬运去测厚位
+IF NOT SingleStep[6] THEN
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND  arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=3;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=3005;
+	END_IF		
+END_IF	
+
+
+3005:
+IF NOT SingleStep[6] THEN
+ IF Thickness_Finish  AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 
+	AND  arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 AND
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1 THEN 
+	Step35:=3007;
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+END_IF
+END_IF
+
+
+
+3007://P3_M4电芯分拣夹升降去测厚辅助位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=9;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=3010;
+	END_IF	
+END_IF	
+
+3010://电芯分选夹开合气缸闭合
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=FALSE;//分选夹归正气缸伸出
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.ONState THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=3020;	
+	END_IF
+END_IF
+
+3020://P3_M4电芯分拣夹升降去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=3;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=3030;
+	P3SortLifting_TON[5].IN:=FALSE;	
+	END_IF
+END_IF	
+
+3030://电芯分选夹升降气缸缩回
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bOFF:=TRUE;
+	P3SortLifting_TON[5].IN:=TRUE;
+	IF P3SortLifting_TON[5].Q(*arrCyCtrl[P3CYNo.P3SortLifting].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2*) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF			
+	Step35:=3050;
+	P3SortLifting_TON[5].IN:=FALSE;	
+	END_IF	
+END_IF
+3050://电芯记忆从称重平台转移到分选夹子
+CellMemory[CellNo.SortClip2]:=CellMemory[CellNo.Thickness];
+MEMSET(ADR(CellMemory[CellNo.Thickness]),0,SIZEOF(CellMemory[CellNo.Thickness]));
+Step35:=3060;	
+	
+	
+3060://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=3070;
+	Thickness_Finish:=FALSE;
+	END_IF	
+END_IF	
+
+
+	
+3070://P3_M4电芯分拣夹搬运去扫码称重MES NG位
+IF NOT SingleStep[6] THEN
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=7;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=3075;	
+	END_IF
+END_IF	
+
+3075:
+	IF Push_NG_condition[4] THEN	
+		P3_Production.OutFlag1:=FALSE;
+		P3_Production.NGFlag[1]:=FALSE;//踢扫码NG料
+		P3_Production.NGFlag[5]:=FALSE;	//MES卡站NG
+		Step35:=3080;
+	END_IF
+
+
+3080://P3_M4电芯分拣夹升降去扫码NG位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[7]
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND NOT NG_Auto[4].Full 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[7]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=7;
+	END_IF
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[7] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=3090;
+	END_IF	
+END_IF	
+
+
+
+
+3090://电芯分选夹升降气缸伸出
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=3100;	
+	END_IF	
+END_IF
+
+	
+3100://电芯分选夹开合气缸张开
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState  THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=3120;	
+	END_IF
+END_IF
+
+
+3120://把分选夹子的电芯记忆清零
+MEMSET(ADR(CellMemory[CellNo.SortClip2]),0,SIZEOF(CellMemory[CellNo.SortClip2]));
+Step35:=3130;
+	
+3130://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	
+	Step35:=3140;
+	END_IF
+END_IF	
+
+3140://P3_M4电芯分拣夹搬运去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	
+	Step35:=3150;
+	END_IF	
+END_IF
+
+3150:
+Step35:=1;
+
+
+
+4000://P3_M4电芯分拣夹搬运去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=3;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=4010;	
+	END_IF	
+END_IF	
+
+
+
+4010://测厚完成信号，测厚气缸到位
+IF NOT SingleStep[6] THEN
+ IF Thickness_Finish  AND arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1 
+	AND  arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2 AND
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1 THEN 
+	IF StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4020;
+END_IF
+END_IF
+
+
+4020://P3_M4电芯分拣夹升降去测厚辅助位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[3] THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=9;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[9] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4040;
+	END_IF	
+END_IF	
+
+
+///ihgdfg
+4040://电芯分选夹开合气缸夹紧
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=TRUE;//分选夹归正气缸伸出
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=FALSE;//分选夹归正气缸伸出
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.ONState THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=4060;	
+	END_IF
+END_IF
+	
+4060://P3_M4电芯分拣夹升降去测厚位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=3;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4080;
+	P3SortLifting_TON[6].IN:=FALSE;	
+	END_IF	
+END_IF	
+
+
+
+4080://电芯分选夹升降气缸缩回
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bOFF:=TRUE;
+	P3SortLifting_TON[6].IN:=TRUE;	
+	IF P3SortLifting_TON[6].Q(*arrCyCtrl[P3CYNo.P3SortLifting].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2*) THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4090;
+	P3SortLifting_TON[6].IN:=FALSE;		
+	END_IF	
+END_IF
+
+4090://电芯记忆从测厚平台转移到分选夹子
+CellMemory[CellNo.SortClip2]:=CellMemory[CellNo.Thickness];
+MEMSET(ADR(CellMemory[CellNo.Thickness]),0,SIZEOF(CellMemory[CellNo.Thickness]));
+Step35:=4100;	
+
+
+4100://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		Thickness_Finish:=FALSE;
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4110;
+	Thickness_Finish:=FALSE;
+	END_IF		
+END_IF	
+
+4110://P3_M4电芯分拣夹搬运去厚度烘烤 NG位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[6] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=6;
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志	
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4120;	
+	END_IF
+END_IF
+
+4120:
+	IF Push_NG_condition[3] THEN
+		P3_Production.OutFlag1:=FALSE;
+		P3_Production.NGFlag[4]:=FALSE;//测厚NG料
+		P3_Production.NGFlag[6]:=FALSE;//烘烤NG料
+		Step35:=4130;
+	END_IF
+
+4130://P3_M4电芯分拣夹升降去称重和测厚NG位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[6] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving
+	AND NOT NG_Auto[3].Full
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[6]THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=6;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[6] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4140;
+	END_IF	
+END_IF
+
+4140://电芯分选夹升降气缸伸出
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortLifting].Cmd.bON:=TRUE;
+	
+	IF arrCyCtrl[P3CYNo.P3SortLifting].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1 THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	Step35:=4150;	
+	END_IF	
+END_IF
+	
+4150://电芯分选夹开合气缸张开
+IF NOT SingleStep[6] THEN
+	
+	arrCyCtrl[P3CYNo.P3SortClamp].Cmd.bON:=TRUE;
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bOFF:=TRUE;//分选夹归正气缸缩回
+	arrCyCtrl[P3CYNo.P3SortPush].Cmd.bON:=FALSE;//分选夹归正气缸缩回
+	IF arrCyCtrl[P3CYNo.P3SortClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1 AND
+       arrCyCtrl[P3CYNo.P3SortPush].Status.OFFState THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF		
+	Step35:=4160;
+	END_IF	
+END_IF
+
+
+4160://清掉分选夹子的电芯记忆
+MEMSET(ADR(CellMemory[CellNo.SortClip2]),0,SIZEOF(CellMemory[CellNo.SortClip2]));	
+Step35:=4180;	
+	
+4180://P3_M4电芯分拣夹升降去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.iGoSetPos:=1;
+	END_IF
+	
+	IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.NoMoving THEN
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF	
+	
+	Step35:=4190;
+	END_IF	
+END_IF
+
+4190://P3_M4电芯分拣夹搬运去初始位
+IF NOT SingleStep[6] THEN
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] 
+	AND	NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving 
+	AND arrCyCtrl[P3CYNo.P3SortRotate].Status.OFFState THEN
+		arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.iGoSetPos:=1;	
+		SortingCarryTorMark:=TRUE;//电芯分选夹搬运力矩超限报警标志
+	END_IF
+	
+	IF  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.NoMoving THEN
+		SortingCarryTorMark:=FALSE;//电芯分选夹搬运力矩超限报警标志
+		IF  StepModel[6] THEN
+			SingleStep[6]:=TRUE;
+		ELSE
+			SingleStep[6]:=FALSE;
+		END_IF
+		
+		Step35:=4200;
+	END_IF	
+END_IF
+	
+4200:
+Step35:=1;
+
+
+
+
+END_CASE
+END_IF
+
+CASE Step35 OF
+
+195://测厚完成信号，上位机开始上传数据
+PC_finish:=FALSE;
+Step35:=197;
+	
+197://测厚完成信号，上位机开始上传数据
+IF (Thickness_Finish AND NOT PC_finish)OR P3User2_Par.Shield[5] THEN
+	PC_start:=TRUE;
+	PC_finish_ton.IN:=FALSE;
+	Step35:=198;
+END_IF
+
+198://上位机上传数据完成，保存记忆
+	IF  PC_finish OR P3User2_Par.Shield[5]  THEN
+		PC_start:=FALSE;
+		PC_finish:=FALSE;
+		PC_finish_CS:=0;
+		Step35:=200;
+		Output_step:=100;
+		Step_Men:=10;//记忆保存
+	ELSIF (NOT PC_finish  AND NOT PC_start AND PC_finish_CS=0)AND NOT P3User2_Par.Shield[5] THEN
+			PC_finish_ton.IN:=TRUE;
+	ELSIF (NOT PC_finish AND P3_Error[5] AND NOT PC_start)AND NOT P3User2_Par.Shield[5] THEN
+		Step35:=195;//重新上传
+	END_IF
+	IF PC_finish_ton.Q THEN
+		PC_finish_CS:=PC_finish_CS+1;
+		Step35:=195;
+	END_IF
+
+END_CASE
+
+
+
+CASE Step_Men OF
+	
+	10:
+		CellMemory[80]:=CellMemory[79];
+		Step_Men:=20;
+		
+	20:
+		CellMemory[79]:=CellMemory[78];
+		Step_Men:=30;
+		
+	30:
+		CellMemory[78]:=CellMemory[77];
+		Step_Men:=40;
+		
+	40:
+		CellMemory[77]:=CellMemory[76];
+		Step_Men:=50;
+		
+	50:
+		CellMemory[76]:=CellMemory[75];
+		Step_Men:=60;
+		
+	60:
+		CellMemory[75]:=CellMemory[74];
+		Step_Men:=70;
+		
+	70:
+		CellMemory[74]:=CellMemory[73];
+		Step_Men:=80;
+		
+	80:
+		CellMemory[73]:=CellMemory[72];
+		Step_Men:=90;
+		
+	90:
+		CellMemory[72]:=CellMemory[71];
+		Step_Men:=100;
+		
+	100:
+		CellMemory[71]:=CellMemory[70];
+		Step_Men:=110;
+	
+	110:
+		CellMemory[70]:=CellMemory[CellNo.Thickness];
+		Step_Men:=120;	
+		
+	120:
+		Step_Men:=666;
+
+END_CASE
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="ACT1" Id="{3a685d12-93b3-4abb-b6c1-566ad22b4030}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"CS_SetpMoterV2"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"ShortTest_NG_Push"</v>
+                          <v n="Type">"CS_SetpMoterV2"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">16L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" />
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"stP3NgPushMoter[2]"</v>
+                              <v n="Type">"ST_SetpMotor"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">11L</v>
+                            </o>
+                            <v n="Id">10L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>stSetpMotor</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>ST_SetpMotor[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" />
+                          <l2 n="Types" />
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">17L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">7L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"CS_SetpMoterV2"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"weigh_NG_Push"</v>
+                          <v n="Type">"CS_SetpMoterV2"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">18L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" />
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"stP3NgPushMoter[3]"</v>
+                              <v n="Type">"ST_SetpMotor"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">15L</v>
+                            </o>
+                            <v n="Id">14L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>stSetpMotor</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>ST_SetpMotor[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" />
+                          <l2 n="Types" />
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">19L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">6L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"CS_SetpMoterV2"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"Thickness_NG_Push"</v>
+                          <v n="Type">"CS_SetpMoterV2"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">20L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" />
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"stP3NgPushMoter[4]"</v>
+                              <v n="Type">"ST_SetpMotor"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">5L</v>
+                            </o>
+                            <v n="Id">4L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>stSetpMotor</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>ST_SetpMotor[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" />
+                          <l2 n="Types" />
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">21L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"Push_NG_Full[2]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">157L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"FB_SetMoter_auto"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"NG_Auto[2]"</v>
+                            <v n="Type">"FB_SetMoter_auto"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">52L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].HomeDone"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">55L</v>
+                              </o>
+                              <v n="Id">54L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].biSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">57L</v>
+                              </o>
+                              <v n="Id">56L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].biUpSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">59L</v>
+                              </o>
+                              <v n="Id">58L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].biDownSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">61L</v>
+                              </o>
+                              <v n="Id">60L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].bHave"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">63L</v>
+                              </o>
+                              <v n="Id">62L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].biBoxSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">65L</v>
+                              </o>
+                              <v n="Id">64L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].bHome"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">67L</v>
+                              </o>
+                              <v n="Id">66L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"Push_NG[2]"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">69L</v>
+                              </o>
+                              <v n="Id">68L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].bGoWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">71L</v>
+                              </o>
+                              <v n="Id">70L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].bLeaveWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">73L</v>
+                              </o>
+                              <v n="Id">72L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].bJog_Down"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">75L</v>
+                              </o>
+                              <v n="Id">74L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[2].bJog_Up"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">77L</v>
+                              </o>
+                              <v n="Id">76L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Home_done</v>
+                              <v>biSensor</v>
+                              <v>P_OT</v>
+                              <v>N_OT</v>
+                              <v>bHave</v>
+                              <v>Box</v>
+                              <v>bHome</v>
+                              <v>Push_NG</v>
+                              <v>bGoWorkPos</v>
+                              <v>bLeaveWorkPos</v>
+                              <v>JOG_N</v>
+                              <v>JOG_P</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Full</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">53L</v>
+                        </o>
+                        <v n="Id">158L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">25L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"Push_NG_Full[3]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">159L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"FB_SetMoter_auto"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"NG_Auto[3]"</v>
+                            <v n="Type">"FB_SetMoter_auto"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">105L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].HomeDone"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">108L</v>
+                              </o>
+                              <v n="Id">107L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].biSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">110L</v>
+                              </o>
+                              <v n="Id">109L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].biUpSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">112L</v>
+                              </o>
+                              <v n="Id">111L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].biDownSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">114L</v>
+                              </o>
+                              <v n="Id">113L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].bHave"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">116L</v>
+                              </o>
+                              <v n="Id">115L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].biBoxSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">118L</v>
+                              </o>
+                              <v n="Id">117L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].bHome"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">120L</v>
+                              </o>
+                              <v n="Id">119L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"Push_NG[3]"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">122L</v>
+                              </o>
+                              <v n="Id">121L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].bGoWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">124L</v>
+                              </o>
+                              <v n="Id">123L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].bLeaveWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">126L</v>
+                              </o>
+                              <v n="Id">125L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].bJog_Down"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">128L</v>
+                              </o>
+                              <v n="Id">127L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[3].bJog_Up"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">130L</v>
+                              </o>
+                              <v n="Id">129L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Home_done</v>
+                              <v>biSensor</v>
+                              <v>P_OT</v>
+                              <v>N_OT</v>
+                              <v>bHave</v>
+                              <v>Box</v>
+                              <v>bHome</v>
+                              <v>Push_NG</v>
+                              <v>bGoWorkPos</v>
+                              <v>bLeaveWorkPos</v>
+                              <v>JOG_N</v>
+                              <v>JOG_P</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Full</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">106L</v>
+                        </o>
+                        <v n="Id">160L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">104L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"Push_NG_Full[4]"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">161L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"FB_SetMoter_auto"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"NG_Auto[4]"</v>
+                            <v n="Type">"FB_SetMoter_auto"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">131L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].HomeDone"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">134L</v>
+                              </o>
+                              <v n="Id">133L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].biSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">136L</v>
+                              </o>
+                              <v n="Id">135L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].biUpSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">138L</v>
+                              </o>
+                              <v n="Id">137L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].biDownSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">140L</v>
+                              </o>
+                              <v n="Id">139L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].bHave"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">142L</v>
+                              </o>
+                              <v n="Id">141L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].biBoxSensor"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">144L</v>
+                              </o>
+                              <v n="Id">143L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].bHome"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">146L</v>
+                              </o>
+                              <v n="Id">145L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"Push_NG[4]"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">148L</v>
+                              </o>
+                              <v n="Id">147L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].bGoWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">150L</v>
+                              </o>
+                              <v n="Id">149L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].bLeaveWorkPos"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">152L</v>
+                              </o>
+                              <v n="Id">151L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].bJog_Down"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">154L</v>
+                              </o>
+                              <v n="Id">153L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"stP3NgPushMoter[4].bJog_Up"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">156L</v>
+                              </o>
+                              <v n="Id">155L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Home_done</v>
+                              <v>biSensor</v>
+                              <v>P_OT</v>
+                              <v>N_OT</v>
+                              <v>bHave</v>
+                              <v>Box</v>
+                              <v>bHome</v>
+                              <v>Push_NG</v>
+                              <v>bGoWorkPos</v>
+                              <v>bLeaveWorkPos</v>
+                              <v>JOG_N</v>
+                              <v>JOG_P</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                              <v>BOOL[REF]</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Full</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">132L</v>
+                        </o>
+                        <v n="Id">162L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">23L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Auto6">
+      <LineId Id="32885" Count="328" />
+      <LineId Id="35102" Count="0" />
+      <LineId Id="35100" Count="1" />
+      <LineId Id="33214" Count="406" />
+      <LineId Id="35099" Count="0" />
+      <LineId Id="35097" Count="1" />
+      <LineId Id="33621" Count="1373" />
+      <LineId Id="35074" Count="0" />
+      <LineId Id="34995" Count="54" />
+      <LineId Id="3442" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

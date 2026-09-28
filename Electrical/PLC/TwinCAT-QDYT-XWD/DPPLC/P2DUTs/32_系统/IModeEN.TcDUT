@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="IModeEN" Id="{44f40147-dc8d-44ec-899c-20b23bf83ecb}">
+    <Declaration><![CDATA[TYPE IModeEN ://功能屏蔽
+STRUCT
+
+	FirstEmpFoldEN		:BOOL;  		// 首层空叠隔膜屏蔽   ON是屏蔽
+	DP_ModeEN			:BOOL;		//尾层空叠隔膜屏蔽	OFF是屏蔽
+	RectifydevModelEN		:BOOL;		//隔膜纠偏屏蔽		ON是屏蔽
+	EmptyRunModeEN		:BOOL;		//空叠隔膜屏蔽		OFF是屏蔽
+	CCD_ChosesHMIEN		:BOOL;		//CCD屏蔽		ON是屏蔽
+	DT_CCD_TwoModelEN	:BOOL;		//CCD复检屏蔽		ON是屏蔽
+	DT_OverhangEN		:BOOL;		//对齐度屏蔽		ON是屏蔽
+	DT_CellNG_TFEN		:BOOL;		//对齐度踢废屏蔽 	ON是屏蔽
+	DT_OHclosureEN		:BOOL;		//对齐度闭环屏蔽		ON是屏蔽
+	GMAngleALMsel     :BOOL;		//隔膜卷径报警屏蔽		ON是屏蔽
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Method" Id="{92686f6b-76ab-43bf-9c8e-fa42a4a90268}">
+    <Declaration><![CDATA[TYPE ST_Method :  //    方法
+STRUCT
+
+             AllTempTurnON                            :ST_MethodOut;//温控开
+             AllTempTurnOFF                           :ST_MethodOut;//温控关
+          
+             AllRectLock                                  :ST_MethodOut;//纠偏外部锁定
+             AllRectAuto                                  :ST_MethodOut;//纠偏自动
+             AllRectManual                              :ST_MethodOut;//纠偏手动
+             AllRectCenter                               :ST_MethodOut;//j纠偏居中
+
+            // AllTen                                          :ST_MethodOut;
+          
+
+             AllGear                                        :ST_MethodOut;
+             AllHome                                      :ST_MethodOut;
+
+
+           // P1Ten                                             :ST_MethodOut;
+           // P2Ten                                             :ST_MethodOut;
+            //P3Ten                                             :ST_MethodOut;
+
+            P1Pole                                            :ST_MethodOut;   
+            P2Pole                                            :ST_MethodOut;   
+            P3Pole                                            :ST_MethodOut;   
+            P1GM                                             :ST_MethodOut;    
+            P2GM                                             :ST_MethodOut;   
+
+
+            P1CamIn                                        :ST_MethodOut;
+            P2CamIn_U                                     :ST_MethodOut;
+            P2CamIn_D                                     :ST_MethodOut;
+            P3CamIn_U                                     :ST_MethodOut;
+            P3CamIn_D                                     :ST_MethodOut;
+
+
+          P4ShortTestHome                              :ST_MethodOut;  //短路测试
+          P4StackHome                                    :ST_MethodOut; //叠片台
+          P4CutSyncHome                                 :ST_MethodOut ;  //裁切同步
+          P4NGHome                                       :ST_MethodOut ;  //NG料盒
+
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

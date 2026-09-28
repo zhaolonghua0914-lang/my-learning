@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_FingerprintKey" Id="{c97b0611-32f2-4e47-b990-c349216ff665}">
+    <Declaration><![CDATA[TYPE ST_FingerprintKey :
+STRUCT
+	MachineId		: 	STRING(49);//指纹器编号	
+	UserId			:	STRING(49);//用户名	
+	UserClassLevel	: 	STRING(49);//用户权限	
+	Fid				: 	STRING(49);//本地文件id	
+	MatchScore		:	STRING(49);//指纹匹配评分	
+	Result			: 	STRING(49);//匹配结果	
+	FileName		: 	STRING(49);//本地文件路径	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

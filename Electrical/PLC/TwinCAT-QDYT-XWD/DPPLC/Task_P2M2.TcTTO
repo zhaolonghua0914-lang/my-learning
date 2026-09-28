@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <Task Name="Task_P2M2" Id="{0fa39ed2-609e-46cc-aa60-f4f44efe965a}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>2000</CycleTime>
+    <Priority>14</Priority>
+    <PouCall>
+      <Name>P2M2_Auto</Name>
+    </PouCall>
+    <TaskFBGuid>{39112f9d-68b5-4c3f-9c81-a409eeb62855}</TaskFBGuid>
+    <Fb_init>{3dccc1dc-3c58-44d3-bf24-37934550c217}</Fb_init>
+    <Fb_exit>{d239b7dc-5759-45b1-a640-ad5ba0a3b192}</Fb_exit>
+    <CycleUpdate>{07a8ae87-107c-420f-beaf-3bff219adc2c}</CycleUpdate>
+    <PostCycleUpdate>{cba6577e-c02b-4af7-8904-0c88d7fe3db3}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

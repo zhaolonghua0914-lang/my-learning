@@ -1,0 +1,313 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Weight_Test" Id="{3b3f6510-c493-44c4-9436-171253fc6547}" SpecialFunc="None">
+    <Declaration><![CDATA[//称重测试
+PROGRAM LateBlanking_Weight_Test
+VAR
+	strBetryName: STRING;//文件名
+
+    strBetryName2: STRING;//文件名
+	bTest: BOOL;
+	AA: UDINT;
+	BB: UDINT;
+	Weight_cese_1: Weight_cese;
+	
+	W_ton :Tc2_Standard.TON;
+	
+
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+//称重平台上料
+IF NOT Permit_Weigh AND NOT Weigh_Finish THEN
+	Permit_WeighRack:=TRUE;
+	ELSE
+	Permit_WeighRack:=FALSE;
+END_IF
+
+
+W_ton(PT:=T#100MS);
+Weight_date();
+
+
+CASE weight_step OF 
+0:
+IF Permit_Weigh AND NOT Weigh_Finish AND NOT P3_Error[15]THEN
+	weight_step:=10;
+END_IF
+
+10:
+P3_Weight_gross.Weight_start:=TRUE;
+W_ton.IN:=TRUE;
+weight_step:=20;
+
+20:
+IF( P3_Weight_gross.Weight_finish  AND W_ton.Q)  OR  P3User2_Par.Shield[2]	THEN
+	Permit_Weigh:=FALSE;
+	Weigh_Finish:=TRUE;
+	P3_Weight_gross.Weight_start:=FALSE;
+	CellMemory[CellNo.Weight].Cell_weight:=P3_Weight_gross.bweight;
+	CellMemory[CellNo.Weight].Weight:=1;
+	weight_step:=30;
+END_IF
+
+30:
+W_ton.IN:=FALSE;
+P3_Weight_gross.Weight_finish:=FALSE;
+weight_step:=0;
+END_CASE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*IF bTest THEN
+	
+ STRING_TO_UTF8(pDstUTF8:=ADR(P3WeightSend.Data) , pSrcSTRING:=ADR(strBetryName) , nDstSize:=INT_TO_UINT( LEN(STR:=strBetryName )+1) );
+
+ AA:=INT_TO_UDINT( LEN(STR:=strBetryName2 )+1);
+  BB:=INT_TO_UDINT( LEN(STR:=strBetryName )+1);
+ UTF8_TO_STRING(pDstSTRING:=ADR(strBetryName2) , pSrcUTF8:=ADR(P3WeightRec.Data) , nDstSize:=SIZEOF(P3WeightRec.Data) , nDstLen=> AA    );
+ bTest:=FALSE;
+END_IF*)
+
+]]></ST>
+    </Implementation>
+    <Action Name="Weight_date" Id="{644be724-9cc3-4540-9374-34b8557baac3}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"Weight_cese"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"Weight_cese_1"</v>
+                          <v n="Type">"Weight_cese"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">15L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" />
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">true</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3IO.P3WeightSend"</v>
+                              <v n="Type">"ST_SendData"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">5L</v>
+                            </o>
+                            <v n="Id">4L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3WeightRec"</v>
+                              <v n="Type">"ST_ReceiveData"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">14L</v>
+                            </o>
+                            <v n="Id">13L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3_Weight_gross"</v>
+                              <v n="Type">"ST_Gross"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">18L</v>
+                            </o>
+                            <v n="Id">17L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>W_Send</v>
+                            <v>W_Receive</v>
+                            <v>W_Gross</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>ST_SendData[REF]</v>
+                            <v>ST_ReceiveData[REF]</v>
+                            <v>Gross[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" />
+                          <l2 n="Types" />
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">16L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Weight_Test">
+      <LineId Id="253" Count="0" />
+      <LineId Id="205" Count="0" />
+      <LineId Id="220" Count="4" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="218" Count="1" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="81" Count="1" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="310" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="291" Count="2" />
+      <LineId Id="288" Count="0" />
+      <LineId Id="255" Count="31" />
+      <LineId Id="175" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="98" Count="7" />
+      <LineId Id="19" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

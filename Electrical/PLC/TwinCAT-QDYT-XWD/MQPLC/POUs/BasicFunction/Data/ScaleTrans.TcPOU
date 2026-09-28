@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="ScaleTrans" Id="{651fea1f-dfbc-4f94-9b5f-ba0a5db27a2f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION ScaleTrans : REAL
+VAR_INPUT
+	EN:BOOL;//启动条件
+	Scalln:REAL;//输入值
+	X0:REAL;//输入范围下限值
+	Y0:REAL;//输出范围下限值
+	X1:REAL;//输入范围上限值
+	Y1:REAL;//输出范围上限值
+	Sclofs:REAL;//偏置值
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF EN THEN
+	IF (X1-X0)<> 0 THEN
+		ScaleTrans:=(Y1-Y0)/(X1-X0)*(Scalln-X0)+Y0+Sclofs;
+	END_IF
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="ScaleTrans">
+      <LineId Id="7" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

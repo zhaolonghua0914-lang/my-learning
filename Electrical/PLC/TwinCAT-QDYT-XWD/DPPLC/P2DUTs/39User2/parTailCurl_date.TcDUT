@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="parTailCurl_date" Id="{1c6828ae-d5c7-4157-b0f3-d5412b300b83}">
+    <Declaration><![CDATA[TYPE parTailCurl_date :
+STRUCT
+	HotTime:REAL;//热切加热时间
+	SumNo:REAL:=1;//尾卷总圈数
+	SynNo:REAL;//尾卷同步圈数
+	CoeSpeed:REAL;//尾卷主轴速度系数
+	Xlength:REAL;//夹膜平移夹板到卷针边距离
+	WJ_PoistCamOut:REAL;//尾卷夹膜平移凸轮解耦位置
+	Sticker_Model: BOOL;//贴胶MARK与定长切换
+	Hotcount:UDINT;///热切切断计数
+	Hotlifetime:UDINT;///热切切断寿命
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

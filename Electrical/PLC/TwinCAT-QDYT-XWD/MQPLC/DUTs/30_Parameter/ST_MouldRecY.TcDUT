@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_MouldRecY" Id="{005e295a-0eea-4718-977d-bcd2c28c1ccf}">
+    <Declaration><![CDATA[TYPE ST_MouldRecY :
+STRUCT
+		fRecBaseValue1                         :REAL:=5;//模具Y纠偏传感器基准值1(靠近大板)
+		fRecBaseValue2							:REAL:=5;//模具Y纠偏传感器基准值2(远离大板)	
+		fRectifyCoe                                 :REAL:=1;//纠偏系数	
+		bRectifyDir                                 :BOOL;//纠偏方向
+		fRecBaseRange                           :REAL:=0.2;//纠偏无效范围     注：纠偏量超出此值，才会进行动作。
+		iMode                                        :INT:=1;//纠偏模式   1=单边纠偏；2=双边纠偏
+		fRecAxisPos_H                             :REAL:=4;//纠偏电机上限
+		fRecAxisPos_L                             :REAL:=4;//纠偏电机下限
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

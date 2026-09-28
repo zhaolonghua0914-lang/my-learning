@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDComLineScan" Id="{0e574d4f-0a8d-4c87-8bbb-0f88faaf2753}">
+    <Declaration><![CDATA[TYPE ST_CCDComLineScan :
+STRUCT
+	//BLineScanNG_Down   :INT;       (***线扫缺陷NG信号***)
+	//BLineScanNG_UP   :INT;      
+	bLineScanNG:BOOL; (***线扫缺陷NG信号***)
+    bLineScan_Warn   :BOOL;       (***线扫暂停警告***)
+	bLineScan_Estop   :BOOL;       (***线扫报警***)
+	iResult:INT;  //先扫反馈结果(   1=OK   2=黄标类型(不停机)  ;3=裂纹圆角类型   ;0=无效)
+	iPoleNo:STRING(256);//线扫极片编号
+	iResult_Down:INT; //下线扫NG类型；
+	iResult_UP:INT;//上线扫NG类型；
+	iResult_Start:BOOL;//线扫软启动	
+	bSendMark:BOOL;//PLC_To_PC上位机的发送数据标志
+	
+	(*******************************************线扫IO控制*****************************************************)
+	iResult_IO_UP:INT;//上线扫结果	30=OK	31=NG	33=无效
+	iResult_IO_Down:INT;//下线扫结果	30=OK	31=NG	33=无效
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

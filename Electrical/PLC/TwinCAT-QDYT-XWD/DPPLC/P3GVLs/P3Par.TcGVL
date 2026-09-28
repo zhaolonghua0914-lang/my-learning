@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="P3Par" Id="{a931f7fd-b3c4-4a2e-955f-dc8285574f74}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+	CellNo: ST_MemoryName;//电芯记忆编号
+	Torque_P3:ST_Torque_P3;
+END_VAR
+
+
+
+VAR_GLOBAL PERSISTENT
+  	P3User2_Par:              User2_Par;
+	P3_Production:LocalProduction;//产能统计
+	CellMemory: ARRAY [1..80] OF ST_CellMemory;// 电芯记忆
+	P3Par :P3_Par;
+	P3_Weight_gross	:ST_Gross;
+	Alarm_CS :ARRAY[0..23] OF UDINT;//报警时间计数
+	Auto_CS :ARRAY[0..23] OF UDINT;//运行时间计数
+	Manul_CS :ARRAY[0..23] OF UDINT;//待机时间计数
+	Oven_par :ARRAY[1..2] OF REAL;//烤箱升降取放烤箱辅助位(相对位置)
+	P3TimeData :               FB_HDData;
+	P3_PLC_PC_MES:ST_PLC_PC_MES;//PLC与PC物料码交互
+	
+	//模切、叠台条码交互
+	DT_To_MQ_MES AT %Q*:ST_DT_To_MQ_MES;
+	MQ_To_DT_MES AT %I*:ST_MQ_To_DT_MES;
+
+END_VAR
+	]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,1004 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Output_statistics" Id="{04f97668-c1f8-4572-88cd-5ab0baa60869}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Output_statistics
+VAR
+	I:INT;
+	DayClear:R_TRIG;
+	NightClear:R_TRIG;
+	Day_Output_U:UINT;//白班总产量
+	Night_Output_U:UINT;//夜班总产量
+	Day_Output_NG_U:UINT;// 白班NG数
+	Night_Output_NG_U:UINT;// 夜班NG数
+	JS_ton1 :ARRAY[0..24] OF ton;//后段运行时间计时
+	JS_ton2 :ARRAY[0..24] OF ton;//后段报警时间计时
+	His_Hough:R_TRIG;
+	P3FB_ProductionDataLocal:FB_ProductionDataLocal;//产能统计
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+P3FB_ProductionDataLocal(
+	NowTimeData:=System.StTime, (*当前系统时间*)
+	OutFlag1:=P3_Production.OutFlag1, (*产量计数标志1*)
+	OutFlag2:=P3_Production.OutFlag2, (*产量计数标志1*)
+	NGFlag:=P3_Production.NGFlag ,(*NG1计数标志*)(*扫码NG*)
+	RunFlag:=P3_SystemRUN.iMode=1,(*运行标志*)
+	WaitFlag:=P3_SystemRUN.iMode<>1 AND NOT P3_SystemRUN.Alarming ,(*待料标志*)
+	AlarmFlag:=P3_SystemRUN.Alarming, (*故障标志*)
+	DelDataAMBtn:= P3_Production.HMI_DelDataAMBtn,(*白班数据清除按钮*)//HMI_DayCountZero
+	DelDataPMBtn:= P3_Production.HMI_DelDataPMBtn,(*夜班数据清除按钮*)//HMI_NightCountZero
+	NowOutTotal=>P3_Production.HMI_TotalCount ,(*当前班次加工总数*)
+	NowRate=> P3_Production.HMI_Qualified,(*当前班次良率*)
+	OEE=> P3_Production.HMI_OEE,//设备稼动率/稼动率
+	NGClearAMBtn:=P3_Production.HMI_NGClearAMBtn,//白班NG类型计数清零
+	NGClearPMBtn:=P3_Production.HMI_NGClearPMBtn,//夜班NG类型计数清零
+	NowDay:= P3_Production.SaveNowDay,(*数据移位时所保存当前日*)
+	NowMonth:=P3_Production.SaveNowMonth ,(*数据移位时所保存当前月*)
+	DayHistory:= P3_Production.DayReadDayHistory, (*历史日*)
+	MonthHistory:= P3_Production.DayReadMonthHistory,(*历史月*)
+	TodayTotal:=P3_Production.HMI_TodayTotal ,(*当天24H生产总数*)
+	TodayOK:=P3_Production.HMI_TodayOK , (*当天24H生产OK总数*)
+	TodayNG:=P3_Production.HMI_TodayNG , (*当天24H生产NG总数*)
+	TodayTotal_AM:= P3_Production.DayCountTotal,(*当天白班生产总数*)
+	TodayTotal_PM:=P3_Production.NightCountTotal,(*当天夜班生产总数*)
+	TodayRate_AM:= P3_Production.HMI_DayQualified,(*当天白班良率*)
+	TodayRate_PM:=P3_Production.HMI_NightQualified ,(*当天夜班良率*)
+	TodayOK_AM:=P3_Production.HMI_DayOkCount ,(*当天白班生产OK总数*)
+	TodayOK_PM:= P3_Production.HMI_NightOkCount,(*当天夜班生产OK总数*)
+	TodayNG_AM:=P3_Production.HMI_DayNgCount ,(*当天白班生产NG总数*)
+	TodayNG_PM:=P3_Production.HMI_NightNgCount , (*当天夜班生产NG总数*)
+	TodayHour_AM:= P3_Production.HourTimeDayCount,(*当天白班每小时产量ARRAY[8..19 ]*)
+	TodayHour_PM:=P3_Production.HourTimeNightCount ,(*当天夜班每小时产量ARRAY[0..23]*)
+	TodayNGClass_AM:=P3_Production.NgPerHourDayCount , (*当天白班各类NG数量ARRAY[1..30 ]*)
+	TodayNGClass_PM:= P3_Production.NgPerHourNightCount,(*当天夜班各类NG数量ARRAY[1..30 ]*)
+	TodayRun_AM:= P3_Production.DayRunTimeTotal,(*当天白班总运行时间合计/分*)
+	TodayRun_PM:= P3_Production.NightRunTimeTotal,(*当天夜班总运行时间合计/分*)
+	TodayWait_AM:=P3_Production.DayWaitTimeTotal , (*当天白班总待料时间合计/分*)
+	TodayWait_PM:=P3_Production.NightWaitTimeTotal , (*当天夜班总待料时间合计/分*)
+	TodayAlarm_AM:=P3_Production.DayAlarmTimeTotal ,(*当天白班总报警时间合计/分*)
+	TodayAlarm_PM:=P3_Production.NightAlarmTimeTotal, (*当天夜班总报警时间合计/分*)
+	
+	TodayRun_AMH:=P3_Production.DayRunTime_min,(*当天白班每小时运行时间合计/分*)
+	TodayRun_PMH:=P3_Production.NightRunTime_min,(*当天夜班每小时运行时间合计/分*)
+	TodayWait_AMH:=P3_Production.DayWaitTime_min,(*当天白班每小时待料时间合计/分*)
+	TodayWait_PMH:=P3_Production.NightWaitTime_min,(*当天夜班每小时待料时间合计/分*)
+	TodayAlarm_AMH:=P3_Production.DayAlmTime_min,(*当天白班每小时报警时间合计/分*)
+	TodayAlarm_PMH:=P3_Production.NightAlmTime_min,(*当天夜班每小时报警时间合计/分*)
+	
+	HistoryRun_AMH:=P3_Production.HisDayRunTime_min,(*历史每天白班每小时运行时间合计ARRAY[1..7 ]*)
+	HistoryRun_PMH:=P3_Production.HisNightRunTime_min,(*历史每天夜班每小时运行时间合计ARRAY[1..7 ]*)
+	HistoryWait_AMH:=P3_Production.HisDayWaitTime_min,(*历史每天白班每小时待料时间合计ARRAY[1..7 ]*)
+	HistoryWait_PMH:=P3_Production.HisNightWaitTime_min,(*历史每天夜班每小时待料时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_AMH:=P3_Production.HisDayAlmTime_min,(*历史每天白班每小时报警时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_PMH:=P3_Production.HisNightAlmTime_min,(*历史每天夜班每小时报警时间合计ARRAY[1..7 ]*)
+	
+	RunCnt_AM:=P3_Production.nDayRunTimeCnt , (*白班运行时间计数*)
+	RunCnt_PM:=P3_Production.nNightRunTimeCnt ,(*夜班运行时间计数*)
+	WaitCnt_AM:= P3_Production.nDayWaitTimeCnt, (*白班待料时间计数*)
+	WaitCnt_PM:=P3_Production.nNightWaitTimeCnt ,(*夜班待料时间计数*)
+	AlarmCnt_AM:=P3_Production.nDayAlarmTimeCnt , (*白班报警时间计数*)
+	AlarmCnt_PM:= P3_Production.nNightAlarmTimeCnt,(*夜班报警时间计数*)
+	
+	HistoryTotal:=P3_Production.HMI_HistoryTotal ,(*历史每天24H生产总数ARRAY[1..7 ]*)
+	HistoryOK:=P3_Production.HMI_HistoryOK ,(*历史每天24H生产OK总数ARRAY[1..7 ]*)
+	HistoryNG:=P3_Production.HMI_HistoryNG , (*历史每天24H生产NG总数ARRAY[1..7 ]*)
+	HistoryTotal_AM:=P3_Production.DayCountTotalHistory ,(*历史每天白班生产总数ARRAY[1..7 ]*)
+	HistoryTotal_PM:=P3_Production.NightCountTotalHistory ,(*历史每天夜班生产总数ARRAY[1..7 ]*)
+	HistoryRate_AM:=P3_Production.HMI_DayQualifiedHistory , (*历史每天白班良率ARRAY[1..7 ]*)
+	HistoryRate_PM:=P3_Production.HMI_NightQualifiedHistory,(*历史每天夜班良率ARRAY[1..7 ]*)
+	HistoryOK_AM:=P3_Production.HMI_DayOkCountHistory , (*历史每天白班生产OK总数ARRAY[1..7 ]*)
+	HistoryOK_PM:=P3_Production.HMI_NightOkCountHistory , (*历史每天夜班生产OK总数ARRAY[1..7 ]*)
+	HistoryNG_AM:=P3_Production.HMI_DayNgCountHistory ,(*历史每天白班生产NG总数ARRAY[1..7 ]*)
+	HistoryNG_PM:= P3_Production.HMI_NightNgCountHistory,(*历史每天夜班生产NG总数ARRAY[1..7 ]*)
+	HistoryHour_AM:=P3_Production.HourTimeDayCountHistory ,(*历史每天白班每小时产量ARRAY[1..7,8..19 ]*)
+	HistoryHour_PM:=P3_Production.HourTimeNightCountHistory ,(*历史每天夜班每小时产量ARRAY[1..7,0..23]*)
+	HistoryNGClass_AM:= P3_Production.NgPerHourDayCountHistory,(*历史每天白班各类NG数量ARRAY[1..7,1..30 ]*)
+	HistoryNGClass_PM:= P3_Production.NgPerHourNightCountHistory,(*历史每天夜班各类NG数量ARRAY[1..7,1..30 ]*)
+	HistoryRun_AM:=P3_Production.DayRunTimeTotalHistory , (*历史每天白班总运行时间合计ARRAY[1..7 ]*)
+	HistoryRun_PM:= P3_Production.NightRunTimeTotalHistory, (*历史每天夜班总运行时间合计ARRAY[1..7 ]*)
+	HistoryWait_AM:= P3_Production.DayWaitTimeTotalHistory,(*历史每天白班总待料时间合计ARRAY[1..7 ]*)
+	HistoryWait_PM:= P3_Production.NightWaitTimeTotalHistory, (*历史每天夜班总待料时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_AM:= P3_Production.DayAlarmTimeTotalHistory,(*历史每天白班总报警时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_PM:= P3_Production.NightAlarmTimeTotalHistory,(*历史每天夜班总报警时间合计ARRAY[1..7 ]*)
+
+	TodayNgHour_Day:=P3_Production.HMINgClassCount_Day,(*白班每种NG类型每小时统计 ,,,NG类型，小时*)
+	TodayNgHour_Night:=P3_Production.HMINgClassCount_Night,(*夜班每种NG类型每小时统计 ,,,NG类型，小时*)
+	HisTodayNgHour_Day:=P3_Production.HisHMINgClassCount_Day,//l历史白班每小时NG类型统计,,
+	HisTodayNgHour_Night:=P3_Production.HisHMINgClassCount_Night,//历史夜班每小时NG类型统计,,
+	);
+
+Day_NG.Hough:=REAL_TO_UINT((P2M1_MachCtrl.DT_b.DT_DayHough+P2M2_MachCtrl.DT_b.DT_DayHough+P2M3_MachCtrl.DT_b.DT_DayHough)*100);
+Night_NG.Hough:=REAL_TO_UINT((P2M1_MachCtrl.DT_b.DT_NightHough+P2M2_MachCtrl.DT_b.DT_NightHough+P2M3_MachCtrl.DT_b.DT_NightHough)*100);
+Day_NG.JDHough:=REAL_TO_UINT((P2M1_MachCtrl.DT_b.DTJD_DayHough+P2M2_MachCtrl.DT_b.DTJD_DayHough+P2M3_MachCtrl.DT_b.DTJD_DayHough)*100);
+Night_NG.JDHough:=REAL_TO_UINT((P2M1_MachCtrl.DT_b.DTJD_NightHough+P2M2_MachCtrl.DT_b.DTJD_NightHough+P2M3_MachCtrl.DT_b.DTJD_NightHough)*100);
+Day_NG.FirstCheck:=REAL_TO_UINT(P3_Production.NgPerHourDayCount[10]+P3_Production.NgPerHourDayCount[11]+P3_Production.NgPerHourDayCount[12]);
+Night_NG.FirstCheck:=REAL_TO_UINT(P3_Production.NgPerHourNightCount[10]+P3_Production.NgPerHourNightCount[11]+P3_Production.NgPerHourNightCount[12]);
+//昨日对齐度NG数
+His_Hough(CLK:= (System.StTime.wHour=8));
+IF His_Hough.Q THEN	
+	//白班
+	Day_NG.His_Hough:=Day_NG.Hough;
+	Day_NG.JDHis_Hough:=Day_NG.JDHough;
+	Day_NG.His_FirstCheck:=Day_NG.FirstCheck;
+	Day_NG.Hough_DT[1]:=P2M1_MachCtrl.DT_b.DT_DayHough_U; 
+	Day_NG.Hough_DT[2]:=P2M2_MachCtrl.DT_b.DT_DayHough_U; 
+	Day_NG.Hough_DT[3]:=P2M3_MachCtrl.DT_b.DT_DayHough_U; 
+	Day_NG.His_HoughAn[1]:=REAL_TO_UINT(P2M1_MachCtrl.DT_b.DT_DayHoughAn);
+	Day_NG.His_HoughAn[2]:=REAL_TO_UINT(P2M2_MachCtrl.DT_b.DT_DayHoughAn);
+	Day_NG.His_HoughAn[3]:=REAL_TO_UINT(P2M3_MachCtrl.DT_b.DT_DayHoughAn);
+	Day_NG.His_HoughCa[1]:=REAL_TO_UINT(P2M1_MachCtrl.DT_b.DT_DayHoughCa);
+	Day_NG.His_HoughCa[2]:=REAL_TO_UINT(P2M2_MachCtrl.DT_b.DT_DayHoughCa);
+	Day_NG.His_HoughCa[3]:=REAL_TO_UINT(P2M3_MachCtrl.DT_b.DT_DayHoughCa);
+	P2M1_MachCtrl.DT_b.DT_DayHough_U:=0;
+	P2M2_MachCtrl.DT_b.DT_DayHough_U:=0;
+	P2M3_MachCtrl.DT_b.DT_DayHough_U:=0;
+	P2M1_MachCtrl.DT_b.DT_DayHoughAn:=0;
+	P2M2_MachCtrl.DT_b.DT_DayHoughAn:=0;
+	P2M3_MachCtrl.DT_b.DT_DayHoughAn:=0;
+	P2M1_MachCtrl.DT_b.DT_DayHoughCa:=0;
+	P2M2_MachCtrl.DT_b.DT_DayHoughCa:=0;
+	P2M3_MachCtrl.DT_b.DT_DayHoughCa:=0;
+	//夜班
+	Night_NG.His_Hough:=Night_NG.Hough;
+	Night_NG.JDHis_Hough:=Night_NG.JDHough;
+	Night_NG.His_FirstCheck:=Night_NG.FirstCheck;
+	Night_NG.Hough_DT[1]:=P2M1_MachCtrl.DT_b.DT_NightHough_U; 
+	Night_NG.Hough_DT[2]:=P2M2_MachCtrl.DT_b.DT_NightHough_U; 
+	Night_NG.Hough_DT[3]:=P2M3_MachCtrl.DT_b.DT_NightHough_U; 
+	Night_NG.His_HoughAn[1]:=REAL_TO_UINT(P2M1_MachCtrl.DT_b.DT_NightHoughAn);
+	Night_NG.His_HoughAn[2]:=REAL_TO_UINT(P2M2_MachCtrl.DT_b.DT_NightHoughAn);
+	Night_NG.His_HoughAn[3]:=REAL_TO_UINT(P2M3_MachCtrl.DT_b.DT_NightHoughAn);
+	Night_NG.His_HoughCa[1]:=REAL_TO_UINT(P2M1_MachCtrl.DT_b.DT_NightHoughCa);
+	Night_NG.His_HoughCa[2]:=REAL_TO_UINT(P2M2_MachCtrl.DT_b.DT_NightHoughCa);
+	Night_NG.His_HoughCa[3]:=REAL_TO_UINT(P2M3_MachCtrl.DT_b.DT_NightHoughCa);
+	P2M1_MachCtrl.DT_b.DT_NightHough_U:=0;
+	P2M2_MachCtrl.DT_b.DT_NightHough_U:=0;
+	P2M3_MachCtrl.DT_b.DT_NightHough_U:=0;
+	P2M1_MachCtrl.DT_b.DT_NightHoughAn:=0;
+	P2M2_MachCtrl.DT_b.DT_NightHoughAn:=0;
+	P2M3_MachCtrl.DT_b.DT_NightHoughAn:=0;
+	P2M1_MachCtrl.DT_b.DT_NightHoughCa:=0;
+	P2M2_MachCtrl.DT_b.DT_NightHoughCa:=0;
+	P2M3_MachCtrl.DT_b.DT_NightHoughCa:=0;
+END_IF
+
+IF system.stTime.wHour >=8 AND system.stTime.wHour <20 THEN
+  P3_Production.NgPerHourDayCount[13]:=(MTD_Mes1.rExcelRate[0]+MTD_Mes1.rExcelRate[15])/(P2M1_Par.stDT_date.An_Quantity(*+P2M1_Par.stDT_date.Ca_Quantity*));
+ // P3_Production.NgPerHourDayCount[14]:=(MTD_Mes1.rExcelRate[27]+MTD_Mes1.rExcelRate[41])/P2M1_Par.stDT_date.Ca_Quantity;	
+  P3_Production.NgPerHourDayCount[15]:=UDINT_TO_REAL(P2M1_Par.stDT_date.An_Rectifydev_DayNG+P2M2_Par.stDT_date.An_Rectifydev_DayNG+P2M3_Par.stDT_date.An_Rectifydev_DayNG)/P2M1_Par.stDT_date.An_Quantity;  
+//  P3_Production.NgPerHourDayCount[16]:=UDINT_TO_REAL(P2M1_Par.stDT_date.Ca_Rectifydev_DayNG+P2M2_Par.stDT_date.Ca_Rectifydev_DayNG+P2M3_Par.stDT_date.Ca_Rectifydev_DayNG)/P2M1_Par.stDT_date.Ca_Quantity;  
+  P3_Production.NgPerHourDayCount[17]:=(P2M1_MachCtrl.DT_b.DT_DayHoughAn+P2M2_MachCtrl.DT_b.DT_DayHoughAn+P2M3_MachCtrl.DT_b.DT_DayHoughAn)/P2M1_Par.stDT_date.An_Quantity;
+END_IF  
+
+IF system.stTime.wHour >=20 OR system.stTime.wHour<8 THEN
+  P3_Production.NgPerHourNightCount[13]:=(MTD_Mes1.rExcelRate[0]+MTD_Mes1.rExcelRate[15])/(P2M1_Par.stDT_date.An_Quantity(*+P2M1_Par.stDT_date.Ca_Quantity*));
+//  P3_Production.NgPerHourNightCount[14]:=(MTD_Mes1.rExcelRate[27]+MTD_Mes1.rExcelRate[41])/P2M1_Par.stDT_date.Ca_Quantity;	
+  P3_Production.NgPerHourNightCount[15]:=UDINT_TO_REAL(P2M1_Par.stDT_date.An_Rectifydev_NightNG+P2M2_Par.stDT_date.An_Rectifydev_NightNG+P2M3_Par.stDT_date.An_Rectifydev_NightNG)/P2M1_Par.stDT_date.An_Quantity;
+//  P3_Production.NgPerHourNightCount[16]:=UDINT_TO_REAL(P2M1_Par.stDT_date.Ca_Rectifydev_NightNG+P2M2_Par.stDT_date.Ca_Rectifydev_NightNG+P2M3_Par.stDT_date.Ca_Rectifydev_NightNG)/P2M1_Par.stDT_date.Ca_Quantity;
+  P3_Production.NgPerHourNightCount[17]:=(P2M1_MachCtrl.DT_b.DT_NightHoughAn+P2M2_MachCtrl.DT_b.DT_NightHoughAn+P2M3_MachCtrl.DT_b.DT_NightHoughAn)/P2M1_Par.stDT_date.An_Quantity;
+END_IF  
+
+//运行时间统计
+P3TimeData(
+	Alm:= b_Alarm[4] , 
+	Wait:=P3_SystemRUN.iMode=3 AND NOT b_Alarm[4] , 
+	Run:=P3_SystemRUN.iMode=1 , 
+	XL_Wait:=(Step36=1910 OR Step36=1917 ) AND P3_SystemRUN.iMode=1  , 
+	Query:=HDQuery, 
+	date1:=HDdate , 	
+	STTimedata=> );
+
+
+(*
+//产量统计
+CASE Output_step OF
+100:
+		IF CellMemory[CellNo.Thickness].ScanCode<>1  AND Thickness_Finish THEN//踢扫码NG料
+				P3_Production.OutFlag1:=TRUE;
+				P3_Production.NGFlag[1]:=TRUE;//踢扫码NG料
+		ELSIF  CellMemory[CellNo.Thickness].ShortTest<>1 AND Thickness_Finish THEN//踢短路NG料
+				P3_Production.OutFlag1:=TRUE;
+				P3_Production.NGFlag[2]:=TRUE;//踢短路NG料
+		ELSIF CellMemory[CellNo.Thickness].Weight<>1 AND Thickness_Finish THEN//踢称重NG料
+				P3_Production.OutFlag1:=TRUE;
+				P3_Production.NGFlag[3]:=TRUE;//踢称重NG料
+		ELSIF Thickness_Finish AND CellMemory[CellNo.Thickness].Thickness<>1 THEN//测厚NG料
+				P3_Production.OutFlag1:=TRUE;
+				P3_Production.NGFlag[4]:=TRUE;//测厚NG料
+		ELSIF ( NOT CellMemory[CellNo.Thickness].Cell_cold_result OR NOT CellMemory[CellNo.Thickness].Cell_cold_result1 OR NOT CellMemory[CellNo.Thickness].Cell_cold_result2)  AND Thickness_Finish THEN// (NOT CellMemory[CellNo.Thickness].Cell_cold_result OR NOT CellMemory[CellNo.Thickness].Cell_cold_result1 OR
+				P3_Production.OutFlag1:=TRUE;
+				P3_Production.NGFlag[5]:=TRUE;	//MES卡站NG
+		ELSIF Thickness_Finish AND (CellMemory[CellNo.Thickness].ShortTest=1 OR P3User2_Par.Shield[1])  AND (CellMemory[CellNo.Thickness].Weight=1 OR P3User2_Par.Shield[2] ) AND (CellMemory[CellNo.Thickness].Thickness=1 OR P3User2_Par.Shield[3]) THEN
+				P3_Production.OutFlag1:=TRUE;//总数
+		END_IF
+		Output_step:=666;
+END_CASE*)
+
+
+
+
+
+
+
+
+(*
+I:=HMI_Hour;
+
+
+CASE Output_step OF
+100://白班、夜班产量统计
+IF HMI_Hour>=8 AND HMI_Hour<20 THEN//白班产量
+	Day_Output_U:=Day_Output_U+1;
+	Day_Output:=(Day_Output_U*100)+Day_NG.Hough;//因触摸屏加了两位小数点，放大100倍
+	Output_step:=200;
+END_IF
+IF (HMI_Hour>=0 AND HMI_Hour<8) OR  (HMI_Hour>=20 AND HMI_Hour<=23) THEN//夜班产量
+	Night_Output_U:=Night_Output_U+1;
+	Night_Output:=(Night_Output_U*100)+Night_NG.Hough;//因触摸屏加了两位小数点，放大100倍
+	Output_step:=200;
+END_IF
+
+
+
+200://时段产量
+	Time_Output[I]:=Time_Output[I]+1;
+	Output_step:=300;	
+
+300:
+IF HMI_Hour>=8 AND HMI_Hour<20 THEN
+		IF CellMemory[CellNo.Thickness].DT_station_No=P2M1_MachCtrl.DT_b.DT_No AND CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+				//	Day_Output_NG:=Day_Output_NG+1;
+				//	Day_NG.Hough:=Day_NG.Hough+1;
+				//	Day_NG.Hough_DT[1]:=Day_NG.Hough_DT[1]+1;
+				Output_step:=1006;
+		ELSIF CellMemory[CellNo.Thickness].DT_station_No=P2M2_MachCtrl.DT_b.DT_No AND CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+				//	Day_Output_NG:=Day_Output_NG+1;
+				//	Day_NG.Hough:=Day_NG.Hough+1;
+				//	Day_NG.Hough_DT[2]:=Day_NG.Hough_DT[2]+1;
+				Output_step:=1006;
+		ELSIF CellMemory[CellNo.Thickness].DT_station_No=P2M3_MachCtrl.DT_b.DT_No AND CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+				//	Day_Output_NG:=Day_Output_NG+1;
+				//	Day_NG.Hough:=Day_NG.Hough+1;
+				//	Day_NG.Hough_DT[3]:=Day_NG.Hough_DT[3]+1;
+				Output_step:=1006;
+		ELSIF CellMemory[CellNo.Thickness].ScanCode<>1  AND Thickness_Finish THEN//踢扫码NG料
+				Day_Output_NG_U:=Day_Output_NG_U+1;
+				Day_NG.ScanCode:=Day_NG.ScanCode+1;
+				Output_step:=1006;
+		ELSIF  CellMemory[CellNo.Thickness].ShortTest<>1 AND Thickness_Finish THEN//踢短路NG料
+				Day_Output_NG_U:=Day_Output_NG_U+1;
+				Day_NG.ShortTest:=Day_NG.ShortTest+1;
+				Output_step:=1006;
+		ELSIF CellMemory[CellNo.Thickness].Weight<>1 AND Thickness_Finish THEN//踢称重NG料
+				Day_Output_NG_U:=Day_Output_NG_U+1;
+				Day_NG.Weight:=Day_NG.Weight+1;
+				Output_step:=1006; 
+		ELSIF Thickness_Finish AND CellMemory[CellNo.Thickness].Thickness<>1 THEN//测厚NG料
+				Day_Output_NG_U:=Day_Output_NG_U+1;
+				Day_NG.Thickness:=Day_NG.Thickness+1;
+				Output_step:=1006;
+		ELSIF (NOT CellMemory[CellNo.Thickness].Cell_cold_result OR NOT CellMemory[CellNo.Thickness].Cell_cold_result1 OR NOT CellMemory[CellNo.Thickness].Cell_cold_result2 ) AND Thickness_Finish THEN
+				Day_Output_NG_U:=Day_Output_NG_U+1;
+				Day_NG.MES:=Day_NG.MES+1;
+				Output_step:=1006;	
+		ELSIF Thickness_Finish AND (CellMemory[CellNo.Thickness].ShortTest=1 OR P3User2_Par.Shield[1])  AND (CellMemory[CellNo.Thickness].Weight=1 OR P3User2_Par.Shield[2] ) AND (CellMemory[CellNo.Thickness].Thickness=1 OR P3User2_Par.Shield[3]) THEN
+				Day_Output_OK:=Day_Output_OK+1;
+				Output_step:=1006;
+		END_IF
+ELSIF (HMI_Hour>=0 AND HMI_Hour<8) OR  (HMI_Hour>=20 AND HMI_Hour<=23) THEN
+		IF CellMemory[CellNo.Thickness].DT_station_No=P2M1_MachCtrl.DT_b.DT_No AND CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+				//	Night_Output_NG:=Night_Output_NG+1;
+				//	Night_NG.Hough:=Night_NG.Hough+1;
+				//	Night_NG.Hough_DT[1]:=Night_NG.Hough_DT[1]+1;
+				Output_step:=2006;
+		ELSIF CellMemory[CellNo.Thickness].DT_station_No=P2M2_MachCtrl.DT_b.DT_No AND  CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+				//	Night_Output_NG:=Night_Output_NG+1;
+				//	Night_NG.Hough:=Night_NG.Hough+1;
+				//	Night_NG.Hough_DT[2]:=Night_NG.Hough_DT[2]+1;
+				Output_step:=2006;
+		ELSIF CellMemory[CellNo.Thickness].DT_station_No=P2M3_MachCtrl.DT_b.DT_No AND  CellMemory[CellNo.Thickness].Hough=2  AND Thickness_Finish THEN
+				//	Night_Output_NG:=Night_Output_NG+1;
+				//	Night_NG.Hough:=Night_NG.Hough+1;
+				//	Night_NG.Hough_DT[3]:=Night_NG.Hough_DT[3]+1;
+				Output_step:=2006;
+		ELSIF CellMemory[CellNo.Thickness].ScanCode<>1  AND Thickness_Finish THEN//踢扫码NG料
+				Night_Output_NG_U:=Night_Output_NG_U+1;
+				Night_NG.ScanCode:=Night_NG.ScanCode+1;
+				Output_step:=2006;
+		ELSIF  CellMemory[CellNo.Thickness].ShortTest<>1 AND Thickness_Finish THEN//踢短路NG料
+				Night_Output_NG_U:=Night_Output_NG_U+1;
+				Night_NG.ShortTest:=Night_NG.ShortTest+1;
+				Output_step:=2006;
+		ELSIF CellMemory[CellNo.Thickness].Weight<>1 AND Thickness_Finish THEN//踢称重和测厚NG料
+				Night_Output_NG_U:=Night_Output_NG_U+1;
+				Night_NG.Weight:=Night_NG.Weight+1;
+				Output_step:=2006; 
+		ELSIF Thickness_Finish AND CellMemory[CellNo.Thickness].Thickness<>1 THEN
+				Night_Output_NG_U:=Night_Output_NG_U+1;
+				Night_NG.Thickness:=Night_NG.Thickness+1;
+				Output_step:=2006;
+		ELSIF (NOT CellMemory[CellNo.Thickness].Cell_cold_result OR NOT CellMemory[CellNo.Thickness].Cell_cold_result1 OR NOT CellMemory[CellNo.Thickness].Cell_cold_result2 ) AND Thickness_Finish THEN
+				Night_Output_NG_U:=Night_Output_NG_U+1;
+				Night_NG.MES:=Night_NG.MES+1;
+				Output_step:=2006;	
+		ELSIF Thickness_Finish AND (CellMemory[CellNo.Thickness].ShortTest=1 OR P3User2_Par.Shield[1])  AND (CellMemory[CellNo.Thickness].Weight=1 OR P3User2_Par.Shield[2] ) AND (CellMemory[CellNo.Thickness].Thickness=1 OR P3User2_Par.Shield[3]) THEN
+				Night_Output_OK:=Night_Output_OK+1;
+				Output_step:=2006;
+		END_IF
+END_IF
+
+
+
+END_CASE
+
+Day_Output_NG:=(Day_Output_NG_U*100)+Day_NG.Hough;//因触摸屏加了两位小数点，放大100倍
+Night_Output_NG:=(Night_Output_NG_U*100)+Night_NG.Hough;//因触摸屏加了两位小数点，放大100倍
+
+IF Day_Output<>0 THEN 
+Day_Yield:=UINT_TO_REAL(Day_Output_OK)/((UINT_TO_REAL(Day_Output))/100);
+END_IF
+
+IF Night_Output<>0 THEN
+Night_Yield:=UINT_TO_REAL(Night_Output_OK)/((UINT_TO_REAL(Night_Output))/100);	
+END_IF
+
+
+
+
+
+DayClear(CLK:=(HMI_Hour=8 AND HMI_Minute=0 AND HMI_Second=0 ) , Q=> );
+NightClear(CLK:=(HMI_Hour=20 AND HMI_Minute=0 AND HMI_Second=0) , Q=> );
+
+
+
+IF Day_Clear OR  DayClear.Q  THEN
+	Time_Output[8]:=0;
+	Time_Output[9]:=0;
+	Time_Output[10]:=0;
+	Time_Output[11]:=0;
+	Time_Output[12]:=0;
+	Time_Output[13]:=0;
+	Time_Output[14]:=0;
+	Time_Output[15]:=0;
+	Time_Output[16]:=0;
+	Time_Output[17]:=0;
+	Time_Output[18]:=0;
+	Time_Output[19]:=0;
+	Day_Output_NG:=0;
+	Day_Output_OK:=0;
+	Day_Output:=0;
+	Day_Output_U:=0;
+	Day_Output_NG_U:=0;
+	Day_Yield:=0;
+	MEMSET(ADR(Day_NG),0,SIZEOF(Day_NG));
+END_IF
+
+IF Night_Clear OR NightClear.Q THEN
+	Time_Output[0]:=0;
+	Time_Output[1]:=0;
+	Time_Output[2]:=0;
+	Time_Output[3]:=0;
+	Time_Output[4]:=0;
+	Time_Output[5]:=0;
+	Time_Output[6]:=0;
+	Time_Output[7]:=0;
+	Time_Output[20]:=0;
+	Time_Output[21]:=0;
+	Time_Output[22]:=0;
+	Time_Output[23]:=0;
+	Night_Output_NG:=0;
+	Night_Output_OK:=0;
+	Night_Output:=0;
+	Night_Output_U:=0;
+	Night_Output_NG_U:=0;
+	Night_Yield:=0;
+	MEMSET(ADR(Night_NG),0,SIZEOF(Night_NG));
+END_IF
+
+
+JS_ton1[0](PT:=T#1000MS);
+JS_ton2[0](PT:=T#1000MS);
+//1000ms计数一次 次数变量要断电保持
+IF HMI_Hour=0 THEN//0:00-1:00
+JS_ton1[0].IN:=(b_Alarm[4] AND NOT JS_ton1[0].Q);
+ 
+IF JS_ton1[0].Q THEN
+	Alarm_CS[0]:=Alarm_CS[0]+1;
+END_IF
+JS_ton2[0].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[0].Q );
+
+IF JS_ton2[0].Q THEN
+	Auto_CS[0]:=Auto_CS[0]+1;	
+END_IF
+Manul_CS[0]:=3600-(Alarm_CS[0]+Auto_CS[0]);
+END_IF
+
+JS_ton1[1](PT:=T#1000MS);
+JS_ton2[1](PT:=T#1000MS);
+IF HMI_Hour=1 THEN//1:00-2:00
+JS_ton1[1].IN:=(b_Alarm[4] AND NOT JS_ton1[1].Q);
+ 
+IF JS_ton1[1].Q THEN
+	Alarm_CS[1]:=Alarm_CS[1]+1;
+END_IF
+JS_ton2[1].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[1].Q );
+
+IF JS_ton2[1].Q THEN
+	Auto_CS[1]:=Auto_CS[1]+1;
+	
+END_IF
+Manul_CS[1]:=3600-(Alarm_CS[1]+Auto_CS[1]);
+END_IF
+
+
+JS_ton1[2](PT:=T#1000MS);
+JS_ton2[2](PT:=T#1000MS);
+IF HMI_Hour=2 THEN//2:00-3:00
+JS_ton1[2].IN:=(b_Alarm[4] AND NOT JS_ton1[2].Q);
+ 
+IF JS_ton1[2].Q THEN
+	Alarm_CS[2]:=Alarm_CS[2]+1;
+END_IF
+JS_ton2[2].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[2].Q );
+
+IF JS_ton2[2].Q THEN
+	Auto_CS[2]:=Auto_CS[2]+1;
+	
+END_IF
+
+Manul_CS[2]:=3600-(Alarm_CS[2]+Auto_CS[2]);
+
+END_IF
+
+
+JS_ton1[3](PT:=T#1000MS);
+JS_ton2[3](PT:=T#1000MS);
+IF HMI_Hour=3 THEN//3:00-4:00
+JS_ton1[3].IN:=(b_Alarm[4] AND NOT JS_ton1[3].Q);
+ 
+IF JS_ton1[3].Q THEN
+	Alarm_CS[3]:=Alarm_CS[3]+1;
+END_IF
+JS_ton2[3].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[3].Q );
+
+IF JS_ton2[3].Q THEN
+	Auto_CS[3]:=Auto_CS[3]+1;
+	
+END_IF
+
+Manul_CS[3]:=3600-(Alarm_CS[3]+Auto_CS[3]);
+
+END_IF
+
+
+JS_ton1[4](PT:=T#1000MS);
+JS_ton2[4](PT:=T#1000MS);
+IF HMI_Hour=4 THEN//4:00-5:00
+JS_ton1[4].IN:=(b_Alarm[4] AND NOT JS_ton1[4].Q);
+ 
+IF JS_ton1[4].Q THEN
+	Alarm_CS[4]:=Alarm_CS[4]+1;
+END_IF
+JS_ton2[4].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[4].Q );
+
+IF JS_ton2[4].Q THEN
+	Auto_CS[4]:=Auto_CS[4]+1;
+	
+END_IF
+
+Manul_CS[4]:=3600-(Alarm_CS[4]+Auto_CS[4]);
+
+END_IF
+
+
+JS_ton1[5](PT:=T#1000MS);
+JS_ton2[5](PT:=T#1000MS);
+IF HMI_Hour=5 THEN//5:00-6:00
+JS_ton1[5].IN:=(b_Alarm[4] AND NOT JS_ton1[5].Q);
+ 
+IF JS_ton1[5].Q THEN
+	Alarm_CS[5]:=Alarm_CS[5]+1;
+END_IF
+JS_ton2[5].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[5].Q );
+
+IF JS_ton2[5].Q THEN
+	Auto_CS[5]:=Auto_CS[5]+1;
+	
+END_IF
+
+Manul_CS[5]:=3600-(Alarm_CS[5]+Auto_CS[5]);
+
+END_IF
+
+
+JS_ton1[6](PT:=T#1000MS);
+JS_ton2[6](PT:=T#1000MS);
+IF HMI_Hour=6 THEN//6:00-7:00
+JS_ton1[6].IN:=(b_Alarm[4] AND NOT JS_ton1[6].Q);
+ 
+IF JS_ton1[6].Q THEN
+	Alarm_CS[6]:=Alarm_CS[6]+1;
+END_IF
+JS_ton2[6].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[6].Q );
+
+IF JS_ton2[6].Q THEN
+	Auto_CS[6]:=Auto_CS[6]+1;
+	
+END_IF
+
+Manul_CS[6]:=3600-(Alarm_CS[6]+Auto_CS[6]);
+
+END_IF
+
+
+
+JS_ton1[7](PT:=T#1000MS);
+JS_ton2[7](PT:=T#1000MS);
+IF HMI_Hour=7 THEN//7:00-8:00
+JS_ton1[7].IN:=(b_Alarm[4] AND NOT JS_ton1[7].Q);
+ 
+IF JS_ton1[7].Q THEN
+	Alarm_CS[7]:=Alarm_CS[7]+1;
+END_IF
+JS_ton2[7].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[7].Q );
+
+IF JS_ton2[7].Q THEN
+	Auto_CS[7]:=Auto_CS[7]+1;
+	
+END_IF
+
+Manul_CS[7]:=3600-(Alarm_CS[7]+Auto_CS[7]);
+
+END_IF
+
+
+JS_ton1[8](PT:=T#1000MS);
+JS_ton2[8](PT:=T#1000MS);
+IF HMI_Hour=8 THEN//8:00-9:00
+JS_ton1[8].IN:=(b_Alarm[4] AND NOT JS_ton1[8].Q);
+ 
+IF JS_ton1[8].Q THEN
+	Alarm_CS[8]:=Alarm_CS[8]+1;
+END_IF
+JS_ton2[8].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[8].Q );
+
+IF JS_ton2[8].Q THEN
+	Auto_CS[8]:=Auto_CS[8]+1;
+	
+END_IF
+
+Manul_CS[8]:=3600-(Alarm_CS[8]+Auto_CS[8]);
+
+END_IF
+
+
+
+JS_ton1[9](PT:=T#1000MS);
+JS_ton2[9](PT:=T#1000MS);
+IF HMI_Hour=9 THEN//9:00-10:00
+JS_ton1[9].IN:=(b_Alarm[4] AND NOT JS_ton1[9].Q);
+ 
+IF JS_ton1[9].Q THEN
+	Alarm_CS[9]:=Alarm_CS[9]+1;
+END_IF
+JS_ton2[9].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[9].Q );
+
+IF JS_ton2[9].Q THEN
+	Auto_CS[9]:=Auto_CS[9]+1;
+	
+END_IF
+
+Manul_CS[9]:=3600-(Alarm_CS[9]+Auto_CS[9]);
+
+END_IF
+
+
+JS_ton1[10](PT:=T#1000MS);
+JS_ton2[10](PT:=T#1000MS);
+IF HMI_Hour=10 THEN//10:00-11:00
+JS_ton1[10].IN:=(b_Alarm[4] AND NOT JS_ton1[10].Q);
+ 
+IF JS_ton1[10].Q THEN
+	Alarm_CS[10]:=Alarm_CS[10]+1;
+END_IF
+JS_ton2[10].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[10].Q );
+
+IF JS_ton2[10].Q THEN
+	Auto_CS[10]:=Auto_CS[10]+1;
+	
+END_IF
+
+Manul_CS[10]:=3600-(Alarm_CS[10]+Auto_CS[10]);
+
+END_IF
+
+
+JS_ton1[11](PT:=T#1000MS);
+JS_ton2[11](PT:=T#1000MS);
+IF HMI_Hour=11 THEN//11:00-12:00
+JS_ton1[11].IN:=(b_Alarm[4] AND NOT JS_ton1[11].Q);
+ 
+IF JS_ton1[11].Q THEN
+	Alarm_CS[11]:=Alarm_CS[11]+1;
+END_IF
+JS_ton2[11].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[11].Q );
+
+IF JS_ton2[11].Q THEN
+	Auto_CS[11]:=Auto_CS[11]+1;
+	
+END_IF
+
+Manul_CS[11]:=3600-(Alarm_CS[11]+Auto_CS[11]);
+
+END_IF
+
+
+
+JS_ton1[12](PT:=T#1000MS);
+JS_ton2[12](PT:=T#1000MS);
+IF HMI_Hour=12 THEN//12:00-13:00
+JS_ton1[12].IN:=(b_Alarm[4] AND NOT JS_ton1[12].Q);
+ 
+IF JS_ton1[12].Q THEN
+	Alarm_CS[12]:=Alarm_CS[12]+1;
+END_IF
+JS_ton2[12].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[12].Q );
+
+IF JS_ton2[12].Q THEN
+	Auto_CS[12]:=Auto_CS[12]+1;
+	
+END_IF
+
+Manul_CS[12]:=3600-(Alarm_CS[12]+Auto_CS[12]);
+
+END_IF
+
+
+JS_ton1[13](PT:=T#1000MS);
+JS_ton2[13](PT:=T#1000MS);
+IF HMI_Hour=13 THEN//13:00-14:00
+JS_ton1[13].IN:=(b_Alarm[4] AND NOT JS_ton1[13].Q);
+ 
+IF JS_ton1[13].Q THEN
+	Alarm_CS[13]:=Alarm_CS[13]+1;
+END_IF
+JS_ton2[13].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[13].Q );
+
+IF JS_ton2[13].Q THEN
+	Auto_CS[13]:=Auto_CS[13]+1;
+	
+END_IF
+
+Manul_CS[13]:=3600-(Alarm_CS[13]+Auto_CS[13]);
+
+END_IF
+
+
+
+JS_ton1[14](PT:=T#1000MS);
+JS_ton2[14](PT:=T#1000MS);
+IF HMI_Hour=14 THEN//14:00-15:00
+JS_ton1[14].IN:=(b_Alarm[4] AND NOT JS_ton1[14].Q);
+ 
+IF JS_ton1[14].Q THEN
+	Alarm_CS[14]:=Alarm_CS[14]+1;
+END_IF
+JS_ton2[14].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[14].Q );
+
+IF JS_ton2[14].Q THEN
+	Auto_CS[14]:=Auto_CS[14]+1;
+	
+END_IF
+
+Manul_CS[14]:=3600-(Alarm_CS[14]+Auto_CS[14]);
+
+END_IF
+
+
+JS_ton1[15](PT:=T#1000MS);
+JS_ton2[15](PT:=T#1000MS);
+IF HMI_Hour=15 THEN//15:00-16:00
+JS_ton1[15].IN:=(b_Alarm[4] AND NOT JS_ton1[15].Q);
+ 
+IF JS_ton1[15].Q THEN
+	Alarm_CS[15]:=Alarm_CS[15]+1;
+END_IF
+JS_ton2[15].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[15].Q );
+
+IF JS_ton2[15].Q THEN
+	Auto_CS[15]:=Auto_CS[15]+1;
+	
+END_IF
+
+Manul_CS[15]:=3600-(Alarm_CS[15]+Auto_CS[15]);
+
+END_IF
+
+
+JS_ton1[16](PT:=T#1000MS);
+JS_ton2[16](PT:=T#1000MS);
+IF HMI_Hour=16 THEN//16:00-17:00
+JS_ton1[16].IN:=(b_Alarm[4] AND NOT JS_ton1[16].Q);
+ 
+IF JS_ton1[16].Q THEN
+	Alarm_CS[16]:=Alarm_CS[16]+1;
+END_IF
+JS_ton2[16].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[16].Q );
+
+IF JS_ton2[16].Q THEN
+	Auto_CS[16]:=Auto_CS[16]+1;
+	
+END_IF
+
+Manul_CS[16]:=3600-(Alarm_CS[16]+Auto_CS[16]);
+
+END_IF
+
+
+JS_ton1[17](PT:=T#1000MS);
+JS_ton2[17](PT:=T#1000MS);
+IF HMI_Hour=17 THEN//17:00-18:00
+JS_ton1[17].IN:=(b_Alarm[4] AND NOT JS_ton1[17].Q);
+ 
+IF JS_ton1[17].Q THEN
+	Alarm_CS[17]:=Alarm_CS[17]+1;
+END_IF
+JS_ton2[17].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[17].Q );
+
+IF JS_ton2[17].Q THEN
+	Auto_CS[17]:=Auto_CS[17]+1;
+	
+END_IF
+
+Manul_CS[17]:=3600-(Alarm_CS[17]+Auto_CS[17]);
+
+END_IF
+
+
+JS_ton1[18](PT:=T#1000MS);
+JS_ton2[18](PT:=T#1000MS);
+IF HMI_Hour=18 THEN//18:00-19:00
+JS_ton1[18].IN:=(b_Alarm[4] AND NOT JS_ton1[18].Q);
+ 
+IF JS_ton1[18].Q THEN
+	Alarm_CS[18]:=Alarm_CS[18]+1;
+END_IF
+JS_ton2[18].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[18].Q );
+
+IF JS_ton2[18].Q THEN
+	Auto_CS[18]:=Auto_CS[18]+1;
+	
+END_IF
+
+Manul_CS[18]:=3600-(Alarm_CS[18]+Auto_CS[18]);
+
+END_IF
+
+
+JS_ton1[19](PT:=T#1000MS);
+JS_ton2[19](PT:=T#1000MS);
+IF HMI_Hour=19 THEN//19:00-20:00
+JS_ton1[19].IN:=(b_Alarm[4] AND NOT JS_ton1[19].Q);
+ 
+IF JS_ton1[19].Q THEN
+	Alarm_CS[19]:=Alarm_CS[19]+1;
+END_IF
+JS_ton2[19].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[19].Q );
+
+IF JS_ton2[19].Q THEN
+	Auto_CS[19]:=Auto_CS[19]+1;
+	
+END_IF
+
+Manul_CS[19]:=3600-(Alarm_CS[19]+Auto_CS[19]);
+
+END_IF
+
+
+JS_ton1[20](PT:=T#1000MS);
+JS_ton2[20](PT:=T#1000MS);
+IF HMI_Hour=20 THEN//20:00-21:00
+JS_ton1[20].IN:=(b_Alarm[4] AND NOT JS_ton1[20].Q);
+ 
+IF JS_ton1[20].Q THEN
+	Alarm_CS[20]:=Alarm_CS[20]+1;
+END_IF
+JS_ton2[20].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[20].Q );
+
+IF JS_ton2[20].Q THEN
+	Auto_CS[20]:=Auto_CS[20]+1;
+	
+END_IF
+
+Manul_CS[20]:=3600-(Alarm_CS[20]+Auto_CS[20]);
+
+END_IF
+
+
+JS_ton1[21](PT:=T#1000MS);
+JS_ton2[21](PT:=T#1000MS);
+IF HMI_Hour=21 THEN//21:00-22:00
+JS_ton1[21].IN:=(b_Alarm[4] AND NOT JS_ton1[21].Q);
+ 
+IF JS_ton1[21].Q THEN
+	Alarm_CS[21]:=Alarm_CS[21]+1;
+END_IF
+JS_ton2[21].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[21].Q );
+
+IF JS_ton2[21].Q THEN
+	Auto_CS[21]:=Auto_CS[21]+1;
+	
+END_IF
+
+Manul_CS[21]:=3600-(Alarm_CS[21]+Auto_CS[21]);
+
+END_IF
+
+
+JS_ton1[22](PT:=T#1000MS);
+JS_ton2[22](PT:=T#1000MS);
+IF HMI_Hour=22 THEN//22:00-23:00
+JS_ton1[22].IN:=(b_Alarm[4] AND NOT JS_ton1[22].Q);
+ 
+IF JS_ton1[22].Q THEN
+	Alarm_CS[22]:=Alarm_CS[22]+1;
+END_IF
+JS_ton2[22].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[22].Q );
+
+IF JS_ton2[22].Q THEN
+	Auto_CS[22]:=Auto_CS[22]+1;
+	
+END_IF
+
+Manul_CS[22]:=3600-(Alarm_CS[22]+Auto_CS[22]);
+
+END_IF
+
+
+JS_ton1[23](PT:=T#1000MS);
+JS_ton2[23](PT:=T#1000MS);
+IF HMI_Hour=23 THEN//23:00-00:00
+JS_ton1[23].IN:=(b_Alarm[4] AND NOT JS_ton1[23].Q);
+ 
+IF JS_ton1[23].Q THEN
+	Alarm_CS[23]:=Alarm_CS[23]+1;
+END_IF
+JS_ton2[23].IN:=(P3_SystemRUN.iMode=1 AND NOT JS_ton2[23].Q );
+
+IF JS_ton2[23].Q THEN
+	Auto_CS[23]:=Auto_CS[23]+1;
+	
+END_IF
+
+Manul_CS[23]:=3600-(Alarm_CS[23]+Auto_CS[23]);
+
+END_IF
+
+
+//DayClear(CLK:=(HMI_Hour=8 AND HMI_Minute=0 AND HMI_Second=0 ) , Q=> );
+//NightClear(CLK:=(HMI_Hour=20 AND HMI_Minute=0 AND HMI_Second=0) , Q=> );
+
+
+
+IF Day_Clear OR  DayClear.Q  THEN
+	Auto_CS[8]:=0;
+	Auto_CS[9]:=0;
+	Auto_CS[10]:=0;
+	Auto_CS[11]:=0;
+	Auto_CS[12]:=0;
+	Auto_CS[13]:=0;
+	Auto_CS[14]:=0;
+	Auto_CS[15]:=0;
+	Auto_CS[16]:=0;
+	Auto_CS[17]:=0;
+	Auto_CS[18]:=0;
+	Auto_CS[19]:=0;
+	
+	Alarm_CS[8]:=0;
+	Alarm_CS[9]:=0;
+	Alarm_CS[10]:=0;
+	Alarm_CS[11]:=0;
+	Alarm_CS[12]:=0;
+	Alarm_CS[13]:=0;
+	Alarm_CS[14]:=0;
+	Alarm_CS[15]:=0;
+	Alarm_CS[16]:=0;
+	Alarm_CS[17]:=0;
+	Alarm_CS[18]:=0;
+	Alarm_CS[19]:=0;
+	
+	Manul_CS[8]:=0;
+	Manul_CS[9]:=0;
+	Manul_CS[10]:=0;
+	Manul_CS[11]:=0;
+	Manul_CS[12]:=0;
+	Manul_CS[13]:=0;
+	Manul_CS[14]:=0;
+	Manul_CS[15]:=0;
+	Manul_CS[16]:=0;
+	Manul_CS[17]:=0;
+	Manul_CS[18]:=0;
+	Manul_CS[19]:=0;
+	
+END_IF
+
+IF Night_Clear OR NightClear.Q THEN
+	Auto_CS[0]:=0;
+	Auto_CS[1]:=0;
+	Auto_CS[2]:=0;
+	Auto_CS[3]:=0;
+	Auto_CS[4]:=0;
+	Auto_CS[5]:=0;
+	Auto_CS[6]:=0;
+	Auto_CS[7]:=0;
+	Auto_CS[20]:=0;
+	Auto_CS[21]:=0;
+	Auto_CS[22]:=0;
+	Auto_CS[23]:=0;
+	
+	Alarm_CS[0]:=0;
+	Alarm_CS[1]:=0;
+	Alarm_CS[2]:=0;
+	Alarm_CS[3]:=0;
+	Alarm_CS[4]:=0;
+	Alarm_CS[5]:=0;
+	Alarm_CS[6]:=0;
+	Alarm_CS[7]:=0;
+	Alarm_CS[20]:=0;
+	Alarm_CS[21]:=0;
+	Alarm_CS[22]:=0;
+	Alarm_CS[23]:=0;
+	
+	Manul_CS[0]:=0;
+	Manul_CS[1]:=0;
+	Manul_CS[2]:=0;
+	Manul_CS[3]:=0;
+	Manul_CS[4]:=0;
+	Manul_CS[5]:=0;
+	Manul_CS[6]:=0;
+	Manul_CS[7]:=0;
+	Manul_CS[20]:=0;
+	Manul_CS[21]:=0;
+	Manul_CS[22]:=0;
+	Manul_CS[23]:=0;	
+
+	
+END_IF
+
+
+
+//运行时间统计
+P3TimeData(
+	Alm:= b_Alarm[4] , 
+	Wait:=P3_SystemRUN.iMode=3 AND NOT b_Alarm[4] , 
+	Run:=P3_SystemRUN.iMode=1 , 
+	XL_Wait:=(Step36=1910 OR Step36=1917 ) AND P3_SystemRUN.iMode=1  , 
+	Query:=HDQuery, 
+	date1:=HDdate , 	
+	STTimedata=> );
+
+//稼动率
+OEE1(
+	Alm:=M_Sys .p1state=4 OR  M_Sys .p1state=5 OR 
+               P2M1_DTSysState.bErrorStop OR  P2M1_WJSysState.bErrorStop OR
+               P2M2_DTSysState.bErrorStop OR  P2M2_WJSysState.bErrorStop OR
+               P2M3_DTSysState.bErrorStop OR  P2M3_WJSysState.bErrorStop OR
+               b_Alarm[4]  , 
+	Wait:= , 
+	Run:=  M_Sys .p1state=1 AND
+                 P2M1_MachCtrl.U.DT_iMode=1 AND P2M1_MachCtrl.U.WJ_iMode=1 AND P2M1_MachCtrl.U.TJ_iMode=1 AND 
+                 P2M2_MachCtrl.U.DT_iMode=1 AND P2M2_MachCtrl.U.WJ_iMode=1 AND P2M2_MachCtrl.U.TJ_iMode=1  AND
+                 P2M3_MachCtrl.U.DT_iMode=1 AND P2M3_MachCtrl.U.WJ_iMode=1 AND P2M3_MachCtrl.U.TJ_iMode=1   AND
+                 P3_SystemRUN.iMode=1, 
+	OEE=> OEE );
+*)
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="Output_statistics">
+      <LineId Id="2295" Count="977" />
+      <LineId Id="81" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

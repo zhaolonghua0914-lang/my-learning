@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="TempInShow" Id="{00930e87-7f7a-48a9-8f0c-50569287bc76}">
+    <Declaration><![CDATA[TYPE TempInShow :  //最多5个备用通道
+STRUCT
+   iPV1:                                  INT:=9999;// 读取当前温度 (模块) 
+   fPV1:                                  REAL;// 读取当前温度(转换后)
+
+   iPV2:                                  INT:=9999;// 读取当前温度 (模块) 
+   fPV2:                                  REAL;// 读取当前温度(转换后)
+
+   iPV3:                                  INT:=9999;// 读取当前温度 (模块) 
+   fPV3:                                  REAL;// 读取当前温度(转换后)
+
+   iPV4:                                  INT:=9999;// 读取当前温度 (模块) 
+   fPV4:                                  REAL;// 读取当前温度(转换后)
+
+   iPV5:                                  INT:=9999;// 读取当前温度 (模块) 
+   fPV5:                                  REAL;// 读取当前温度(转换后)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

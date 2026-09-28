@@ -1,0 +1,543 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="Weight_cese" Id="{4d0e4fbc-8712-477d-a6d6-d3283db8b9c1}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Weight_cese
+VAR_INPUT
+	//W_Send :ST_Send;
+	
+END_VAR
+VAR_IN_OUT
+
+	W_Send :ST_SendData;
+	W_Receive:ST_ReceiveData;
+	W_Gross	:ST_Gross;
+END_VAR
+VAR_OUTPUT
+	
+	
+END_VAR
+VAR
+	Step_W_Date :UINT;
+	W_TON :ARRAY[1..6] OF Tc2_Standard.TON;
+	strBetryName	:STRING;//字符串
+	strBetryName2 	:STRING;
+	strBetryName3 	:STRING;
+	L_R: UDINT;
+	L_S: UDINT;
+	G_OUT1 	:STRING;
+	G_OUT2 	:STRING;
+	weight	:REAL;
+	weight_Z	:REAL;
+	WeightTestAgain :BOOL;
+	WeightTestAgainMount :INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ACT();
+W_TON[1](PT:=T#2S);
+W_TON[2](PT:=T#100MS);
+W_TON[3](PT:=T#2S);
+W_TON[4](PT:=T#100MS);
+
+
+//初始位称重功能块
+IF W_Gross.Init THEN
+	Step_W_Date:=0;
+	W_Gross.Weight_start:=FALSE;
+	W_Gross.Clear_start:=FALSE;
+	W_Send.Status.InitRequest:=FALSE;
+	W_Send.Status.TransmitRequest:=FALSE;
+	W_Gross.error[1]:=FALSE;
+	W_Gross.Clear_finish:=FALSE;
+	W_Gross.Weight_finish:=FALSE;
+	W_Gross.Init:=FALSE;
+END_IF
+
+
+
+
+
+CASE Step_W_Date  OF	
+0://称重测试开始
+IF W_Gross.Weight_start THEN
+	Step_W_Date:=10;
+	W_Gross.Weight_finish:=FALSE;
+	W_Gross.Weight_start :=FALSE;
+	W_Gross.Clear_finish:=FALSE;
+
+ELSIF W_Gross.Clear_start THEN
+	Step_W_Date:=1010;
+	W_Gross.Clear_finish:=FALSE;
+	W_Gross.Clear_start :=FALSE;
+	W_Gross.Weight_finish:=FALSE;
+END_IF
+
+10://初始化
+W_Send.Status.InitRequest:=TRUE;
+W_TON[1].IN:=TRUE;
+Step_W_Date:=20;
+
+20://如果接收到就
+IF W_Receive.Status.InitAccepted THEN
+	Step_W_Date:=30;
+	W_Send.Status.InitRequest:=FALSE;
+	W_TON[1].IN:=FALSE;
+END_IF
+IF W_TON[1].Q THEN
+	W_Send.Status.InitRequest:=FALSE;
+	W_Gross.error[1]:=TRUE;
+	W_TON[1].IN:=FALSE;
+	Step_W_Date:=1111;
+END_IF
+
+30:
+strBetryName:='Q$R$N';
+STRING_TO_UTF8(pDstUTF8:=ADR(W_Send.Data) , pSrcSTRING:=ADR(strBetryName) , nDstSize:=INT_TO_UINT( LEN(STR:=strBetryName )+1));
+W_Send.Status.OutputLength:=INT_TO_UINT( LEN(STR:=strBetryName ));
+Step_W_Date:=40;
+
+40:
+W_Send.Status.TransmitRequest:=TRUE;
+IF W_Receive.Status.TransmitDone AND W_Receive.Status.ReceiveRequest AND W_Receive.Status.TotalInputLength>5 THEN
+	Step_W_Date:=50;
+W_Send.Status.TransmitRequest:=FALSE;
+END_IF
+
+50:
+L_R:=INT_TO_UDINT( LEN(STR:=strBetryName2 )+1);
+UTF8_TO_STRING(pDstSTRING:=ADR(strBetryName2) , pSrcUTF8:=ADR(W_Receive.Data) , nDstSize:=SIZEOF(W_Receive.Data) , nDstLen=> L_R  );
+W_TON[2].IN:=TRUE;
+IF W_TON[2].Q THEN
+Step_W_Date:=60;
+W_TON[2].IN:=FALSE;
+END_IF
+
+60:
+weight_Z:=STRING_TO_REAL(G_OUT2);
+IF G_OUT1='+' THEN
+	W_Gross.bweight:=weight_Z;
+	Step_W_Date:=70;
+END_IF
+IF G_OUT1='-' THEN
+	W_Gross.bweight:=-weight_Z;
+	Step_W_Date:=70;
+END_IF
+
+70:
+IF W_Gross.bweight >=1 OR WeightTestAgain THEN
+W_Gross.Weight_finish:=TRUE;
+Step_W_Date:=0;
+WeightTestAgain:=FALSE;
+ELSE
+WeightTestAgain:=TRUE;
+Step_W_Date:=10;
+WeightTestAgainMount:=WeightTestAgainMount+1;
+END_IF
+
+
+
+
+1010://初始化
+W_Send.Status.InitRequest:=TRUE;
+W_TON[3].IN:=TRUE;
+Step_W_Date:=1020;
+
+1020://如果接收到就
+IF W_Receive.Status.InitAccepted THEN
+	Step_W_Date:=1030;
+	W_Send.Status.InitRequest:=FALSE;
+	W_TON[3].IN:=FALSE;
+END_IF
+IF W_TON[3].Q THEN
+	W_Send.Status.InitRequest:=FALSE;
+	W_Gross.error[1]:=TRUE;
+	W_TON[3].IN:=FALSE;
+	Step_W_Date:=1111;
+END_IF
+
+1030:
+strBetryName3:='R$R$N';
+STRING_TO_UTF8(pDstUTF8:=ADR(W_Send.Data) , pSrcSTRING:=ADR(strBetryName3) , nDstSize:=INT_TO_UINT( LEN(STR:=strBetryName3 )+1   )       );
+W_Send.Status.OutputLength:=INT_TO_UINT( LEN(STR:=strBetryName3 ));
+Step_W_Date:=1040;
+
+1040:
+W_Send.Status.TransmitRequest:=TRUE;
+IF W_Receive.Status.TransmitDone  AND W_Receive.Status.ReceiveRequest THEN
+	W_Send.Status.TransmitRequest:=FALSE;
+	W_Send.Status.ReceiveAccepted:=TRUE;
+	Step_W_Date:=1050;
+END_IF
+
+1050:
+IF NOT W_Receive.Status.ReceiveRequest  THEN
+	W_Send.Status.ReceiveAccepted:=FALSE;
+	Step_W_Date:=1060;
+END_IF
+
+1060:
+IF  W_Receive.Status.ReceiveRequest THEN
+	W_Gross.Clear_finish:=TRUE;
+	Step_W_Date:=0;
+END_IF
+
+
+
+END_CASE]]></ST>
+    </Implementation>
+    <Action Name="ACT" Id="{4d624951-ef20-49f8-b78c-99228b9b80d0}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"G_OUT1"</v>
+                              <v n="Type">"STRING"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">10L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"MID"</v>
+                          <o n="Instance" t="Operand">
+                            <n n="Operand" />
+                            <v n="Type">""</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">2L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"strBetryName2"</v>
+                                <v n="Type">"STRING"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">5L</v>
+                              </o>
+                              <v n="Id">4L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"1"</v>
+                                <v n="Type">"INT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">7L</v>
+                              </o>
+                              <v n="Id">6L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"4"</v>
+                                <v n="Type">"INT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">9L</v>
+                              </o>
+                              <v n="Id">8L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>STR</v>
+                              <v>LEN</v>
+                              <v>POS</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>STRING(255)</v>
+                              <v>INT</v>
+                              <v>INT</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>   </v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>STRING(255)</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">Function</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">3L</v>
+                        </o>
+                        <v n="Id">11L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"G_OUT2"</v>
+                              <v n="Type">"STRING"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">21L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"MID"</v>
+                          <o n="Instance" t="Operand">
+                            <n n="Operand" />
+                            <v n="Type">""</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">13L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"strBetryName2"</v>
+                                <v n="Type">"STRING"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">16L</v>
+                              </o>
+                              <v n="Id">15L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"10"</v>
+                                <v n="Type">"INT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">18L</v>
+                              </o>
+                              <v n="Id">17L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"5"</v>
+                                <v n="Type">"INT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">20L</v>
+                              </o>
+                              <v n="Id">19L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>STR</v>
+                              <v>LEN</v>
+                              <v>POS</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>STRING(255)</v>
+                              <v>INT</v>
+                              <v>INT</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>   </v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>STRING(255)</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">Function</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">14L</v>
+                        </o>
+                        <v n="Id">22L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">12L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="Weight_cese">
+      <LineId Id="504" Count="149" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

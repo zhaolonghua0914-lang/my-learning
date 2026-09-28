@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ShortPar" Id="{41aad045-6d22-4ec5-a83e-56bbbc598c7f}">
+    <Declaration><![CDATA[TYPE ShortPar :
+STRUCT
+	fVoltageSet: REAL;  //电压设定值
+
+	StrMohmRangeSet:STRING; //电阻量程设置(1:2M/2:20M/3:200M/4:2000M/5:4000M/6:AUTO) 
+
+    StrSpeedSet:STRING ;//测量速度设置(FAST/SLOW)
+    
+    fTimerSet:    REAL; //测试时间设置
+    fDelaySet:   REAL; //响应时间设定
+     
+	fComparatorUpLimitSet :REAL;  //比较器上限设定
+	fComparatorDownLimitSet :REAL;//比较器下限设定	
+    strComparatorModeSet: STRING ;// 21  测试模式设置（CONTinue/PASSstop/FAILstop/SEQuence）
+	
+	strComparatorBeeperSet:    STRING;//23  判定蜂鸣器设置(PASS/FAIL/OFF/END)
+	
+	strContactSet :STRING;//  25  接触检查功能设置(ON/OFF)	
+
+	strShortSet:STRING;// 28  短路检查功能设置(ON/OFF)
+	
+	fShortTimeSet:  REAL;// 30 短路检查时间设置(0:自动)
+	
+	
+	strKeyBeeperSet:STRING;  // 33  按键输入蜂鸣器音设置(ON/OFF)	
+	
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ShortCiucitCtrl" Id="{ab572cfd-b2a5-4f30-b08f-5542186b55dd}">
+    <Declaration><![CDATA[TYPE ShortCiucitCtrl :
+STRUCT
+	ShortTestCtrl_U:ShortTestCtrl;
+	ShortTestReceiveData_U:ShortTestReceiveData;
+	ShortTestSendData_U:ShortTestSendData;
+	ST_ReceiveTestStatus_U:ST_ReceiveTestStatus;
+	ST_SendTestStatus_U:ST_SendTestStatus;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

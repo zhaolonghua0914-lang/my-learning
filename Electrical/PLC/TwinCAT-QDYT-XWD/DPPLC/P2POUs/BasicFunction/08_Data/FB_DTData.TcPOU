@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DTData" Id="{2950fe7f-c7d6-4dd8-8a0c-8b6a2ecad960}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_DTData
+VAR_INPUT
+    Alm :    BOOL ;//报警
+	Wait :BOOL ;//待机
+	Run :BOOL ;//运行
+	Overhang_NG:BOOL ;//对齐度NG下料
+	GM_change:BOOL ;//隔膜更换时间
+	Query:BOOL;//时间查询
+	
+END_VAR
+
+VAR_OUTPUT
+	STTimedata:ARRAY[0..32] OF ST_Timedata;
+END_VAR
+
+VAR
+	
+	rRun : R_TRIG;
+	rAlm : R_TRIG;
+	rWait : R_TRIG;
+	rOverhang_NG : R_TRIG;
+	rGM_change: R_TRIG;
+	fRun: F_TRIG;
+	fAlm: F_TRIG;
+	fWait: F_TRIG;
+	fOverhang_NG: F_TRIG;
+	fGM_change: F_TRIG;
+	delay:BOOL ;//延时
+	TON_1: TON;
+	i:INT;
+	K: INT;
+	J: BOOL;
+END_VAR
+
+VAR_IN_OUT
+     date1:INT;//查询日期
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+K:=K+1;
+	IF K>499THEN
+		J:=TRUE;
+		K:=0;
+	ELSE
+		J:=FALSE;
+	END_IF
+
+
+///////////////运行时间/////////////////
+//rRun(CLK:= Pulse._500ms.Q , Q=> );
+rRun(CLK:= J , Q=> );
+
+IF rRun.Q  AND  Run THEN
+	STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]:=STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]+1;
+END_IF
+
+IF STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]> 3600 THEN
+	STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]:= 3600 ;
+END_IF
+
+//IF STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]= 0 AND STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]= 0  AND 
+  //  (STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 3585  OR  STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 3586 ) THEN
+	//STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]:= 3600 ;
+//END_IF
+
+///////////////待机时间///////////////
+rWait(CLK:=J , Q=> );
+
+IF rWait.Q  AND Wait THEN
+	STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]:=STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]+1;
+END_IF
+ 
+IF STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]> 3600 THEN
+	STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]:= 3600 ;
+END_IF
+
+//IF STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 0 AND STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]= 0  AND
+  //  (STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 3585  OR  STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 3586 )  THEN
+//	STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]:= 3600 ;
+//END_IF
+
+////////////////报警时间///////////////
+rAlm(CLK:=J , Q=> );
+
+IF rAlm.Q AND Alm THEN
+	STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]:=STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]+1;
+END_IF
+
+IF STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]> 3600 THEN
+	STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]:= 3600 ;
+END_IF
+
+//IF STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 0 AND STTimedata[system.stTime.wDay].WaitTime[system.stTime.wHour]= 0  AND 
+  //  (STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 3585  OR  STTimedata[system.stTime.wDay].RunTime[system.stTime.wHour]= 3586 )  THEN
+//	STTimedata[system.stTime.wDay].AlmTime[system.stTime.wHour]:= 3600 ;
+//END_IF
+
+////////////////换隔膜时间///////////////
+rGM_change(CLK:=J , Q=> );
+
+IF rGM_change.Q AND GM_change THEN
+	STTimedata[system.stTime.wDay].GMchangeTime[system.stTime.wHour]:=STTimedata[system.stTime.wDay].GMchangeTime[system.stTime.wHour]+1;
+END_IF
+
+////////////////剔对齐度时间///////////////
+rOverhang_NG(CLK:=J , Q=> );
+
+IF rOverhang_NG.Q AND Overhang_NG THEN
+	STTimedata[system.stTime.wDay].OverhangNGTime[system.stTime.wHour]:=STTimedata[system.stTime.wDay].OverhangNGTime[system.stTime.wHour]+1;
+END_IF
+
+//数据查询
+IF Query THEN
+	delay:=TRUE;
+END_IF
+
+TON_1(IN:= , PT:=T#60S , Q=> , ET=> );
+IF delay THEN
+		  IF NOT TON_1.Q THEN
+			  TON_1.IN:=TRUE;
+		  ELSE	
+			  delay:=FALSE;
+			  date1:=system.stTime.wDay;
+		  END_IF	 
+ELSE	
+	 TON_1.IN:=FALSE;
+END_IF
+
+
+IF NOT delay THEN
+STTimedata[32]:=STTimedata[system.stTime.wDay];
+ELSE
+STTimedata[32]:=STTimedata[date1];
+END_IF
+
+IF (system.stTime.wMonth=2 AND  system.stTime.wDay=28 )   OR
+    ((system.stTime.wMonth=4 OR system.stTime.wMonth=6 OR system.stTime.wMonth=9 OR system.stTime.wMonth=11) AND system.stTime.wDay=30 )   OR
+	((system.stTime.wMonth=1 OR  system.stTime.wMonth=3 OR system.stTime.wMonth=5 OR system.stTime.wMonth=7 OR system.stTime.wMonth=8 OR system.stTime.wMonth=10 OR system.stTime.wMonth=12) AND  system.stTime.wDay=31)  AND
+    system.stTime.wHour=23 AND    system.stTime.wMinute =59 AND   system.stTime.wSecond=59 THEN
+	FOR i:=0 TO 32  DO
+	MEMSET(ADR(STTimedata[i]),0,SIZEOF(STTimedata[i]));	
+	END_FOR
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_DTData">
+      <LineId Id="342" Count="104" />
+      <LineId Id="225" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

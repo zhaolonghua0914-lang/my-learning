@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="System" Id="{5fcd1162-50a2-465e-ba39-c042107bf73e}">
+    <Declaration><![CDATA[
+VAR_GLOBAL	
+	stHmiSysCmd			    	    :ST_SysCmd;
+	MachimeVersion				:STRING:='V2024.5.28';(*当前系统版本号*)
+	MachimeTpye					:STRING:='YKRFH';
+	SysInfo						       :SystemInfoCtrl;
+	fPlcCycleTime_ms			    :LREAL;
+	pulse						            :PulseCtrl;	
+	stTime: TIMESTRUCT;
+    versionwrite  : BOOL;//版本号写入
+
+
+
+
+
+
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

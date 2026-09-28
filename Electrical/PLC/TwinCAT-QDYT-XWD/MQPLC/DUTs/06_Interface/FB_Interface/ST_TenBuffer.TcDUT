@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_TenBuffer" Id="{864a9017-d727-4bbb-b0a5-17801e78f9d8}">
+    <Declaration><![CDATA[TYPE ST_TenBuffer :  //张力FB 接口信号
+STRUCT
+   	bExecute			                        :BOOL;	
+  
+
+	bError                                       :BOOL;
+
+	bReady                                      :BOOL;
+	bStartSync		                             :BOOL;
+	bInSync		                                 :BOOL;//同步状态
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

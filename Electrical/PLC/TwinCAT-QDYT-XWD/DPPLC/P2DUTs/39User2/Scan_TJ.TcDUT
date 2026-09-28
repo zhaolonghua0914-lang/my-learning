@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="Scan_TJ" Id="{c49698cc-bb13-4351-98e2-67022a337954}">
+    <Declaration><![CDATA[TYPE Scan_TJ :
+STRUCT
+Scan_gross :INT;//扫码，1、OK，2、NG
+TJ_Code    :STRING;	//码条
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

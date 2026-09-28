@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_SendStatus" Id="{46378d55-4826-4b2e-9973-19d187c09c2e}">
+    <Declaration><![CDATA[TYPE ST_SendStatus :
+STRUCT
+	TransmitRequest          :BOOL;
+	ReceiveAccepted          :BOOL;
+	InitRequest              :BOOL;//
+	PutData                  :BOOL:=TRUE;
+	OutputLength             :UINT;//字节长度
+	
+	
+	
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

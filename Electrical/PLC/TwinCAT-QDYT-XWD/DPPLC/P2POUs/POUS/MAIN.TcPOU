@@ -1,0 +1,675 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{d22c5293-19c1-477b-b89a-7cafdf536547}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	rt:ARRAY[1..10]OF R_TRIG;//上升沿触发
+	ft:ARRAY[1..10]OF F_TRIG;//下升沿触发
+	i:BYTE;
+	bSave: BOOL;
+	rt10: R_TRIG;
+	bReadDataFirstCyle: BOOL;
+	testii: INT;
+	testii2: INT;
+	bSaveDataTest: BOOL;
+	bReadDataCyle2: BOOL;
+	rtSaveData: R_TRIG;
+	fbDataXML  :FB_DataXML; 	
+	
+	
+	
+	BUSY: BOOL;
+	ERR: BOOL;
+	ERRID: UDINT;
+	CSData:    CS_Data;
+	
+
+	THNN: INT;
+	MA100: BOOL;
+	A1: BOOL;
+	D1: BOOL;
+	A2: BOOL;
+	A3: BOOL;
+	
+	//iShort:        IShortTest;
+	D2: INT;
+	//stTime: TIMESTRUCT;
+	strTime: STRING;
+	BY1:  BYTE;
+	AA1: BOOL;
+	btest: BOOL;
+	iPower: INT;
+	iPowerSetp: INT;
+	bytePower: BYTE:=16#01;
+	boPower2: BOOL;
+	k: INT:=1;
+	PowerOnDone: BOOL;
+   
+	SJ0617: INT;
+	tRead										:TON;
+END_VAR
+
+VAR
+	bFirstCycle										        	:BOOL;	(*初始化用的*)
+(*保存掉电保持参数*)
+	FB_WritePersistentData1								: FB_WritePersistentData;
+	tCycleTimer											: TON;
+	bWrite												: BOOL;    (*定时自动保存*)
+(*系统重启*)
+	tNtDelayReset										:TON;
+	bReboot											: BOOL;	(*重启系统的变量*)
+	NT_Reboot1											: NT_Reboot;
+(*系统关机*)
+	NT_Shutdown1										: NT_Shutdown;
+	tNtDelayShutdown									: TON;
+	bShutdown											: BOOL;
+(*远程桌面接管*)
+	OpenRemoteDesktop									: NT_StartProcess;
+	timerHMI											:TON;
+(*系统时间获取*)
+	NT_GetTime1											: NT_GetTime;
+(*心跳信号*)
+	bHeartBeat											:BOOL;
+	tHeartBeatTime										:TIME:=t#0.5s;
+	TonHeartBeat										:TON;
+
+	TaskInfo											:	TaskInfoCtrl;
+	loadParaStep: UINT;
+
+    tonPowerOn  :Tc2_Standard.TON;
+    tonPower       :Tc2_Standard.TON;
+
+
+     STR1: STRING:='20200412160000';
+	 STR2: STRING:='12345678ABCDE';
+	 STR3: STRING:='SSDDFF1234  JJJJ';
+	 size:UDINT;
+END_VAR
+
+
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*===========================================版本号=================================================*)
+//MachimeVersion:='V3.0-24/3/2';(*HMI显示当前程序版本号*)
+IF versionwrite THEN
+   MachimeVersion:=CONCAT(CONCAT(CONCAT(CONCAT('V',CONCAT( WORD_TO_STRING(stTime.wYear),'.')),WORD_TO_STRING(stTime.wMonth)),'.'),WORD_TO_STRING(stTime.wDay));
+END_IF
+(*
+版本： 
+
+
+(*
+1、线扫OK与NG信号IO触发;（02.20）
+2、叠台NG梯度踢废空叠隔膜程序；（02.20）
+3、叠台NG梯度踢废下料方式程序；（02.20）
+4、隔膜剩余长度计算程序;（02.21）
+5、无极片编号传送带尾部排废程序；（02.23）
+6、对齐度NG计数程序  （02.27）
+7、接带后找极耳程序；（02.28）
+8、模切风刀吹气程序；（3.2）
+9、程序版本号程序；（3.2）
+10、叠台搬运极耳真空检测程序；（3.3）
+11、冷压扫二维码程序；（3.3）
+12、隔膜剩余长度计算（通过卷径大小）程序;（03.3）
+13、隔膜卷径报警值限定（93），卷径报警实时判断改为叠完一个电芯判断一次;（03.6）
+14、叠台搬运和压刀凸轮曲线修改，压刀升降和压刀开合行程限定；（03.12）
+15、模切线扫结果判定逻辑优化，线扫触发和结果计数；（03.12）
+16、新增模切放卷尾料4连标程序；（03.13）
+17、模切黄标和接带踢废程序优化；（03.13）
+18、短卷针回零增加安全条件(短卷针旋转轴原点传感器需亮)；（03.13）
+19、模切放卷激光器继电器控制启用；（3.17）
+20、触摸屏门禁屏蔽取消；（3.17）
+21、增加启动CCD自检弹窗，需要确认后才能启动；（3.26）
+22、叠台气涨轴开关有信号，隔膜踢废；（3.26）
+23、触摸屏三级权限；（3.26）
+24、上位机优率表；（3.31）
+25、黄标跳切计数；（3.26）
+26、黄标计数；（4.1）
+27、叠台增加调试模式；（4.2）
+28、热切丝寿命计数；（4.2）
+29、模切尾料四连标检测；（4.2）
+30、对齐度单片踢废；（4.5）
+31、隔膜尾料角度计算；（4.5）
+32、断带后R角不冲切；（4.7）
+33、黄标与接带感应后日志；（4.7）
+34、极片间距报警；（4.17）
+35、凸轮位置角度固定；（4.17）
+36、空叠首尾层隔膜降速降张力；（4.17）
+37、正极真空改成常开；（4.17）
+38、纠偏台重复精度测试；（4.17）
+39、二维码贴胶完成自动备胶默停、重胶；（4.20）
+40、对齐度踢废后第一片纠偏平台不纠偏；（4.20）
+41、叠台一键初始化；（4.20）
+42、模切尺寸、倒装、分段皮带比例系数改成一致；（4.20）
+43、尾卷纠偏到限位，凸轮耦合报警；（4.20）
+44、叠最后一层隔膜负极叠台升降放片位置下降少一点；（4.20）
+45、模切R角横深纵深闭环纠偏；（4.20）
+46、CCD标定与重复精度测试电机到位后延时拍照；（4.20）
+47、短卷针夹泄气真空；（4.21）
+48、对齐度闭环纠偏；（4.21）
+49、模切触发高速停止；（4.22）
+50、叠片取分段皮带取料中信号提前复位；（4.22）
+51、贴胶头进退增加软限位；（4.23）
+52、叠台0步增加判断，正负极不能执行同时往叠台方向运动流程；（4.23）
+53、热压一键初始化；（4.23）
+*)
+*)
+(*====================================================================================================*)
+
+TwinCAT_Nt();
+IF tonPowerOn.ET>=T#1S THEN
+     MAIN.RecipeData();
+END_IF
+IOLink();
+
+tonPowerOn(IN:=PowerOnDone , PT:=T#15S , Q=> , ET=> );  //上电延时5S
+
+IF tonPowerOn.Q AND fbDataXML.bReadParDone THEN
+  MainState();
+  FingerprintKey();  
+  dDrauFan[1];// :=TRUE;
+  dDrauFan[2];// :=TRUE;
+ELSE
+   Power();//接触器上电
+END_IF
+op();
+
+
+
+SJ0617;
+
+
+//字体设置成中文字体  解决了注释乱码的问题
+
+
+
+
+
+
+// scRecipe(iRecipe2:=iRecipe );
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ]]></ST>
+    </Implementation>
+    <Action Name="op" Id="{8ce43308-03ce-4d79-82ce-6dbe919efd28}">
+      <Implementation>
+        <ST><![CDATA[FOR i :=1 TO 50 DO
+	IF Network1_OP[i] = 8 THEN
+		bNetwork1_OP[i] := TRUE;
+	ELSE
+		bNetwork1_OP[i] := FALSE;
+	END_IF
+	
+	IF Network2_OP[i] = 8 THEN
+		bNetwork2_OP[i] := TRUE;
+	ELSE
+		bNetwork2_OP[i] := FALSE;
+	END_IF
+	
+	IF Network3_OP[i] = 8 THEN
+		bNetwork3_OP[i] := TRUE;
+	ELSE
+		bNetwork3_OP[i] := FALSE;
+	END_IF
+	
+	IF Network4_OP[i] = 8 THEN
+		bNetwork4_OP[i] := TRUE;
+	ELSE
+		bNetwork4_OP[i] := FALSE;
+	END_IF
+	
+	IF Network5_OP[i] = 8 THEN
+		bNetwork5_OP[i] := TRUE;
+	ELSE
+		bNetwork5_OP[i] := FALSE;
+	END_IF
+END_FOR]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Power" Id="{38d1091b-9866-4da2-a342-18e552c7b9ed}">
+      <Implementation>
+        <ST><![CDATA[(***系统延时启动***)
+
+tonPower(IN:= , PT:=T#1.5S , Q=> , ET=> );
+
+CASE iPowerSetp OF
+0:
+    tonPower.IN:=TRUE;
+    iPowerSetp:=10;
+10:
+   IF   tonPower.Q  THEN
+      bytePower:=SHL(bytePower,1);
+     
+      tonPower(IN:=FALSE );
+      k:=k+1;
+     iPowerSetp:=20;
+  END_IF
+20:
+    bytePower.0:=1;
+    tonPower.IN:=TRUE;
+    iPowerSetp:=30;
+30:
+   IF  k>=8 THEN
+        iPowerSetp:=666;
+       // bytePower:=16#00;
+        PowerOnDone:=TRUE;
+   ELSE
+      iPowerSetp:=10;
+   END_IF
+
+END_CASE
+ 
+bytePower.0;
+bytePower.1;
+bytePower.2;
+bytePower.3;
+bytePower.4;
+bytePower.5;
+bytePower.6;
+bytePower.7;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RecipeData" Id="{44285f54-257e-47b3-9a77-77f20e252110}">
+      <Implementation>
+        <ST><![CDATA[
+IF NOT  bReadDataFirstCyle AND tCycleTimer.ET>T#90S THEN //testii:=testii+1
+	//fbDataXML.bRead:=NOT bDataValid;
+	bReadDataFirstCyle:=TRUE;
+END_IF
+
+
+IF fbDataXML.bReadParDone AND bReadDataFirstCyle AND NOT  bReadDataCyle2 THEN
+	  parDA:=P2User1_Par.parDA;
+	  parFilterAD:=P2User1_Par.parFilterAD;//  先备份数据暂时不开放 
+      bReadDataCyle2:=TRUE;
+END_IF
+
+rt[2](CLK:=tCycleTimer.ET>=T#4M , Q=> );
+rtSaveData(CLK:=stHmiSysCmd.bSaveData , Q=> );
+IF  rtSaveData.Q THEN
+	bSaveDataTest:=TRUE;
+END_IF
+IF  rt[2].Q  OR  bSaveDataTest THEN   
+	P2User1_Par.parDA:=parDA;
+	P2User1_Par.parFilterAD:=parFilterAD; 
+	bSaveDataTest:=FALSE;
+	fbDataXML.bSave:=TRUE;
+	testii2:=testii2+1;
+END_IF
+
+rt[4](CLK:=stHmiSysCmd.bReadData (*AND P2M1_MachCtrl.U.DT_iMode=3 AND P2M2_MachCtrl.U.DT_iMode=3 AND P2M3_MachCtrl.U.DT_iMode=3*), Q=> );
+rt[5](CLK:=PowerOnDone , Q=> );
+tRead(IN:=PowerOnDone, PT:=T#3S , Q=> , ET=> );
+IF PowerOnDone AND  tRead.Q AND NOT fbDataXML.bReadParDone THEN
+	 P2M3_MachCtrl.DT_b.Error[67]:=TRUE;//上电后叠台参数读取失败，请手动点读取参数
+END_IF
+
+fbDataXML(
+					bSave:=fbDataXML.bSave AND NOT P2M3_MachCtrl.DT_b.Error[67] , 
+					bRead:=fbDataXML.bRead OR rt[5].Q OR rt[4].Q , 
+					bSaveParDone=> , 
+					bReadParDone=> );
+
+fbDataXML.bSaveParDone;
+fbDataXML.bReadParDone;
+
+
+(*
+tCycleTimer(IN:=NOT tCycleTimer.Q , PT:=T#300S , Q=>bSave , ET=> );
+rt10(clk:=bSave);
+IF NOT  bReadDataFirstCyle THEN //testii:=testii+1
+	 fbDataXML.bRead:=TRUE;
+	 testii:=testii+1;
+	 bReadDataFirstCyle:=TRUE;
+END_IF
+
+
+IF fbDataXML.bReadParDone AND bReadDataFirstCyle AND NOT  bReadDataCyle2 THEN
+	  //parDA:=P2User1_Par.parDA;
+	  //parFilterAD:=P2User1_Par.parFilterAD;      //  先备份数据暂时不开放 
+      bReadDataCyle2:=TRUE;
+END_IF
+
+
+rtSaveData(CLK:=stHmiSysCmd.bSaveData , Q=> );
+IF  rtSaveData.Q THEN
+	bSaveDataTest:=TRUE;
+END_IF
+
+
+IF  rt10.Q   OR   bSaveDataTest THEN
+   
+     P2User1_Par.parDA:=parDA;
+	 P2User1_Par.parFilterAD:=parFilterAD; 
+
+    bSaveDataTest:=FALSE;
+
+	fbDataXML.bSave:=TRUE;
+	testii2:=testii2+1;
+END_IF
+
+fbDataXML(bSave:=fbDataXML.bSave AND M_Sys .P1SaveParDone , 
+                      bRead:=fbDataXML.bRead AND M_Sys.P1ReadParDone ,
+                      bSaveParDone=> , 
+                      bReadParDone=>,);
+(*
+IF fbDataXML.bError THEN				  
+		P3_Error[91]:=TRUE;	
+END_IF			
+*)	 					   
+P2SaveParDone:=fbDataXML.bSaveParDone;
+P2ReadParDone:=fbDataXML.bReadParDone;
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="TwinCAT_Nt" Id="{75ec9b0b-0c5f-4ced-9a56-a8662c43c78c}">
+      <Implementation>
+        <ST><![CDATA[//fPlcCycleTime_ms:=UDINT_TO_LREAL(_TaskInfo[0].CycleTime)/10000;
+
+(***********************  保存掉电保持数据   **************************************)
+tCycleTimer(IN:=NOT tCycleTimer.Q , PT:=T#386S , Q=>bWrite , ET=> );
+rt[1](CLK:=tCycleTimer.ET>=T#3M, Q=>bWrite );
+FB_WritePersistentData1(
+	NETID:='' ,
+	PORT:=852 ,
+	START:=bWrite OR  stHmiSysCmd.bSaveData   ,//OR    _TaskInfo[1].FirstCycle
+	TMOUT:=t#2s ,
+	MODE:=SPDM_2PASS ,
+	BUSY=>BUSY ,
+	ERR=> ERR,
+	ERRID=>ERRID );
+ft[1](CLK:=BUSY , Q=> );
+IF ft[1].Q THEN
+	bDataValid:=TRUE;
+END_IF	
+	
+(********************** 获取系统时间   ***************************************)
+NT_GetTime1(
+	NETID:='' ,
+	START:=Pulse._1s.RT ,
+	TMOUT:= ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> ,
+	TIMESTR=>stTime );
+
+	strTime:=CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT( CONCAT(CONCAT( WORD_TO_STRING(stTime.wYear),'-'), WORD_TO_STRING(stTime.wMonth)),'-'),WORD_TO_STRING(stTime.wDay)),
+             '-'),WORD_TO_STRING(stTime.wHour)),'-'),WORD_TO_STRING(stTime.wMinute)),'-'),WORD_TO_STRING(stTime.wSecond));
+
+(********************************** Systemfunctions **********************************************************)
+	SysInfo(
+		Reset				:= ,
+		TimeStampTrig		:= Pulse._100ms.RT,
+		//RunTimeNo			=> ,
+		//ProjectName			=> ,
+		//NumberOfTasks		=> ,
+		//OnlineChangeCount	=> ,
+		RetainVarErr		=> ,
+		PersistenVarErr		=> ,
+		TimeStampDT			=> ,
+		TimeStamp			=> ,
+		TimeStr				=> ,
+		DateStr				=> ,
+		TimeStamp2			=> ,
+		TimeStruct			=> ,
+		MonthDays			=> ,
+		LeapYear			=> ,
+		WeekOfYear			=> ,
+		timezoneId			=>);
+
+	TaskInfo(
+		index				=> ,
+		active				=> ,
+		taskName			=> ,
+		firstCycle			=> ,
+		cycleTimeExceeded	=> ,
+		cycleTime			=> ,
+		lastExecTime		=> ,
+		priority			=> ,
+		cycleCount			=> );
+
+	Pulse(
+		BlinkSlow			=> ,
+		Blink				=> ,
+		BlinkFast			=> );	
+		
+	(*系统重启，CE远程桌面，系统时间，定时保存掉电数据，等系统常规动作*)
+(**********************  通讯心跳信号   ***************************************)
+TonHeartBeat(IN:=NOT TonHeartBeat.Q , PT:=tHeartBeatTime , Q=> , ET=> );
+IF TonHeartBeat.Q THEN
+	bHeartBeat:=NOT bHeartBeat;
+END_IF
+
+tNtDelayReset(IN:=stHmiSysCmd.bRebootPc OR bReboot , PT:=T#1S , Q=> , ET=> );
+NT_Reboot1(
+	NETID:='' ,
+	DELAY:= ,
+	START:=tNtDelayReset.Q  ,
+	TMOUT:=DEFAULT_ADS_TIMEOUT ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> );
+
+tNtDelayShutdown(IN:=stHmiSysCmd.bShutDownPc OR bShutDown , PT:=T#1S , Q=> , ET=> );	(*触摸屏上已经做了延时*)
+NT_Shutdown1(
+	NETID:= ,
+	DELAY:= ,
+	START:=tNtDelayShutdown.Q,
+	TMOUT:=DEFAULT_ADS_TIMEOUT ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> );
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+	
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="MAIN">
+      <LineId Id="472" Count="1" />
+      <LineId Id="591" Count="1" />
+      <LineId Id="590" Count="0" />
+      <LineId Id="474" Count="2" />
+      <LineId Id="579" Count="0" />
+      <LineId Id="684" Count="0" />
+      <LineId Id="944" Count="51" />
+      <LineId Id="702" Count="0" />
+      <LineId Id="479" Count="1" />
+      <LineId Id="3" Count="2" />
+      <LineId Id="384" Count="0" />
+      <LineId Id="310" Count="0" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="9" Count="4" />
+      <LineId Id="596" Count="0" />
+      <LineId Id="235" Count="1" />
+      <LineId Id="14" Count="19" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="37" Count="36" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.op">
+      <LineId Id="1" Count="0" />
+      <LineId Id="3" Count="4" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="9" Count="3" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="14" Count="3" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="19" Count="3" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="24" Count="3" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.Power">
+      <LineId Id="2" Count="64" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.RecipeData">
+      <LineId Id="120" Count="0" />
+      <LineId Id="124" Count="3" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="128" Count="18" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="156" Count="4" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="147" Count="7" />
+      <LineId Id="121" Count="2" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="14" Count="2" />
+      <LineId Id="37" Count="3" />
+      <LineId Id="88" Count="2" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="91" Count="1" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="103" Count="2" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="41" Count="1" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="69" Count="1" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="59" Count="2" />
+      <LineId Id="3" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="107" Count="2" />
+      <LineId Id="115" Count="2" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="6" Count="4" />
+      <LineId Id="71" Count="12" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.TwinCAT_Nt">
+      <LineId Id="2" Count="3" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="6" Count="8" />
+      <LineId Id="127" Count="2" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="15" Count="108" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

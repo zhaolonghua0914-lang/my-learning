@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ParPublic" Id="{d7e880a3-d66a-4ed4-922a-4976a9177880}">
+    <Declaration><![CDATA[TYPE ST_ParPublic :
+STRUCT
+		   fMainPos                   :REAL:=250;     //主轴关键点角度
+		   //fBeltSpacePos            :REAL:=280;//皮带运行定长
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

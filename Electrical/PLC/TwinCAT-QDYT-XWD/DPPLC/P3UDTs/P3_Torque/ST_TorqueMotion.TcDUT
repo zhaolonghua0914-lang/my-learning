@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_TorqueMotion" Id="{ef766cc4-3704-49d9-b400-1cf76f70339d}">
+    <Declaration><![CDATA[TYPE ST_TorqueMotion :
+STRUCT
+	Velocity ,
+	Acc,
+	Dec,
+	Jerk : REAL;
+	
+	FastReachVelo,
+	BufferVelo 
+	: REAL;
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

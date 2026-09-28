@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CCDComRectify" Id="{b09c0532-bb05-4e97-814c-dd1d59286570}">
+    <Declaration><![CDATA[TYPE ST_CCDComRectify :
+STRUCT
+	Start:ST_CCDComRectify_O;  //软触发
+	Finish:ST_CCDComRectify_I;  //纠偏结果
+	DayNgclassification :ST_Ng_classification; //白班纠偏NG计数
+	NightNgclassification :ST_Ng_classification; //晚班纠偏NG计数
+	bRectifyDone:BOOL;  //取图完成
+	iDemarcatResult:INT;//标定结果（1:OK ,2:NG,3:无料）
+	iDemCount:INT;//标定拍照计数
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

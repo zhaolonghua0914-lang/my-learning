@@ -1,0 +1,1323 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="IOLink" Id="{e08d9d3f-296c-459c-81df-748d7c709426}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM IOLink
+VAR
+//	tFlash: TON;
+//	bFlash:BOOL;
+//	bIOinit: BOOL;
+	XXX: INT;
+	Q20815: BOOL;
+	AA: INT;
+
+     arrFilter_AD               : ARRAY[1..MaxAINo]  OF  FB_Filter_AD ;
+
+      arrFilter_ADV2               : ARRAY[1..2]  OF  FB_Filter_ADV2 ;
+
+	I1: INT;
+
+    rt01   :Tc2_Standard.R_TRIG;
+    rt02   :Tc2_Standard.R_TRIG;
+
+     parDAOld                   :ARRAY[1..8] OF INT;   
+	test1: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+InPut();
+
+OutPut();
+
+AI();
+
+LimitSwitch();
+
+IF fbPulseCtrl[4].RT THEN
+      AO();
+END_IF
+(*
+rt01(CLK:=arrCyCtrl[P3CYNo.RollPress].Cmd.bON , Q=> );
+rt02(CLK:=arrCyCtrl[P3CYNo.RollPress].Cmd.bOFF , Q=> );
+IF rt01.Q THEN
+    P3EL4004S[3,1]:=parDA[33]	 ;//重力补偿
+  //  P3EL4004S[3,2]:=parDA[34]	 ;
+END_IF
+IF rt02.Q THEN
+    P3EL4004S[3,1]:=22000;//重力补偿
+ //   P3EL4004S[3,2]:=20000;
+END_IF
+*)
+//正极数据IOLink
+ProductPar.AnPar.fSpeed:=GVL_Par.ProductPar.AnPar.iMainVel;
+ProductPar.AnPar.fTension:=ProductPar.parFilterAD[3].Out_Value;
+
+//负极数据IOLink
+ProductPar.CaPar.fSpeed:=GVL_Par.ProductPar.CaPar.iMainVel;
+ProductPar.CaPar.fTension:=ProductPar.parFilterAD[15].Out_Value;
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="AI" Id="{eac25eb3-d560-4edd-bfb4-c595f8f0e948}">
+      <Implementation>
+        <ST><![CDATA[
+//正极
+arrFilter_AD[1].AD	:=	AI101[0];//	正极左放卷卷径超声波检测
+arrFilter_AD[2].AD	:=	AI101[1];//	正极右放卷卷径超声波检测
+//arrFilter_AD[3].AD	:=	AI101[2];//	正极辅驱前料带张力检测
+arrFilter_ADV2[1].AD	:=	AI101[2];//	正极辅驱前料带张力检测
+arrFilter_AD[4].AD	:=	AI101[3];//	备用
+			
+arrFilter_AD[5].AD	:=	AI102[0];//	正极后摆杆电位计检测
+arrFilter_AD[6].AD	:=	AI102[1];//	正极倒角深度前纠偏检测
+arrFilter_AD[7].AD	:=	AI102[2];//	正极倒角深度后纠偏检测
+arrFilter_AD[8].AD	:=	AI102[3];//	备用
+
+arrFilter_AD[9].AD		;//	正极
+arrFilter_AD[10].AD		;//	正极
+arrFilter_AD[11].AD		;//	正极
+arrFilter_AD[12].AD		;//	正极
+
+//负极
+arrFilter_AD[13].AD	:=	AI201[0];//	负极左放卷卷径超声波检测
+arrFilter_AD[14].AD	:=	AI201[1];//	负极右放卷卷径超声波检测
+//arrFilter_AD[15].AD	:=	AI201[2];//	负极辅驱前料带张力检测
+ arrFilter_ADV2[2].AD	:=	AI201[2];//	负极辅驱前料带张力检测
+ 
+arrFilter_AD[16].AD	:=	AI201[3];//	备用
+arrFilter_AD[17].AD	:=	AI202[0];//	负极后摆杆电位计检测
+arrFilter_AD[18].AD	:=	AI202[1];//	负极倒角深度前纠偏检测
+arrFilter_AD[19].AD	:=	AI202[2];//	负极倒角深度后纠偏检测
+arrFilter_AD[20].AD	:=	AI202[3];//	备用
+
+arrFilter_AD[21].AD		;//	负极
+arrFilter_AD[22].AD		;//	负极
+arrFilter_AD[23].AD		;//	负极
+arrFilter_AD[24].AD		;//	负极
+
+//转换
+FOR  I1:=1 TO MaxAINo   DO
+(*	
+     arrFilter_AD[I1].fPointNum:=10;
+	IF  I1=6 OR I1=7  OR  I1=18 OR I1=19  THEN         
+         arrFilter_AD[I1].fPointNum:=20;
+	END_IF	 
+		 
+   IF I1=3 OR I1=15  THEN
+	    arrFilter_ADV2[I1].fPointNum:=1500;
+	END_IF	
+	*)
+	IF  I1=6 OR I1=7  OR  I1=18 OR I1=19  THEN         
+         arrFilter_AD[I1].fPointNum:=20;
+   ELSIF I1=3 OR I1=15  THEN
+	    arrFilter_ADV2[1].fPointNum:=1000;
+		arrFilter_ADV2[2].fPointNum:=1000;
+   ELSE
+	   arrFilter_AD[I1].fPointNum:=10;
+   END_IF
+
+   IF I1=3   THEN
+		   //arrFilter_AD[3].AD	:=	AI101[2];//	正极辅驱前料带张力检测
+	   arrFilter_ADV2[1](   
+		  iMode:=         2, 
+		  AD:=               , 
+		  iLimitH:=         ProductPar.parFilterAD[3].iLimitH  , 
+		  iLimitL:=          ProductPar.parFilterAD[3].iLimitL   , 
+		  fRangeH:=      ProductPar.parFilterAD[3].fRangeH , 
+		  fRangeL:=       ProductPar.parFilterAD[3].fRangeL , 
+		  fPointNum:=    , 
+		  Out_Value=>   ProductPar.parFilterAD[3].Out_Value  );
+		  
+		//arrFilter_AD[15].AD	:=	AI201[2];//	负极辅驱前料带张力检测
+	ELSIF I1=15   THEN
+	  arrFilter_ADV2[2](   
+		  iMode:=         2, 
+		  AD:=               , 
+		  iLimitH:=         ProductPar.parFilterAD[15].iLimitH  , 
+		  iLimitL:=          ProductPar.parFilterAD[15].iLimitL   , 
+		  fRangeH:=      ProductPar.parFilterAD[15].fRangeH , 
+		  fRangeL:=       ProductPar.parFilterAD[15].fRangeL , 
+		  fPointNum:=    , 
+		  Out_Value=>   ProductPar.parFilterAD[15].Out_Value  );	
+   ELSE
+	  arrFilter_AD[I1](
+		  iMode:=         2, 
+		  AD:=               , 
+		  iLimitH:=         ProductPar.parFilterAD[I1].iLimitH  , 
+		  iLimitL:=          ProductPar.parFilterAD[I1].iLimitL   , 
+		  fRangeH:=      ProductPar.parFilterAD[I1].fRangeH , 
+		  fRangeL:=       ProductPar.parFilterAD[I1].fRangeL , 
+		  fPointNum:=    , 
+		  Out_Value=>   ProductPar.parFilterAD[I1].Out_Value  );
+   END_IF	  
+	  
+END_FOR
+
+  
+	  
+	  
+	  
+
+
+////////////////引用///////////////////////////
+stAnUwindTen.fWindDiameter:=ProductPar.parFilterAD[1].Out_Value	;	//	正极左放卷卷径超声波检测
+stAnUwindTen.fWindDiameter:=ProductPar.parFilterAD[2].Out_Value		;	//	正极右放卷卷径超声波检测
+AnSenser.aiPoleTensionFr:=ProductPar.parFilterAD[3].Out_Value		;	//	正极辅驱前料带张力检测
+ProductPar.parFilterAD[4].Out_Value	;	//	备用
+
+stAnAuxDriverTen.fDanserDegree:=ProductPar.parFilterAD[5].Out_Value	;	//	正极后摆杆电位计检测
+AnSenser.aiMouldRectifyFr:=ProductPar.parFilterAD[6].Out_Value	;	//	正极倒角深度前纠偏检测
+AnSenser.aiMouldRectifyBe:=ProductPar.parFilterAD[7].Out_Value	;	//	正极倒角深度后纠偏检测
+ProductPar.parFilterAD[8].Out_Value	;	//	备用
+
+ProductPar.parFilterAD[9].Out_Value	;	//	正极
+ProductPar.parFilterAD[10].Out_Value	;	//	正极
+ProductPar.parFilterAD[11].Out_Value	;	//	正极
+ProductPar.parFilterAD[12].Out_Value	;	//	正极
+
+stCaUwindTen.fWindDiameter:=ProductPar.parFilterAD[13].Out_Value	;	//	负极左放卷卷径超声波检测
+stCaUwindTen.fWindDiameter:=ProductPar.parFilterAD[14].Out_Value	;	//	负极右放卷卷径超声波检测
+CaSenser.aiPoleTensionFr:=ProductPar.parFilterAD[15].Out_Value	;	//	负极辅驱前料带张力检测
+ProductPar.parFilterAD[16].Out_Value	;	//	备用
+
+stCaAuxDriverTen.fDanserDegree:=ProductPar.parFilterAD[17].Out_Value	;	//	负极后摆杆电位计检测
+CaSenser.aiMouldRectifyFr:=ProductPar.parFilterAD[18].Out_Value		;	//	负极倒角深度前纠偏检测
+CaSenser.aiMouldRectifyBe:=ProductPar.parFilterAD[19].Out_Value		;	//	负极倒角深度后纠偏检测
+ProductPar.parFilterAD[20].Out_Value	;	//	备用
+
+ProductPar.parFilterAD[21].Out_Value	;	//	负极	
+ProductPar.parFilterAD[22].Out_Value	;	//	负极		
+ProductPar.parFilterAD[23].Out_Value	;	//	负极		
+ProductPar.parFilterAD[24].Out_Value	;	//	负极		
+
+
+
+
+
+(*
+//正极
+arrFilter_AD[1].AD	:=	AI101[0];//	正极左放卷卷径超声波检测
+arrFilter_AD[2].AD	:=	AI101[1];//	正极右放卷卷径超声波检测
+arrFilter_AD[3].AD	:=	AI101[2];//	正极辅驱前料带张力检测
+arrFilter_AD[4].AD	:=	AI101[3];//	备用
+			
+arrFilter_AD[5].AD	:=	AI102[0];//	正极后摆杆电位计检测
+arrFilter_AD[6].AD	:=	AI102[1];//	正极倒角深度前纠偏检测
+arrFilter_AD[7].AD	:=	AI102[2];//	正极倒角深度后纠偏检测
+arrFilter_AD[8].AD	:=	AI102[3];//	备用
+
+arrFilter_AD[9].AD		;//	正极
+arrFilter_AD[10].AD		;//	正极
+arrFilter_AD[11].AD		;//	正极
+arrFilter_AD[12].AD		;//	正极
+
+//负极
+arrFilter_AD[13].AD	:=	AI201[0];//	负极左放卷卷径超声波检测
+arrFilter_AD[14].AD	:=	AI201[1];//	负极右放卷卷径超声波检测
+arrFilter_AD[15].AD	:=	AI201[2];//	负极辅驱前料带张力检测
+arrFilter_AD[16].AD	:=	AI201[3];//	备用
+			
+arrFilter_AD[17].AD	:=	AI202[0];//	负极后摆杆电位计检测
+arrFilter_AD[18].AD	:=	AI202[1];//	负极倒角深度前纠偏检测
+arrFilter_AD[19].AD	:=	AI202[2];//	负极倒角深度后纠偏检测
+arrFilter_AD[20].AD	:=	AI202[3];//	备用
+
+arrFilter_AD[21].AD		;//	负极
+arrFilter_AD[22].AD		;//	负极
+arrFilter_AD[23].AD		;//	负极
+arrFilter_AD[24].AD		;//	负极
+
+//转换
+FOR  I1:=1 TO MaxAINo   DO
+	
+	IF  I1=6 OR I1=7  OR  I1=18 OR I1=19  THEN         
+         arrFilter_AD[I1].fPointNum:=40;
+   ELSE
+	   arrFilter_AD[I1].fPointNum:=10;
+   END_IF
+	
+  arrFilter_AD[I1](
+	  iMode:=         2, 
+	  AD:=               , 
+	  iLimitH:=         ProductPar.parFilterAD[I1].iLimitH  , 
+	  iLimitL:=          ProductPar.parFilterAD[I1].iLimitL   , 
+	  fRangeH:=      ProductPar.parFilterAD[I1].fRangeH , 
+	  fRangeL:=       ProductPar.parFilterAD[I1].fRangeL , 
+	  fPointNum:=    , 
+	  Out_Value=>   ProductPar.parFilterAD[I1].Out_Value  );
+END_FOR
+////////////////引用///////////////////////////
+stAnUwindTen.fWindDiameter:=ProductPar.parFilterAD[1].Out_Value	;	//	正极左放卷卷径超声波检测
+stAnUwindTen.fWindDiameter:=ProductPar.parFilterAD[2].Out_Value		;	//	正极右放卷卷径超声波检测
+AnSenser.aiPoleTensionFr:=ProductPar.parFilterAD[3].Out_Value		;	//	正极辅驱前料带张力检测
+ProductPar.parFilterAD[4].Out_Value	;	//	备用
+
+stAnAuxDriverTen.fDanserDegree:=ProductPar.parFilterAD[5].Out_Value	;	//	正极后摆杆电位计检测
+AnSenser.aiMouldRectifyFr:=ProductPar.parFilterAD[6].Out_Value	;	//	正极倒角深度前纠偏检测
+AnSenser.aiMouldRectifyBe:=ProductPar.parFilterAD[7].Out_Value	;	//	正极倒角深度后纠偏检测
+ProductPar.parFilterAD[8].Out_Value	;	//	备用
+
+ProductPar.parFilterAD[9].Out_Value	;	//	正极
+ProductPar.parFilterAD[10].Out_Value	;	//	正极
+ProductPar.parFilterAD[11].Out_Value	;	//	正极
+ProductPar.parFilterAD[12].Out_Value	;	//	正极
+
+stCaUwindTen.fWindDiameter:=ProductPar.parFilterAD[13].Out_Value	;	//	负极左放卷卷径超声波检测
+stCaUwindTen.fWindDiameter:=ProductPar.parFilterAD[14].Out_Value	;	//	负极右放卷卷径超声波检测
+CaSenser.aiPoleTensionFr:=ProductPar.parFilterAD[15].Out_Value	;	//	负极辅驱前料带张力检测
+ProductPar.parFilterAD[16].Out_Value	;	//	备用
+
+stCaAuxDriverTen.fDanserDegree:=ProductPar.parFilterAD[17].Out_Value	;	//	负极后摆杆电位计检测
+CaSenser.aiMouldRectifyFr:=ProductPar.parFilterAD[18].Out_Value		;	//	负极倒角深度前纠偏检测
+CaSenser.aiMouldRectifyBe:=ProductPar.parFilterAD[19].Out_Value		;	//	负极倒角深度后纠偏检测
+ProductPar.parFilterAD[20].Out_Value	;	//	备用
+
+ProductPar.parFilterAD[21].Out_Value	;	//	负极	
+ProductPar.parFilterAD[22].Out_Value	;	//	负极		
+ProductPar.parFilterAD[23].Out_Value	;	//	负极		
+ProductPar.parFilterAD[24].Out_Value	;	//	负极		
+*)]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="AO" Id="{737c51e7-0292-4740-bf7f-eca0a05e9126}">
+      <Implementation>
+        <ST><![CDATA[////////模切AO部分////////				
+AO101[0]:=REAL_TO_INT(ProductPar.parDA[1]*0.1+parDAOld[1]*0.9)			;	//	正极后摆杆比例阀
+AO101[1]:=REAL_TO_INT(ProductPar.parDA[2]*0.1+parDAOld[2]*0.9)			;	//	正极主驱压辊比例阀
+AO101[2]:=REAL_TO_INT(ProductPar.parDA[3]*0.1+parDAOld[3]*0.9)			;	//	正极
+AO101[3]:=REAL_TO_INT(ProductPar.parDA[4]*0.1+parDAOld[4]*0.9)			;	//	正极
+		
+parDAOld[1]:=AO101[0];
+parDAOld[2]:=AO101[1];
+parDAOld[3]:=AO101[2];
+parDAOld[4]:=AO101[3];
+				
+AO201[0]:=REAL_TO_INT(ProductPar.parDA[5]*0.1+parDAOld[5]*0.9)			;	//	负极后摆杆比例阀
+AO201[1]:=REAL_TO_INT(ProductPar.parDA[6]*0.1+parDAOld[6]*0.9)			;	//	负极主驱压辊比例阀
+AO201[2]:=REAL_TO_INT(ProductPar.parDA[7]*0.1+parDAOld[7]*0.9)			;	//	负极
+AO201[3]:=REAL_TO_INT(ProductPar.parDA[8]*0.1+parDAOld[8]*0.9)			;	//	负极
+
+parDAOld[5]:=AO201[0];
+parDAOld[6]:=AO201[1];
+parDAOld[7]:=AO201[2];
+parDAOld[8]:=AO201[3];
+
+
+
+
+
+///////////////正极张力转换///////////////////////////////
+ProductPar.parFilterDA[1].bMode;  //TRUE 为标定模式      标定完成后一定要复位      
+
+ProductPar.parFilterDA[1].X0;   //料带张力低限值    g
+ProductPar.parFilterDA[1].Y0;    //料带张力低限值 DA输出   
+ProductPar.parFilterDA[1].X1;  //料带张力高限值    g
+ProductPar.parFilterDA[1].Y1;   //料带张力高限值   DA输出 
+ProductPar.parFilterDA[1].iDAValue;   //标定DA值     
+
+ProductPar.parDA[1]:=REAL_TO_INT(FC_Filter_AA(ProductPar.AnPar.fFr_TenValuehmi,0,0,100,30000));//	正极后摆杆比例阀
+(*
+ProductPar.parDA[1]:= SEL(ProductPar.parFilterDA[1].bMode,    
+                                 REAL_TO_INT(FC_Filter_AA(ProductPar.AnPar.fFr_TenValuehmi,ProductPar.parFilterDA[1].X0,ProductPar.parFilterDA[1].Y0,ProductPar.parFilterDA[1].X1,ProductPar.parFilterDA[1].Y1)  ) ,     
+                                 REAL_TO_INT (ProductPar.parFilterDA[1].iDAValue)   );                 //               REAL_TO_INT(FC_Filter_AA(ProductPar.AnPar.fFr_TenValuehmi,0,0,100,30000));//	正极后摆杆比例阀
+*)
+								 
+ProductPar.parDA[2]:=REAL_TO_INT(FC_Filter_AA(ProductPar.AnPar.fPressDDRhmi,0,0,100,2000));//	正极主驱压辊比例阀
+//AnPar.fBe_TenValue:=FC_Filter_AA(AnPar.fBe_TenValuehmi,0,0,100,100);//	正极前摆杆扭矩设置
+
+///////////////负极张力转换///////////////////////////////
+ProductPar.parFilterDA[2].bMode;  //TRUE 为标定模式      标定完成后一定要复位      
+
+ProductPar.parFilterDA[2].X0;   //料带张力低限值    g
+ProductPar.parFilterDA[2].Y0;    //料带张力低限值 DA输出   
+ProductPar.parFilterDA[2].X1;  //料带张力高限值    g
+ProductPar.parFilterDA[2].Y1;   //料带张力高限值   DA输出 
+ProductPar.parFilterDA[2].iDAValue;   //标定DA值     
+   
+ProductPar.parDA[5]:=REAL_TO_INT(FC_Filter_AA(ProductPar.CaPar.fFr_TenValuehmi,0,0,100,30000));//	负极后摆杆比例阀
+(*
+ProductPar.parDA[5]:= SEL(ProductPar.parFilterDA[2].bMode,    
+                                 REAL_TO_INT(FC_Filter_AA(ProductPar.CaPar.fFr_TenValuehmi,ProductPar.parFilterDA[2].X0,ProductPar.parFilterDA[2].Y0,ProductPar.parFilterDA[2].X1,ProductPar.parFilterDA[2].Y1)  ) ,     
+                                  REAL_TO_INT(ProductPar.parFilterDA[2].iDAValue)  ) ;  
+*)								  
+								  
+ProductPar.parDA[6]:=REAL_TO_INT(FC_Filter_AA(ProductPar.CaPar.fPressDDRhmi,0,0,100,2000));//	负极主驱压辊比例阀
+//CaPar.fBe_TenValue:=FC_Filter_AA(CaPar.fBe_TenValuehmi,0,0,100,100);//	负极前摆杆扭矩设置]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="InPut" Id="{e4d88748-4d47-44ee-8362-0ef5f4cb6785}">
+      <Implementation>
+        <ST><![CDATA[
+
+//输入映射	正极
+		arrCyCtrl[NameNo.AnCYNo.BoardPressL].Io.DIONSwitch:=	I101[1]	;//	正极极片左接带气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.BoardPressL].Io.DIOFFSwitch:=	I101[2]	;//	正极极片左接带气缸缩回位		
+		arrCyCtrl[NameNo.AnCYNo.BoardPressR].Io.DIONSwitch:=	I101[3]	;//	正极极片右接带气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.BoardPressR].Io.DIOFFSwitch:=	I101[4]	;//	正极极片右接带气缸缩回位		
+		AnBtn.PoleBoxBit1:=	I101[5]	;//	正极放卷按钮BIT1		
+		AnBtn.PoleBoxBit2:=	I101[6]	;//	正极放卷按钮BIT2		
+		AnBtn.PoleBoxBit3:=	I101[7]	;//	正极放卷按钮BIT3		
+		AnBtn.PoleBoxBit4:=	I101[8]	;//	正极放卷按钮BIT4		
+		AnBtn.PoleBoxStart:=	I101[9]	;//	正极放卷启动按钮		
+		AnBtn.PoleBoxEStop:=	I101[10]	;//	正极片放卷急停		
+		AnBtn.CoderRollPress:=	I101[11]	;//	正极编码器压辊按钮		
+			I101[12]	;//			
+		arrCyCtrl[NameNo.AnCYNo.DriverPressAux].Io.DIONSwitch:=arrCyCtrl[NameNo.AnCYNo.DriverPressAux].Io.DOStatus1	;//I101[13]	;//	正极辅助驱动压辊伸出位		
+		arrCyCtrl[NameNo.AnCYNo.DriverPressAux].Io.DIOFFSwitch:=NOT arrCyCtrl[NameNo.AnCYNo.DriverPressAux].Io.DOStatus1	;//I101[14]	;//	正极辅助驱动压辊缩回位		
+		arrCyCtrl[NameNo.AnCYNo.CoderRollPress].Io.DIONSwitch:=	arrCyCtrl[NameNo.AnCYNo.CoderRollPress].Io.DOStatus1;//I101[15]	;//	正极前线扫编码器压辊伸出位		
+		arrCyCtrl[NameNo.AnCYNo.CoderRollPress].Io.DIOFFSwitch:=	NOT arrCyCtrl[NameNo.AnCYNo.CoderRollPress].Io.DOStatus1;//I101[16]	;//	正极前线扫编码器压辊缩回位		
+							
+		AnBtn.DriverPress_Aux:=	I102[1]	;//	正极辅驱压辊旋钮		
+		AnBtn.DriverJogFw_Aux:=	I102[2]	;//	正极辅驱正转旋钮		
+		AnBtn.DriverJogBw_Aux:=	I102[3]	;//	正极辅驱反转旋钮		
+			I102[4]	;//			
+		arrRecCtrl[NameNo.AnRecNo.PoleWind].Io.biAutoDone:=	I102[5]	;//	正极放卷纠偏自动模式		
+		arrRecCtrl[NameNo.AnRecNo.PoleWind].Io.biAlarm:=	I102[6]	;//	正极放卷纠偏故障		
+		arrRecCtrl[NameNo.AnRecNo.PoleProcess].Io.biAutoDone:=	I102[7]	;//	正极行进纠偏自动模式		
+		arrRecCtrl[NameNo.AnRecNo.PoleProcess].Io.biAlarm:=	I102[8]	;//	正极行进纠偏故障
+			I102[9]	;//			
+		AnSenser.biFlgBlue:=	I102[10]	;//	正极放卷蓝胶检测		
+			AnSenser.bLineScanResult1_UP:=I102[11]	;//	正极CCD上线扫结果OK
+			AnSenser.bLineScanResult2_UP:=I102[12]	;//	正极CCD上线扫结果NG		
+			I102[13]	;//	
+			AnSenser.bLineScanResult1_Down:=I102[14]	;//	正极CCD下线扫结果OK
+			AnSenser.bLineScanResult2_Down:=I102[15]	;//	正极CCD下线扫结果NG
+		//AnSenser.biTabHave:=	I102[16]	;//		极耳有无检测	
+		AnSenser.bPoleCheck_R:=I102[16]	;//		正极倒角前极耳检测感应器					
+		arrCyCtrl[NameNo.AnCYNo.DriverPressDDR].Io.DIONSwitch:=	I103[1]	;//	正极极主驱动压辊伸出位		
+		arrCyCtrl[NameNo.AnCYNo.DriverPressDDR].Io.DIOFFSwitch:=	I103[2]	;//	正极极主驱动压辊缩回位		
+		AnBtn.DriverPressDDR:=	I103[3]	;//	正极主驱动压辊按钮		
+		AnSenser.biCuterStopUp:=	I103[4]	;//	正极裁切切刀堵料检测		
+		AnSenser.biSafetyCurtain_M:=	I103[5]	;//	正极模具安全光栅		
+		AnSenser.biSafetyCurtain_C:=	I103[6]	;//	正极裁切安全光栅		
+		arrCyCtrl[NameNo.AnCYNo.NGRevBeltUpDown].Io.DIONSwitch:=	I103[7]	;//	正极踢废倒装皮带升降气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.NGRevBeltUpDown].Io.DIOFFSwitch:=	I103[8]	;//	正极踢废倒装皮带升降气缸缩回位		
+		AnSenser.biWasteBox:=	I103[9]	;//	正极连续废料收集箱高度感应		
+			I103[10]	;//			
+		//arrCyCtrl[NameNo.AnCYNo.NGBoxLock1].Io.DIONSwitch:=	I103[11]	;//	正极NG收料归正伸出位1		
+		//arrCyCtrl[NameNo.AnCYNo.NGBoxLock2].Io.DIONSwitch:=	I103[12]	;//	正极NG收料归正伸出位2		
+		//arrCyCtrl[NameNo.AnCYNo.NGBoxLock1].Io.DIOFFSwitch:=	I103[13]	;//	正极NG收料归正缩回位1		
+		//arrCyCtrl[NameNo.AnCYNo.NGBoxLock2].Io.DIOFFSwitch:=	I103[14]	;//	正极NG收料归正缩回位2		
+		//AnBtn.NGBoxEStop:=//	I103[15]	;//	正极NG收料盒急停按钮		
+		AnBtn.NGBoxStart:=	I103[16]	;//	正极NG收料盒确认放入料框按钮		
+							
+		AnBtn.NGBoxMotor_JogUp:=	I104[1]	;//	正极NG收料盒电机上升按钮		
+		AnBtn.NGBoxMotor_JogDown:=	I104[2]	;//	正极NG收料盒电机下降按钮		
+		AnsetpMotor.biSensor:=	I104[3]	;//	正极NG料盒高度感应		
+		AnsetpMotor.biBoxSensor:=	I104[4]	;//	正极NG料盒到位感应		
+		AnsetpMotor.biUpSensor:=	I104[5]	;//	正极NG料盒顶升电机上限		
+		AnsetpMotor.biDownSensor:=	I104[6]	;//	正极NG料盒顶升电机下限		
+		AnBtn.PoleBrushDustPush_U:=	I104[7]	;//	正极上表面毛刷除尘升降气缸按钮		
+		AnBtn.PoleWindDustPush_U:=	I104[8]	;//	正极上表面超声波除尘升降气缸按钮		
+		arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_U].Io.DIONSwitch:=	I104[9]	;//	正极上表面毛刷除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_U].Io.DIOFFSwitch:=	I104[10]	;//	正极上表面毛刷除尘升降气缸缩回位		
+		arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_U].Io.DIONSwitch:=	I104[11]	;//	正极上表面风刀除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_U].Io.DIOFFSwitch:=	I104[12]	;//	正极上表面风刀除尘升降气缸缩回位		
+		AnBtn.PoleBrushDustPush_D:=	I104[13]	;//	正极下表面毛刷除尘升降气缸按钮		
+		AnBtn.PoleWindDustPush_D:=	I104[14]	;//	正极下表面超声波除尘升降气缸按钮		
+		arrCyCtrl[NameNo.AnCYNo.DustRevBeltUpDown].Io.DIONSwitch:=	I104[15]	;//	正极下表面除尘倒装皮带升降气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.DustRevBeltUpDown].Io.DIOFFSwitch:=	I104[16]	;//	正极下表面除尘倒装皮带升降气缸缩回位		
+							
+		arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_D].Io.DIONSwitch:=	I105[1]	;//	正极下表面毛刷除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_D].Io.DIOFFSwitch:=I105[2]	;//	正极下表面毛刷除尘升降气缸缩回位		
+		arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_D].Io.DIONSwitch:=	I105[3]	;//	正极下表面风刀除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_D].Io.DIOFFSwitch:=	I105[4]	;//	正极下表面风刀除尘升降气缸缩回位		
+			I105[5]	;//			
+		AnSenser.NGBoxFull:=I105[6]	;//正极NG料盒料满报警			
+		AnSenser.NGboxsensor:=I105[7]	;//正极NG料盒抛料对射感应		
+		AnSenser.bFourYellowDown:=I105[8]	;//	正极四连标下		
+		AnSenser.bFourYellowUP:=I105[9]	;//	正极四连标上		
+			I105[10]	;//			
+			I105[11]	;//			
+			I105[12]	;//			
+			I105[13]	;//			
+			I105[14]	;//			
+			I105[15]	;//			
+			I105[16]	;//			
+							
+		AnSys.btnAuto:=	I106[1]	;//	正极控制面板手自动切换按钮		
+		AnSys.btnStart:=	I106[2]	;//	正极控制面板启动按钮		
+		AnSys.btnReset:=	I106[3]	;//	正极控制面板复位按钮		
+		AnSys.btnStop:=	I106[4]	;//	正极控制面板停止按钮		
+		AnSys.btnEstop:=	I106[5]	AND I106[9];//	正极控制面板急停按钮		
+		AnBtn.EncloserEstop[1]:=	I106[6]	;//	正极外罩急停1		
+		AnBtn.EncloserEstop[2]:=	I106[7]	;//	正极外罩急停2		
+		AnBtn.EncloserEstop[3]:=	I106[8]	;//	正极外罩急停3		
+			//I106[9]	;//			
+		AnSenser.biDoor[1]:=	I106[10]	;//	正极外罩门禁1		
+		AnSenser.biDoor[2]:=	I106[11]	;//	正极外罩门禁2		
+		AnSenser.biDoor[3]:=	I106[12]	;//	正极外罩门禁3		
+		AnSenser.biDoor[4]:=	I106[13]	;//	正极外罩门禁4		
+		AnSenser.biDoor[5]:=	I106[14]	;//	正极外罩门禁5		
+			I106[15]	;//		
+			I106[16]	;//		
+							
+			I107[1]	;//			
+			I107[2]	;//			
+			I107[3]	;//			
+			I107[4]	;//			
+			I107[5]	;//			
+			I107[6]	;//			
+			I107[7]	;//			
+			I107[8]	;//			
+			I107[9]	;//			
+			I107[10]	;//			
+			I107[11]	;//			
+			I107[12]	;//			
+			I107[13]	;//			
+			I107[14]	;//			
+			I107[15]	;//			
+			I107[16]	;//			
+			AnSenser.aThrow:=	I104[9]	;//	正极上表面毛刷除尘升降气缸伸出位(踢废失败报警解除专用)	
+			AnSenser.biCutPoleHave	:=	I108[1]	;	//裁切后极片有无检测	
+			AnSenser.bKick :=I108[2]	;//	踢废工位有无料检测；		
+			AnSenser.bYellowCheck_C:=I108[3]	;//	正极踢废前黄标检测感应器；		
+			AnSenser.bYellowCheck_R1:=I108[4]	;//正极倒角前接带检测感应器	上	
+			//AnSenser.bPoleCheck_R:=I108[5]	;//		正极倒角前极耳检测感应器
+			AnSenser.bYellowCheck_R2:=I108[6]	;//	正极倒角前接带检测感应器下
+			AnSenser.MouldInsensor:=I108[7]	;//	//R角模具到位感应		
+			AnSenser.CuterInsensor:=I108[8]	;//裁切切刀到位感应		
+			I108[9]	;//			
+			I108[10]	;//			
+			I108[11]	;//			
+			I108[12]	;//			
+			I108[13]	;//			
+			I108[14]	;//			
+			I108[15]	;//			
+			I108[16]	;//			
+							
+			I109[1]	;//			
+			I109[2]	;//			
+			I109[3]	;//			
+			I109[4]	;//			
+			I109[5]	;//			
+			I109[6]	;//			
+			I109[7]	;//			
+			I109[8]	;//			
+			I109[9]	;//			
+			I109[10]	;//			
+			I109[11]	;//			
+			I109[12]	;//			
+			I109[13]	;//			
+			I109[14]	;//			
+			I109[15]	;//			
+			I109[16]	;//			
+			
+			AnSenser.biSubBelt1Have:=I30101;	//	1号叠台:正极模切送料分段皮带1有料感应
+			AnSenser.biSubBelt2Have:=I40101;	//	2号叠台:正极模切送料分段皮带2有料感应	
+			AnSenser.biSubBelt3Have:=I50101;	//	3号叠台:正极模切送料分段皮带3有料感应		
+//输入映射	负极						
+		arrCyCtrl[NameNo.CaCYNo.BoardPressL].Io.DIONSwitch:=	I201[1]	;//	负极极片左接带气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.BoardPressL].Io.DIOFFSwitch:=	I201[2]	;//	负极极片左接带气缸缩回位		
+		arrCyCtrl[NameNo.CaCYNo.BoardPressR].Io.DIONSwitch:=	I201[3]	;//	负极极片右接带气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.BoardPressR].Io.DIOFFSwitch:=	I201[4]	;//	负极极片右接带气缸缩回位		
+		CaBtn.PoleBoxBit1:=	I201[5]	;//	负极放卷按钮BIT1		
+		CaBtn.PoleBoxBit2:=	I201[6]	;//	负极放卷按钮BIT2		
+		CaBtn.PoleBoxBit3:=	I201[7]	;//	负极放卷按钮BIT3		
+		CaBtn.PoleBoxBit4:=	I201[8]	;//	负极放卷按钮BIT4		
+		CaBtn.PoleBoxStart:=	I201[9]	;//	负极放卷启动按钮		
+		CaBtn.PoleBoxEStop:=	I201[10]	;//	负极片放卷急停		
+		CaBtn.CoderRollPress:=	I201[11]	;//	负极编码器压辊按钮
+			I201[12]	;//			
+		arrCyCtrl[NameNo.CaCYNo.DriverPressAux].Io.DIONSwitch:=arrCyCtrl[NameNo.CaCYNo.DriverPressAux].Io.DOStatus1	;//I201[13]	;//	负极辅助驱动压辊伸出位		
+		arrCyCtrl[NameNo.CaCYNo.DriverPressAux].Io.DIOFFSwitch:=NOT arrCyCtrl[NameNo.CaCYNo.DriverPressAux].Io.DOStatus1	;//I201[14]	;//	负极辅助驱动压辊缩回位		
+		arrCyCtrl[NameNo.CaCYNo.CoderRollPress].Io.DIONSwitch:=arrCyCtrl[NameNo.CaCYNo.CoderRollPress].Io.DOStatus1	;//I201[15]	;//	负极前线扫编码器压辊伸出位		
+		arrCyCtrl[NameNo.CaCYNo.CoderRollPress].Io.DIOFFSwitch:=NOT arrCyCtrl[NameNo.CaCYNo.CoderRollPress].Io.DOStatus1	;//I201[16]	;//	负极前线扫编码器压辊缩回位		
+							
+		CaBtn.DriverPress_Aux:=	I202[1]	;//	负极辅驱压辊旋钮		
+		CaBtn.DriverJogFw_Aux:=	I202[2]	;//	负极辅驱正转旋钮		
+		CaBtn.DriverJogBw_Aux:=	I202[3]	;//	负极辅驱反转旋钮		
+			I202[4]	;//			
+		arrRecCtrl[NameNo.CaRecNo.PoleWind].Io.biAutoDone:=	I202[5]	;//	负极放卷纠偏自动模式		
+		arrRecCtrl[NameNo.CaRecNo.PoleWind].Io.biAlarm:=	I202[6]	;//	负极放卷纠偏故障	
+		arrRecCtrl[NameNo.CaRecNo.PoleProcess].Io.biAutoDone:=	I202[7]	;//	负极行进纠偏自动模式		
+		arrRecCtrl[NameNo.CaRecNo.PoleProcess].Io.biAlarm:=	I202[8]	;//	负极行进纠偏故障		
+			I202[9]	;//			
+		CaSenser.biFlgBlue:=	I202[10]	;//	负极放卷蓝胶检测	
+			CaSenser.bLineScanResult1_UP:=I202[11]	;//	负极CCD上线扫结果OK
+			CaSenser.bLineScanResult2_UP:=I202[12]	;//	负极CCD上线扫结果NG
+			I202[13]	;//	
+			CaSenser.bLineScanResult1_Down:=I202[14]	;//	负极CCD下线扫结果OK
+			CaSenser.bLineScanResult2_Down:=I202[15]	;//	负极CCD下线扫结果NG
+		//CaSenser.biTabHave:=	I202[16]	;//		极耳有无检测	
+		CaSenser.bPoleCheck_R:=I202[16]	;//	负极倒角前极耳检测感应器					
+		arrCyCtrl[NameNo.CaCYNo.DriverPressDDR].Io.DIONSwitch:=	I203[1]	;//	负极极主驱动压辊伸出位		
+		arrCyCtrl[NameNo.CaCYNo.DriverPressDDR].Io.DIOFFSwitch:=	I203[2]	;//	负极极主驱动压辊缩回位		
+		CaBtn.DriverPressDDR:=	I203[3]	;//	负极主驱动压辊按钮		
+		CaSenser.biCuterStopUp:=	I203[4]	;//	负极裁切切刀堵料检测		
+		CaSenser.biSafetyCurtain_M:=	I203[5]	;//	负极模具安全光栅		
+		CaSenser.biSafetyCurtain_C:=	I203[6]	;//	负极裁切安全光栅		
+		arrCyCtrl[NameNo.CaCYNo.NGRevBeltUpDown].Io.DIONSwitch:=	I203[7]	;//	负极踢废倒装皮带升降气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.NGRevBeltUpDown].Io.DIOFFSwitch:=	I203[8]	;//	负极踢废倒装皮带升降气缸缩回位		
+		CaSenser.biWasteBox:=	I203[9]	;//	负极连续废料收集箱高度感应		
+			I203[10]	;//			
+		//arrCyCtrl[NameNo.CaCYNo.NGBoxLock1].Io.DIONSwitch:=	I203[11]	;//	负极NG收料归正伸出位1		
+		//arrCyCtrl[NameNo.CaCYNo.NGBoxLock2].Io.DIONSwitch:=	I203[12]	;//	负极NG收料归正伸出位2		
+		//arrCyCtrl[NameNo.CaCYNo.NGBoxLock1].Io.DIOFFSwitch:=	I203[13]	;//	负极NG收料归正缩回位1		
+		//arrCyCtrl[NameNo.CaCYNo.NGBoxLock2].Io.DIOFFSwitch:=	I203[14]	;//	负极NG收料归正缩回位2		
+		CaBtn.NGBoxEStop:=//	I203[15]	;//	负极NG收料盒急停按钮		
+		CaBtn.NGBoxStart:=	I203[16]	;//	负极NG收料盒确认放入料框按钮		
+							
+		CaBtn.NGBoxMotor_JogUp:=	I204[1]	;//	负极NG收料盒电机上升按钮		
+		CaBtn.NGBoxMotor_JogDown:=	I204[2]	;//	负极NG收料盒电机下降按钮		
+		CasetpMotor.biSensor:=	I204[3]	;//	负极NG料盒高度感应		
+		CasetpMotor.biBoxSensor:=	I204[4]	;//	负极NG料盒到位感应		
+		CasetpMotor.biUpSensor:=	I204[5]	;//	负极NG料盒顶升电机上限		
+		CasetpMotor.biDownSensor:=	I204[6]	;//	负极NG料盒顶升电机下限		
+		CaBtn.PoleBrushDustPush_U:=	I204[7]	;//	负极上表面毛刷除尘升降气缸按钮		
+		CaBtn.PoleWindDustPush_U:=	I204[8]	;//	负极上表面超声波除尘升降气缸按钮		
+		arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_U].Io.DIONSwitch:=	I204[9]	;//	负极上表面毛刷除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_U].Io.DIOFFSwitch:=	I204[10]	;//	负极上表面毛刷除尘升降气缸缩回位		
+		arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_U].Io.DIONSwitch:=	I204[11]	;//	负极上表面风刀除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_U].Io.DIOFFSwitch:=	I204[12]	;//	负极上表面风刀除尘升降气缸缩回位		
+		CaBtn.PoleBrushDustPush_D:=	I204[13]	;//	负极下表面毛刷除尘升降气缸按钮		
+		CaBtn.PoleWindDustPush_D:=	I204[14]	;//	负极下表面超声波除尘升降气缸按钮		
+		arrCyCtrl[NameNo.CaCYNo.DustRevBeltUpDown].Io.DIONSwitch:=	I204[15]	;//	负极下表面除尘倒装皮带升降气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.DustRevBeltUpDown].Io.DIOFFSwitch:=	I204[16]	;//	负极下表面除尘倒装皮带升降气缸缩回位		
+							
+		arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_D].Io.DIONSwitch:=	I205[1]	;//	负极下表面毛刷除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_D].Io.DIOFFSwitch:=	I205[2]	;//	负极下表面毛刷除尘升降气缸缩回位		
+		arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_D].Io.DIONSwitch:=	I205[3]	;//	负极下表面风刀除尘升降气缸伸出位		
+		arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_D].Io.DIOFFSwitch:=	I205[4]	;//	负极下表面风刀除尘升降气缸缩回位		
+		I205[5]	;//	正压压力表；		
+		CaSenser.NGBoxFull:=I205[6]	;//负极NG料盒料满报警			
+		CaSenser.NGboxsensor :=I205[7]	;//负极NG料盒抛料对射感应		
+		CaSenser.bFourYellowDown:=I205[8]	;//	负极四连标下		
+		CaSenser.bFourYellowUP:=I205[9]	;//	负极四连标上		
+			I205[10]	;//			
+			I205[11]	;//			
+			I205[12]	;//			
+			I205[13]	;//			
+			I205[14]	;//			
+			I205[15]	;//			
+			I205[16]	;//			
+							
+		CaSys.btnAuto:=	I206[1]	;//	负极控制面板手自动切换按钮		
+		CaSys.btnStart:=	I206[2]	;//	负极控制面板启动按钮		
+		CaSys.btnReset:=	I206[3]	;//	负极控制面板复位按钮		
+		CaSys.btnStop:=	I206[4]	;//	负极控制面板停止按钮		
+		CaSys.btnEstop:=	I206[5] AND I206[9]	;//	负极控制面板急停按钮		
+		CaBtn.EncloserEstop[1]:=	I206[6]	;//	负极外罩急停1		
+		CaBtn.EncloserEstop[2]:=	I206[7]	;//	负极外罩急停2		
+		CaBtn.EncloserEstop[3]:=	I206[8]	;//	负极外罩急停3		
+			//I206[9]	;//			
+		CaSenser.biDoor[1]:=	I206[10]	;//	负极外罩门禁1		
+		CaSenser.biDoor[2]:=	I206[11]	;//	负极外罩门禁2		
+		CaSenser.biDoor[3]:=	I206[12]	;//	负极外罩门禁3		
+		CaSenser.biDoor[4]:=	I206[13]	;//	负极外罩门禁4		
+		CaSenser.biDoor[5]:=	I206[14]	;//	负极
+			I206[15]	;//模切通道安全门报警
+			I206[16]	;	
+							
+			I207[1]	;//			
+			I207[2]	;//			
+			I207[3]	;//			
+			I207[4]	;//			
+			I207[5]	;//			
+			I207[6]	;//			
+			I207[7]	;//			
+			I207[8]	;//			
+			I207[9]	;//			
+			I207[10]	;//			
+			I207[11]	;//			
+			I207[12]	;//			
+			I207[13]	;//			
+			I207[14]	;//			
+			I207[15]	;//			
+			I207[16]	;//		
+			CaSenser.aThrow:=	I204[9]	;//负极上表面毛刷除尘升降气缸伸出位(踢废失败报警解除专用)					
+			CaSenser.biCutPoleHave	:=	I208[1]	;	//裁切后极片有无检测	
+			CaSenser.bKick :=I208[2]	;//	踢废工位有无料检测；		
+			CaSenser.bYellowCheck_C:=I208[3]	;//	负极色标传感器；		
+			CaSenser.bYellowCheck_R1:=I208[4]	;//负极倒角前接带检测感应器上		
+			//CaSenser.bPoleCheck_R:=I208[5]	;//	负极倒角前极耳检测感应器
+			CaSenser.bYellowCheck_R2:=I208[6]	;//	负极倒角前接带检测感应器下
+			CaSenser.MouldInsensor:=I208[7]	;//	R角模具到位感应		
+			CaSenser.CuterInsensor:=I208[8]	;//	裁切切刀到位感应		
+			I208[9]	;//			
+			I208[10]	;//			
+			I208[11]	;//			
+			I208[12]	;//			
+			I208[13]	;//			
+			I208[14]	;//			
+			I208[15]	;//			
+			I208[16]	;//			
+							
+			I209[1]	;//			
+			I209[2]	;//			
+			I209[3]	;//			
+			I209[4]	;//			
+			I209[5]	;//			
+			I209[6]	;//			
+			I209[7]	;//			
+			I209[8]	;//			
+			I209[9]	;//			
+			I209[10]	;//			
+			I209[11]	;//			
+			I209[12]	;//			
+			I209[13]	;//			
+			I209[14]	;//			
+			I209[15]	;//			
+			I209[16]	;//			
+
+			CaSenser.biSubBelt1Have:=I30107;	//	1号叠台:负极模切送料分段皮带1有料感应
+			CaSenser.biSubBelt2Have:=I40107;	//	2号叠台:负极模切送料分段皮带2有料感应	
+			CaSenser.biSubBelt3Have:=I50107;	//	3号叠台:负极模切送料分段皮带3有料感应				]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="LimitSwitch" Id="{92482269-ece1-468d-ae71-4e56a7046c81}">
+      <Implementation>
+        <ST><![CDATA[//正极极片张力
+arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.DigitalInputs;
+//arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.biNegLimit:=arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.biPosLimit:=arrAxisCtrl[NameNo.AnAxisNo.PoleTension].Io.DigitalInputs.16;
+//arrAxisPar[NameNo.AnAxisNo.PoleTension].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//正极极片缓存
+arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.biNegLimit:= arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.biPosLimit:= arrAxisCtrl[NameNo.AnAxisNo.BuffeLine].Io.DigitalInputs.18;
+arrAxisPar[NameNo.AnAxisNo.BuffeLine].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//正极模具纠偏X轴(肩宽)
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.biNegLimit:=arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.biPosLimit:=arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_X].Io.DigitalInputs.16;
+arrAxisPar[NameNo.AnAxisNo.MouldRectify_X].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//正极模具纠偏Y轴(切刀深度)   负限当作原点&负限
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.biNegLimit:=arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.biPosLimit:=arrAxisCtrl[NameNo.AnAxisNo.MouldRectify_Y].Io.DigitalInputs.16;
+arrAxisPar[NameNo.AnAxisNo.MouldRectify_Y].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//正极模具
+arrAxisCtrl[NameNo.AnAxisNo.Mould].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.Mould].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.Mould].Io.DigitalInputs.2;
+//arrAxisCtrl[AnAxisNo.Mould].Io.biNegLimit:=arrAxisCtrl[AnAxisNo.Mould].Io.DigitalInputs.0;
+//arrAxisCtrl[AnAxisNo.Mould].Io.biPosLimit:=arrAxisCtrl[AnAxisNo.Mould].Io.DigitalInputs.1;
+
+//正极裁切
+arrAxisCtrl[NameNo.AnAxisNo.Cuter].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.Cuter].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.Cuter].Io.DigitalInputs.2;
+//arrAxisCtrl[AnAxisNo.Cuter].Io.biNegLimit:=arrAxisCtrl[AnAxisNo.Cuter].Io.DigitalInputs.0;
+//arrAxisCtrl[AnAxisNo.Cuter].Io.biPosLimit:=arrAxisCtrl[AnAxisNo.Cuter].Io.DigitalInputs.1;
+
+//正极裁切角度纠偏   负限当作原点&负限
+arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.biNegLimit:=arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.biPosLimit:=arrAxisCtrl[NameNo.AnAxisNo.CuterDegRectify].Io.DigitalInputs.16;
+arrAxisPar[NameNo.AnAxisNo.CuterDegRectify].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//正极裁切换型
+arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.biHomeSwitch:=arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.biNegLimit:=arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.biPosLimit:=arrAxisCtrl[NameNo.AnAxisNo.CuterBeltChange].Io.DigitalInputs.16;
+arrAxisPar[NameNo.AnAxisNo.CuterBeltChange].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//正极初始踢废料
+//arrAxisCtrl[NameNo.AnAxisNo.NGPush1].Io.DigitalInputs;
+//arrAxisCtrl[NameNo.AnAxisNo.NGPush1].Io.biHomeSwitch:=NOT arrAxisCtrl[NameNo.AnAxisNo.NGPush1].Io.DigitalInputs.2;
+//arrAxisCtrl[AnAxisNo.NGPush1].Io.biNegLimit:=arrAxisCtrl[AnAxisNo.NGPush1].Io.DigitalInputs.0;
+//arrAxisCtrl[AnAxisNo.NGPush1].Io.biPosLimit:=arrAxisCtrl[AnAxisNo.NGPush1].Io.DigitalInputs.1;
+
+//正极踢废料
+//arrAxisCtrl[NameNo.AnAxisNo.NGPush2].Io.DigitalInputs;
+//arrAxisCtrl[NameNo.AnAxisNo.NGPush2].Io.biHomeSwitch:=NOT arrAxisCtrl[NameNo.AnAxisNo.NGPush2].Io.DigitalInputs.2;
+//arrAxisCtrl[AnAxisNo.NGPush2].Io.biNegLimit:=arrAxisCtrl[AnAxisNo.NGPush2].Io.DigitalInputs.0;
+//arrAxisCtrl[AnAxisNo.NGPush2].Io.biPosLimit:=arrAxisCtrl[AnAxisNo.NGPush2].Io.DigitalInputs.1;
+
+//正极CCD压片升降
+arrAxisCtrl[NameNo.AnAxisNo.CCDPressPush].Io.DigitalInputs;
+arrAxisCtrl[NameNo.AnAxisNo.CCDPressPush].Io.biHomeSwitch:=NOT arrAxisCtrl[NameNo.AnAxisNo.CCDPressPush].Io.DigitalInputs.2;
+//arrAxisCtrl[AnAxisNo.CCDPressPush].Io.biNegLimit:=arrAxisCtrl[AnAxisNo.CCDPressPush].Io.DigitalInputs.0;
+//arrAxisCtrl[AnAxisNo.CCDPressPush].Io.biPosLimit:=arrAxisCtrl[AnAxisNo.CCDPressPush].Io.DigitalInputs.1;
+
+
+//负极极片张力
+arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.DigitalInputs;
+//arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.PoleTension].Io.DigitalInputs.16;
+
+//负极极片缓存
+arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.biNegLimit:= arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.biPosLimit:= arrAxisCtrl[NameNo.CaAxisNo.BuffeLine].Io.DigitalInputs.18;
+arrAxisPar[NameNo.CaAxisNo.BuffeLine].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//负极模具纠偏X轴(肩宽)
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_X].Io.DigitalInputs.16;
+arrAxisPar[NameNo.CaAxisNo.MouldRectify_X].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//负极模具纠偏Y轴(切刀深度) 负限当作原点&负限
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.DigitalInputs.17;//arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.MouldRectify_Y].Io.DigitalInputs.16;
+arrAxisPar[NameNo.CaAxisNo.MouldRectify_Y].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//负极模具
+arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.DigitalInputs.2;
+//arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.DigitalInputs.0;
+//arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.Mould].Io.DigitalInputs.1;
+
+//负极裁切
+arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.DigitalInputs.2;
+//arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.DigitalInputs.0;
+//arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.Cuter].Io.DigitalInputs.1;
+
+//负极裁切角度纠偏   负限当作原点&负限
+arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.CuterDegRectify].Io.DigitalInputs.16;
+arrAxisPar[NameNo.CaAxisNo.CuterDegRectify].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//负极裁切换型
+arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.biHomeSwitch:=arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.DigitalInputs.2;
+arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.DigitalInputs.17;
+arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.CuterBeltChange].Io.DigitalInputs.16;
+arrAxisPar[NameNo.CaAxisNo.CuterBeltChange].bLimitSwitchEn:=TRUE;//开启限位保护
+
+//负极初始踢废料
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.DigitalInputs;
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.biHomeSwitch:=NOT arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.DigitalInputs.2;
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.DigitalInputs.0;
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.NGPush1].Io.DigitalInputs.1;
+
+//负极踢废料
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.DigitalInputs;
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.biHomeSwitch:=NOT arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.DigitalInputs.2;
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.DigitalInputs.0;
+//arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.NGPush2].Io.DigitalInputs.1;
+
+//负极CCD压片升降
+arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.DigitalInputs;
+arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.biHomeSwitch:=NOT arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.DigitalInputs.2;
+//arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.biNegLimit:=arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.DigitalInputs.0;
+//arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.biPosLimit:=arrAxisCtrl[NameNo.CaAxisNo.CCDPressPush].Io.DigitalInputs.1;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="OutPut" Id="{788dc975-422b-4dc9-a35e-a6baacf3cef4}">
+      <Implementation>
+        <ST><![CDATA[//输出映射	正极									
+		Q101[1]	:=	arrCyCtrl[NameNo.AnCYNo.Inflation_L].Io.DOStatus1	;//	正极左放卷气涨轴张开				
+		Q101[2]	:=	arrCyCtrl[NameNo.AnCYNo.Inflation_L].Io.DOStatus2	;//	正极左放卷气涨轴缩回				
+		Q101[3]	:=	arrCyCtrl[NameNo.AnCYNo.Inflation_R].Io.DOStatus1	;//	正极右放卷气涨轴张开				
+		Q101[4]	:=	arrCyCtrl[NameNo.AnCYNo.Inflation_R].Io.DOStatus2	;//	正极右放卷气涨轴缩回				
+		Q101[5]	:=	arrCyCtrl[NameNo.AnCYNo.BoardPressL].Io.DOStatus1	;//	正极极片左接带气缸伸出				
+		Q101[6]	:=	arrCyCtrl[NameNo.AnCYNo.BoardPressL].Io.DOStatus2	;//	正极极片左接带气缸缩回				
+		Q101[7]	:=	arrCyCtrl[NameNo.AnCYNo.BoardPressR].Io.DOStatus1	;//	正极极片右接带气缸伸出				
+		Q101[8]	:=	arrCyCtrl[NameNo.AnCYNo.BoardPressR].Io.DOStatus2	;//	正极极片右接带气缸缩回				
+		Q101[9]	:=	arrCyCtrl[NameNo.AnEVNo.ConnectDustVacuo].Io.DOStatus1	;//	正极极片接带平台除尘真空打开				
+		Q101[10]	:=	AnBtn.PoleBoxStartLight	;//	正极放卷启动按钮灯				
+		Q101[11]	:=	AnBtn.CoderRollPressLight		;//	正极编码器压辊按钮灯			
+		Q101[12]			;//					
+		Q101[13]	:=	arrCyCtrl[NameNo.AnCYNo.DriverPressAux].Io.DOStatus1	;//	正极辅助驱动压辊伸出				
+		Q101[14]	:=	arrCyCtrl[NameNo.AnCYNo.DriverPressAux].Io.DOStatus2	;//	正极辅助驱动压辊缩回				
+		Q101[15]	:=	arrCyCtrl[NameNo.AnCYNo.CoderRollPress].Io.DOStatus1	;//	正极前线扫编码器压辊伸出				
+		Q101[16]	:=	arrCyCtrl[NameNo.AnCYNo.CoderRollPress].Io.DOStatus2	;//	正极前线扫编码器压辊缩回				
+										
+		Q102[1]			;//					
+		Q102[2]	:=	arrCyCtrl[NameNo.AnEVNo.LineSceneDustBlow].Io.DOStatus1	;//	正极线扫相机镜头除尘吹气				
+		Q102[3]	:=	arrCyCtrl[NameNo.AnEVNo.LineSceneDustVacuo].Io.DOStatus1	;//	正极线扫相机镜头除尘真空				
+		Q102[4]			;//					
+		Q102[5]	:=	arrRecCtrl[NameNo.AnRecNo.PoleWind].Io.boManual	;//	正极放卷纠偏手动				
+		Q102[6]	:=	arrRecCtrl[NameNo.AnRecNo.PoleWind].Io.boCentre	;//	正极放卷纠偏居中				
+		Q102[7]	:=	arrRecCtrl[NameNo.AnRecNo.PoleWind].Io.boLock	;//	正极放卷纠偏外部锁定				
+		Q102[8]	:=	arrRecCtrl[NameNo.AnRecNo.PoleWind].Io.boAuto	;//	正极放卷纠偏自动				
+		Q102[9]	:=	arrRecCtrl[NameNo.AnRecNo.PoleProcess].Io.boManual	;//	正极行进纠偏手动				
+		Q102[10]	:=	arrRecCtrl[NameNo.AnRecNo.PoleProcess].Io.boCentre	;//	正极行进纠偏居中				
+		Q102[11]	:=	arrRecCtrl[NameNo.AnRecNo.PoleProcess].Io.boLock	;//	正极行进纠偏外部锁定				
+		Q102[12]	:=	arrRecCtrl[NameNo.AnRecNo.PoleProcess].Io.boAuto	;//	正极行进纠偏自动				
+		Q102[13]	:=	AnCCDIO.boChamferPhoto	;//	正极CCD冲R角定位拍照触发				
+		Q102[14]	:=	AnCCDIO.boCuterPhoto	;//	正极CCD裁切定位拍照触发				
+		Q102[15]	:=	AnCCDIO.boSizePhoto	;//	正极CCD尺寸检测拍照触发				
+		Q102[16]			;//					
+										
+		Q103[1]	:=	arrCyCtrl[NameNo.AnCYNo.DriverPressDDR].Io.DOStatus1	;//	正极主驱动压辊伸出				
+		Q103[2]	:=	arrCyCtrl[NameNo.AnCYNo.DriverPressDDR].Io.DOStatus2	;//	正极主驱动压辊缩回				
+		Q103[3]	:=	AnBtn.DriverPressDDRLight	;//	正极主驱动压辊按钮灯				
+		Q103[4]	:=	arrCyCtrl[NameNo.AnEVNo.AreaArrayDustBlow].Io.DOStatus1	;//	正极模切相机镜头除尘吹气				
+		Q103[5]	:=	arrCyCtrl[NameNo.AnEVNo.MouldUpBlow].Io.DOStatus1	;//	正极模具上模吹气打开				
+		Q103[6]	:=	arrCyCtrl[NameNo.AnEVNo.MouldDownVacuo].Io.DOStatus1	;//	正极模具下模真空				
+		Q103[7]	:=	arrCyCtrl[NameNo.AnEVNo.MouldDownAir].Io.DOStatus1	;//	正极模具下模破真空				
+		Q103[8]	:=	arrDustMotor[NameNo.AnMotorNo.CuterBeltDust].bo_Pul	;//	正极裁切输送皮带除尘毛刷正转				
+		Q103[9]	:=	arrDustMotor[NameNo.AnMotorNo.CuterBeltDust].bo_Dir	;//	正极裁切输送皮带除尘毛刷反转				
+		Q103[10]	:=	arrCyCtrl[NameNo.AnCYNo.NGRevBeltUpDown].Io.DOStatus1	;//	正极踢废倒装皮带升降气缸伸出				
+		Q103[11]	:=	arrCyCtrl[NameNo.AnCYNo.NGRevBeltUpDown].Io.DOStatus2	;//	正极踢废倒装皮带升降气缸缩回				
+		Q103[12]	:=	arrCyCtrl[NameNo.AnCYNo.NGRevBeltTension].Io.DOStatus1	;//	正极踢废倒装皮带1张紧气缸伸出				
+		Q103[13]	:=	arrCyCtrl[NameNo.AnCYNo.NGRevBeltTension].Io.DOStatus2	;//	正极踢废倒装皮带1张紧气缸缩回				
+		Q103[14]			;//					
+		Q103[15]	:=	arrCyCtrl[NameNo.AnEVNo.ConnectDustVacuo].Io.DOStatus2	;//	正极极片接带平台除尘真空关闭					
+		Q103[16]	:=	arrCyCtrl[NameNo.AnCYNo.WasteBoxPush].Io.DOStatus1	;//	正极连续废料收集箱推料气缸				
+										
+		Q104[1]	:=	arrDustMotor[NameNo.AnMotorNo.NGReverseBeltDust].bo_Pul	;//	正极踢废倒装皮带除尘毛刷正转				
+		Q104[2]	:=	arrDustMotor[NameNo.AnMotorNo.NGReverseBeltDust].bo_Dir	;//	正极踢废倒装皮带除尘毛刷反转				
+		//Q104[3]	:=	arrCyCtrl[NameNo.AnCYNo.NGBoxLock1].Io.DOStatus1	;//	正极NG收料1归正伸出				
+		//Q104[4]	:=	arrCyCtrl[NameNo.AnCYNo.NGBoxLock1].Io.DOStatus2	;//	正极NG收料1归正缩回				
+		//Q104[5]	:=	arrCyCtrl[NameNo.AnCYNo.NGBoxLock2].Io.DOStatus1	;//	正极NG收料2归正伸出				
+		//Q104[6]	:=	arrCyCtrl[NameNo.AnCYNo.NGBoxLock2].Io.DOStatus2	;//	正极NG收料归正缩回				
+		Q104[7]	:=	arrCyCtrl[NameNo.AnEVNo.NGPushInsideAir].Io.DOStatus1	;//	正极NG踢废腔室破真空				
+		Q104[8]	:=	arrCyCtrl[NameNo.AnEVNo.NGPushInsideVacuo].Io.DOStatus1	;//	正极NG踢废腔室真空				
+		Q104[9]	:=	AnsetpMotor.bo_Up	;//	正极NG料盒顶升上升				
+		Q104[10]	:=	AnsetpMotor.bo_Down	;//	正极NG料盒顶升下降				
+		Q104[11]	:=	AnBtn.NGBoxStartLight	;//	正极NG收料盒确认放入料框按钮灯				
+		Q104[12]	:=	AnBtn.NGBoxMotor_JogUpLight	;//	正极NG收料盒电机上升按钮灯				
+		Q104[13]	:=	AnBtn.NGBoxMotor_JogDownLight	;//	正极NG收料盒电机下降按钮灯				
+		Q104[14]			;//					
+		Q104[15]			;//					
+		Q104[16]			;//					
+										
+		Q105[1]	:=	AnBtn.PoleBrushDustPush_ULight	;//	正极上表面毛刷除尘升降气缸按钮灯				
+		Q105[2]	:=	AnBtn.PoleWindDustPush_ULight	;//	正极上表面超声波除尘升降气缸按钮灯				
+		Q105[3]	:=	arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_U].Io.DOStatus1	;//	正极上表面毛刷除尘升降气缸伸出				
+		Q105[4]	:=	arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_U].Io.DOStatus2	;//	正极上表面毛刷除尘升降气缸缩回				
+		Q105[5]	:=	arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_U].Io.DOStatus1	;//	正极上表面风刀除尘升降气缸伸出				
+		Q105[6]	:=	arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_U].Io.DOStatus2	;//	正极上表面风刀除尘升降气缸缩回				
+		Q105[7]	:=	arrCyCtrl[NameNo.AnEVNo.BrushDustVacuo_U].Io.DOStatus1	;//	正极上表面毛刷除尘真空				
+		Q105[8]	:=	arrCyCtrl[NameNo.AnEVNo.WindDustBlow_U].Io.DOStatus1	;//	正极上表面风刀除尘吹气				
+		Q105[9]	:=	arrCyCtrl[NameNo.AnEVNo.WindDustVacuo_U].Io.DOStatus1	;//	正极上表面风刀除尘真空				
+		Q105[10]	:=	arrDustMotor[NameNo.AnMotorNo.DedustBeltDust].bo_Pul	;//	正极上表面除尘皮带除尘毛刷正转				
+		Q105[11]	:=	arrDustMotor[NameNo.AnMotorNo.DedustBeltDust].bo_Dir	;//	正极上表面除尘皮带除尘毛刷反转				
+		Q105[12]	:=	arrDustMotor[NameNo.AnMotorNo.PoleBrushDust_U].bo_Pul	;//	正极上表面极片除尘毛刷正转				
+		Q105[13]	:=	arrDustMotor[NameNo.AnMotorNo.PoleBrushDust_U].bo_Dir	;//	正极上表面极片除尘毛刷反转				
+		Q105[14]	:=	arrDustMotor[NameNo.AnMotorNo.DDR_Dust].bo_Pul		;//	正极主驱辊除尘毛刷正转				
+		Q105[15]	:=	arrDustMotor[NameNo.AnMotorNo.DDR_Dust].bo_Dir		;//	正极主驱辊除尘毛刷反转				
+		Q105[16]			;//					
+										
+		Q106[1]	:=	AnBtn.PoleBrushDustPush_DLight	;//	正极下表面毛刷除尘升降气缸按钮灯				
+		Q106[2]	:=	AnBtn.PoleWindDustPush_DLight	;//	正极下表面超声波除尘升降气缸按钮灯				
+		Q106[3]	:=	arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_D].Io.DOStatus1	;//	正极下表面毛刷除尘升降气缸伸出				
+		Q106[4]	:=	arrCyCtrl[NameNo.AnCYNo.PoleBrushDustPush_D].Io.DOStatus2	;//	正极下表面毛刷除尘升降气缸缩回				
+		Q106[5]	:=	arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_D].Io.DOStatus1	;//	正极下表面风刀除尘升降气缸伸出				
+		Q106[6]	:=	arrCyCtrl[NameNo.AnCYNo.PoleWindDustPush_D].Io.DOStatus2	;//	正极下表面风刀除尘升降气缸缩回				
+		Q106[7]	:=	arrCyCtrl[NameNo.AnCYNo.DustRevBeltUpDown].Io.DOStatus1	;//	正极下表面除尘倒装皮带升降气缸伸出				
+		Q106[8]	:=	arrCyCtrl[NameNo.AnCYNo.DustRevBeltUpDown].Io.DOStatus2	;//	正极下表面除尘倒装皮带升降气缸缩回				
+		Q106[9]	:=	arrCyCtrl[NameNo.AnEVNo.BrushDustVacuo_D].Io.DOStatus1	;//	正极下表面毛刷除尘真空				
+		Q106[10]	:=	arrCyCtrl[NameNo.AnEVNo.WindDustBlow_D].Io.DOStatus1	;//	正极下表面风刀除尘吹气				
+		Q106[11]	:=	arrCyCtrl[NameNo.AnEVNo.WindDustVacuo_D].Io.DOStatus1	;//	正极下表面风刀除尘真空				
+		Q106[12]	:=	arrDustMotor[NameNo.AnMotorNo.DedustReverseBeltDust].bo_Pul	;//	正极下表面除尘皮带除尘毛刷正转				
+		Q106[13]	:=	arrDustMotor[NameNo.AnMotorNo.DedustReverseBeltDust].bo_Dir	;//	正极下表面除尘皮带除尘毛刷反转				
+		Q106[14]	:=	arrDustMotor[NameNo.AnMotorNo.PoleBrushDust_D].bo_Pul	;//	正极下表面极片除尘毛刷正转				
+		Q106[15]	:=	arrDustMotor[NameNo.AnMotorNo.PoleBrushDust_D].bo_Dir	;//	正极下表面极片除尘毛刷反转				
+		Q106[16]			;//					
+										
+		Q107[1]	:=	AnSys.boStartLight	;//	正极控制面板启动按钮灯				
+		Q107[2]	:=	AnSys.boResetLight	;//	正极控制面板复位按钮灯				
+		Q107[3]	:=	AnSys.boStopLight	;//	正极控制面板停止按钮灯				
+		Q107[4]	:=	stSysState.boYellowLight	;//	正极三色灯_黄				
+		Q107[5]	:=	stSysState.boGreenLight	;//	正极三色灯_绿				
+		Q107[6]	:=	stSysState.boRedLight	;//	正极三色灯_红				
+		Q107[7]	:=	stSysState.boBuzzer AND NOT ProductPar.iModeEN.bBuzzerEN	;//	正极三色灯_蜂鸣器				
+		Q107[8]			;//					
+		Q107[9]	:=	arrCyCtrl[NameNo.AnEVNo.RJ_Blow].Io.DOStatus1		;//	正极R角吹气		
+		Q107[10]	:=	arrCyCtrl[NameNo.AnEVNo.RJDustBlow].Io.DOStatus1		;//R角风刀吹气			
+		Q107[11]			;//	正极激光指示器				
+		Q107[12]			;//					
+		Q107[13]			;//					
+		Q107[14]			;//					
+		Q107[15]			;//					
+		Q107[16]			;//					
+										
+		Q108[1]			;//					
+		Q108[2]	:=AnCCDIO.boXSPhoto OR  AnCCDIO.hmiXSPhoto		;//			
+		Q108[3]			;//					
+		Q108[4]			;//					
+		Q108[5]			;//					
+		Q108[6]			;//					
+		Q108[7]			;//					
+		Q108[8]			;//					
+		Q108[9]			;//					
+		Q108[10]			;//					
+		Q108[11]			;//					
+		Q108[12]			;//					
+		Q108[13]			;//					
+		Q108[14]			;//					
+		Q108[15]			;//					
+		Q108[16]			;//					
+										
+		Q109[1]	:=	bytePower.0	;//	正极模切电源				
+		Q109[2]	:=	bytePower.1	;//	负极模切电源				
+		Q109[3]	:=	bytePower.2	;//	叠台1电源				
+		Q109[4]	:=	bytePower.3	;//	叠台2电源				
+		Q109[5]	:=	bytePower.4	;//	叠台3电源				
+		Q109[6]	:=	bytePower.5	;//	后段滤波器电源				
+		Q109[7]	:=	bytePower.6	;//	后段加热回路电源				
+		Q109[8]			;//					
+		Q109[9]			;//					
+		Q109[10]			;//					
+		Q109[11]			;//					
+		Q109[12]			;//					
+		Q109[13]			;//					
+		Q109[14]			;//					
+		Q109[15]			;//					
+		Q109[16]			;//					
+										
+//输出映射	负极									
+		Q201[1]	:=	arrCyCtrl[NameNo.CaCYNo.Inflation_L].Io.DOStatus1	;//	负极左放卷气涨轴张开				
+		Q201[2]	:=	arrCyCtrl[NameNo.CaCYNo.Inflation_L].Io.DOStatus2	;//	负极左放卷气涨轴缩回				
+		Q201[3]	:=	arrCyCtrl[NameNo.CaCYNo.Inflation_R].Io.DOStatus1	;//	负极右放卷气涨轴张开				
+		Q201[4]	:=	arrCyCtrl[NameNo.CaCYNo.Inflation_R].Io.DOStatus2	;//	负极右放卷气涨轴缩回				
+		Q201[5]	:=	arrCyCtrl[NameNo.CaCYNo.BoardPressL].Io.DOStatus1	;//	负极极片左接带气缸伸出				
+		Q201[6]	:=	arrCyCtrl[NameNo.CaCYNo.BoardPressL].Io.DOStatus2	;//	负极极片左接带气缸缩回				
+		Q201[7]	:=	arrCyCtrl[NameNo.CaCYNo.BoardPressR].Io.DOStatus1	;//	负极极片右接带气缸伸出				
+		Q201[8]	:=	arrCyCtrl[NameNo.CaCYNo.BoardPressR].Io.DOStatus2	;//	负极极片右接带气缸缩回				
+		Q201[9]	:=	arrCyCtrl[NameNo.CaEVNo.ConnectDustVacuo].Io.DOStatus1	;//	负极极片接带平台除尘真空打开				
+		Q201[10]	:=	CaBtn.PoleBoxStartLight	;//	负极放卷启动按钮灯				
+		Q201[11]	:=	CaBtn.CoderRollPressLight		;//	负极编码器压辊按钮灯		;//	
+		Q201[12]			;//					
+		Q201[13]	:=	arrCyCtrl[NameNo.CaCYNo.DriverPressAux].Io.DOStatus1	;//	负极辅助驱动压辊伸出				
+		Q201[14]	:=	arrCyCtrl[NameNo.CaCYNo.DriverPressAux].Io.DOStatus2	;//	负极辅助驱动压辊缩回				
+		Q201[15]	:=	arrCyCtrl[NameNo.CaCYNo.CoderRollPress].Io.DOStatus1	;//	负极前线扫编码器压辊伸出				
+		Q201[16]	:=	arrCyCtrl[NameNo.CaCYNo.CoderRollPress].Io.DOStatus2	;//	负极前线扫编码器压辊缩回				
+										
+		Q202[1]			;//					
+		Q202[2]	:=	arrCyCtrl[NameNo.CaEVNo.LineSceneDustBlow].Io.DOStatus1	;//	负极线扫相机镜头除尘吹气				
+		Q202[3]	:=	arrCyCtrl[NameNo.CaEVNo.LineSceneDustVacuo].Io.DOStatus1	;//	负极线扫相机镜头除尘真空				
+		Q202[4]			;//					
+		Q202[5]	:=	arrRecCtrl[NameNo.CaRecNo.PoleWind].Io.boManual	;//	负极放卷纠偏手动				
+		Q202[6]	:=	arrRecCtrl[NameNo.CaRecNo.PoleWind].Io.boCentre	;//	负极放卷纠偏居中				
+		Q202[7]	:=	arrRecCtrl[NameNo.CaRecNo.PoleWind].Io.boLock	;//	负极放卷纠偏外部锁定				
+		Q202[8]	:=	arrRecCtrl[NameNo.CaRecNo.PoleWind].Io.boAuto	;//	负极放卷纠偏自动				
+		Q202[9]	:=	arrRecCtrl[NameNo.CaRecNo.PoleProcess].Io.boManual	;//	负极行进纠偏手动				
+		Q202[10]	:=	arrRecCtrl[NameNo.CaRecNo.PoleProcess].Io.boCentre	;//	负极行进纠偏居中				
+		Q202[11]	:=	arrRecCtrl[NameNo.CaRecNo.PoleProcess].Io.boLock	;//	负极行进纠偏外部锁定				
+		Q202[12]	:=	arrRecCtrl[NameNo.CaRecNo.PoleProcess].Io.boAuto	;//	负极行进纠偏自动				
+		Q202[13]	:=	CaCCDIO.boChamferPhoto	;//	负极CCD冲R角定位拍照触发				
+		Q202[14]	:=	CaCCDIO.boCuterPhoto	;//	负极CCD裁切定位拍照触发				
+		Q202[15]	:=	CaCCDIO.boSizePhoto	;//	负极CCD尺寸检测拍照触发				
+		Q202[16]			;//					
+										
+		Q203[1]	:=	arrCyCtrl[NameNo.CaCYNo.DriverPressDDR].Io.DOStatus1	;//	负极主驱动压辊伸出				
+		Q203[2]	:=	arrCyCtrl[NameNo.CaCYNo.DriverPressDDR].Io.DOStatus2	;//	负极主驱动压辊缩回				
+		Q203[3]	:=	CaBtn.DriverPressDDRLight	;//	负极主驱动压辊按钮灯				
+		Q203[4]	:=	arrCyCtrl[NameNo.CaEVNo.AreaArrayDustBlow].Io.DOStatus1	;//	负极模切相机镜头除尘吹气				
+		Q203[5]	:=	arrCyCtrl[NameNo.CaEVNo.MouldUpBlow].Io.DOStatus1	;//	负极模具上模吹气打开				
+		Q203[6]	:=	arrCyCtrl[NameNo.CaEVNo.MouldDownVacuo].Io.DOStatus1	;//	负极模具下模真空				
+		Q203[7]	:=	arrCyCtrl[NameNo.CaEVNo.MouldDownAir].Io.DOStatus1	;//	负极模具下模破真空				
+		Q203[8]	:=	arrDustMotor[NameNo.CaMotorNo.CuterBeltDust].bo_Pul	;//	负极裁切输送皮带除尘毛刷正转				
+		Q203[9]	:=	arrDustMotor[NameNo.CaMotorNo.CuterBeltDust].bo_Dir	;//	负极裁切输送皮带除尘毛刷反转				
+		Q203[10]	:=	arrCyCtrl[NameNo.CaCYNo.NGRevBeltUpDown].Io.DOStatus1	;//	负极踢废倒装皮带升降气缸伸出				
+		Q203[11]	:=	arrCyCtrl[NameNo.CaCYNo.NGRevBeltUpDown].Io.DOStatus2	;//	负极踢废倒装皮带升降气缸缩回				
+		Q203[12]	:=	arrCyCtrl[NameNo.CaCYNo.NGRevBeltTension].Io.DOStatus1	;//	负极踢废倒装皮带1张紧气缸伸出				
+		Q203[13]	:=	arrCyCtrl[NameNo.CaCYNo.NGRevBeltTension].Io.DOStatus2	;//	负极踢废倒装皮带1张紧气缸缩回				
+		Q203[14]			;//					
+		Q203[15]	:=	arrCyCtrl[NameNo.CaEVNo.ConnectDustVacuo].Io.DOStatus2	;//	负极极片接带平台除尘真空关闭			;//					
+		Q203[16]	:=	arrCyCtrl[NameNo.CaCYNo.WasteBoxPush].Io.DOStatus1	;//	负极连续废料收集箱推料气缸				
+										
+		Q204[1]	:=	arrDustMotor[NameNo.CaMotorNo.NGReverseBeltDust].bo_Pul	;//	负极踢废倒装皮带除尘毛刷正转				
+		Q204[2]	:=	arrDustMotor[NameNo.CaMotorNo.NGReverseBeltDust].bo_Dir	;//	负极踢废倒装皮带除尘毛刷反转				
+		//Q204[3]	:=	arrCyCtrl[NameNo.CaCYNo.NGBoxLock1].Io.DOStatus1	;//	负极NG收料1归正伸出				
+		//Q204[4]	:=	arrCyCtrl[NameNo.CaCYNo.NGBoxLock1].Io.DOStatus2	;//	负极NG收料1归正缩回				
+		//Q204[5]	:=	arrCyCtrl[NameNo.CaCYNo.NGBoxLock2].Io.DOStatus1	;//	负极NG收料2归正伸出				
+		//Q204[6]	:=	arrCyCtrl[NameNo.CaCYNo.NGBoxLock2].Io.DOStatus2	;//	负极NG收料归正缩回				
+		Q204[7]	:=	arrCyCtrl[NameNo.CaEVNo.NGPushInsideAir].Io.DOStatus1	;//	负极NG踢废腔室破真空				
+		Q204[8]	:=	arrCyCtrl[NameNo.CaEVNo.NGPushInsideVacuo].Io.DOStatus1	;//	负极NG踢废腔室真空				
+		Q204[9]	:=	CasetpMotor.bo_Up	;//	负极NG料盒顶升上升				
+		Q204[10]	:=	CasetpMotor.bo_Down	;//	负极NG料盒顶升下降				
+		Q204[11]	:=	CaBtn.NGBoxStartLight	;//	负极NG收料盒确认放入料框按钮灯				
+		Q204[12]	:=	CaBtn.NGBoxMotor_JogUpLight	;//	负极NG收料盒电机上升按钮灯				
+		Q204[13]	:=	CaBtn.NGBoxMotor_JogDownLight	;//	负极NG收料盒电机下降按钮灯				
+		Q204[14]			;//					
+		Q204[15]			;//					
+		Q204[16]			;//					
+										
+		Q205[1]	:=	CaBtn.PoleBrushDustPush_ULight	;//	负极上表面毛刷除尘升降气缸按钮灯				
+		Q205[2]	:=	CaBtn.PoleWindDustPush_ULight	;//	负极上表面超声波除尘升降气缸按钮灯				
+		Q205[3]	:=	arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_U].Io.DOStatus1	;//	负极上表面毛刷除尘升降气缸伸出				
+		Q205[4]	:=	arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_U].Io.DOStatus2	;//	负极上表面毛刷除尘升降气缸缩回				
+		Q205[5]	:=	arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_U].Io.DOStatus1	;//	负极上表面风刀除尘升降气缸伸出				
+		Q205[6]	:=	arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_U].Io.DOStatus2	;//	负极上表面风刀除尘升降气缸缩回				
+		Q205[7]	:=	arrCyCtrl[NameNo.CaEVNo.BrushDustVacuo_U].Io.DOStatus1	;//	负极上表面毛刷除尘真空				
+		Q205[8]	:=	arrCyCtrl[NameNo.CaEVNo.WindDustBlow_U].Io.DOStatus1	;//	负极上表面风刀除尘吹气				
+		Q205[9]	:=	arrCyCtrl[NameNo.CaEVNo.WindDustVacuo_U].Io.DOStatus1	;//	负极上表面风刀除尘真空				
+		Q205[10]	:=	arrDustMotor[NameNo.CaMotorNo.DedustBeltDust].bo_Pul	;//	负极上表面除尘皮带除尘毛刷正转				
+		Q205[11]	:=	arrDustMotor[NameNo.CaMotorNo.DedustBeltDust].bo_Dir	;//	负极上表面除尘皮带除尘毛刷反转				
+		Q205[12]	:=	arrDustMotor[NameNo.CaMotorNo.PoleBrushDust_U].bo_Pul	;//	负极上表面极片除尘毛刷正转				
+		Q205[13]	:=	arrDustMotor[NameNo.CaMotorNo.PoleBrushDust_U].bo_Dir	;//	负极上表面极片除尘毛刷反转				
+		Q205[14]	:=	arrDustMotor[NameNo.CaMotorNo.DDR_Dust].bo_Pul	;//	负极主驱辊除尘毛刷正转					
+		Q205[15]	:=	arrDustMotor[NameNo.CaMotorNo.DDR_Dust].bo_Dir	;//	负极主驱辊除尘毛刷正转			;//					
+		Q205[16]			;//					
+										
+		Q206[1]	:=	CaBtn.PoleBrushDustPush_DLight	;//	负极下表面毛刷除尘升降气缸按钮灯				
+		Q206[2]	:=	CaBtn.PoleWindDustPush_DLight	;//	负极下表面超声波除尘升降气缸按钮灯				
+		Q206[3]	:=	arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_D].Io.DOStatus1	;//	负极下表面毛刷除尘升降气缸伸出				
+		Q206[4]	:=	arrCyCtrl[NameNo.CaCYNo.PoleBrushDustPush_D].Io.DOStatus2	;//	负极下表面毛刷除尘升降气缸缩回				
+		Q206[5]	:=	arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_D].Io.DOStatus1	;//	负极下表面风刀除尘升降气缸伸出				
+		Q206[6]	:=	arrCyCtrl[NameNo.CaCYNo.PoleWindDustPush_D].Io.DOStatus2	;//	负极下表面风刀除尘升降气缸缩回				
+		Q206[7]	:=	arrCyCtrl[NameNo.CaCYNo.DustRevBeltUpDown].Io.DOStatus1	;//	负极下表面除尘倒装皮带升降气缸伸出				
+		Q206[8]	:=	arrCyCtrl[NameNo.CaCYNo.DustRevBeltUpDown].Io.DOStatus2	;//	负极下表面除尘倒装皮带升降气缸缩回				
+		Q206[9]	:=	arrCyCtrl[NameNo.CaEVNo.BrushDustVacuo_D].Io.DOStatus1	;//	负极下表面毛刷除尘真空				
+		Q206[10]	:=	arrCyCtrl[NameNo.CaEVNo.WindDustBlow_D].Io.DOStatus1	;//	负极下表面风刀除尘吹气				
+		Q206[11]	:=	arrCyCtrl[NameNo.CaEVNo.WindDustVacuo_D].Io.DOStatus1	;//	负极下表面风刀除尘真空				
+		Q206[12]	:=	arrDustMotor[NameNo.CaMotorNo.DedustReverseBeltDust].bo_Pul	;//	负极下表面除尘皮带除尘毛刷正转				
+		Q206[13]	:=	arrDustMotor[NameNo.CaMotorNo.DedustReverseBeltDust].bo_Dir	;//	负极下表面除尘皮带除尘毛刷反转				
+		Q206[14]	:=	arrDustMotor[NameNo.CaMotorNo.PoleBrushDust_D].bo_Pul	;//	负极下表面极片除尘毛刷正转				
+		Q206[15]	:=	arrDustMotor[NameNo.CaMotorNo.PoleBrushDust_D].bo_Dir	;//	负极下表面极片除尘毛刷反转				
+		Q206[16]			;//					
+										
+		Q207[1]	:=	CaSys.boStartLight	;//	负极控制面板启动按钮灯				
+		Q207[2]	:=	CaSys.boResetLight	;//	负极控制面板复位按钮灯				
+		Q207[3]	:=	CaSys.boStopLight	;//	负极控制面板停止按钮灯				
+		Q207[4]	:=	stSysState.boYellowLight	;//	负极三色灯_黄				
+		Q207[5]	:=	stSysState.boGreenLight	;//	负极三色灯_绿				
+		Q207[6]	:=	stSysState.boRedLight	;//	负极三色灯_红				
+		Q207[7]	:=	stSysState.boBuzzer AND NOT ProductPar.iModeEN.bBuzzerEN	;//	负极三色灯_蜂鸣器				
+		Q207[8]				;//		
+		Q207[9]	:=	arrCyCtrl[NameNo.CaEVNo.RJ_Blow].Io.DOStatus1		;//	负极R角吹气					
+		Q207[10]	:=	arrCyCtrl[NameNo.CaEVNo.RJDustBlow].Io.DOStatus1		;//R角风刀吹气		
+		Q207[11]			;//	负极激光指示器				
+		Q207[12]			;//					
+		Q207[13]			;//					
+		Q207[14]			;//					
+		Q207[15]			;//					
+		Q207[16]			;//					
+										
+		Q208[1]			;//					
+		Q208[2]:=CaCCDIO.boXSPhoto OR	 CaCCDIO.hmiXSPhoto	;//			
+		Q208[3]			;//					
+		Q208[4]			;//					
+		Q208[5]			;//					
+		Q208[6]			;//					
+		Q208[7]			;//					
+		Q208[8]			;//					
+		Q208[9]			;//					
+		Q208[10]			;//					
+		Q208[11]			;//					
+		Q208[12]			;//					
+		Q208[13]			;//					
+		Q208[14]			;//					
+		Q208[15]			;//					
+		Q208[16]			;//					
+										
+		Q209[1]			;//					
+		Q209[2]			;//					
+		Q209[3]			;//					
+		Q209[4]			;//					
+		Q209[5]			;//					
+		Q209[6]			;//					
+		Q209[7]			;//					
+		Q209[8]			;//					
+		Q209[9]			;//					
+		Q209[10]			;//					
+		Q209[11]			;//					
+		Q209[12]			;//					
+		Q209[13]			;//					
+		Q209[14]			;//					
+		Q209[15]			;//					
+		Q209[16]			;//		
+
+
+Q30103	:=	arrDustMotor[NameNo.AnMotorNo.FeduanbeltDust1].bo_Pul ;//正极模切分段皮带1除尘毛刷正转
+Q30104	:=	arrDustMotor[NameNo.AnMotorNo.FeduanbeltDust1].bo_Dir ;//正极模切分段皮带1除尘毛刷反转
+Q30201	:=	arrDustMotor[NameNo.CaMotorNo.FeduanbeltDust1].bo_Pul ;//正极模切分段皮带1除尘毛刷正转
+Q30202  :=	arrDustMotor[NameNo.CaMotorNo.FeduanbeltDust1].bo_Dir;//正极模切分段皮带1除尘毛刷反转
+
+Q40103	:=	arrDustMotor[NameNo.AnMotorNo.FeduanbeltDust2].bo_Pul ;//正极模切分段皮带2除尘毛刷正转
+Q40104	:=	arrDustMotor[NameNo.AnMotorNo.FeduanbeltDust2].bo_Dir ;//正极模切分段皮带2除尘毛刷反转
+Q40201	:=	arrDustMotor[NameNo.CaMotorNo.FeduanbeltDust2].bo_Pul ;//正极模切分段皮带2除尘毛刷正转
+Q40202	:=	arrDustMotor[NameNo.CaMotorNo.FeduanbeltDust2].bo_Dir ;//正极模切分段皮带2除尘毛刷反转
+
+Q50103	:=	arrDustMotor[NameNo.AnMotorNo.FeduanbeltDust3].bo_Pul ;//正极模切分段皮带3除尘毛刷正转
+Q50104	:=	arrDustMotor[NameNo.AnMotorNo.FeduanbeltDust3].bo_Dir ;//正极模切分段皮带3除尘毛刷反转
+Q50201	:=	arrDustMotor[NameNo.CaMotorNo.FeduanbeltDust3].bo_Pul ;//正极模切分段皮带3除尘毛刷正转
+Q50202	:=	arrDustMotor[NameNo.CaMotorNo.FeduanbeltDust3].bo_Dir ;//正极模切分段皮带3除尘毛刷反转
+
+			
+										]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="IOLink">
+      <LineId Id="254" Count="1" />
+      <LineId Id="193" Count="25" />
+      <LineId Id="277" Count="2" />
+      <LineId Id="219" Count="12" />
+      <LineId Id="19" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.AI">
+      <LineId Id="339" Count="128" />
+      <LineId Id="334" Count="4" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="294" Count="8" />
+      <LineId Id="312" Count="4" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="303" Count="8" />
+      <LineId Id="204" Count="0" />
+      <LineId Id="317" Count="3" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="56" Count="1" />
+      <LineId Id="333" Count="0" />
+      <LineId Id="327" Count="0" />
+      <LineId Id="329" Count="0" />
+      <LineId Id="328" Count="0" />
+      <LineId Id="331" Count="1" />
+      <LineId Id="330" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="46" Count="2" />
+      <LineId Id="3" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="134" Count="1" />
+      <LineId Id="321" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="234" Count="2" />
+      <LineId Id="260" Count="0" />
+      <LineId Id="322" Count="3" />
+      <LineId Id="264" Count="3" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="268" Count="3" />
+      <LineId Id="326" Count="0" />
+      <LineId Id="272" Count="4" />
+    </LineIds>
+    <LineIds Name="IOLink.AO">
+      <LineId Id="11" Count="5" />
+      <LineId Id="89" Count="1" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="94" Count="3" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="106" Count="3" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="115" Count="1" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="119" Count="2" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="122" Count="8" />
+      <LineId Id="132" Count="0" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="141" Count="1" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="105" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.InPut">
+      <LineId Id="1909" Count="1" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="1597" Count="26" />
+      <LineId Id="1926" Count="3" />
+      <LineId Id="1628" Count="86" />
+      <LineId Id="1914" Count="2" />
+      <LineId Id="1912" Count="0" />
+      <LineId Id="1719" Count="30" />
+      <LineId Id="1903" Count="2" />
+      <LineId Id="1750" Count="27" />
+      <LineId Id="1930" Count="3" />
+      <LineId Id="1782" Count="43" />
+      <LineId Id="1934" Count="0" />
+      <LineId Id="1827" Count="41" />
+      <LineId Id="1919" Count="2" />
+      <LineId Id="1918" Count="0" />
+      <LineId Id="1923" Count="2" />
+      <LineId Id="1876" Count="26" />
+      <LineId Id="1906" Count="2" />
+      <LineId Id="1596" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.LimitSwitch">
+      <LineId Id="625" Count="3" />
+      <LineId Id="619" Count="0" />
+      <LineId Id="637" Count="0" />
+      <LineId Id="624" Count="0" />
+      <LineId Id="333" Count="4" />
+      <LineId Id="638" Count="0" />
+      <LineId Id="338" Count="5" />
+      <LineId Id="639" Count="0" />
+      <LineId Id="477" Count="3" />
+      <LineId Id="636" Count="0" />
+      <LineId Id="344" Count="0" />
+      <LineId Id="640" Count="0" />
+      <LineId Id="483" Count="4" />
+      <LineId Id="482" Count="0" />
+      <LineId Id="489" Count="4" />
+      <LineId Id="488" Count="0" />
+      <LineId Id="504" Count="4" />
+      <LineId Id="494" Count="0" />
+      <LineId Id="642" Count="0" />
+      <LineId Id="509" Count="0" />
+      <LineId Id="345" Count="4" />
+      <LineId Id="643" Count="0" />
+      <LineId Id="362" Count="12" />
+      <LineId Id="500" Count="3" />
+      <LineId Id="495" Count="1" />
+      <LineId Id="629" Count="4" />
+      <LineId Id="497" Count="0" />
+      <LineId Id="634" Count="0" />
+      <LineId Id="510" Count="4" />
+      <LineId Id="644" Count="0" />
+      <LineId Id="515" Count="3" />
+      <LineId Id="569" Count="1" />
+      <LineId Id="645" Count="0" />
+      <LineId Id="571" Count="3" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="576" Count="0" />
+      <LineId Id="646" Count="0" />
+      <LineId Id="577" Count="17" />
+      <LineId Id="647" Count="0" />
+      <LineId Id="595" Count="5" />
+      <LineId Id="648" Count="0" />
+      <LineId Id="601" Count="17" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="IOLink.OutPut">
+      <LineId Id="1336" Count="111" />
+      <LineId Id="1671" Count="0" />
+      <LineId Id="1449" Count="193" />
+      <LineId Id="1646" Count="1" />
+      <LineId Id="1658" Count="12" />
+      <LineId Id="1648" Count="1" />
+      <LineId Id="1644" Count="0" />
+      <LineId Id="1643" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

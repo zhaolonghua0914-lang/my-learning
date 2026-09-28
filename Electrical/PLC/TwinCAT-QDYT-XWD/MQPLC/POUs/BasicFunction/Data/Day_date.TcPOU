@@ -1,0 +1,331 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Day_date" Id="{62d92378-fee5-414b-9961-aa4b76fcecaa}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Day_date
+VAR_INPUT
+	dDay:INT;//实时日期；
+	Hour:INT;//当前时间小时；
+	Mins:INT;//分钟；
+	iFinish:INT;  //尺寸检测CCD结果指示(1=完成;2=NG;3=无片;0=无效)  SizeResults
+	LineScanNG:BOOL;// 极片外观判定结果   线扫NG、OK
+	rTCount:BOOL;//切刀；
+	Clear1: BOOL;//白班产能清零；
+	Clear2: BOOL;//晚班产能清零；
+	PartSelect:INT;//正负极；
+	NGMark:ARRAY [0..15,0..1] OF  LREAL;//白班  0、尺寸NG；1、线扫瑕疵NG；
+	NGMark2:ARRAY [0..15,0..1] OF  LREAL;//夜班  0、尺寸NG；1、线扫瑕疵NG；
+	K7:REAL;//度数；
+	K8: REAL;//尺寸NG类型输入1-8；
+	K9:REAL;//线扫瑕疵类型输入1-8；
+	EE:BOOL;
+END_VAR
+VAR_OUTPUT
+	Cn_date:ARRAY[0..23,0..5] OF  LREAL  ;//1、裁切总数；2、瑕疵NG数；3、尺寸NG数；
+	Cn_date2:ARRAY[0..10] OF  LREAL ;//白班；1、切片总数；2、线扫NG总数；3、尺寸NG总数；4、总良率；5、线扫NG率；6、尺寸NG率；
+	Cn_date3:ARRAY[0..10] OF  LREAL  ;//晚班；1、切片总数；2、线扫NG总数；3、尺寸NG总数；4、总良率；5、线扫NG率；6、尺寸NG率；
+END_VAR
+
+VAR
+	K1: INT;
+	K2: INT;
+	K3: INT;
+	K4: INT;
+	K5: INT;
+	K6: INT;
+	K11:INT;
+	K12:INT;
+
+
+	rRight:ARRAY [0..5] OF R_TRIG;//1、裁切一次；2、尺寸NG一次；3、线扫瑕疵NG一次；
+	aTime: ARRAY [0..5] OF TON;
+	AA: BOOL;
+	BB: BOOL;
+	CC: BOOL;
+	DD:BOOL;
+	FF:BOOL;
+
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ K5:=REAL_TO_INT(K8);
+ K6:=REAL_TO_INT(K9);
+
+rRight[4](CLK:= FF);
+ (**待机时间统计**)
+IF PLC_wSecond=9 OR PLC_wSecond=19 OR PLC_wSecond=29 OR PLC_wSecond=39 OR PLC_wSecond=49 OR PLC_wSecond=59 THEN
+	    FF:=TRUE;
+ELSE
+		FF:=FALSE;
+END_IF
+ 
+IF stSysState.iMode=1 THEN 
+ 	IF K7>0 AND K7<=10 THEN
+		DD:=TRUE;
+	ELSE
+		DD:=FALSE;
+	END_IF
+
+rRight[1](CLK:=  rTCount );//裁切一次；
+rRight[2](CLK:=DD AND (iFinish=2 OR  iFinish=3 ));//尺寸NG一次；
+//rRight[4](CLK:=  EE AND  rTCount);//踢废吹气；
+rRight[3](CLK:=DD AND (iFinish=1 OR iFinish=0)  AND K6<>8 AND K6<>0 AND NOT ProductPar.iModeEN.bCcdTcpEN AND NOT ProductPar.iModeEN.bLineScanCCDEN );//线扫NG；r
+(***********切片计数***********)
+IF rRight[1].Q THEN
+	Cn_date[Hour,1]:=Cn_date[Hour,1]+1;
+	IF Hour>=8 AND Hour<=19 THEN//白班总数；
+		Cn_date2[1]:=Cn_date2[1]+1;
+	END_IF
+	IF Hour>=20 OR Hour<=7 THEN//晚班总数；
+		Cn_date3[1]:=Cn_date3[1]+1;
+	END_IF
+	
+END_IF
+(*********瑕疵NG计数*********)
+IF rRight[3].Q  AND K6<>8  AND K6<>0  THEN//IF rRight[3].Q  AND K6<>8 AND K6<>0 THEN
+	Cn_date[Hour,2]:=Cn_date[Hour,2]+1;
+	IF Hour>=8 AND Hour<=19 THEN//白班总数；
+		Cn_date2[2]:=Cn_date2[2]+1;
+	(*详细线扫NG不良统计*)	
+	IF K6=1 OR K6=2 OR K6=3 OR K6=4 OR K6=5 OR K6=6 OR K6=7 OR K6=9 OR K6=10 OR K6=11 OR K6=12 OR K6=13 OR K6=14  THEN
+		NGMark[K6,1]:=NGMark[K6,1]+1;
+	END_IF
+	END_IF
+	IF Hour>=20 OR Hour<=7 THEN//晚班总数；
+		Cn_date3[2]:=Cn_date3[2]+1;
+	(*详细线扫NG不良统计*)	
+	IF K6=1 OR K6=2 OR K6=3 OR K6=4 OR K6=5 OR K6=6 OR K6=7 OR K6=9 OR K6=10 OR K6=11 OR K6=12 OR K6=13 OR K6=14 THEN
+		NGMark2[K6,1]:=NGMark2[K6,1]+1;
+	END_IF
+	END_IF
+
+END_IF
+(*********尺寸NG计数*********)
+IF rRight[2].Q AND K5<>0 THEN
+	Cn_date[Hour,3]:=Cn_date[Hour,3]+1;
+	IF Hour>=8 AND Hour<=19  THEN//白班总数；
+		Cn_date2[3]:=Cn_date2[3]+1;
+	(*详细尺寸NG不良统计*)	
+		IF K5=1 OR K5=2 OR K5=3 OR K5=4 OR K5=5 OR K5=6 OR K5=7 OR K5=8 OR K5=9 OR K5=10 OR K5=11 OR K5=12 OR K5=13 OR K5=14 THEN
+			NGMark[K5,0]:=NGMark[K5,0]+1;
+		END_IF
+	END_IF
+	IF Hour>=20 OR Hour<=7 THEN//晚班总数；
+		Cn_date3[3]:=Cn_date3[3]+1;
+		(*详细尺寸NG不良统计*)	
+		IF K5=1 OR K5=2 OR K5=3 OR K5=4 OR K5=5 OR K5=6 OR K5=7 OR K5=8 OR K5=9 OR K5=10 OR K5=11 OR K5=12 OR K5=13 OR K5=14 THEN
+			NGMark2[K5,0]:=NGMark2[K5,0]+1;
+		END_IF
+	END_IF
+
+END_IF
+
+(*自动运行时间统计*)
+IF rRight[4].Q AND stSysState.iModehmi=1 THEN
+	Cn_date[Hour,0]:=Cn_date[Hour,0]+1;
+END_IF
+
+
+(****************白班良率%*****************)
+//总良率：
+IF Cn_date2[1]>0 THEN
+Cn_date2[4]:=(Cn_date2[1]-Cn_date2[2]-Cn_date2[3])/Cn_date2[1];
+ELSE
+Cn_date2[4]:=0;	
+END_IF
+//线扫NG率：
+IF Cn_date2[1]>0 THEN
+Cn_date2[5]:=Cn_date2[2]/Cn_date2[1];
+ELSE
+Cn_date2[5]:=0;	
+END_IF
+//尺寸NG率：
+IF Cn_date2[1]>0 THEN
+Cn_date2[6]:=Cn_date2[3]/Cn_date2[1];
+ELSE
+Cn_date2[6]:=0;	
+END_IF
+
+(****************晚班良率%*****************)
+//总良率：
+IF Cn_date3[1]>0 THEN
+Cn_date3[4]:=(Cn_date3[1]-Cn_date3[2]-Cn_date3[3])/Cn_date3[1];
+ELSE
+Cn_date3[4]:=0;	
+END_IF
+//线扫NG率：
+IF Cn_date3[1]>0 THEN
+Cn_date3[5]:=Cn_date3[2]/Cn_date3[1];
+ELSE
+Cn_date3[5]:=0;	
+END_IF
+//尺寸NG率：
+IF Cn_date3[1]>0 THEN
+Cn_date3[6]:=Cn_date3[3]/Cn_date3[1];
+ELSE
+Cn_date3[6]:=0;	
+END_IF
+
+END_IF
+
+
+(***手动时间统计**)
+IF rRight[4].Q AND (stSysState.iModehmi=3 OR stSysState.iModehmi=2) THEN
+	Cn_date[Hour,4]:=Cn_date[Hour,4]+1;
+END_IF
+/////////报警
+IF rRight[4].Q AND (stSysState.iModehmi=4 OR stSysState.iModehmi=5) THEN
+	Cn_date[Hour,5]:=Cn_date[Hour,5]+1;
+END_IF
+
+//白班待机时间清零
+IF Clear1 OR (Hour=7 AND  Mins=20) THEN
+
+FOR K11:=0 TO 5 DO
+	 Cn_date[8,K11]:=0;
+	 Cn_date[9,K11]:=0;
+	 Cn_date[10,K11]:=0;
+	 Cn_date[11,K11]:=0;
+	 Cn_date[12,K11]:=0;
+	 Cn_date[13,K11]:=0;
+	 Cn_date[14,K11]:=0;
+	 Cn_date[15,K11]:=0;
+	 Cn_date[16,K11]:=0;
+	 Cn_date[17,K11]:=0;
+	 Cn_date[18,K11]:=0;
+	 Cn_date[19,K11]:=0;
+END_FOR
+END_IF
+
+//晚班待机时间清零
+IF Clear2 OR (Hour=8 AND Mins=20 )THEN	
+
+FOR K12:=0 TO 5 DO
+	 Cn_date[20,K12]:=0;
+	 Cn_date[21,K12]:=0;
+	 Cn_date[22,K12]:=0;
+	 Cn_date[23,K12]:=0;
+	 Cn_date[0,K12]:=0;
+	 Cn_date[1,K12]:=0;
+	 Cn_date[2,K12]:=0;
+	 Cn_date[3,K12]:=0;
+	 Cn_date[4,K12]:=0;
+	 Cn_date[5,K12]:=0;
+	 Cn_date[6,K12]:=0;
+	 Cn_date[7,K12]:=0;
+END_FOR
+END_IF
+
+
+(***********白晚班产能清零***********)
+IF Clear1 OR (Hour=7 AND  Mins=20) THEN
+FOR K3:=1 TO 10 DO
+	Cn_date2[K3]:=0;
+END_FOR
+
+FOR K1:=0 TO 5 DO
+	 Cn_date[8,K1]:=0;
+	 Cn_date[9,K1]:=0;
+	 Cn_date[10,K1]:=0;
+	 Cn_date[11,K1]:=0;
+	 Cn_date[12,K1]:=0;
+	 Cn_date[13,K1]:=0;
+	 Cn_date[14,K1]:=0;
+	 Cn_date[15,K1]:=0;
+	 Cn_date[16,K1]:=0;
+	 Cn_date[17,K1]:=0;
+	 Cn_date[18,K1]:=0;
+	 Cn_date[19,K1]:=0;
+END_FOR
+NGMark[0,0]:=0;
+NGMark[1,0]:=0;
+NGMark[2,0]:=0;
+NGMark[3,0]:=0;
+NGMark[4,0]:=0;
+NGMark[5,0]:=0;
+NGMark[6,0]:=0;
+NGMark[7,0]:=0;
+NGMark[8,0]:=0;
+NGMark[9,0]:=0;
+NGMark[10,0]:=0;
+NGMark[11,0]:=0;
+NGMark[12,0]:=0;
+NGMark[13,0]:=0;
+NGMark[14,0]:=0;
+NGMark[0,1]:=0;
+NGMark[1,1]:=0;
+NGMark[2,1]:=0;
+NGMark[3,1]:=0;
+NGMark[4,1]:=0;
+NGMark[5,1]:=0;
+NGMark[6,1]:=0;
+NGMark[7,1]:=0;
+NGMark[8,1]:=0;
+NGMark[9,1]:=0;
+NGMark[10,1]:=0;
+NGMark[11,1]:=0;
+NGMark[12,1]:=0;
+NGMark[13,1]:=0;
+NGMark[14,1]:=0;
+END_IF
+
+//////////////////////////////////////////////
+IF Clear2 OR (Hour=8 AND Mins=20 )THEN
+FOR K4:=1 TO 10 DO
+	Cn_date3[K4]:=0;
+END_FOR			
+
+FOR K2:=0 TO 5 DO
+	 Cn_date[20,K2]:=0;
+	 Cn_date[21,K2]:=0;
+	 Cn_date[22,K2]:=0;
+	 Cn_date[23,K2]:=0;
+	 Cn_date[0,K2]:=0;
+	 Cn_date[1,K2]:=0;
+	 Cn_date[2,K2]:=0;
+	 Cn_date[3,K2]:=0;
+	 Cn_date[4,K2]:=0;
+	 Cn_date[5,K2]:=0;
+	 Cn_date[6,K2]:=0;
+	 Cn_date[7,K2]:=0;
+END_FOR
+NGMark2[0,0]:=0;
+NGMark2[1,0]:=0;
+NGMark2[2,0]:=0;
+NGMark2[3,0]:=0;
+NGMark2[4,0]:=0;
+NGMark2[5,0]:=0;
+NGMark2[6,0]:=0;
+NGMark2[7,0]:=0;
+NGMark2[8,0]:=0;
+NGMark2[9,0]:=0;
+NGMark2[10,0]:=0;
+NGMark2[11,0]:=0;
+NGMark2[12,0]:=0;
+NGMark2[13,0]:=0;
+NGMark2[14,0]:=0;
+NGMark2[0,0]:=0;
+NGMark2[1,1]:=0;
+NGMark2[2,1]:=0;
+NGMark2[3,1]:=0;
+NGMark2[4,1]:=0;
+NGMark2[5,1]:=0;
+NGMark2[6,1]:=0;
+NGMark2[7,1]:=0;
+NGMark2[8,1]:=0;
+NGMark2[9,1]:=0;
+NGMark2[10,1]:=0;
+NGMark2[11,1]:=0;
+NGMark2[12,1]:=0;
+NGMark2[13,1]:=0;
+NGMark2[14,1]:=0;
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="Day_date">
+      <LineId Id="2187" Count="19" />
+      <LineId Id="2208" Count="251" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,634 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="ShortTest" Id="{cec0ba6a-191a-4c3d-945e-002c79a2a0d1}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK ShortTest
+VAR_INPUT
+	//ShortCircuit---短路
+END_VAR
+VAR_IN_OUT
+	TestCtrl:ShortTestCtrl;//测试控制
+	T_Send :ST_SendTestStatus;//发送状态控制字
+	T_Receive:ST_ReceiveTestStatus;//接收状态控制字
+	
+	uSendData:ShortTestSendData;//发送数据命令(STRING转ASCLL)
+	uReceiveData:ShortTestReceiveData;//接收数据(ASCLL转string)
+	
+END_VAR
+
+VAR_OUTPUT
+	
+	DataError1:BOOL;//电阻值返回数据异常
+	DataError2:BOOL;//电压值返回数据异常
+	DataError3:BOOL;//测试时间返回数据异常
+	DataError4:BOOL;//初始化异常
+END_VAR
+VAR
+	L_R:UDINT;//返回数据的长度
+	AutoStep:UINT;//主程序步
+	InitStep:UINT;//初始化步
+	Test_TON :ARRAY[1..6] OF TON;//延时
+	
+	
+(*发送*)
+	sTestSendCmd	:STRING;//命令1字发送字符串
+	sTestSend1Cmd	:STRING;//命令1字符串,电阻值：MEASure
+	sTestSend2Cmd	:STRING;//命令2字符串,电压值:VOLTage
+	sTestSend3Cmd	:STRING;//命令3字符串,短路结果:SHORtcheck:RESult？
+(*接收*)
+	sCmdReceive		:STRING;//命令返回数据
+	sCmd1Receive	:REAL;//命令1返回数据,电阻值
+	sCmd2Receive	:REAL;//命令2返回数据,电压值
+	sCmd3Receive	:REAL;//命令3返回数据,短路结果
+	
+//>=32位数据长度,<=64字节	
+	SendData1:STRING;//数据长度大于32，小于64，第一次需要发送的数据
+	SendData2:STRING;//数据长度大于32，小于64，第二次需要发送的数据
+	ReceiveData1:STRING;(*第一次接收到的数据*)
+	ReceiveData2:STRING;(*第二次接收到的数据*)
+	
+	
+	L_sCmdReceive1:INT;//电阻值数据长度
+	L_sCmdReceive2:INT;//电压值数据长度
+	
+	sCmdReceive1_DEL:STRING;//第二三个返回数据截取缓存
+	sCmdReceive2_DEL:STRING;//第3个数据截取缓存
+	
+	TestTON:ARRAY[1..3] OF TON;
+	
+
+	aaaa: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+
+ACT01_Test();
+IF P3_SystemRUN.iMode=3THEN
+	ACT02_Init();
+END_IF]]></ST>
+    </Implementation>
+    <Action Name="ACT01_Test" Id="{0270b00c-f7aa-471f-b8b8-07b8f3be3338}">
+      <Implementation>
+        <ST><![CDATA[//命令添加，注意顺序
+	sTestSend1Cmd	:=':MEASure?$R;';//命令1字符串,电阻值：MEASure
+	sTestSend2Cmd	:=':VOLTage?$R;';//命令2字符串,电压值:VOLTage
+	//sTestSend3Cmd	:=':TIMer?$R;';//命令3字符串,测试时间
+	//sTestSend3Cmd	:=':DELay?$R;';//命令3字符串,测试时间
+	//uSendData.sData :=concat(sTestSend1Cmd,concat());
+	sTestSend3Cmd	:=':TIMer?$R;';//命令3字符串,测试时间
+CASE AutoStep  OF	
+0:
+	uSendData.sData:=':MOHM:AUTO:DCLear OFF';
+	T_Send.OutputLength:=INT_TO_UINT (LEN(uSendData.sData));//发送数据长度
+	AutoStep:=20;
+20:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	AutoStep:=50;	
+50:
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		AutoStep:=80;
+	END_IF
+80:
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		AutoStep:=100;
+	END_IF
+100://	串口初始化
+	T_Send.InitRequest:=TRUE;//
+	IF T_Receive.InitAccepted THEN
+		T_Send.InitRequest:=FALSE;//
+		AutoStep:=200;
+	END_IF
+200://发送，结束数据缓存区初始化
+	sTestSendCmd:='';//命令1字发送字符串
+	sCmdReceive:='';//命令返回数据
+	sCmd1Receive:=0;
+	sCmd2Receive:=0;
+	sCmd3Receive:=0;
+	uSendData.sData :='';
+	uReceiveData.sData:='';
+	TestCtrl.bDone:=FALSE;
+	MEMSET(ADR(uSendData),0,SIZEOF(uSendData));
+	AutoStep:=300;
+300:
+	IF TestCtrl.bStart THEN
+		AutoStep:=400;	
+	END_IF
+400:
+	
+	TestCtrl.bDone :=FALSE;	//读取完成
+	AutoStep:=500;	
+500:
+	uSendData.sData:=sTestSend1Cmd;//发送数据
+	T_Send.OutputLength:=INT_TO_UINT (LEN(uSendData.sData));//发送数据长度
+	AutoStep:=600;	
+600:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	AutoStep:=700;	
+700:
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		AutoStep:=800;
+	END_IF
+800:
+	Test_TON[1](IN:=FALSE);
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		AutoStep:=900;	//等待数据返回 
+	END_IF
+	
+900://等待数据	
+	Test_TON[1](IN:=TRUE , PT:=T#1.5S , Q=> , ET=> );
+	IF T_Receive.ReceiveRequest   THEN//可以接收数据
+		AutoStep:=950;	//等待数据返回 
+	ELSIF Test_TON[1].Q THEN
+		Test_TON[1](IN:=FALSE);
+		AutoStep:=100;
+	END_IF
+950:
+	IF T_Receive.TotalInputLength>=2 THEN
+		AutoStep:=1000;	//等待数据返回 
+	ELSE
+		DataError1:=TRUE;//电阻值反悔哦数据异常
+	END_IF	
+1000:
+	T_Send.ReceiveAccepted:=TRUE;//请求读取
+	AutoStep:=1100;	//等待数据返回 	
+1100://判断数据长度
+	IF T_Receive.TotalInputLength<=32 THEN
+		AutoStep:=1200;	//等待数据返回 	
+	END_IF
+1200:
+	sCmd1Receive:=STRING_TO_REAL(uReceiveData.sData);//命令返回数据
+	AutoStep:=1300;	//等待数据返回 	
+1300:
+	T_Send.ReceiveAccepted:=TRUE;
+	IF NOT T_Receive.ReceiveRequest THEN
+		T_Send.ReceiveAccepted:=FALSE;	
+		AutoStep:=1400;
+	END_IF
+1400:
+	T_Send.InitRequest:=TRUE;//
+	IF T_Receive.InitAccepted THEN
+		T_Send.InitRequest:=FALSE;//
+		AutoStep:=2000;
+	END_IF
+
+2000:
+	uSendData.sData:=sTestSend2Cmd;//发送数据
+	T_Send.OutputLength:=INT_TO_UINT (LEN(uSendData.sData));//发送数据长度
+	AutoStep:=2100;	
+2100:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	AutoStep:=2200;	
+2200:
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		AutoStep:=2300;
+	END_IF
+2300:
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		AutoStep:=2400;	//等待数据返回 
+	END_IF
+	
+2400://等待数据	
+	IF T_Receive.ReceiveRequest  THEN//可以接收数据
+		AutoStep:=2450;	//等待数据返回 
+	END_IF
+2450:
+	IF  T_Receive.TotalInputLength>=2 THEN
+		AutoStep:=2500;	//等待数据返回 
+	ELSE
+		DataError2:=TRUE;//电压值返回数据异常
+	END_IF
+2500:
+	T_Send.ReceiveAccepted:=TRUE;//请求读取
+	AutoStep:=2600;	//等待数据返回 	
+2600://判断数据长度
+	IF T_Receive.TotalInputLength<=32 THEN
+		AutoStep:=2700;	//等待数据返回 	
+	END_IF
+2700:
+	sCmd2Receive:=STRING_TO_REAL(uReceiveData.sData);//命令返回数据
+	AutoStep:=2800;	//等待数据返回 	
+2800:
+	T_Send.ReceiveAccepted:=TRUE;
+	IF NOT T_Receive.ReceiveRequest THEN
+		T_Send.ReceiveAccepted:=FALSE;	
+		AutoStep:=2900;
+	END_IF
+2900:
+	T_Send.InitRequest:=TRUE;//
+	IF T_Receive.InitAccepted THEN
+		T_Send.InitRequest:=FALSE;//
+		AutoStep:=3000;
+	END_IF
+3000:
+	uSendData.sData:=sTestSend3Cmd;//发送数据
+	T_Send.OutputLength:=INT_TO_UINT (LEN(uSendData.sData)+1);//发送数据长度
+	AutoStep:=3100;	
+3100:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	AutoStep:=3200;	
+3200:
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		AutoStep:=3300;
+	END_IF
+3300:
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		AutoStep:=3400;	//等待数据返回 
+	END_IF
+	
+3400://等待数据	
+	IF T_Receive.ReceiveRequest  THEN//可以接收数据
+		AutoStep:=3450;	//等待数据返回 
+	END_IF
+3450:
+	IF  T_Receive.TotalInputLength>=2 THEN
+		AutoStep:=3500;	//等待数据返回 
+	ELSE
+		DataError3:=TRUE;//测试时间返回异常
+	END_IF
+3500:
+	T_Send.ReceiveAccepted:=TRUE;//请求读取
+	AutoStep:=3600;	//等待数据返回 	
+3600://判断数据长度
+	IF T_Receive.TotalInputLength<=32 THEN
+		AutoStep:=3700;	//等待数据返回 	
+	END_IF
+3700:
+	sCmd3Receive:=STRING_TO_REAL(uReceiveData.sData);//命令返回数据
+	AutoStep:=3800;	//等待数据返回 	
+	
+3800:
+	T_Send.ReceiveAccepted:=TRUE;
+	IF NOT T_Receive.ReceiveRequest  THEN
+		T_Send.ReceiveAccepted:=FALSE;	
+		AutoStep:=3900;
+	END_IF
+3900:
+	T_Send.InitRequest:=TRUE;//
+	IF T_Receive.InitAccepted THEN
+		T_Send.InitRequest:=FALSE;//
+		AutoStep:=5000;
+	END_IF
+5000:
+	TestCtrl.Measure:=sCmd1Receive;//电阻值
+	TestCtrl.Voltage:=sCmd2Receive;//电压值
+	TestCtrl.TestTime:=sCmd3Receive;//测试时间//sCmd3Receive
+	AutoStep:=5100;
+
+
+
+
+
+5100://数据读取完成，允许数据绑定
+	TestCtrl.bStart :=FALSE;//读取开始
+	TestCtrl.bDone:=TRUE;//数据上传完成
+	AutoStep:=6000;
+6000:
+	IF NOT TestCtrl.bDone THEN
+		AutoStep:=100;
+	END_IF 
+END_CASE
+
+
+
+
+
+
+	
+(*	
+600://发送数据转换为ASCLL码
+	IF  T_Send.OutputLength<=32 THEN//数据长度小于32字节
+		AutoStep:=700;	
+	ELSE
+		AutoStep:=1000;
+	END_IF	
+700:
+	//uSendData.sData:=sTestSendCmd;//发送数据
+	AutoStep:=800;	
+800:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	AutoStep:=900;	
+900:
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		AutoStep:=950;
+	END_IF
+950:
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		AutoStep:=3000;	//等待数据返回 
+	END_IF
+
+1000://数据长度大于32
+	T_Send.OutputLength:=INT_TO_UINT (LEN(uSendData.sData));//发送数据长度,32<=L<=64
+	SendData1:=LEFT(uSendData.sData,32);//数据长度大于32，小于64，第一次需要发送的数据
+	SendData2:=DELETE(uSendData.sData,32,1);//数据长度大于32，小于64，第二次需要发送的数据
+	AutoStep:=1100;
+1100://第一次数据发送
+	uSendData.sData:=SendData1;//发送数据
+	AutoStep:=1200;		
+1200:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	AutoStep:=1300;		
+1300:
+	IF  T_Receive.PutDataDone THEN
+		T_Send.PutData:=FALSE;	
+		AutoStep:=1400;
+	END_IF
+1400://第二次发送
+	uSendData.sData:=SendData2;//发送数据
+	AutoStep:=1500;
+1500:
+	T_Send.PutData:=TRUE;	
+	AutoStep:=1600;
+1600:
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		AutoStep:=1700;
+	END_IF
+	
+1700:
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		AutoStep:=3000;	//等待数据返回 
+	END_IF 
+
+3000://等待数据	
+	IF T_Receive.ReceiveRequest AND T_Receive.TotalInputLength>=6 THEN//可以接收数据
+		AutoStep:=3100;	//等待数据返回 
+	ELSE
+		DataError1:=TRUE;//数据1异常报警
+	END_IF
+3100:
+	T_Send.ReceiveAccepted:=TRUE;//请求读取
+	AutoStep:=3150;	//等待数据返回 	
+3150://判断数据长度
+	IF T_Receive.TotalInputLength<=32 THEN
+		AutoStep:=3200;	//等待数据返回 	
+	ELSE//数据长度>=32
+		AutoStep:=3500;	//等待数据返回 
+	END_IF
+3200:
+	sCmdReceive:=uReceiveData.sData;//命令返回数据
+	AutoStep:=3300;	//等待数据返回 	
+3300:
+	T_Send.ReceiveAccepted:=TRUE;
+	IF NOT T_Receive.ReceiveRequest THEN
+		T_Send.ReceiveAccepted:=FALSE;	
+		AutoStep:=5000;	//等待数据返回 	
+	END_IF
+	
+
+3500:
+	ReceiveData1:=uReceiveData.sData;(*第一次接收到的数据*)
+	AutoStep:=3600;	//等待数据返回
+3600:
+	T_Send.ReceiveAccepted:=TRUE;
+	IF NOT T_Receive.ReceiveRequest THEN  	
+		T_Send.ReceiveAccepted:=FALSE;	
+		AutoStep:=3700;	//等待数据返回
+	END_IF
+3700:
+	IF T_Receive.ReceiveRequest THEN
+		ReceiveData2:=uReceiveData.sData;(*第二次接收到的数据*)
+		AutoStep:=3800;	//等待数据返回
+	END_IF
+3800:
+	T_Send.ReceiveAccepted:=TRUE;
+	IF NOT T_Receive.ReceiveRequest THEN
+		T_Send.ReceiveAccepted:=FALSE;	
+		AutoStep:=3900;	//等待数据返回 	
+	END_IF
+3900:
+	sCmdReceive:=CONCAT(ReceiveData1,ReceiveData2);//命令返回数据
+	AutoStep:=5000;	//等待数据返回 	
+	
+
+5000://返回数据开始解码
+//电阻值
+	L_sCmdReceive1:=FIND(sCmdReceive,';');//电阻值数据长度
+	sCmd1Receive:=LEFT(sCmdReceive,L_sCmdReceive1);//电阻值数据
+//电压值，短路测试结果
+	sCmdReceive1_DEL:=DELETE(sCmdReceive,(L_sCmdReceive1),1);
+	L_sCmdReceive2:=FIND(sCmdReceive1_DEL,';');//电压值数据长度
+	sCmd2Receive:=LEFT(sCmdReceive1_DEL,L_sCmdReceive2);//命令2返回数据,电压值
+//短路测试结果截取	
+	sCmdReceive2_DEL:=DELETE(sCmdReceive1_DEL,(L_sCmdReceive2),1);//第3个数据截取缓存
+	sCmd3Receive:=sCmdReceive2_DEL;//命令3返回数据,测试时间
+	AutoStep:=5100;
+*)
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT02_Init" Id="{ee22f736-a0ee-4707-b047-dc320d2553d0}">
+      <Implementation>
+        <ST><![CDATA[CASE InitStep OF//初始化步
+
+0:
+	InitStep:=100;
+100:
+	IF TestCtrl.Init  THEN
+		TestCtrl.InitFinish:=FALSE;//初始化完成
+		InitStep:=105;
+	END_IF
+105:
+	IF NOT TestCtrl.InitFinish THEN
+		InitStep:=110;	
+	END_IF
+110:
+	T_Send.InitRequest:=TRUE;//
+	IF T_Receive.InitAccepted THEN
+		T_Send.InitRequest:=FALSE;//
+		InitStep:=200;
+	END_IF
+200:	
+	TestCtrl.Init:=FALSE;
+	//TestCtrl.bStart:=FALSE;
+	TestCtrl.bDone:=FALSE;
+	uSendData.sData:='';
+	uReceiveData.sData :='';
+	InitStep:=300;
+300://仪器初始化
+	uSendData.sData:='*RST$R';
+	T_Send.OutputLength:=INT_TO_UINT (LEN(uSendData.sData));//发送数据长度
+	InitStep:=400;
+400:
+	T_Send.TransmitRequest:=TRUE;
+	T_Send.PutData:=TRUE;	
+	InitStep:=500;	
+500:
+	TestTON[3](IN:=TRUE,PT:=T#2S);
+	IF  T_Receive.TransmitDone THEN//数据发送完成
+		TestTON[3](IN:=FALSE);
+		DataError4:=FALSE;//测试仪初始化异常
+		InitStep:=600;
+	ELSIF TestTON[3].Q THEN
+		TestTON[3].IN :=FALSE;
+		DataError4:=TRUE;//测试仪初始化异常
+	END_IF
+600:
+	DataError1:=FALSE;
+	DataError2:=FALSE;
+	DataError3:=FALSE;
+	T_Send.PutData:=FALSE;	
+	T_Send.TransmitRequest:=FALSE;
+	IF NOT T_Send.PutData THEN
+		InitStep:=700;	//等待数据返回 
+	END_IF
+	
+700:
+	AutoStep:=0;	
+	TestCtrl.InitFinish:=TRUE;//初始化完成
+	InitStep:=2000;	//等待数据返回 
+2000:
+	InitStep:=0;
+	
+	
+END_CASE	]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="ShortTest">
+      <LineId Id="23" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="999" Count="1" />
+      <LineId Id="815" Count="0" />
+      <LineId Id="1002" Count="0" />
+      <LineId Id="1001" Count="0" />
+      <LineId Id="1003" Count="0" />
+    </LineIds>
+    <LineIds Name="ShortTest.ACT01_Test">
+      <LineId Id="2" Count="3" />
+      <LineId Id="406" Count="0" />
+      <LineId Id="402" Count="0" />
+      <LineId Id="439" Count="0" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="408" Count="7" />
+      <LineId Id="417" Count="0" />
+      <LineId Id="420" Count="0" />
+      <LineId Id="424" Count="1" />
+      <LineId Id="429" Count="3" />
+      <LineId Id="407" Count="0" />
+      <LineId Id="9" Count="2" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="12" Count="1" />
+      <LineId Id="16" Count="2" />
+      <LineId Id="399" Count="2" />
+      <LineId Id="19" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="166" Count="0" />
+      <LineId Id="23" Count="12" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="221" Count="7" />
+      <LineId Id="437" Count="0" />
+      <LineId Id="229" Count="3" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="433" Count="0" />
+      <LineId Id="234" Count="1" />
+      <LineId Id="434" Count="0" />
+      <LineId Id="436" Count="0" />
+      <LineId Id="435" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="381" Count="1" />
+      <LineId Id="384" Count="0" />
+      <LineId Id="383" Count="0" />
+      <LineId Id="385" Count="1" />
+      <LineId Id="239" Count="5" />
+      <LineId Id="247" Count="8" />
+      <LineId Id="189" Count="1" />
+      <LineId Id="257" Count="3" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="191" Count="1" />
+      <LineId Id="261" Count="20" />
+      <LineId Id="284" Count="0" />
+      <LineId Id="387" Count="2" />
+      <LineId Id="391" Count="1" />
+      <LineId Id="390" Count="0" />
+      <LineId Id="285" Count="21" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="308" Count="20" />
+      <LineId Id="331" Count="0" />
+      <LineId Id="380" Count="0" />
+      <LineId Id="393" Count="1" />
+      <LineId Id="396" Count="0" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="395" Count="0" />
+      <LineId Id="332" Count="8" />
+      <LineId Id="403" Count="1" />
+      <LineId Id="342" Count="10" />
+      <LineId Id="194" Count="0" />
+      <LineId Id="363" Count="10" />
+      <LineId Id="438" Count="0" />
+      <LineId Id="374" Count="5" />
+      <LineId Id="195" Count="5" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="176" Count="1" />
+      <LineId Id="36" Count="66" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="103" Count="53" />
+      <LineId Id="307" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="ShortTest.ACT02_Init">
+      <LineId Id="4" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="75" Count="2" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="69" Count="1" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="35" Count="2" />
+      <LineId Id="28" Count="2" />
+      <LineId Id="19" Count="2" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="39" Count="3" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="80" Count="2" />
+      <LineId Id="48" Count="3" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="52" Count="1" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="58" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="55" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

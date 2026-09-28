@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CCDCom" Id="{6c57d47e-ced5-4970-9669-4dd8b96187be}">
+    <Declaration><![CDATA[TYPE ST_CCDCom : 
+STRUCT
+	bHeartbeat :BOOL;  //叠片部分ccd软件心跳
+	
+	AnRec:ST_CCDComRectify;//正极纠偏工位
+	CaRec:ST_CCDComRectify;//负极纠偏工位
+	Over:ST_CCDComOverhang;//对齐度工位
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

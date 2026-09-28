@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_AlarmWarn" Id="{81abe9cb-4755-4eee-b827-b0a39185e230}">
+    <Declaration><![CDATA[TYPE ST_AlarmWarn :
+STRUCT
+	arrTenAlarm                                 :ARRAY[1..15]  OF BOOL;                  //张力报警
+	arrCreatTableAlarm                         :ARRAY[1..30]  OF BOOL;             //创建凸轮报警
+	arrCamInAlarm                               :ARRAY[1..30]  OF BOOL;             //凸轮耦合报警
+	arrGearAlarm                                  :ARRAY[1..25]  OF BOOL;             //齿轮报警
+	arrFlowAlarm                                  :ARRAY[1..50]  OF BOOL;             //流程报警
+	arrLightWarn                                  :ARRAY[1..50]  OF BOOL;             //轻型警告(提示)
+	arrRecAlarm                                 :ARRAY[1..15]  OF BOOL;                  //纠偏报警
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

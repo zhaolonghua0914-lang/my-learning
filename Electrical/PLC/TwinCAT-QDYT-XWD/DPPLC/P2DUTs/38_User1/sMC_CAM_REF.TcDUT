@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="sMC_CAM_REF" Id="{cfa860cb-7655-466f-a0cc-c0c8a35902ba}">
+    <Declaration><![CDATA[TYPE sMC_CAM_REF :
+STRUCT
+	Distance:REAL;
+	Phase:REAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

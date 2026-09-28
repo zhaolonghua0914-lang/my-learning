@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="System_Senser" Id="{e0939ac8-e2d5-45ba-bf9c-8b468b16242c}">
+    <Declaration><![CDATA[TYPE System_Senser :
+STRUCT
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,381 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto8_01Sticke" Id="{155ccb3b-d994-4593-80f2-117b911439e4}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Auto8_01Sticke
+VAR
+	SingleStep_8 : R_TRIG;
+	rReadyglue_btn: R_TRIG;//一键备胶按钮上升沿
+	fReadyglue_btn: F_TRIG;//一键备胶按钮下降沿
+	
+	Bule_Start:BOOL;//一键备胶	
+	P3Auto8_TON :ARRAY[1..9] OF Tc2_Standard.TON;
+	ceshi: BOOL;
+	BuleHavetape_TRIG				    : R_TRIG;
+	BuleHavetape_FRIG				    : F_TRIG;
+	BlueGlueMount						:INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+P3Auto8_TON[1](PT:=T#500MS);
+P3Auto8_TON[2](PT:=T#500MS);
+P3Auto8_TON[3](PT:=T#500MS);
+P3Auto8_TON[4](PT:=T#500MS);
+P3Auto8_TON[5](PT:=T#300MS);
+SingleStep_8 (CLK:=P3_Start[8] , Q=>);
+IF  SingleStep_8.Q or NOT StepModel[8]  THEN
+	SingleStep[8]:=FALSE;
+END_IF
+
+rReadyglue_btn(CLK:=Readybtn , Q=> );
+fReadyglue_btn(CLK:=Readybtn , Q=> );
+IF rReadyglue_btn.Q THEN
+    StickerStandbyDone:=FALSE;
+END_IF	 
+IF fReadyglue_btn.Q THEN
+   Bule_Start:=TRUE;
+END_IF   
+BuleHavetape_TRIG(CLK:=P3Senser.P3_BuleHavetape , Q=> );
+BuleHavetape_FRIG(CLK:=P3Senser.P3_BuleHavetape , Q=> );
+IF BuleHavetape_TRIG.Q OR BuleHavetape_FRIG.Q THEN
+	BlueGlueMount:=BlueGlueMount+1;
+END_IF
+	
+IF LateBlanking_init_start[8] OR P3_SystemRUN.iMode=1 THEN
+	 Bule_Start:=FALSE;
+	 ceshi:=FALSE;
+END_IF
+   
+IF (P3_SystemRUN.iMode=1 OR Bule_Start OR ceshi)  AND LateBlanking_init_OK[8] AND NOT  P3_Error[42]  THEN
+CASE Step37 OF
+0://判断备胶是否完成
+
+    IF NOT SingleStep[8] THEN
+        IF NOT StickerStandbyDone THEN
+            IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF	
+		BlueGlueMount:=0;	
+		Step37:=10;
+	    END_IF  
+	
+	   IF StickerStandbyDone AND  arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch THEN  
+		  IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		  ELSE
+			   SingleStep[8]:=FALSE;
+		  END_IF	
+		  Step37:=210;
+	   END_IF	
+  
+	   IF StickerStandbyDone AND NOT arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch THEN 	
+          IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		  ELSE
+			   SingleStep[8]:=FALSE;
+		  END_IF	
+		  Step37:=10;
+      END_IF		
+	END_IF  
+10://备胶气缸回初始位
+        StickerStandbyDone :=FALSE;//备胶完成复位
+    IF NOT SingleStep[8] THEN
+        arrCyCtrl[P3CYNo.P3GluePush].Cmd.bOFF:=TRUE;//压胶气缸缩回
+		arrCyCtrl[P3CYNo.P3TapePull].Cmd.bOFF:=TRUE;//拉胶夹紧气缸缩回
+	//	arrCyCtrl[P3CYNo.P3TapeBuffer].Cmd.bOFF:=TRUE;//贴胶缓存气缸缩回
+		arrCyCtrl[P3CYNo.P3TapeCut].Cmd.bOFF:=TRUE;//切胶气缸缩回
+		arrCyCtrl[P3CYNo.P3TapePush].Cmd.bOFF:=TRUE;//贴胶头夹紧气缸缩回
+		arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bOFF:=TRUE;//吸胶真空关闭
+		IF arrCyCtrl[P3CYNo.P3TapePull].Status.OFFState AND NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[2] THEN
+				arrCyCtrl[P3CYNo.P3TapeLift].Cmd.bOFF:=TRUE;//拉带升降气缸缩回
+		END_IF
+		
+		IF 	arrCyCtrl[P3CYNo.P3GluePush].Status.OFFState AND  arrCyCtrl[P3CYNo.P3TapePull].Status.OFFState AND 	 arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState (* AND
+		    arrCyCtrl[P3CYNo.P3TapeBuffer].Status.OFFState*) AND  arrCyCtrl[P3CYNo.P3TapeCut].Status.OFFState AND  arrCyCtrl[P3CYNo.P3TapePush].Status.OFFState  THEN 
+			IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+		    Step37:=20;
+		END_IF	
+	END_IF	
+20://贴胶头进退轴回初始位
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND
+          arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState  AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1 THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=1;
+		END_IF	
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step37:=40;
+	    END_IF
+	END_IF		
+
+40://胶缓存气缸伸出	
+	IF NOT SingleStep[8] THEN				
+			arrCyCtrl[P3CYNo.P3TapeBuffer].Cmd.bON:=TRUE; //	胶缓存气缸伸出														
+			IF arrCyCtrl[P3CYNo.P3TapeBuffer].Status.ONState THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF	
+               Step37:=60;					
+			END_IF
+	END_IF	
+			
+60://拉胶升降气缸伸出	胶缓存气缸缩回
+	IF NOT SingleStep[8]  THEN
+			arrCyCtrl[P3CYNo.P3TapeBuffer].Cmd.bOFF:=TRUE; //	胶缓存气缸缩回
+			IF arrCyCtrl[P3CYNo.P3TapeCut].Status.OFFState AND LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[1]+1) THEN
+            arrCyCtrl[P3CYNo.P3TapeLift].Cmd.bON:=TRUE; //	拉胶升降气缸伸出	
+			END_IF											
+			IF arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND arrCyCtrl[P3CYNo.P3TapeBuffer].Status.OFFState THEN
+				IF  StepModel[8] THEN
+					SingleStep[8]:=TRUE;
+				ELSE
+					SingleStep[8]:=FALSE;
+				END_IF		
+			Step37:=70;
+			END_IF
+	END_IF	
+
+70://拉带夹胶气缸夹紧	
+	IF NOT SingleStep[8] THEN				
+			arrCyCtrl[P3CYNo.P3TapePull].Cmd.bON:=TRUE; //	拉带夹胶气缸夹紧	
+			P3Auto8_TON[5].IN:=TRUE;										
+			IF arrCyCtrl[P3CYNo.P3TapePull].Status.ONState AND P3Auto8_TON[5].Q THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF		
+                 Step37:=80;
+                 P3Auto8_TON[5].IN:=FALSE;				
+			END_IF
+	END_IF		
+
+80://压胶气缸张开 
+	IF NOT SingleStep[8] THEN				
+			arrCyCtrl[P3CYNo.P3GluePush].Cmd.bON:=TRUE; //	压胶气缸张开 
+			P3Auto8_TON[1].IN:=TRUE;												
+			IF P3Auto8_TON[1].Q THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF		
+                 Step37:=90;
+                 P3Auto8_TON[1].IN:=FALSE;				
+			END_IF
+	END_IF		 
+
+90://拉胶升降气缸缩回	
+	IF NOT SingleStep[8] THEN				
+			arrCyCtrl[P3CYNo.P3TapeLift].Cmd.bOFF:=TRUE; //	拉胶升降气缸缩回													
+			IF arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF		
+                 Step37:=100;				
+			END_IF
+	END_IF		
+(*
+95:
+	IF BlueGlueMount<>0 THEN		
+		Step37:=100;
+	ELSE
+		Step37:=100;
+		P3_Error[67]:=TRUE;//后段蓝胶无料校测报警
+	END_IF		
+*)
+100://1=贴胶头真空开,2=贴胶头前进取胶位
+     IF NOT SingleStep[8] THEN
+        //arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bON  :=TRUE;
+		arrCyCtrl[P3CYNo.P3TapePush].Cmd.bOFF:=TRUE;//贴胶头夹紧气缸缩回	
+		arrCyCtrl[P3CYNo.P3GluePush].Cmd.bOFF:=TRUE;//压胶气缸缩回
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[2] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND
+           arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState  AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1 THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=2;
+		END_IF	
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[2] AND arrCyCtrl[P3CYNo.P3GluePush].Status.OFFState THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step37:=105;
+		   P3Auto8_TON[4].IN:=FALSE;
+	    END_IF
+	END_IF		
+
+105:
+	arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bON  :=TRUE;
+	P3Auto8_TON[4].IN:=TRUE;
+	IF P3Auto8_TON[4].Q AND arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch THEN
+		 Step37:=110;
+		 P3Auto8_TON[4].IN:=FALSE;
+	END_IF
+		
+	
+	
+110://切胶气缸伸出
+	IF NOT SingleStep[8]  THEN		
+		    IF  arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState THEN	                                   
+			arrCyCtrl[P3CYNo.P3TapeCut].Cmd.bON:=TRUE; //	胶气缸伸出			
+           	END_IF
+										
+			IF arrCyCtrl[P3CYNo.P3TapeCut].Status.ONState THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF		
+                 Step37:=120;				
+			END_IF
+	END_IF		
+
+120://切胶气缸缩回
+	IF NOT SingleStep[8] THEN	
+			arrCyCtrl[P3CYNo.P3TapeBuffer].Cmd.bON:=TRUE; //	胶缓存气缸伸出	
+			arrCyCtrl[P3CYNo.P3TapeCut].Cmd.bOFF:=TRUE; //	胶气缸缩回												
+			IF arrCyCtrl[P3CYNo.P3TapeCut].Status.OFFState THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF		
+                 Step37:=130;				
+			END_IF
+	END_IF													
+
+130://拉带夹胶气缸张开	
+	IF NOT SingleStep[8] THEN				
+			arrCyCtrl[P3CYNo.P3TapePull].Cmd.bOFF:=TRUE; //	拉带夹胶气缸张开													
+			IF arrCyCtrl[P3CYNo.P3TapePull].Status.OFFState THEN
+				IF  StepModel[8] THEN
+			       SingleStep[8]:=TRUE;
+		        ELSE
+			        SingleStep[8]:=FALSE;
+		        END_IF		
+                 Step37:=140;				
+			END_IF
+	END_IF		
+
+	
+140://判断真空检测是否有信号
+    
+        IF  arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch THEN 
+			 Step37:=155;
+		 ELSE	
+			 Step37:=150;  //贴胶头真空关闭，贴胶头去初始位
+		END_IF	
+		
+	  
+	
+150: //贴胶头真空关闭，贴胶头去初始位
+     IF NOT SingleStep[8] THEN
+       
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND
+           arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState  AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1 THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=1;
+		END_IF	
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF	
+			 arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bOFF  :=TRUE;	
+           Step37:=0;
+		   Bule_Start:=FALSE;
+	    END_IF
+	END_IF	
+
+155://判断在不在贴胶，没开始贴胶去等待位，在贴胶中直接发备胶完成
+	 IF NOT StickerDoneNo1[1] (*AND NOT StickerDoneNo1[2]*) AND NOT StickerDoneNo1[3] THEN
+		 Step37:=160;
+	 ELSE
+	     Step37:=200;
+	 END_IF
+
+160://贴胶头进退轴去贴胶等待位
+    IF NOT SingleStep[8] THEN
+        IF NOT arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[4] AND NOT  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.NoMoving AND
+          arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState  AND NOT arrCyCtrl[P3CYNo.P3TapeLift].Io.DOStatus1 THEN 
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.iGoSetPos :=4;
+		END_IF	
+		
+	    IF  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[4] THEN
+		   IF  StepModel[8] THEN
+			   SingleStep[8]:=TRUE;
+		    ELSE
+			   SingleStep[8]:=FALSE;
+		    END_IF		
+           Step37:=170;
+	    END_IF
+	END_IF	
+
+170://判断真空检测是否有信号
+    
+        IF  arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch THEN 
+			 Step37:=200;
+		 ELSE	
+			 Step37:=150;  //贴胶头真空关闭，贴胶头去初始位
+		END_IF	
+		
+200:// 备胶完成		
+     StickerStandbyDone:=TRUE;
+    IF StickerStandbyDone THEN
+		Step37:=205;
+		
+	END_IF
+205:
+	IF arrCyCtrl[P3CYNo.P3TapeBuffer].Status.ONState THEN
+		IF BlueGlueMount<>0 THEN		
+			Step37:=210;
+		ELSE
+			P3_Error[67]:=TRUE;//后段蓝胶无料校测报警
+			Step37:=210;	
+		END_IF	
+	ELSE
+		IF NOT arrCyCtrl[P3CYNo.P3TapeBuffer].Io.DIOnSwitch THEN
+			arrCyCtrl[P3CYNo.P3TapeBuffer].Cmd.bON:=TRUE; //	胶缓存气缸伸出	
+		END_IF
+	END_IF
+210: 
+    IF NOT StickerStandbyDone THEN
+		Step37:=0;
+		Bule_Start:=FALSE;
+	END_IF	
+
+
+END_CASE
+END_IF
+
+
+
+IF  P3_Error[41] THEN
+	StickerStandbyDone:=FALSE;
+	Bule_Start:=FALSE;
+	Step37:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlanking_Auto8_01Sticke">
+      <LineId Id="2148" Count="354" />
+      <LineId Id="526" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

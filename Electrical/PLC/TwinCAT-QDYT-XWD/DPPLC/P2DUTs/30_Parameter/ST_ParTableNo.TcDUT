@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ParTableNo" Id="{394a8bb7-2504-4d74-bdf1-b7c11fa75ac1}">
+    <Declaration><![CDATA[TYPE ST_ParTableNo ://    凸轮表号
+STRUCT
+(*
+P2M1AnCarryingLine1     	 	 :UINT :=10;	//1号叠台	正极搬运平移凸轮号从取料位到叠台位
+P2M1AnCarryingLine2   		 :UINT :=11;	//1号叠台	正极搬运平移凸轮号从叠台位到取料位
+P2M1AnDTCarryingLine1		 :UINT :=12;	//1号叠台	正极叠台搬运平移凸轮从取料位到叠台位
+P2M1AnDTCarryingLine2		 :UINT :=13;	//1号叠台	正极叠台搬运平移凸轮从叠台位到取料位
+P2M1AnCarryingUpdown1		 :UINT :=14;	//1号叠台	正极搬运升降凸轮从取料位到叠台位
+P2M1AnCarryingUpdown2		 :UINT :=15;	//1号叠台	正极搬运升降凸轮从叠台位到取料位
+P2M1AnDTCarryingUpDown1		 :UINT :=16;	//1号叠台	正极叠台搬运升降凸轮从取料位到叠台位
+P2M1AnDTCarryingUpDown2		 :UINT :=17;	//1号叠台	正极叠台搬运升降凸轮从叠台位到取料位
+P2M1AnCarryingWhirling1		 :UINT :=18;	//1号叠台	正极搬运旋转凸轮从取料位到叠台位
+P2M1AnCarryingWhirling2		 :UINT :=19;	//1号叠台	正极搬运旋转凸轮从叠台位到取片位
+P2M1CaCarryingLine1     	 	 :UINT :=20;	//1号叠台	负极搬运平移凸轮号从取料位到叠台位
+P2M1CaCarryingLine2   		 :UINT :=21;	//1号叠台	负极搬运平移凸轮号从叠台位到取料位
+P2M1CaDTCarryingLine1		 :UINT :=22;	//1号叠台	负极叠台搬运平移凸轮从取料位到叠台位
+P2M1CaDTCarryingLine2		 :UINT :=23;	//1号叠台	负极叠台搬运平移凸轮从叠台位到取料位
+P2M1CaCarryingUpdown1		 :UINT :=24;	//1号叠台	负极搬运升降凸轮从取料位到叠台位
+P2M1CaCarryingUpdown2		 :UINT :=25;	//1号叠台	负极搬运升降凸轮从叠台位到取料位
+P2M1CaDTCarryingUpDown1		 :UINT :=26;	//1号叠台	负极叠台搬运升降凸轮从取料位到叠台位
+P2M1CaDTCarryingUpDown2		 :UINT :=27;	//1号叠台	负极叠台搬运升降凸轮从叠台位到取料位
+P2M1LeftYDUpdown		 :UINT :=28;	//1号叠台	左压刀升降
+P2M1LeftYDLine		 :UINT :=29;	//1号叠台	左压刀开合
+P2M1RightYDUpdown		 :UINT :=30;	//1号叠台	右压刀升降
+P2M1RightYDLine		 :UINT :=31;	//1号叠台	右压刀开合
+P2M1SEPTATLine1		 :UINT :=32;	//1号叠台	隔膜平移从负极到正极
+P2M1SEPTATLine2		 :UINT :=33;	//1号叠台	隔膜平移从正极到负极
+P2M1SEPTATCache		 :UINT :=34;	//1号叠台	隔膜缓存
+P2M1SEPTAunwinding		 :UINT :=35;	//1号叠台	隔膜放卷
+P2M1TailCurlUpDown		 :UINT :=36;	//1号叠台	尾卷夹升降
+P2M1TailCurlLine		 :UINT :=37;	//1号叠台	尾卷夹平移
+				
+				
+				
+P2M2AnCarryingLine1     	 	 :UINT :=41;	//2号叠台	正极搬运平移凸轮号从取料位到叠台位
+P2M2AnCarryingLine2   		 :UINT :=42;	//2号叠台	正极搬运平移凸轮号从叠台位到取料位
+P2M2AnDTCarryingLine1		 :UINT :=43;	//2号叠台	正极叠台搬运平移凸轮从取料位到叠台位
+P2M2AnDTCarryingLine2		 :UINT :=44;	//2号叠台	正极叠台搬运平移凸轮从叠台位到取料位
+P2M2AnCarryingUpdown1		 :UINT :=45;	//2号叠台	正极搬运升降凸轮从取料位到叠台位
+P2M2AnCarryingUpdown2		 :UINT :=46;	//2号叠台	正极搬运升降凸轮从叠台位到取料位
+P2M2AnDTCarryingUpDown1		 :UINT :=47;	//2号叠台	正极叠台搬运升降凸轮从取料位到叠台位
+P2M2AnDTCarryingUpDown2		 :UINT :=48;	//2号叠台	正极叠台搬运升降凸轮从叠台位到取料位
+P2M2AnCarryingWhirling1		 :UINT :=49;	//2号叠台	正极搬运旋转凸轮从取料位到叠台位
+P2M2AnCarryingWhirling2		 :UINT :=50;	//2号叠台	正极搬运旋转凸轮从叠台位到取片位
+P2M2CaCarryingLine1     	 	 :UINT :=51;	//2号叠台	负极搬运平移凸轮号从取料位到叠台位
+P2M2CaCarryingLine2   		 :UINT :=52;	//2号叠台	负极搬运平移凸轮号从叠台位到取料位
+P2M2CaDTCarryingLine1		 :UINT :=53;	//2号叠台	负极叠台搬运平移凸轮从取料位到叠台位
+P2M2CaDTCarryingLine2		 :UINT :=54;	//2号叠台	负极叠台搬运平移凸轮从叠台位到取料位
+P2M2CaCarryingUpdown1		 :UINT :=55;	//2号叠台	负极搬运升降凸轮从取料位到叠台位
+P2M2CaCarryingUpdown2		 :UINT :=56;	//2号叠台	负极搬运升降凸轮从叠台位到取料位
+P2M2CaDTCarryingUpDown1		 :UINT :=57;	//2号叠台	负极叠台搬运升降凸轮从取料位到叠台位
+P2M2CaDTCarryingUpDown2		 :UINT :=58;	//2号叠台	负极叠台搬运升降凸轮从叠台位到取料位
+P2M2LeftYDUpdown		 :UINT :=59;	//2号叠台	左压刀升降
+P2M2LeftYDLine		 :UINT :=60;	//2号叠台	左压刀开合
+P2M2RightYDUpdown		 :UINT :=61;	//2号叠台	右压刀升降
+P2M2RightYDLine		 :UINT :=62;	//2号叠台	右压刀开合
+P2M2SEPTATLine1		 :UINT :=63;	//2号叠台	隔膜平移从负极到正极
+P2M2SEPTATLine2		 :UINT :=64;	//2号叠台	隔膜平移从正极到负极
+P2M2SEPTATCache		 :UINT :=65;	//2号叠台	隔膜缓存
+P2M2SEPTAunwinding		 :UINT :=66;	//2号叠台	隔膜放卷
+P2M2TailCurlUpDown		 :UINT :=67;	//2号叠台	尾卷夹升降
+P2M2TailCurlLine		 :UINT :=68;	//2号叠台	尾卷夹平移
+				
+				
+				
+P2M3AnCarryingLine1     	 	 :UINT :=72;	//3号叠台	正极搬运平移凸轮号从取料位到叠台位
+P2M3AnCarryingLine2   		 :UINT :=73;	//3号叠台	正极搬运平移凸轮号从叠台位到取料位
+P2M3AnDTCarryingLine1		 :UINT :=74;	//3号叠台	正极叠台搬运平移凸轮从取料位到叠台位
+P2M3AnDTCarryingLine2		 :UINT :=75;	//3号叠台	正极叠台搬运平移凸轮从叠台位到取料位
+P2M3AnCarryingUpdown1		 :UINT :=76;	//3号叠台	正极搬运升降凸轮从取料位到叠台位
+P2M3AnCarryingUpdown2		 :UINT :=77;	//3号叠台	正极搬运升降凸轮从叠台位到取料位
+P2M3AnDTCarryingUpDown1		 :UINT :=78;	//3号叠台	正极叠台搬运升降凸轮从取料位到叠台位
+P2M3AnDTCarryingUpDown2		 :UINT :=79;	//3号叠台	正极叠台搬运升降凸轮从叠台位到取料位
+P2M3AnCarryingWhirling1		 :UINT :=80;	//3号叠台	正极搬运旋转凸轮从取料位到叠台位
+P2M3AnCarryingWhirling2		 :UINT :=81;	//3号叠台	正极搬运旋转凸轮从叠台位到取片位
+P2M3CaCarryingLine1     	 	 :UINT :=82;	//3号叠台	负极搬运平移凸轮号从取料位到叠台位
+P2M3CaCarryingLine2   		 :UINT :=83;	//3号叠台	负极搬运平移凸轮号从叠台位到取料位
+P2M3CaDTCarryingLine1		 :UINT :=84;	//3号叠台	负极叠台搬运平移凸轮从取料位到叠台位
+P2M3CaDTCarryingLine2		 :UINT :=85;	//3号叠台	负极叠台搬运平移凸轮从叠台位到取料位
+P2M3CaCarryingUpdown1		 :UINT :=86;	//3号叠台	负极搬运升降凸轮从取料位到叠台位
+P2M3CaCarryingUpdown2		 :UINT :=87;	//3号叠台	负极搬运升降凸轮从叠台位到取料位
+P2M3CaDTCarryingUpDown1		 :UINT :=88;	//3号叠台	负极叠台搬运升降凸轮从取料位到叠台位
+P2M3CaDTCarryingUpDown2		 :UINT :=89;	//3号叠台	负极叠台搬运升降凸轮从叠台位到取料位
+P2M3LeftYDUpdown		 :UINT :=90;	//3号叠台	左压刀升降
+P2M3LeftYDLine		 :UINT :=91;	//3号叠台	左压刀开合
+P2M3RightYDUpdown		 :UINT :=92;	//3号叠台	右压刀升降
+P2M3RightYDLine		 :UINT :=93;	//3号叠台	右压刀开合
+P2M3SEPTATLine1		 :UINT :=94;	//3号叠台	隔膜平移从负极到正极
+P2M3SEPTATLine2		 :UINT :=95;	//3号叠台	隔膜平移从正极到负极
+P2M3SEPTATCache		 :UINT :=96;	//3号叠台	隔膜缓存
+P2M3SEPTAunwinding		 :UINT :=97;	//3号叠台	隔膜放卷
+P2M3TailCurlUpDown		 :UINT :=98;	//3号叠台	尾卷夹升降
+P2M3TailCurlLine		 :UINT :=99;	//3号叠台	尾卷夹平移
+
+*)
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

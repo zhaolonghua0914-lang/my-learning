@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Meney_Type" Id="{67ae0c83-7de4-417b-a441-f5ed9e75ac69}">
+    <Declaration><![CDATA[TYPE ST_Meney_Type :
+STRUCT
+	
+UnreelingTension			:	REAL	;//	放卷张力
+SlicingSpeed				:	REAL	;//	切片速度
+PolePlateLenth				:	REAL	;//	极片长度（走带方向）				
+PolePlateAngle1				:	REAL	;//	极片角度1
+PolePlateAngle2				:	REAL	;//	极片角度2
+PolePlateAngle3				:	REAL	;//	极片角度3
+PolePlateAngle4				:	REAL	;//	极片角度4
+PolePlateWidth				:	REAL	;//	极片宽度
+RoundedSize1				:	REAL	;//	圆角尺寸1
+RoundedSize2				:	REAL	;//	圆角尺寸2
+RoundedSize3				:	REAL	;//	圆角尺寸3
+RoundedSize4				:	REAL	;//	圆角尺寸4
+AppearanceResult			:	BOOL	;//	极片外观判定结果
+EarMargin_L					:	REAL	;//	极耳左边距
+EarMargin_R					:	REAL	;//	极耳右边距
+RoundedPlaneBurr1			:	REAL	;//	圆角平面毛刺1
+RoundedPlaneBurr2			:	REAL	;//	圆角平面毛刺2
+RoundedPlaneBurr3			:	REAL	;//	圆角平面毛刺3
+RoundedPlaneBurr4			:	REAL	;//	圆角平面毛刺4
+RoundEndBurr1				:	REAL	;//	圆角端面毛刺1
+RoundEndBurr2				:	REAL	;//	圆角端面毛刺2
+RoundEndBurr3				:	REAL	;//	圆角端面毛刺3
+RoundEndBurr4				:	REAL	;//	圆角端面毛刺4
+PolePieceCuttingPlaneBurr1	:	REAL	;//	极片裁切平面毛刺1
+PolePieceCuttingPlaneBurr2	:	REAL	;//	极片裁切平面毛刺2
+EndFaceBurr1				:	REAL	;//	极片裁切端面毛刺1
+EndFaceBurr2				:	REAL	;//	极片裁切端面毛刺2
+CutOffPowderWidth			:	REAL	;//	极片裁切掉粉宽度
+SizeResults					:	BOOL	;//	极片尺寸判定结果
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

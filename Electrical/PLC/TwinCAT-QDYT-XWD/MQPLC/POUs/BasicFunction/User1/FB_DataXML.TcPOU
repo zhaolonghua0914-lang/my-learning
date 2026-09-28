@@ -1,0 +1,290 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DataXML" Id="{9da6bff0-af1d-471f-ae64-615ccea5dffe}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_DataXML
+VAR_INPUT
+    	bSave:BOOL;
+	    bRead:BOOL;
+		bReadSel:BOOL;//参数读取选择，TRUE=选择恢复上电备份的参数
+END_VAR
+VAR_OUTPUT
+    	bSaveParDone      :BOOL;
+	    bReadParDone     :BOOL;
+END_VAR
+
+VAR
+	iDataSetp: INT;
+	i1: INT;
+	i2:BYTE;
+	rt100:Tc2_Standard.R_TRIG;
+	rt101:Tc2_Standard.R_TRIG;
+	rt102:Tc2_Standard.R_TRIG;
+	rt103:Tc2_Standard.R_TRIG;
+	bSaveTemp: BOOL;
+	bReadTemp: BOOL;
+	sFilePath:STRING;//文件路径
+	sNewFilePath:STRING;//新文件路径
+	sOldFilePath:STRING;//旧文件路径
+	sFileName:STRING;//文件名称
+	sVarName:STRING;//变量名称
+	fbXmlSrvRead				: FB_XmlSrvReadByName;//读取XML文件	
+	fbXmlSrvWrite				: FB_XmlSrvWriteByName;//写入XML文件
+	bFirstCycleFlg:BOOL;//首次执行标志位
+	fbGetFileList: FB_GetFileList;//获取文件列表功能块
+	stFindFileEntry:ARRAY[1..50] OF ST_FindFileEntry;//文件列表存放结构体	
+	nFileBakStep:UINT;//文件备份步序
+	fbFileDelete	: FB_FileDelete;//删除文件
+	fbFileRename	: FB_FileRename;//文件重命名
+	fbCreateDirectory:FB_CreateDirectory;//文件夹创建
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[M_WriteOrRead();
+A_FileBak();]]></ST>
+    </Implementation>
+    <Action Name="A_FileBak" Id="{bbfb3f1c-79b0-4208-b161-d4cf64106a1f}">
+      <Implementation>
+        <ST><![CDATA[CASE nFileBakStep OF
+	200:
+		fbGetFileList(bExecute:=FALSE);
+		fbFileDelete(bExecute:=FALSE);
+		fbFileRename(bExecute:=FALSE);
+		fbCreateDirectory(bExecute:=FALSE);
+		nFileBakStep:=300;
+	300:(*获取文件列表*)
+		fbGetFileList.pFindFileListADR:=ADR(stFindFileEntry);
+		fbGetFileList.u32FindFileListSizeOf:=SIZEOF(stFindFileEntry);
+		fbGetFileList(bExecute:=TRUE,sgPathName:=sOldFilePath,sgFileType:='xml');	
+		IF fbGetFileList.bDone THEN
+			fbGetFileList(bExecute:=FALSE);
+			nFileBakStep:=310;
+		ELSIF fbGetFileList.bError THEN
+			fbGetFileList(bExecute:=FALSE);
+			nFileBakStep:=997;
+		END_IF
+	310:(*判断文件是否存在，文件存在则备份一次，文件不存在直接给完成信号*)
+		FOR i2:=1 TO 50 DO
+			IF stFindFileEntry[i2].sFileName=sFileName THEN//
+				EXIT;
+			END_IF
+		END_FOR
+		IF i2>50 THEN
+			nFileBakStep:=666;
+		ELSE
+			nFileBakStep:=320;
+		END_IF
+	320:(*文件夹创建*)
+	fbCreateDirectory(bExecute:=TRUE , sgPathName:=sNewFilePath, tTimeout:=T#1S );
+	IF fbCreateDirectory.bDone THEN
+		fbCreateDirectory(bExecute:=FALSE);
+		nFileBakStep:=350;
+	ELSIF fbCreateDirectory.bError THEN
+		fbCreateDirectory(bExecute:=FALSE);
+		nFileBakStep:=998;
+	END_IF
+	350:(*删除旧文件*)
+		fbFileDelete.sPathName:= CONCAT(sNewFilePath,sFileName);
+		fbFileDelete(bExecute:=TRUE,ePath:= PATH_GENERIC,tTimeout:=T#5S);
+		IF NOT fbFileDelete.bBusy THEN
+			fbFileDelete(bExecute:=FALSE);
+			nFileBakStep:=360;
+		END_IF
+	360:(*重命名文件*)
+		fbFileRename.sOldName:= CONCAT(sOldFilePath,sFileName);
+		fbFileRename.sNewName:= CONCAT(sNewFilePath,sFileName);
+		fbFileRename(bExecute:=TRUE,ePath:= PATH_GENERIC,tTimeout:=T#5S);
+		IF NOT fbFileRename.bBusy THEN
+			fbFileRename(bExecute:=FALSE);
+			IF NOT fbFileRename.bError THEN
+				nFileBakStep:=666;
+			ELSE
+				nFileBakStep:=999;
+			END_IF			
+		END_IF
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="M_WriteOrRead" Id="{2ce5b49f-6905-43d9-905f-fa3b5e963f33}">
+      <Implementation>
+        <ST><![CDATA[rt100(CLK:=bSave , Q=> );//保存参数
+rt101(CLK:=bRead , Q=> );//读取参数
+IF rt100.Q THEN  //保存参数
+    bSaveTemp:=TRUE;
+	bReadTemp:=FALSE;
+	bSaveParDone:=FALSE;
+	iDataSetp:=50;
+END_IF
+IF rt101.Q THEN  //读取参数
+    bReadTemp:=TRUE;
+    bSaveTemp:=FALSE;
+	bReadParDone:=FALSE;
+	iDataSetp:=50;
+END_IF
+
+//rt102(CLK:=NOT bFirstCycleFlg AND NOT bReadTemp, Q=> );//首次上电自动备份参数
+IF rt102.Q THEN  //首次上电自动备份参数
+	iDataSetp:=50;
+END_IF
+
+CASE  iDataSetp OF 
+	50:
+		I1:=1;
+		fbXmlSrvRead(bExecute:=FALSE);
+		fbXmlSrvWrite(bExecute:=FALSE);
+		bSave:=FALSE;
+		bRead:=FALSE;
+		iDataSetp:=100;
+	 100:
+	 	sFilePath:='C:\P1XML\';//保存文件路径
+		CASE i1 OF 
+			 1://轴参数
+				sFileName:= 'P1arrAxisPar.xml';
+				sVarName:='GMotion.arrAxisPar';
+			 2://ProductPar
+				sFileName:='P1ProductPar.xml';
+				sVarName:='GVL_Par.ProductPar';
+			3://AnStats
+				sFileName:='An_Production.xml';
+				sVarName:='User01.An_Production';
+			4://CaStats
+				sFileName:= 'Ca_Production.xml';
+				sVarName:='User01.Ca_Production';
+		END_CASE		
+		
+		IF  bSaveTemp THEN
+			iDataSetp:=200;
+		ELSIF  bReadTemp THEN
+			iDataSetp:=300;
+		//ELSIF NOT bFirstCycleFlg THEN
+		//	iDataSetp:=400;
+		END_IF
+		
+	(********************保存数据流程：先备份原来参数再保存新参数，如果保存失败恢复至备份参数********************)
+	200:(*开始备份*)
+		sNewFilePath:=CONCAT(sFilePath,'Tmp\');
+		sOldFilePath:=sFilePath;
+		nFileBakStep:=200;//调用A_FileBak()进行文件备份
+		iDataSetp:=210;
+	210:(*文件备份状态判断*)
+		IF nFileBakStep=666 THEN//文件备份成功，保存新参数
+			iDataSetp:=230;
+		ELSIF nFileBakStep>990 THEN//文件备份失败
+			iDataSetp:=997;			
+		END_IF
+	230:(*保存新参数*)	
+		fbXmlSrvWrite(
+			bExecute:= TRUE, 
+			ePath:=PATH_GENERIC , 
+			nMode:=XMLSRV_ADDMISSING , 
+			sSymName:=sVarName , 
+			sFilePath:= CONCAT(sFilePath,sFileName), 
+			sXPath:= '/DataEntry/Value', 
+			tTimeout:= T#2S);
+		IF NOT fbXmlSrvWrite.bBusy THEN
+			fbXmlSrvWrite(bExecute:=FALSE);
+			IF NOT fbXmlSrvWrite.bError THEN(*保存新参数成功*)
+				iDataSetp:=500;
+			ELSE(*保存新参数失败，恢复未写入新参数前的备份*)
+				iDataSetp:=250;
+			END_IF	
+		END_IF
+	250:(*保存新参数失败，恢复未写入新参数前的备份*)
+		sOldFilePath:=CONCAT('Tmp\' ,sFileName);
+		sNewFilePath:=sFilePath;
+		nFileBakStep:=200;//调用A_FileBak()进行文件备份
+		iDataSetp:=260;
+	260:(*恢复文件状态判断*)
+		IF nFileBakStep=666 THEN//文件恢复成功
+			iDataSetp:=500;
+		ELSIF nFileBakStep>990 THEN//文件恢复失败
+			iDataSetp:=998;			
+		END_IF		
+
+	(********************参数读取流程********************)	
+	300:(*参数读取选择，TRUE=选择恢复上电备份的参数*)
+		IF bReadSel THEN
+			sFilePath:=CONCAT(sFilePath,'Bak\');
+		END_IF
+		iDataSetp:=310;
+	310:(*读取参数*)
+		fbXmlSrvRead(
+			bExecute:= TRUE, 
+			ePath:=PATH_GENERIC , 
+			nMode:=XMLSRV_ADDMISSING , 
+			sSymName:= sVarName, 
+			sFilePath:=CONCAT(sFilePath,sFileName) , 
+			sXPath:='/DataEntry/Value' , 
+			tTimeout:=T#2S);
+		IF NOT fbXmlSrvRead.bBusy THEN
+			fbXmlSrvRead(bExecute:=FALSE);
+			IF NOT fbXmlSrvRead.bError THEN
+				iDataSetp:=500;//读取成功
+			ELSE
+				iDataSetp:=999;//读取失败
+			END_IF
+		END_IF
+		
+	(********************上电自动备份流程，防止被覆盖********************)	
+	400:
+		sOldFilePath:=sFilePath;
+		sNewFilePath:=CONCAT(sFilePath,'Bak\' );
+		nFileBakStep:=200;//调用A_FileBak()进行文件备份
+		iDataSetp:=410;
+	410:
+		IF nFileBakStep=666 THEN
+				iDataSetp:=500;
+		ELSIF nFileBakStep>990 THEN
+				iDataSetp:=999;			
+		END_IF
+	500:(*继续写下个文件*)
+		IF i1>=1 AND i1<4 THEN
+			i1:=i1+1; 
+			iDataSetp:=100; 
+		ELSIF i1>=4 THEN
+			IF  bSaveTemp THEN		
+				bSaveParDone:=TRUE;
+			ELSIF  bReadTemp THEN
+				bReadParDone:=TRUE;
+			ELSIF NOT bFirstCycleFlg THEN
+				bFirstCycleFlg:=TRUE;
+			END_IF
+			bReadSel:=FALSE;
+			bReadTemp:=FALSE;
+			bSaveTemp:=FALSE;
+			iDataSetp:=666;   
+		END_IF
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="FB_DataXML">
+      <LineId Id="9" Count="0" />
+      <LineId Id="283" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_DataXML.A_FileBak">
+      <LineId Id="8" Count="0" />
+      <LineId Id="119" Count="3" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="60" Count="5" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="117" Count="1" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="70" Count="10" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="81" Count="18" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_DataXML.M_WriteOrRead">
+      <LineId Id="2" Count="146" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="System_Control" Id="{e45ae940-a42d-469c-8e57-bdaa0aa8aa4c}">
+    <Declaration><![CDATA[TYPE System_Control :
+STRUCT
+	btn:ST_SystemButton;//系统按钮
+	se:System_Senser;//系统信号
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

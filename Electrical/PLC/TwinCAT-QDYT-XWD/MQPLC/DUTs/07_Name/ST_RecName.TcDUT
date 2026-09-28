@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_RecName" Id="{b481a28e-876d-455e-935a-0bb2060be8d8}">
+    <Declaration><![CDATA[TYPE ST_RecName :   //  纠偏名称
+STRUCT
+      PoleWind          :INT; (***极片放卷纠偏*)
+      PoleProcess      :INT; (***极片行进纠偏*)
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

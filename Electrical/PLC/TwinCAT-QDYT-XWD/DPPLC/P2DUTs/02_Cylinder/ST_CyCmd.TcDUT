@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CyCmd" Id="{9655ef31-be7b-41bd-86d6-a766757cc5c9}">
+    <Declaration><![CDATA[TYPE ST_CyCmd ://
+STRUCT
+	bON:				        BOOL;	//开关ON
+	bOFF:				    BOOL;	//开关OFF
+	bFree:				    BOOL;	//泄压
+
+    iType	:	                INT:=1	;	      //气缸类型选择：    1：气缸双控    2：气缸单控        3 电磁阀双控   4 电磁阀单控 
+  
+	OnCondition:		   BOOL:=TRUE;	//开条件
+	OffCondition:		    BOOL:=TRUE;	//关条件
+    ErrorTime:		        INT:=5;	
+
+	HMION:	           BOOL;//HMI ON
+	HMIOFF:	           BOOL;//HMI OFF
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

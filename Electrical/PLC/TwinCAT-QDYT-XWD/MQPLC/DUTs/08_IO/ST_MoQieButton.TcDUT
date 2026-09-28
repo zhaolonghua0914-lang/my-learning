@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_MoQieButton" Id="{46f54641-ab4d-4e32-bf30-7c036a38e750}">
+    <Declaration><![CDATA[TYPE ST_MoQieButton :// 按钮
+STRUCT
+    PoleBoxBit1                       :BOOL;    (**极片放卷按钮BIT1**)
+    PoleBoxBit2                       :BOOL;    (**极片放卷按钮BIT2**)
+    PoleBoxBit3                       :BOOL;    (**极片放卷按钮BIT3**)
+    PoleBoxBit4                       :BOOL;    (**极片放卷按钮BIT4**)
+    PoleBoxStart                        :BOOL;    (**极片放卷启动按钮*)
+    PoleBoxEStop                      :BOOL;    (**极片放卷紧急停止*)
+	
+	CoderRollPress                      :BOOL; (**编码器辊压辊按钮*)
+	
+    DriverPress_Aux                        :BOOL;   (**辅驱压辊旋钮**)
+	DriverJogFw_Aux                       :BOOL;    (**辅助驱辊正向点动*)
+	DriverJogBw_Aux                        :BOOL;   (**辅助驱辊反向点动**)
+	
+	DriverPressDDR                      :BOOL; (**主驱动压辊按钮*)
+	
+    NGBoxStart                         :BOOL;  (**NG料盒面板确认按钮**)
+    NGBoxEStop                       :BOOL;  (**NG料盒面板急停按钮**)
+    NGBoxMotor_JogUp                       :BOOL;  (**NG料盒面板排杆电机手动上升**)
+    NGBoxMotor_JogDown                      :BOOL;  (**NG料盒面板排杆电机手动下降**)
+	
+    PoleBrushDustPush_U                        :BOOL;  (**正极上表面毛刷除尘升降气缸按钮*)
+	PoleWindDustPush_U                        :BOOL;  (**正极上表面风刀除尘升降气缸按钮*)
+	PoleBrushDustPush_D                        :BOOL;  (**正极下表面毛刷除尘升降气缸按钮*)
+	PoleWindDustPush_D                        :BOOL;  (**正极下表面风刀除尘升降气缸按钮*)
+(**外罩急停*)
+  	EncloserEstop                      :ARRAY [1..3] OF BOOL;    (**外罩紧急停止*)
+	
+(**按钮指示灯*)
+    PoleBoxStartLight                         :BOOL;    (**极片放卷启动按钮指示灯*)
+    DriverPressDDRLight                       :BOOL; (**主驱动压辊按钮指示灯*)
+	CoderRollPressLight                      :BOOL; (**编码器辊压辊按钮指示灯*)
+	
+    NGBoxStartLight                         :BOOL;  (**NG料盒面板确认按钮指示灯**)
+    NGBoxMotor_JogUpLight                   :BOOL;  (**NG料盒面板排杆电机手动上升按钮指示灯**)
+    NGBoxMotor_JogDownLight               :BOOL;  (**NG料盒面板排杆电机手动下降按钮指示灯**)
+	
+    PoleBrushDustPush_ULight                       :BOOL;  (**正极上表面毛刷除尘升降气缸按钮指示灯*)
+	PoleWindDustPush_ULight                       :BOOL;  (**正极上表面风刀除尘升降气缸按钮指示灯*)
+	PoleBrushDustPush_DLight                        :BOOL;  (**正极下表面毛刷除尘升降气缸按钮指示灯*)
+	PoleWindDustPush_DLight                        :BOOL;  (**正极下表面风刀除尘升降气缸按钮指示灯*)
+	
+(**按钮指示灯*)
+	iPoleBoxCode:       							INT;(*极片放卷按钮盒编码开关指示*)	
+
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

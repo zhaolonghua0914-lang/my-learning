@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="conDT_Date" Id="{be7bd2fc-d9ea-4eec-a65b-1f475aec773c}">
+    <Declaration><![CDATA[TYPE conDT_Date ://叠台叠片
+STRUCT
+	
+	bRecDevBtn:BOOL;//隔膜检测传感器标定按钮
+	DT_Blue_TF		  :BOOL;//蓝胶踢废		OFF:屏蔽
+	Yellowmark_TF:BOOL;//隔膜色标踢废
+	DTIniti_Hbtn:BOOL;//叠台初始化，触摸屏按钮
+	DTIniti_Done:BOOL;//叠台初始化完成
+	DT_AutoHMI:BOOL;//叠台触摸屏自动
+	DT_ManuaHMI:BOOL;//叠台触摸屏手动	
+	
+	ALLIniti_Hbtn:BOOL;//叠片回原点启动，触摸屏按M钮
+	ALLIniti_Done:BOOL;//叠片回原点完成
+	CWW:BOOL; //纠偏方向选择
+	RecDevEqupos:REAL; //纠偏传感器平衡位置
+	RecDevPV:REAL;//纠偏传感器当前值
+	RecDevPV1:REAL;//纠偏传感器当前值
+	Error:ARRAY[0..100] OF BOOL;//报警
+	DT_camError:BOOL;//叠台凸轮报警需初始化
+	
+	BluGlueNG:ARRAY[0..1] OF BOOL;//表示蓝胶当前电芯或下个电芯NG
+	
+	CreateCamStart1:BOOL;//叠台压刀凸轮创建启动
+	CreateCamDone1:BOOL;//叠台压刀凸轮创建完成
+	CreateCamStart2:BOOL;//叠台缓存凸轮创建启动
+	CreateCamDone2:BOOL;//叠台缓存凸轮创建完成
+	
+	Step:ARRAY[0..9] OF UINT;//程序步
+	SinStepMode:BOOL;//单步模式
+	DP_Mode:BOOL;//叠片完成后，空叠隔膜
+	DT_Chesoe:BOOL;//叠负极片选择 
+	DT_CellNG_TF	  :BOOL;//对齐度NG梯度踢废 OFF:屏蔽
+	
+	
+	OffloadRequest:BOOL;//叠电芯完成请求下货
+	OffloadDone:BOOL;//叠台下货完成
+	
+	rTension_Start:BOOL;//一键张力启动
+	bTenExecute:BOOL;//隔膜张力启动
+	bStudyExecute:BOOL;//隔膜张力学习
+	PidSwitch:BOOL:=TRUE;//被动放卷开关选择
+	fWindDiameter:REAL;//隔膜放卷轴当前卷径
+	bTenReady:BOOL;//张力准备好
+	bTensionOK:BOOL;//张力OK
+	bTenCcw:BOOL;//放卷方向选择
+	PTenidSwitch:BOOL;//张力PID开关
+	TenAnglePos:REAL;//张力摆杆当前角度	
+	TeniGMMoveCount:DINT;//隔膜同步拉伸次数
+	
+	RectifydevStarte:BOOL;//隔膜纠偏开启HMI
+	RectifydevModel:BOOL;//隔膜纠偏屏蔽
+	ClearCount:BOOL;//正、负极清零
+	
+	CDD_OverStart:BOOL;//CCD对奇度检测
+	CDD_OverStart_First:BOOL;//CCD对奇度检测压刀间距测量拍照
+	OverhandResult:INT;//叠台极片检测有无
+	OverhandFirstPice:INT;//叠台极片首层标记
+	iOverError:INT;//对齐度检测报警	1：OK，2：NG    实时检测，检测到结果为2就报警
+
+	
+	DT_Start           :BOOL;//叠台启动
+	
+	DT_coumtHight:REAL;//叠片叠台升降已下降高度
+	DT_CCD_TwoModel:BOOL;//叠台CCD拍照复检模式
+	Door_error :ARRAY[0..80] OF BOOL;//叠台门禁报警
+	DT_AllCamOut:BOOL;//叠台一键解耦
+	DT_Memory   :INT;//叠台电芯记忆
+	DT_amount   :UINT;//已叠电芯数
+	DT_amount_clear :BOOL;//电芯数清零
+	DT_No      :STRING;//叠台编号
+	Machine_No: STRING;//机台编号
+	//Cell_Hough    :INT;//(CCD综合评定结果/对齐度)1、对齐度OK，2、对齐度NG
+	fWindDiameter_min :REAL;//最小卷径
+	Door_Forbidden   :BOOL;//门禁禁用
+	Dust_name :INT;//送片皮带毛刷电机
+	DiaphragmUnwindingTension :REAL;//隔膜张力
+	Manual	:BOOL;//叠台手动
+	Put_time :STRING;//投入时间
+	DT_Overhang : BOOL;//对齐度屏蔽
+	CCD_Overhang_button :BOOL;//叠台电芯确认无极片按钮
+	DT_Oerhang_Z :INT;//对齐度结果
+	Overhang_TF :BOOL;//对齐度NG踢废信号
+	Overhang_Warm:BOOL;//对齐度超限报警
+	Overhang_Warm_Reset:BOOL;
+	DT_QLqr :BOOL;//叠台已叠片数清零弹窗
+	DT_init_OK :BOOL;//叠台工位初始位完成
+	YD_JS_L_clear :BOOL;//左压刀计数清零
+	YD_JS_R_clear :BOOL;//右压刀计数清零	
+	stBnt_Blueflag:BOOL;//蓝胶标记启动
+	BlueflagBnt_Warm:BOOL;//是否启动蓝胶标记提示
+	
+	DT_DayHough:REAL;//对齐度NG数统计白班
+	DT_DayHoughAn:REAL;//白班对齐度NG踢废正极片数
+	DT_DayHoughCa:REAL;//白班对齐度NG踢废负极片数
+	DT_NightHough:REAL;//对齐度NG数统计晚班
+	DT_NightHoughAn:REAL;//夜班对齐度NG踢废正极片数
+	DT_NightHoughCa:REAL;//夜班对齐度NG踢废负极片数
+	DT_DayHough_U:UINT;//对齐度NG数统计白班整数
+	DT_NightHough_U:UINT;//对齐度NG数统计晚班整数
+	
+	DTJD_DayHough:REAL;//白班接带对齐度NG数统计
+	DTJD_DayHoughAn:REAL;//白班接带对齐度NG踢废正极片数
+	DTJD_DayHoughCa:REAL;//白班接带对齐度NG踢废负极片数
+	DTJD_NightHough:REAL;//夜班接带对齐度NG数统计
+	DTJD_NightHoughAn:REAL;//夜班接带对齐度NG踢废正极片数
+	DTJD_NightHoughCa:REAL;//夜班接带对齐度NG踢废负极片数
+	DTJD_DayHough_U:UINT;//白班接带对齐度NG数统计整数
+	DTJD_NightHough_U:UINT;//夜班接带对齐度NG数统计整数
+	
+	DT_GMchange:BOOL;//隔膜更换时间
+	DT_OverhangNG:BOOL;//对齐度NG下料时间
+	Query:BOOL;//时间查询
+	date1:INT;//查询日期
+	
+	//20231216新增叠台各种状态
+	iDTRunStatus:INT;//叠台运行状态：1:自动	2：手动	3：正常电芯空叠隔膜中	4:下料	5：空跑(空叠隔膜)	6:正极踢废		7：负极踢废
+	FirstEmpFold:BOOL;//首层空叠隔膜屏蔽
+
+	//20240102新增
+	HMI_WinBtn:ARRAY[1..50] OF BOOL;//触摸屏弹窗确认按钮
+	HMI_WinOEE_Btn:ARRAY[1..50] OF BOOL;//OEE采集确认按钮
+	DiaphragmPartNumberOK    :BOOL;   //隔膜料号OK
+	BluePartNumberOK    :BOOL;   //蓝胶料号OK
+	PartNumberOff       :BOOL;   //料号功能屏蔽
+	Error_tips	:ARRAY[1..30] OF BOOL;//报警提示
+	
+	fWindLength_M:REAL; //隔膜放卷轴当前米数
+	DT_DebugMode           :BOOL;//叠台调试模式料
+	DT_Sheetkick     :BOOL;//对齐度单片踢废屏蔽
+	DT_YDOpenwindow  :BOOL;//叠台压刀开窗测量屏蔽
+	DT_OHclosure		:BOOL;		//对齐度闭环屏蔽		ON是屏蔽
+	GMAngleALMsel     :BOOL;		//隔膜卷径报警屏蔽		ON是屏蔽
+	
+	YD_ferrJSclear :BOOL;//压刀铁氟龙计数清零
+	An_sucker1_JSclear      :BOOL;//正极送片搬运吸盘计数清零  
+    An_sucker2_JSclear      :BOOL;//正极叠台搬运吸盘计数清零  
+    Ca_sucker1_JSclear      :BOOL;//负极送片搬运吸盘计数清零  
+    Ca_sucker2_JSclear      :BOOL;//负极叠台搬运吸盘计数清零  
+    Ca_sucker3_JSclear      :BOOL;//负极流水线搬运吸盘计数清零  	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,401 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="L_Init1" Id="{76946743-cdda-4f08-9abc-b851d0dca14e}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM L_Init1
+VAR
+	INIT_TON  :ARRAY[1..20] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[INIT_TON[1](PT:=T#2S);
+INIT_TON[2](PT:=T#2S);
+INIT_TON[3](PT:=T#2S);
+INIT_TON[4](PT:=T#2S);
+INIT_TON[5](PT:=T#2S);
+INIT_TON[6](PT:=T#2S);
+INIT_TON[7](PT:=T#2S);
+INIT_TON[8](PT:=T#2S);
+INIT_TON[9](PT:=T#2S);
+INIT_TON[10](PT:=T#3S);
+INIT_TON[20](PT:=T#180S);//冷压上料回原超时计时
+
+IF INIT_TON[20].Q THEN
+	Init_step[1]:=0;
+	P3_Error[120]:=TRUE;//冷压上料回原超时报警
+	INIT_TON[20].IN:=FALSE;
+END_IF
+
+///////////////////////////后段总初始化
+IF P3_SystemRUN.iMode=3 THEN
+IF LateBlanking_init_start[0]  THEN
+	LateBlanking_init_OK[0]:=FALSE;
+	LateBlanking_init_OK[1]:=FALSE;
+	LateBlanking_init_OK[2]:=FALSE;
+	LateBlanking_init_OK[3]:=FALSE;
+	LateBlanking_init_OK[4]:=FALSE;
+	LateBlanking_init_OK[5]:=FALSE;
+	LateBlanking_init_OK[6]:=FALSE;
+	LateBlanking_init_OK[7]:=FALSE;
+	LateBlanking_init_OK[8]:=FALSE;
+	LateBlanking_init_OK[10]:=FALSE;
+	LateBlanking_init_start[1]:=TRUE;//冷压上料回原
+	LateBlanking_init_start[2]:=TRUE;//冷压驱动回原
+	LateBlanking_init_start[3]:=TRUE;//烤箱上料回原
+	LateBlanking_init_start[4]:=TRUE;//热压驱动回原
+	LateBlanking_init_start[5]:=TRUE;//称重上料回原
+	LateBlanking_init_start[6]:=TRUE;//电芯分选回原
+	LateBlanking_init_start[7]:=TRUE;//电芯下料回原
+	LateBlanking_init_start[8]:=TRUE;//贴胶下料回原
+	LateBlanking_init_start[10]:=TRUE;//二维码回原
+	LateBlanking_init_start[0]:=FALSE;
+	END_IF
+END_IF
+IF LateBlanking_init_OK[1] AND LateBlanking_init_OK[2] AND LateBlanking_init_OK[3] AND LateBlanking_init_OK[4]
+	AND LateBlanking_init_OK[5] AND LateBlanking_init_OK[6] AND LateBlanking_init_OK[7] AND LateBlanking_init_OK[10]  THEN
+	LateBlanking_init_OK[0]:=TRUE;
+	ELSE
+	LateBlanking_init_OK[0]:=FALSE;	
+END_IF
+
+
+
+//冷压上料夹平移回原条件
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] 
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6] )   THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.Home_Condition:=TRUE;
+ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.Home_Condition:=FALSE;
+END_IF
+
+//冷压上料夹进退回原条件
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error 
+AND P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.Home_Condition:=TRUE;
+ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.Home_Condition:=FALSE;
+END_IF
+
+//冷压上料夹旋转条件
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] OR P2Senser.P2M1_Coldpressingesensor OR P2Senser.P2M2_Coldpressingesensor OR P2Senser.P2M3_Coldpressingesensor) THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.Home_Condition:=TRUE;
+ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.Home_Condition:=FALSE;
+END_IF
+
+//冷压上料夹升降回原条件
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error 
+AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.Home_Condition:=TRUE;
+ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.Home_Condition:=FALSE;
+END_IF
+
+
+
+
+///////////////////////冷压上料初始化
+IF P3_SystemRUN.iMode=3 THEN
+IF LateBlanking_init_start[1]  THEN
+	Init_step[1]:=1;
+	LateBlanking_init_OK[1]:=FALSE;
+	LateBlanking_init_start[1]:=FALSE;
+END_IF
+END_IF
+
+
+
+IF P3_SystemRUN.iMode=3 THEN
+CASE Init_step[1] OF
+
+1://冷压上料夹电芯记忆清除
+	INIT_TON[20].IN:=TRUE;
+	Step30:=0;
+	INIT_TON[10].IN:=FALSE;
+	Scan_start:=FALSE;
+	Scan_finish:=FALSE;
+	MEMSET(ADR(CellMemory[CellNo.ColdpressClip]),0,SIZEOF(CellMemory[CellNo.ColdpressClip]));
+	stP3NgPushMoter[1].bHome:=TRUE;
+	
+	
+IF P3Senser.P3_PoleMotor1_Reach THEN
+arrCyCtrl[P2CYNo.LockonCy].Cmd.bON:=TRUE;
+END_IF
+	Init_step[1]:=10;//信号复位
+10:
+arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.bOFF:=TRUE;//冷压上料夹张开
+IF arrCyCtrl[P3CYNo.P3ColdPressClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error2  THEN
+	Init_step[1]:=20;//气缸打开
+END_IF//
+
+
+
+20: arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed  :=FALSE;   
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed  :=FALSE; 
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed  :=FALSE; 
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed  :=FALSE; 
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bStop:=TRUE;         
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bStop:=TRUE;     
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bStop:=TRUE;//冷压上料夹各轴为停止状态
+	INIT_TON[1].IN:=TRUE;
+	IF INIT_TON[1].Q THEN
+	Init_step[1]:=30;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bStop:=FALSE;         
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bStop:=FALSE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bStop:=FALSE;     
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bStop:=FALSE;//冷压上料夹各轴取消停止状态
+	INIT_TON[1].IN:=FALSE;	
+	END_IF
+
+30:
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bReset:=TRUE;         
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bReset:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bReset:=TRUE;     
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bReset:=TRUE;//冷压上料夹各轴分别复位
+	INIT_TON[2].IN:=TRUE;
+	IF INIT_TON[2].Q THEN	
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bReset:=FALSE;         
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bReset:=FALSE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bReset:=FALSE;     
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bReset:=FALSE;//冷压上料夹各轴取消复位状态
+	INIT_TON[2].IN:=FALSE;
+	Init_step[1]:=40;
+	END_IF
+
+40://冷压上料夹各轴都上使能则跳至下一步
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bEnable:=TRUE;         
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bEnable:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bEnable:=TRUE;     
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bEnable:=TRUE;//冷压上料夹各轴分别上使能
+	
+	IF 	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled  
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 	
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled THEN
+		Init_step[1]:=50;
+	END_IF
+
+50:
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bHome:=TRUE;//冷压上料进退回零
+IF NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed THEN
+Init_step[1]:=60;
+END_IF
+
+60://冷压上料夹进退回零完成
+INIT_TON[4].IN:=TRUE;
+IF 	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving
+AND INIT_TON[4].Q  THEN
+	Init_step[1]:=70;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bHome:=FALSE;
+	INIT_TON[4].IN:=FALSE;
+END_IF
+
+70://冷压上料夹进退到初始位
+
+IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.iGoSetPos:=1;//冷压上料进退回初始位	
+	ColdpreRetractTorMark:=TRUE;//冷压上料夹进退力矩超限报警标志
+END_IF 
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Moving THEN
+	ColdpreRetractTorMark:=FALSE;//冷压上料夹进退力矩超限报警标志
+	Init_step[1]:=80;	
+END_IF
+
+
+	
+80:
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+AND(arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[5] 
+OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[6]) THEN
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bHome:=TRUE;//冷压上料平移回零
+	Init_step[1]:=120;
+ELSE
+	Init_step[1]:=90;
+END_IF
+
+90://冷压上料夹旋转回零
+IF	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1]
+AND (P2Senser.P2M1_Coldpressingesensor OR P2Senser.P2M2_Coldpressingesensor OR P2Senser.P2M3_Coldpressingesensor) THEN //冷压上料旋转回原安全点
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bHome:=TRUE;//冷压上料旋转回零
+	Init_step[1]:=100;
+ELSE
+	P3_error[88]:=TRUE;//冷压上料夹旋转和冷压上料夹平移都不满足安全回原条件
+	Init_step[1]:=0;
+END_IF
+
+100:
+INIT_TON[6].IN:=TRUE;
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Moving AND  INIT_TON[6].Q THEN
+	Init_step[1]:=110;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bHome:=FALSE;
+	INIT_TON[6].IN:=FALSE;
+END_IF
+
+110://冷压上料夹旋转到初始位
+IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=1;//冷压上料夹旋转回初始位
+		ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志
+	END_IF 
+	
+	IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Moving THEN
+		ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+		Init_step[1]:=80;
+	END_IF	
+	
+
+	
+	
+120://冷压上料夹平移回零完成
+INIT_TON[5].IN:=TRUE;
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving AND INIT_TON[5].Q THEN
+    arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bHome:=FALSE;
+	INIT_TON[5].IN:=FALSE;
+	Init_step[1]:=130;
+END_IF
+
+130://冷压上料夹平移到初始位
+IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.iGoSetPos:=1;//冷压上料平移回初始位
+		ColdpreLineTorMark:=TRUE;//冷呀上料夹平移力矩超限报警标志
+	END_IF 
+IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving THEN
+		ColdpreLineTorMark:=FALSE;//冷呀上料夹平移力矩超限报警标志
+		Init_step[1]:=140;
+END_IF
+	
+	
+140:
+IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bHome:=TRUE;//冷压上料旋转回零
+Init_step[1]:=150;
+END_IF
+
+150://冷压上料夹旋转回零
+INIT_TON[6].IN:=TRUE;
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Moving AND  INIT_TON[6].Q THEN
+	Init_step[1]:=160;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bHome:=FALSE;
+	INIT_TON[6].IN:=FALSE;
+END_IF
+
+160://冷压上料夹旋转到初始位
+
+IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.iGoSetPos:=1;//冷压上料夹旋转回初始位
+		ColdpreWhirlTorMark:=TRUE;//冷压上料夹旋转力矩超限报警标志
+	END_IF 
+	
+	IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Moving THEN
+		ColdpreWhirlTorMark:=FALSE;//冷压上料夹旋转力矩超限报警标志
+		Init_step[1]:=170;
+	END_IF	
+	
+
+	
+	
+170://冷压上料夹旋转在初始位且已停止，则冷压上料夹升降开始回零
+INIT_TON[7].IN:=TRUE;
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Moving AND  INIT_TON[7].Q THEN
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bHome:=TRUE;//冷压上料升降回零
+	INIT_TON[7].IN:=FALSE;
+	Init_step[1]:=180;
+	END_IF
+	
+
+180://冷压上料夹升降回零完成
+INIT_TON[9].IN:=TRUE;
+	IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Moving  AND  INIT_TON[9].Q  THEN
+		Init_step[1]:=190;
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bHome:=FALSE;	
+		INIT_TON[9].IN:=FALSE;
+	END_IF
+
+190://冷压上料夹升降到初始位
+	IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.iGoSetPos:=1;	//冷压上料升降回初始位
+	END_IF
+
+	
+	IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Moving  THEN
+		Init_step[1]:=200;
+	END_IF
+
+
+	
+200:
+Step30:=1;
+Init_step[1]:=999;
+
+999://冷压上料初始化完成
+IF Init_step[1]=999 THEN
+INIT_TON[20].IN:=FALSE;
+LateBlanking_init_OK[1]:=TRUE;
+END_IF
+
+END_CASE
+END_IF
+
+
+IF 	arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error OR
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error OR  arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error THEN
+	Init_step[1]:=0;
+END_IF
+
+IF   P3_SystemRUN.btnStop OR NOT P3Button.LateStop THEN
+	Init_step[1]:=0;
+	Init_step[2]:=0;
+	Init_step[3]:=0;
+	Init_step[4]:=0;
+	Init_step[5]:=0;
+	Init_step[6]:=0;
+	Init_step[7]:=0;
+	Init_step[8]:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="L_Init1">
+      <LineId Id="1302" Count="181" />
+      <LineId Id="1684" Count="0" />
+      <LineId Id="1484" Count="0" />
+      <LineId Id="1685" Count="0" />
+      <LineId Id="1485" Count="194" />
+      <LineId Id="1290" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

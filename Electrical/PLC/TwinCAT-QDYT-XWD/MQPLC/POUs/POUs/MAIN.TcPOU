@@ -1,0 +1,1157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{c12da7f5-861b-42e2-9f8e-fb41ebad6786}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	BUSY: BOOL;
+	ERR: BOOL;
+	ERRID: UDINT;
+	CSData:    CS_Data;
+	
+
+	THNN: INT;
+	MA100: BOOL;
+	A1: BOOL;
+	D1: BOOL;
+	A2: BOOL;
+	A3: BOOL;
+	
+	//iShort:        IShortTest;
+	D2: INT;
+	//stTime: TIMESTRUCT;
+	strTime: STRING;
+	BY1:  BYTE;
+	AA1: BOOL;
+	btest: BOOL;
+	iPower: INT;
+	iPowerSetp: INT;
+	boPower2: BOOL;
+	k: INT:=1;
+	PowerOnDone: BOOL;
+	
+   tRead			:TON;
+END_VAR
+
+VAR
+	bFirstCycle										        	:BOOL;	(*初始化用的*)
+(*保存掉电保持参数*)
+	FB_WritePersistentData1								: FB_WritePersistentData;
+	tCycleTimer											: TON;
+	bWrite												: BOOL;    (*定时自动保存*)
+(*系统重启*)
+	tNtDelayReset										:TON;
+	bReboot											: BOOL;	(*重启系统的变量*)
+	NT_Reboot1											: NT_Reboot;
+(*系统关机*)
+	NT_Shutdown1										: NT_Shutdown;
+	tNtDelayShutdown									: TON;
+	bShutdown											: BOOL;
+(*远程桌面接管*)
+	OpenRemoteDesktop									: NT_StartProcess;
+	timerHMI											:TON;
+(*系统时间获取*)
+	NT_GetTime1											: NT_GetTime;
+(*心跳信号*)
+	bHeartBeat											:BOOL;
+	tHeartBeatTime										:TIME:=t#0.5s;
+	TonHeartBeat										:TON;
+
+	TaskInfo											:	TaskInfoCtrl;
+	loadParaStep: UINT;
+	i: UINT;	
+
+    tonPowerOn  :Tc2_Standard.TON;
+    tonPower       :Tc2_Standard.TON;
+
+
+     STR1: STRING:='20200412160000';
+	 STR2: STRING:='12345678ABCDE';
+	 STR3: STRING:='SSDDFF1234  JJJJ';
+	 size:UDINT;
+	 
+	rt:ARRAY[1..10]OF R_TRIG;//上升沿触发
+	ft:ARRAY[1..10]OF F_TRIG;//下降沿触发
+	testii2: INT;
+	bReadDataFirstCyle: BOOL;
+	bReadDataCyle2: BOOL;
+	bSaveTest: BOOL;
+	rtSaveData: R_TRIG;
+	fbDataXML       : FB_DataXML;//XML参数保存功能块
+	rt10:Tc2_Standard.R_TRIG;
+	testii:INT:=0;
+	 
+END_VAR
+
+
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*===========================================版本号=================================================*)
+//MachimeVersion:='V3.0-24/3/2';(*HMI显示当前程序版本号*)
+IF versionwrite THEN
+   MachimeVersion:=CONCAT(CONCAT(CONCAT(CONCAT('V',CONCAT( WORD_TO_STRING(stTime.wYear),'.')),WORD_TO_STRING(stTime.wMonth)),'.'),WORD_TO_STRING(stTime.wDay));
+END_IF
+(*
+版本： 
+
+((*
+1、线扫OK与NG信号IO触发;（02.20）
+2、叠台NG梯度踢废空叠隔膜程序；（02.20）
+3、叠台NG梯度踢废下料方式程序；（02.20）
+4、隔膜剩余长度计算程序;（02.21）
+5、无极片编号传送带尾部排废程序；（02.23）
+6、对齐度NG计数程序  （02.27）
+7、接带后找极耳程序；（02.28）
+8、模切风刀吹气程序；（3.2）
+9、程序版本号程序；（3.2）
+10、叠台搬运极耳真空检测程序；（3.3）
+11、冷压扫二维码程序；（3.3）
+12、隔膜剩余长度计算（通过卷径大小）程序;（03.3）
+13、隔膜卷径报警值限定（93），卷径报警实时判断改为叠完一个电芯判断一次;（03.6）
+14、叠台搬运和压刀凸轮曲线修改，压刀升降和压刀开合行程限定；（03.12）
+15、模切线扫结果判定逻辑优化，线扫触发和结果计数；（03.12）
+16、新增模切放卷尾料4连标程序；（03.13）
+17、模切黄标和接带踢废程序优化；（03.13）
+18、短卷针回零增加安全条件(短卷针旋转轴原点传感器需亮)；（03.13）
+19、模切放卷激光器继电器控制启用；（3.17）
+20、触摸屏门禁屏蔽取消；（3.17）
+21、增加启动CCD自检弹窗，需要确认后才能启动；（3.26）
+22、叠台气涨轴开关有信号，隔膜踢废；（3.26）
+23、触摸屏三级权限；（3.26）
+24、上位机优率表；（3.31）
+25、黄标跳切计数；（3.26）
+26、黄标计数；（4.1）
+27、叠台增加调试模式；（4.2）
+28、热切丝寿命计数；（4.2）
+29、模切尾料四连标检测；（4.2）
+30、对齐度单片踢废；（4.5）
+31、隔膜尾料角度计算；（4.5）
+32、断带后R角不冲切；（4.7）
+33、黄标与接带感应后日志；（4.7）
+34、极片间距报警；（4.17）
+35、凸轮位置角度固定；（4.17）
+36、空叠首尾层隔膜降速降张力；（4.17）
+37、正极真空改成常开；（4.17）
+38、纠偏台重复精度测试；（4.17）
+39、二维码贴胶完成自动备胶默停、重胶；（4.20）
+40、对齐度踢废后第一片纠偏平台不纠偏；（4.20）
+41、叠台一键初始化；（4.20）
+42、模切尺寸、倒装、分段皮带比例系数改成一致；（4.20）
+43、尾卷纠偏到限位，凸轮耦合报警；（4.20）
+44、叠最后一层隔膜负极叠台升降放片位置下降少一点；（4.20）
+45、模切R角横深纵深闭环纠偏；（4.20）
+46、CCD标定与重复精度测试电机到位后延时拍照；（4.20）
+47、短卷针夹泄气真空；（4.21）
+48、对齐度闭环纠偏；（4.21）
+49、模切触发高速停止；（4.22）
+50、叠片取分段皮带取料中信号提前复位；（4.22）
+51、贴胶头进退增加软限位；（4.23）
+52、叠台0步增加判断，正负极不能执行同时往叠台方向运动流程；（4.23）
+53、热压一键初始化；（4.23）
+*)
+   
+*)
+(*====================================================================================================*)
+
+
+
+TwinCAT_Nt();
+
+Main.XML();
+
+
+
+
+
+
+tonPowerOn(IN:=PowerOnDone , PT:=T#5S , Q=> , ET=> );  //上电延时3S
+IF PowerOnDone THEN
+ IOLink();
+END_IF
+
+IF tonPowerOn.Q AND fbDataXML.bReadParDone THEN
+ MainState();
+ FingerprintKey();  
+;
+;
+ELSE
+	;
+   Power();//接触器上电
+END_IF
+
+
+
+
+AA1;
+
+//字体设置成中文字体  解决了注释乱码的问题
+
+
+
+
+
+
+// scRecipe(iRecipe2:=iRecipe );
+ 
+
+
+
+
+
+
+
+ //正极NG类型计数
+ fbAnProductLocal(
+	NGFlag1:=AnSysNgMark.NGMark[1] , 
+	NGFlag2:=AnSysNgMark.NGMark[2], 
+	NGFlag3:=AnSysNgMark.NGMark[3], 
+	NGFlag4:=AnSysNgMark.NGMark[4] , 
+	NGFlag5:=AnSysNgMark.NGMark[5] , 
+	NGFlag6:=AnSysNgMark.NGMark[6] , 
+	NGFlag7:=AnSysNgMark.NGMark[7] , 
+	NGFlag8:=AnSysNgMark.NGMark[8] , 
+	NGFlag9:=AnSysNgMark.NGMark[9] , 
+	NGFlag10:=AnSysNgMark.NGMark[10] , 
+	NGFlag11:=AnSysNgMark.NGMark[11] , 
+	NGFlag12:=AnSysNgMark.NGMark[12] , 
+	NGFlag13:=AnSysNgMark.NGMark[13], 
+	NGFlag14:=AnSysNgMark.NGMark[14] , 
+	NGFlag15:=AnSysNgMark.NGMark[15] , 
+	NGFlag16:=AnSysNgMark.NGMark[16] , 
+	NGFlag17:=AnSysNgMark.NGMark[17] , 
+	NGFlag18:=AnSysNgMark.NGMark[18] , 
+	NGFlag19:=AnSysNgMark.NGMark[19] , 
+	NGFlag20:=AnSysNgMark.NGMark[20] , 
+	NGFlag21:=AnSysNgMark.NGMark[21] , 
+	NGFlag22:=AnSysNgMark.NGMark[22] , 
+	NGFlag23:=AnSysNgMark.NGMark[23] , 
+	NGFlag24:=AnSysNgMark.NGMark[24] , 
+	NGFlag25:=AnSysNgMark.NGMark[25] , 
+	NGFlag26:=AnSysNgMark.NGMark[26] , 
+	NGFlag27:=AnSysNgMark.NGMark[27] , 
+	NGFlag28:=AnSysNgMark.NGMark[28] , 
+	NGFlag29:=AnSysNgMark.NGMark[29] , 
+	NGFlag30:=AnSysNgMark.NGMark[30] , 
+	TodayNGClass_AM=>HMI_AnTodayNGClass_AM, (*当天白班各类NG数量ARRAY[1..30 ]*)
+	TodayNGClass_PM=>HMI_AnTodayNGClass_PM , (*当天夜班各类NG数量ARRAY[1..30 ]*)
+	TodayNG_AM=>HMI_AnTodayNG_AM , (*当天白班生产NG总数*)
+	TodayNG_PM=>HMI_AnTodayNG_PM );(*当天夜班生产NG总数*)
+
+ 
+ 
+ 
+ //负极NG类型计数
+fbCaProductLocal(
+	NGFlag1:=CaSysNgMark.NGMark[1] , 
+	NGFlag2:=CaSysNgMark.NGMark[2], 
+	NGFlag3:=CaSysNgMark.NGMark[3], 
+	NGFlag4:=CaSysNgMark.NGMark[4] , 
+	NGFlag5:=CaSysNgMark.NGMark[5] , 
+	NGFlag6:=CaSysNgMark.NGMark[6] , 
+	NGFlag7:=CaSysNgMark.NGMark[7] , 
+	NGFlag8:=CaSysNgMark.NGMark[8] , 
+	NGFlag9:=CaSysNgMark.NGMark[9] , 
+	NGFlag10:=CaSysNgMark.NGMark[10] , 
+	NGFlag11:=CaSysNgMark.NGMark[11] , 
+	NGFlag12:=CaSysNgMark.NGMark[12] , 
+	NGFlag13:=CaSysNgMark.NGMark[13], 
+	NGFlag14:=CaSysNgMark.NGMark[14] , 
+	NGFlag15:=CaSysNgMark.NGMark[15] , 
+	NGFlag16:=CaSysNgMark.NGMark[16] , 
+	NGFlag17:=CaSysNgMark.NGMark[17] , 
+	NGFlag18:=CaSysNgMark.NGMark[18] , 
+	NGFlag19:=CaSysNgMark.NGMark[19] , 
+	NGFlag20:=CaSysNgMark.NGMark[20] , 
+	NGFlag21:=CaSysNgMark.NGMark[21] , 
+	NGFlag22:=CaSysNgMark.NGMark[22] , 
+	NGFlag23:=CaSysNgMark.NGMark[23] , 
+	NGFlag24:=CaSysNgMark.NGMark[24] , 
+	NGFlag25:=CaSysNgMark.NGMark[25] , 
+	NGFlag26:=CaSysNgMark.NGMark[26] , 
+	NGFlag27:=CaSysNgMark.NGMark[27] , 
+	NGFlag28:=CaSysNgMark.NGMark[28] , 
+	NGFlag29:=CaSysNgMark.NGMark[29] , 
+	NGFlag30:=CaSysNgMark.NGMark[30] , 
+	TodayNGClass_AM=> HMI_CaTodayNGClass_AM, (*当天白班各类NG数量ARRAY[1..30 ]*)
+	TodayNGClass_PM=>HMI_CaTodayNGClass_PM , (*当天夜班各类NG数量ARRAY[1..30 ]*)
+	TodayNG_AM=>HMI_CaTodayNG_AM , (*当天白班生产NG总数*)
+	TodayNG_PM=>HMI_CaTodayNG_PM );(*当天夜班生产NG总数*)
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ]]></ST>
+    </Implementation>
+    <Action Name="Power" Id="{958c42ad-1c52-4fe7-b086-8ab0f01c6e48}">
+      <Implementation>
+        <ST><![CDATA[(***系统延时启动***)
+
+tonPower(IN:= , PT:=T#1.5S , Q=> , ET=> );
+
+CASE iPowerSetp OF
+0:
+    tonPower.IN:=TRUE;
+    iPowerSetp:=10;
+10:
+   IF   tonPower.Q  THEN
+      bytePower:=SHL(bytePower,1);
+     
+      tonPower(IN:=FALSE );
+      k:=k+1;
+     iPowerSetp:=20;
+  END_IF
+20:
+    bytePower.0:=1;
+    tonPower.IN:=TRUE;
+    iPowerSetp:=30;
+30:
+   IF  k>=8 THEN
+        iPowerSetp:=40;
+       // bytePower:=16#00;
+        //PowerOnDone:=TRUE;
+   ELSE
+      iPowerSetp:=10;
+   END_IF
+  40:
+  	(********************** Name赋值   ***************************************)
+	//////轴号//////					
+NameNo.	AnAxisNo.	UnWind_L	:=	1	;//模切左放卷	
+NameNo.	AnAxisNo.	UnWind_R	:=	2	;//模切右放卷	
+NameNo.	AnAxisNo.	PoleTension	:=	3	;//模切前摆杆张力	
+NameNo.	AnAxisNo.	DriverAux	:=	4	;//模切辅助驱动	
+NameNo.	AnAxisNo.	BuffeLine	:=	5	;//模切极片缓存	
+NameNo.	AnAxisNo.	Mould	:=	6	;//倒角模具	
+NameNo.	AnAxisNo.	MouldRectify_X	:=	7	;//模具纠偏X轴(肩宽补偿)	
+NameNo.	AnAxisNo.	MouldRectify_Y	:=	8	;//模具纠偏Y轴(切刀深度)	
+NameNo.	AnAxisNo.	DriverDDR	:=	9	;//模切主驱动	
+NameNo.	AnAxisNo.	Cuter	:=	10	;//裁切切刀	
+NameNo.	AnAxisNo.	CuterDegRectify	:=	11	;//裁切角度纠偏	
+NameNo.	AnAxisNo.	CuterBelt	:=	12	;//裁切输送皮带	
+NameNo.	AnAxisNo.	CuterBeltChange	:=	13	;//裁切输送带换型	
+NameNo.	AnAxisNo.	CCDPressPush	:=	14	;//尺寸CCD压片升降	
+NameNo.	AnAxisNo.	NGPushReverseBelt	:=	15	;//踢废倒装皮带	
+NameNo.	AnAxisNo.	NGPush1	:=	16	;//踢连续废料	
+NameNo.	AnAxisNo.	NGPush2	:=	17	;//踢单张废料	
+NameNo.	AnAxisNo.	DedustBelt	:=	18	;//上表面除尘皮带	
+NameNo.	AnAxisNo.	DedustReverseBelt	:=	19	;//下表面除尘倒装皮带	
+NameNo.	AnAxisNo.	SubBelt1	:=	20	;//送料分段皮带1	
+NameNo.	AnAxisNo.	SubBelt2	:=	21	;//送料分段皮带2	
+NameNo.	AnAxisNo.	SubBelt3	:=	22	;//送料分段皮带3	
+NameNo.	AnAxisNo.	Ready1	:=	23	;//备用1	
+NameNo.	AnAxisNo.	Ready2	:=	24	;//备用2	
+						
+NameNo.	CaAxisNo.	UnWind_L	:=	25	;//模切左放卷	
+NameNo.	CaAxisNo.	UnWind_R	:=	26	;//模切右放卷	
+NameNo.	CaAxisNo.	PoleTension	:=	27	;//模切前摆杆张力	
+NameNo.	CaAxisNo.	DriverAux	:=	28	;//模切辅助驱动	
+NameNo.	CaAxisNo.	BuffeLine	:=	29	;//模切极片缓存	
+NameNo.	CaAxisNo.	Mould	:=	30	;//倒角模具	
+NameNo.	CaAxisNo.	MouldRectify_X	:=	31	;//模具纠偏X轴(肩宽补偿)	
+NameNo.	CaAxisNo.	MouldRectify_Y	:=	32	;//模具纠偏Y轴(切刀深度)	
+NameNo.	CaAxisNo.	DriverDDR	:=	33	;//模切主驱动	
+NameNo.	CaAxisNo.	Cuter	:=	34	;//裁切切刀	
+NameNo.	CaAxisNo.	CuterDegRectify	:=	35	;//裁切角度纠偏	
+NameNo.	CaAxisNo.	CuterBelt	:=	36	;//裁切输送皮带	
+NameNo.	CaAxisNo.	CuterBeltChange	:=	37	;//裁切输送带换型	
+NameNo.	CaAxisNo.	CCDPressPush	:=	38	;//尺寸CCD压片升降	
+NameNo.	CaAxisNo.	NGPushReverseBelt	:=	39	;//踢废倒装皮带	
+NameNo.	CaAxisNo.	NGPush1	:=	40	;//踢连续废料	
+NameNo.	CaAxisNo.	NGPush2	:=	41	;//踢单张废料	
+NameNo.	CaAxisNo.	DedustBelt	:=	42	;//上表面除尘皮带	
+NameNo.	CaAxisNo.	DedustReverseBelt	:=	43	;//下表面除尘倒装皮带	
+NameNo.	CaAxisNo.	SubBelt1	:=	44	;//送料分段皮带1	
+NameNo.	CaAxisNo.	SubBelt2	:=	45	;//送料分段皮带2	
+NameNo.	CaAxisNo.	SubBelt3	:=	46	;//送料分段皮带3	
+NameNo.	CaAxisNo.	Ready1	:=	47	;//备用1	
+NameNo.	CaAxisNo.	Ready2	:=	48	;//备用2	
+						
+NameNo.	VirTimeWind:=50;//虚拟放卷TIme轴					
+						
+NameNo.	AnVirAxisNo.VirMain:=51;//模切虚拟主轴					
+NameNo.	AnVirAxisNo.VirDriver:=52;//模切虚拟驱动辊					
+NameNo.	AnVirAxisNo.VirBelt:=53;//模切虚拟皮带轴					
+						
+NameNo.	CaVirAxisNo.VirMain:=56;//模切虚拟主轴					
+NameNo.	CaVirAxisNo.VirDriver:=57;//模切虚拟驱动辊					
+NameNo.	CaVirAxisNo.VirBelt:=58;//模切虚拟皮带轴					
+						
+	//////气缸和阀号//////					
+NameNo.	AnCYNo.	Inflation_L	:=	1	;(*左放卷气胀轴气缸*)	
+NameNo.	AnCYNo.	Inflation_R	:=	2	;(*右放卷气胀轴气缸*)	
+NameNo.	AnCYNo.	BoardPressL	:=	3	;(*左接带压板气缸*)	
+NameNo.	AnCYNo.	BoardPressR	:=	4	;(*右接带压板气缸*)	
+NameNo.	AnCYNo.	DriverPressAux	:=	5	;(*辅助驱动压辊气缸*)	
+NameNo.	AnCYNo.	CoderRollPress	:=	6	;(*编码器辊压辊气缸*)	
+NameNo.	AnCYNo.	DriverPressDDR	:=	7	;(*主驱动压辊气缸*)	
+NameNo.	AnCYNo.	NGRevBeltUpDown	:=	8	;(*踢废倒装皮带升降气缸*)	
+NameNo.	AnCYNo.	NGRevBeltTension	:=	9	;(*踢废倒装皮带张紧气缸*)	
+NameNo.	AnCYNo.	PoleBrushDustPush_U	:=	11	;(*极片上表面毛刷除尘升降缸*)	
+NameNo.	AnCYNo.	PoleWindDustPush_U	:=	12	;(*极片上表面风刀除尘升降缸*)	
+NameNo.	AnCYNo.	PoleBrushDustPush_D	:=	13	;(*极片下表面毛刷除尘升降缸*)	
+NameNo.	AnCYNo.	PoleWindDustPush_D	:=	14	;(*极片下表面风刀除尘升降缸*)	
+NameNo.	AnCYNo.	DustRevBeltUpDown	:=	15	;(*极片下表面除尘倒装皮带升降气缸*)	
+NameNo.	AnCYNo.	NGBoxLock1	:=	16	;(*NG料盒归正气缸1*)	
+NameNo.	AnCYNo.	NGBoxLock2	:=	17	;(*NG料盒归正气缸2*)	
+NameNo.	AnCYNo.	WasteBoxPush	:=	18	;(*连续废料收集箱推料气缸*)	
+						
+NameNo.	CaCYNo.	Inflation_L	:=	21	;(*左放卷气胀轴气缸*)	
+NameNo.	CaCYNo.	Inflation_R	:=	22	;(*右放卷气胀轴气缸*)	
+NameNo.	CaCYNo.	BoardPressL	:=	23	;(*左接带压板气缸*)	
+NameNo.	CaCYNo.	BoardPressR	:=	24	;(*右接带压板气缸*)	
+NameNo.	CaCYNo.	DriverPressAux	:=	25	;(*辅助驱动压辊气缸*)	
+NameNo.	CaCYNo.	CoderRollPress	:=	26	;(*编码器辊压辊气缸*)	
+NameNo.	CaCYNo.	DriverPressDDR	:=	27	;(*主驱动压辊气缸*)	
+NameNo.	CaCYNo.	NGRevBeltUpDown	:=	28	;(*踢废倒装皮带升降气缸*)	
+NameNo.	CaCYNo.	NGRevBeltTension	:=	29	;(*踢废倒装皮带张紧气缸*)	
+NameNo.	CaCYNo.	PoleBrushDustPush_U	:=	31	;(*极片上表面毛刷除尘升降缸*)	
+NameNo.	CaCYNo.	PoleWindDustPush_U	:=	32	;(*极片上表面风刀除尘升降缸*)	
+NameNo.	CaCYNo.	PoleBrushDustPush_D	:=	33	;(*极片下表面毛刷除尘升降缸*)	
+NameNo.	CaCYNo.	PoleWindDustPush_D	:=	34	;(*极片下表面风刀除尘升降缸*)	
+NameNo.	CaCYNo.	DustRevBeltUpDown	:=	35	;(*极片下表面除尘倒装皮带升降气缸*)	
+NameNo.	CaCYNo.	NGBoxLock1	:=	36	;(*NG料盒归正气缸1*)	
+NameNo.	CaCYNo.	NGBoxLock2	:=	37	;(*NG料盒归正气缸2*)	
+NameNo.	CaCYNo.	WasteBoxPush	:=	38	;(*连续废料收集箱推料气缸*)	
+						
+NameNo.	AnEVNo.	ConnectDustVacuo	:=	41	;	//
+NameNo.	AnEVNo.	LineSceneDustBlow	:=	42	;	//
+NameNo.	AnEVNo.	LineSceneDustVacuo	:=	43	;	//
+NameNo.	AnEVNo.	AreaArrayDustBlow	:=	44	;	//
+NameNo.	AnEVNo.	MouldUpBlow	:=	45	;	//
+NameNo.	AnEVNo.	MouldDownVacuo	:=	46	;	//
+NameNo.	AnEVNo.	MouldDownAir	:=	47	;	//
+NameNo.	AnEVNo.	NGPushInsideAir	:=	48	;	//
+NameNo.	AnEVNo.	NGPushInsideVacuo	:=	49	;	//
+NameNo.	AnEVNo.	BrushDustVacuo_U	:=	50	;	//
+NameNo.	AnEVNo.	WindDustBlow_U	:=	51	;	//
+NameNo.	AnEVNo.	WindDustVacuo_U	:=	52	;	//
+NameNo.	AnEVNo.	BrushDustVacuo_D	:=	53	;	//
+NameNo.	AnEVNo.	WindDustBlow_D	:=	54	;	//
+NameNo.	AnEVNo.	WindDustVacuo_D	:=	55	;	//
+NameNo.	AnEVNo.	RJ_Blow	:=	56	;	//
+NameNo.	AnEVNo.	RJDustBlow	:=	57	;	//						
+
+NameNo.	CaEVNo.	ConnectDustVacuo	:=	61	;	//
+NameNo.	CaEVNo.	LineSceneDustBlow	:=	62	;	//
+NameNo.  CaEVNo.	LineSceneDustVacuo	:=	63	;	//
+NameNo.	CaEVNo.	AreaArrayDustBlow	:=	64	;	//
+NameNo.	CaEVNo.	MouldUpBlow	:=	65	;	//
+NameNo.	CaEVNo.	MouldDownVacuo	:=	66	;	//
+NameNo.	CaEVNo.	MouldDownAir	:=	67	;	//
+NameNo.	CaEVNo.	NGPushInsideAir	:=	68	;	//
+NameNo.	CaEVNo.	NGPushInsideVacuo	:=	69	;	//
+NameNo.	CaEVNo.	BrushDustVacuo_U	:=	70	;	//
+NameNo.	CaEVNo.	WindDustBlow_U	:=	71	;	//
+NameNo.	CaEVNo.	WindDustVacuo_U	:=	72	;	//
+NameNo.	CaEVNo.	BrushDustVacuo_D	:=	73	;	//
+NameNo.	CaEVNo.	WindDustBlow_D	:=	74	;	//
+NameNo.	CaEVNo.	WindDustVacuo_D	:=	75	;	//
+NameNo.	CaEVNo.	RJ_Blow	:=	76	;	//
+NameNo.	CaEVNo.	RJDustBlow	:=	77	;	//
+						
+	//////纠偏号//////					
+NameNo.	AnRecNo.PoleWind:=1;(***极片放卷纠偏*)					
+NameNo.	AnRecNo.PoleProcess:=2;(***极片行进纠偏*)					
+						
+NameNo.	CaRecNo.PoleWind:=3;(***极片放卷纠偏*)					
+NameNo.	CaRecNo.PoleProcess:=4;(***极片行进纠偏*)					
+						
+	//////凸轮编号//////					
+NameNo.	AnTableNo.	Cuter	:=	11	;(*裁切切刀凸轮编号*)	
+NameNo.	AnTableNo.	CuterStop	:=	12	;(*裁切切刀停止凸轮编号*)	
+NameNo.	AnTableNo.	Mould	:=13	;(*模具切刀凸轮编号*)		
+NameNo.	AnTableNo.	MouldStop	:=14	;(*模具切刀停止凸轮编号*)		
+NameNo.	AnTableNo.	Dirver	:=15	;(*主驱动凸轮编号*)		
+NameNo.	AnTableNo.	VirBelt	:=	16	;(*虚拟皮带凸轮编号*)	
+NameNo.	AnTableNo.	NgPush	:=	17	;(*NG踢料凸轮编号*)	
+NameNo.	AnTableNo.	NgPushStop	:=	18	;(*NG踢料停止凸轮编号*)	
+NameNo.	AnTableNo.	BufferLine	:=19	;(*极片缓存凸轮编号*)		
+NameNo.	AnTableNo.	CCDPress	:=	20	;(*CCD压片凸轮编号*)	
+NameNo.	AnTableNo.	BufferLine_1	:=	21	;(*极片缓存凸轮编号1*)	
+NameNo.	AnTableNo.VirDirver	:=	22	;(*正极虚拟驱动凸轮编号1*)	
+						
+NameNo.	CaTableNo.	Cuter	:=	31	;(*裁切切刀凸轮编号*)	
+NameNo.	CaTableNo.	CuterStop	:=	32	;(*裁切切刀停止凸轮编号*)	
+NameNo.	CaTableNo.	Mould	:=	33	;(*模具切刀凸轮编号*)	
+NameNo.	CaTableNo.	MouldStop	:=	34	;(*模具切刀停止凸轮编号*)	
+NameNo.	CaTableNo.	Dirver	:=	35	;(*主驱动凸轮编号*)	
+NameNo.	CaTableNo.	VirBelt	:=	36	;(*虚拟皮带凸轮编号*)	
+NameNo.	CaTableNo.	NgPush	:=	37	;(*NG踢料凸轮编号*)	
+NameNo.	CaTableNo.	NgPushStop	:=	38	;(*NG踢料停止凸轮编号*)	
+NameNo.	CaTableNo.	BufferLine	:=	39	;(*极片缓存凸轮编号*)	
+NameNo.	CaTableNo.	CCDPress	:=	40	;(*CCD压片凸轮编号*)	
+NameNo.	CaTableNo.	BufferLine_1	:=	41	;(*极片缓存凸轮编号1*)					
+NameNo.	CaTableNo.VirDirver	:=	42	;(*负极虚拟驱动凸轮编号1*)						
+	//////皮带工位号//////					
+NameNo.	AnBeltNo.	First	:=1	;	//	首片数据
+NameNo.	AnBeltNo.	OverHang	:=2	;	//	尺寸检测工位
+NameNo.	AnBeltNo.	NGBox1	:=4	;	//	踢废工位1（连续）
+NameNo.	AnBeltNo.	NGBox2	:=6	;	//	踢废工位2（单片）
+NameNo.	AnBeltNo.	BrushDustU	:=7	;	//	极片上表面毛刷除尘工位
+NameNo.	AnBeltNo.	WindDustU	:=8	;	//	极片上表面风刀除尘工位
+NameNo.	AnBeltNo.	BrushDustD	:=9	;	//	极片下表面毛刷除尘工位
+NameNo.	AnBeltNo.	WindDustD	:=10	;	//	极片下表面风刀除尘工位(除尘倒装皮带末位)
+NameNo.	AnBeltNo.	SubBelt1	:=14	;	//	分段皮带1取料工位
+NameNo.	AnBeltNo.	SubBelt2	:=22	;	//	分段皮带2取料工位
+NameNo.	AnBeltNo.	SubBelt3	:=30	;	//	分段皮带3取料工位
+						
+NameNo.	CaBeltNo.	First	:=1	;	//	首片
+NameNo.	CaBeltNo.	OverHang	:=2	;	//	尺寸检测工位
+NameNo.	CaBeltNo.	NGBox1	:=4	;	//	踢废工位1（连续）
+NameNo.	CaBeltNo.	NGBox2	:=6	;	//	踢废工位2（单片）
+NameNo.	CaBeltNo.	BrushDustU	:=7	;	//	极片上表面毛刷除尘工位
+NameNo.	CaBeltNo.	WindDustU	:=8	;	//	极片上表面风刀除尘工位
+NameNo.	CaBeltNo.	BrushDustD	:=9	;	//	极片下表面毛刷除尘工位
+NameNo.	CaBeltNo.	WindDustD	:=10	;	//	极片下表面风刀除尘工位(除尘倒装皮带末位)
+NameNo.	CaBeltNo.	SubBelt1	:=12	;	//	分段皮带1取料工位
+NameNo.	CaBeltNo.	SubBelt2	:=20	;	//	分段皮带2取料工位
+NameNo.	CaBeltNo.	SubBelt3	:=28	;	//	分段皮带3取料工位
+						
+	//////极耳工位号//////					
+NameNo.	AnTabNo.MouldPhoto	:=1	;	//	倒角前拍照位置	
+NameNo.	AnTabNo.CuterPhoto	:=6	;	//	裁切前拍照位置	
+						
+NameNo.	CaTabNo.MouldPhoto	:=1	;	//	倒角前拍照位置	
+NameNo.	CaTabNo.CuterPhoto	:=6	;	//	裁切前拍照位置	
+						
+	//////极耳间距工位号//////					
+NameNo.	AnIntervalNo.First	:=1	;	//	蓝胶位置	
+NameNo.	AnIntervalNo.Mould	:=5	;	//	冲R角位置	
+NameNo.	AnIntervalNo.Cuter	:=10	;	//	裁切位置	
+						
+NameNo.	CaIntervalNo.First	:=1	;	//	蓝胶位置	
+NameNo.	CaIntervalNo.Mould	:=5	;	//	冲R角位置	
+NameNo.	CaIntervalNo.Cuter	:=10	;	//	裁切位置	
+						
+	//////除尘电机号//////	
+NameNo.	AnMotorNo.	DDR_Dust	:=	1	;	//主驱辊除尘				
+NameNo.	AnMotorNo.	CuterBeltDust	:=	2	;	//裁切输送皮带除尘
+NameNo.	AnMotorNo.	NGReverseBeltDust	:=	3	;	//踢废倒装皮带除尘
+NameNo.	AnMotorNo.	DedustBeltDust	:=	4	;	//极片上表面除尘皮带除尘
+NameNo.	AnMotorNo.	DedustReverseBeltDust	:=	5	;	//极片下表面除尘倒装皮带除尘
+NameNo.	AnMotorNo.	PoleBrushDust_U	:=	6	;	//极片上表面毛刷除尘
+NameNo.	AnMotorNo.	PoleBrushDust_D	:=	7	;	//极片下表面毛刷除尘
+NameNo.	AnMotorNo.	FeduanbeltDust1	:= 15;//正极分段皮带1毛刷
+NameNo.	AnMotorNo.	FeduanbeltDust2	:= 16;//正极分段皮带2毛刷
+NameNo.	AnMotorNo.	FeduanbeltDust3	:= 17;//正极分段皮带3毛刷
+
+NameNo.	CaMotorNo.	DDR_Dust	:=	8	;	//主驱辊除尘							
+NameNo.	CaMotorNo.	CuterBeltDust	:=	9	;	//裁切输送皮带除尘
+NameNo.	CaMotorNo.	NGReverseBeltDust	:=	10	;	//踢废倒装皮带除尘
+NameNo.	CaMotorNo.	DedustBeltDust	:=	11	;	//极片上表面除尘皮带除尘
+NameNo.	CaMotorNo.	DedustReverseBeltDust	:=	12	;	//极片下表面除尘倒装皮带除尘
+NameNo.	CaMotorNo.	PoleBrushDust_U	:=	13	;	//极片上表面毛刷除尘
+NameNo.	CaMotorNo.	PoleBrushDust_D	:=	14	;	//极片下表面毛刷除尘
+NameNo.	CaMotorNo.	FeduanbeltDust1	:=	18	;	//负极分段皮带1毛刷
+NameNo.	CaMotorNo.	FeduanbeltDust2	:=	19	;	//负极分段皮带2毛刷
+NameNo.	CaMotorNo.	FeduanbeltDust3	:=	20	;	//负极分段皮带3毛刷
+
+IF ProductPar.parPublic.fMainPos <>250 THEN
+	ProductPar.parPublic.fMainPos:=250;
+END_IF
+IF ProductPar.AnPar.fPoleWidth=0 THEN
+	ProductPar.AnPar.fPoleWidth:=186;
+END_IF
+IF ProductPar.CaPar.fPoleWidth=0 THEN
+	ProductPar.CaPar.fPoleWidth:=188;
+END_IF
+IF ProductPar.AnPar.Machine.fMQDriverDiameter=0 THEN
+	ProductPar.AnPar.Machine.fMQDriverDiameter:=71.62;
+END_IF
+IF ProductPar.CaPar.Machine.fMQDriverDiameter=0 THEN
+	ProductPar.CaPar.Machine.fMQDriverDiameter:=71.62;
+END_IF
+IF ProductPar.AnPar.iMainVel=0 THEN
+	ProductPar.AnPar.iMainVel:=10;
+END_IF
+IF ProductPar.CaPar.iMainVel=0 THEN
+	ProductPar.CaPar.iMainVel:=10;
+END_IF
+
+
+(***DDR位置上电清零***)
+arrAxisCtrl[NameNo.AnAxisNo.DriverDDR].Cmd.fSetPos:=360;
+arrAxisCtrl[NameNo.AnAxisNo.DriverDDR].Cmd.bSetPos:=TRUE;
+
+arrAxisCtrl[NameNo.CaAxisNo.DriverDDR].Cmd.fSetPos:=360;
+arrAxisCtrl[NameNo.CaAxisNo.DriverDDR].Cmd.bSetPos:=TRUE;
+
+IF arrAxisCtrl[NameNo.AnAxisNo.DriverDDR].Cmd.fSetPos>=0 AND arrAxisCtrl[NameNo.CaAxisNo.DriverDDR].Cmd.fSetPos>=0 THEN
+	arrAxisCtrl[NameNo.AnAxisNo.DriverDDR].Cmd.bSetPos:=FALSE;
+	arrAxisCtrl[NameNo.CaAxisNo.DriverDDR].Cmd.bSetPos:=FALSE;
+	iPowerSetp:=666;
+	PowerOnDone:=TRUE;
+END_IF
+//////////////////////////////////////////////////////////////
+
+END_CASE
+ 
+bytePower.0;
+bytePower.1;
+bytePower.2;
+bytePower.3;
+bytePower.4;
+bytePower.5;
+bytePower.6;
+bytePower.7;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="TwinCAT_Nt" Id="{049845fb-5455-4567-bcc9-ba28c9543710}">
+      <Implementation>
+        <ST><![CDATA[//fPlcCycleTime_ms:=UDINT_TO_LREAL(_TaskInfo[0].CycleTime)/10000;
+
+(***********************  保存掉电保持数据   **************************************)
+tCycleTimer(IN:=NOT tCycleTimer.Q , PT:=T#356S , Q=>bWrite , ET=> );
+rt[1](CLK:=tCycleTimer.ET>=T#1M , Q=>bWrite );
+FB_WritePersistentData1(
+	NETID:='' ,
+	PORT:=851 ,
+	START:=bWrite OR  stHmiSysCmd.bSaveData  ,//OR    _TaskInfo[1].FirstCycle 
+	TMOUT:=t#500ms ,
+	MODE:=SPDM_2PASS ,
+	BUSY=>BUSY ,
+	ERR=> ERR,
+	ERRID=>ERRID );
+ft[1](CLK:=BUSY , Q=> );
+IF ft[1].Q THEN
+	bDataValid:=TRUE;
+END_IF	
+	
+	
+	
+(********************** 获取系统时间   ***************************************)
+NT_GetTime1(
+	NETID:='' ,
+	START:=Pulse._1s.RT ,
+	TMOUT:= ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> ,
+	TIMESTR=>stTime );
+
+	strTime:=CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT( CONCAT(CONCAT( WORD_TO_STRING(stTime.wYear),'-'), WORD_TO_STRING(stTime.wMonth)),'-'),WORD_TO_STRING(stTime.wDay)),
+             '-'),WORD_TO_STRING(stTime.wHour)),'-'),WORD_TO_STRING(stTime.wMinute)),'-'),WORD_TO_STRING(stTime.wSecond));
+	
+
+	PLC_wYear:=stTime.wYear;//PLC时间年
+	PLC_wMonth:=stTime.wMonth;//PLC时间月
+	PLC_wDay:=stTime.wDay;//PLC时间日
+	PLC_wHour:=stTime.wHour;//PLC时间时
+	PLC_wMinute:=stTime.wMinute;//PLC时间分
+	PLC_wSecond:=stTime.wSecond;//PLC时间秒	
+	PLC_wMilliseconds:=stTime.wMilliseconds;//PLC时间秒	
+		 
+
+(********************************** Systemfunctions **********************************************************)
+	SysInfo(
+		Reset				:= ,
+		TimeStampTrig		:= Pulse._100ms.RT,
+		//RunTimeNo			=> ,
+		//ProjectName			=> ,
+		//NumberOfTasks		=> ,
+		//OnlineChangeCount	=> ,
+		RetainVarErr		=> ,
+		PersistenVarErr		=> ,
+		TimeStampDT			=> ,
+		TimeStamp			=> ,
+		TimeStr				=> ,
+		DateStr				=> ,
+		TimeStamp2			=> ,
+		TimeStruct			=> ,
+		MonthDays			=> ,
+		LeapYear			=> ,
+		WeekOfYear			=> ,
+		timezoneId			=>);
+
+	TaskInfo(
+		index				=> ,
+		active				=> ,
+		taskName			=> ,
+		firstCycle			=> ,
+		cycleTimeExceeded	=> ,
+		cycleTime			=> ,
+		lastExecTime		=> ,
+		priority			=> ,
+		cycleCount			=> );
+
+	Pulse(
+		BlinkSlow			=> ,
+		Blink				=> ,
+		BlinkFast			=> );	
+		
+	(*系统重启，CE远程桌面，系统时间，定时保存掉电数据，等系统常规动作*)
+(**********************  通讯心跳信号   ***************************************)
+TonHeartBeat(IN:=NOT TonHeartBeat.Q , PT:=tHeartBeatTime , Q=> , ET=> );
+IF TonHeartBeat.Q THEN
+	bHeartBeat:=NOT bHeartBeat;
+END_IF
+
+tNtDelayReset(IN:=stHmiSysCmd.bRebootPc OR bReboot , PT:=T#1S , Q=> , ET=> );
+NT_Reboot1(
+	NETID:='' ,
+	DELAY:= ,
+	START:=tNtDelayReset.Q  ,
+	TMOUT:=DEFAULT_ADS_TIMEOUT ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> );
+
+tNtDelayShutdown(IN:=stHmiSysCmd.bShutDownPc OR bShutDown , PT:=T#1S , Q=> , ET=> );	(*触摸屏上已经做了延时*)
+NT_Shutdown1(
+	NETID:= ,
+	DELAY:= ,
+	START:=tNtDelayShutdown.Q,
+	TMOUT:=DEFAULT_ADS_TIMEOUT ,
+	BUSY=> ,
+	ERR=> ,
+	ERRID=> );
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+	
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="XML" Id="{88381a7a-b57d-4d74-a080-8324bda9c311}">
+      <Implementation>
+        <ST><![CDATA[
+IF NOT  bReadDataFirstCyle THEN //testii:=testii+1;
+	//fbDataXML.bRead:=NOT bDataValid;
+	bReadDataFirstCyle:=TRUE;
+END_IF
+
+
+IF fbDataXML.bReadParDone AND bReadDataFirstCyle   AND   NOT bReadDataCyle2      THEN
+	PoleData:= ProductPar.PoleData;
+	YL_GVL2:=ProductPar.YL_GVL2;
+	iTargetTorque:=ProductPar.iTargetTorque;
+	bReadDataCyle2:=TRUE;
+END_IF
+	 
+
+
+rt[2](CLK:=tCycleTimer.ET>=T#2M , Q=> );
+rtSaveData(CLK:=stHmiSysCmd.bSaveData , Q=> );
+IF  rtSaveData.Q THEN
+	bSaveTest:=TRUE;
+END_IF
+
+
+IF  rt[2].Q  OR bSaveTest THEN
+	ProductPar.PoleData:=PoleData  ;
+	ProductPar.YL_GVL2 :=YL_GVL2  ;
+	ProductPar.iTargetTorque:=iTargetTorque   ;	 
+	bSaveTest:=FALSE;
+	fbDataXML.bSave:=TRUE;
+	testii2:=testii2+1;
+END_IF
+
+rt[4](CLK:=stHmiSysCmd.bReadData (*AND  stSysState.iMode=3*), Q=> );
+rt[5](CLK:=PowerOnDone , Q=> );
+tRead(IN:=PowerOnDone, PT:=T#3S , Q=> , ET=> );
+IF   tRead.Q AND NOT fbDataXML.bReadParDone THEN
+	  breadALM:=TRUE;//上电后模切参数读取失败，请手动点读取参数
+END_IF
+
+IF  stSysState.bReset THEN
+	 breadALM:=FALSE;
+END_IF
+fbDataXML(bSave:=fbDataXML.bSave AND NOT breadALM, bRead:=fbDataXML.bRead OR rt[4].Q OR rt[5].Q, bSaveParDone=> , bReadParDone=> );
+
+fbDataXML.bReadParDone;
+fbDataXML.bSaveParDone;
+
+(*
+//fbPulseCtrl[7](PT_OFF:=T#30M, PT_ON:=T#30M, );
+//fbPulseCtrl[7].Q;
+//fbPulseCtrl[7].RT;
+
+
+tCycleTimer(IN:=NOT tCycleTimer.Q , PT:=T#311S , Q=>bSave , ET=> );
+rt10(clk:=bSave);
+IF NOT  bReadDataFirstCyle THEN //testii:=testii+1;
+	 	 fbDataXML.bRead:=TRUE;
+	     testii:=testii+1;
+	    bReadDataFirstCyle:=TRUE;
+		
+END_IF
+
+
+IF fbDataXML.bReadParDone AND bReadDataFirstCyle   AND   NOT bReadDataCyle2      THEN
+     aAnDay_date:=ProductPar.aAnDay_date;
+     aCaDay_date:=ProductPar.aCaDay_date;
+     cCn_An:=ProductPar.cCn_An;
+     cCn_Ca:=ProductPar.cCn_Ca;
+	 PoleData:= ProductPar.PoleData;
+	 
+     YL_GVL2:=ProductPar.YL_GVL2;
+	 
+     HMI_AnTodayNGClass_AM:=ProductPar.HMI_AnTodayNGClass_AM;
+     HMI_AnTodayNGClass_PM:=ProductPar.HMI_AnTodayNGClass_PM;
+     HMI_AnTodayNG_AM:=ProductPar.HMI_AnTodayNG_AM;
+     HMI_AnTodayNG_PM:=ProductPar.HMI_AnTodayNG_PM;
+     HMI_CaTodayNGClass_AM:=ProductPar.HMI_CaTodayNGClass_AM;
+     HMI_CaTodayNGClass_PM:=ProductPar.HMI_CaTodayNGClass_PM;
+     HMI_CaTodayNG_AM:=ProductPar.HMI_CaTodayNG_AM;
+     HMI_CaTodayNG_PM:=ProductPar.HMI_CaTodayNG_PM;
+	  iTargetTorque:=ProductPar.iTargetTorque;
+	 
+
+	 bReadDataCyle2:=TRUE;
+  END_IF
+	 
+
+
+
+rtSaveData(CLK:=stHmiSysCmd.bSaveData , Q=> );
+IF  rtSaveData.Q THEN
+	bSaveTest:=TRUE;
+END_IF
+
+
+IF  rt10.Q  OR bSaveTest    THEN
+     ProductPar.aAnDay_date:=aAnDay_date   ;
+     ProductPar.aCaDay_date:=aCaDay_date ;
+     ProductPar.cCn_An:=cCn_An   ;
+     ProductPar.cCn_Ca:=cCn_Ca  ;
+	 ProductPar.PoleData:=PoleData  ;
+	 
+     ProductPar.YL_GVL2 :=YL_GVL2  ;
+	 
+     HMI_AnTodayNGClass_AM := ProductPar.HMI_AnTodayNGClass_AM   ;
+     HMI_AnTodayNGClass_PM:=ProductPar.HMI_AnTodayNGClass_PM  ;                      ;
+     ProductPar.HMI_AnTodayNG_AM :=HMI_AnTodayNG_AM  ;
+     ProductPar.HMI_AnTodayNG_PM:=HMI_AnTodayNG_PM   ;
+     ProductPar.HMI_CaTodayNGClass_AM:=HMI_CaTodayNGClass_AM   ;
+     ProductPar.HMI_CaTodayNGClass_PM:=HMI_CaTodayNGClass_PM ;
+     ProductPar.HMI_CaTodayNG_AM:=HMI_CaTodayNG_AM   ;
+     ProductPar.HMI_CaTodayNG_PM:=HMI_CaTodayNG_PM   ;	 
+     ProductPar.iTargetTorque:=iTargetTorque   ;	 
+
+     bSaveTest:=FALSE;
+	fbDataXML.bSave:=TRUE;
+	testii2:=testii2+1;
+END_IF
+
+fbDataXML(bSave:=fbDataXML.bSave AND D_Sys.P3ReadParDone, 
+                     bRead:=fbDataXML.bRead , 
+                     bSaveParDone=> ,
+                     bReadParDone=> );
+					 
+
+M_Sys.P1ReadParDone:=fbDataXML.bReadParDone;
+M_Sys.P1SaveParDone:=fbDataXML.bSaveParDone;
+*)
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="MAIN">
+      <LineId Id="2840" Count="1" />
+      <LineId Id="2967" Count="0" />
+      <LineId Id="2966" Count="0" />
+      <LineId Id="2965" Count="0" />
+      <LineId Id="2842" Count="1" />
+      <LineId Id="2954" Count="0" />
+      <LineId Id="3136" Count="0" />
+      <LineId Id="3237" Count="51" />
+      <LineId Id="3154" Count="0" />
+      <LineId Id="2845" Count="0" />
+      <LineId Id="2835" Count="0" />
+      <LineId Id="2854" Count="0" />
+      <LineId Id="2837" Count="2" />
+      <LineId Id="2114" Count="0" />
+      <LineId Id="1983" Count="0" />
+      <LineId Id="1987" Count="0" />
+      <LineId Id="2748" Count="4" />
+      <LineId Id="2138" Count="0" />
+      <LineId Id="2115" Count="1" />
+      <LineId Id="2369" Count="1" />
+      <LineId Id="2368" Count="0" />
+      <LineId Id="2214" Count="0" />
+      <LineId Id="1991" Count="1" />
+      <LineId Id="3053" Count="0" />
+      <LineId Id="2367" Count="0" />
+      <LineId Id="2287" Count="0" />
+      <LineId Id="2140" Count="0" />
+      <LineId Id="2288" Count="0" />
+      <LineId Id="2141" Count="0" />
+      <LineId Id="1993" Count="2" />
+      <LineId Id="2594" Count="0" />
+      <LineId Id="1998" Count="11" />
+      <LineId Id="2670" Count="3" />
+      <LineId Id="2669" Count="0" />
+      <LineId Id="2010" Count="2" />
+      <LineId Id="2445" Count="34" />
+      <LineId Id="2013" Count="3" />
+      <LineId Id="2480" Count="37" />
+      <LineId Id="2017" Count="33" />
+      <LineId Id="1389" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.Power">
+      <LineId Id="1" Count="0" />
+      <LineId Id="3" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="38" Count="2" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="77" Count="1" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="88" Count="1" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="619" Count="112" />
+      <LineId Id="894" Count="0" />
+      <LineId Id="732" Count="0" />
+      <LineId Id="896" Count="0" />
+      <LineId Id="733" Count="14" />
+      <LineId Id="895" Count="0" />
+      <LineId Id="897" Count="0" />
+      <LineId Id="748" Count="19" />
+      <LineId Id="864" Count="0" />
+      <LineId Id="857" Count="0" />
+      <LineId Id="768" Count="10" />
+      <LineId Id="865" Count="0" />
+      <LineId Id="779" Count="41" />
+      <LineId Id="834" Count="0" />
+      <LineId Id="821" Count="5" />
+      <LineId Id="858" Count="2" />
+      <LineId Id="835" Count="0" />
+      <LineId Id="827" Count="6" />
+      <LineId Id="861" Count="2" />
+      <LineId Id="836" Count="0" />
+      <LineId Id="589" Count="0" />
+      <LineId Id="837" Count="4" />
+      <LineId Id="843" Count="1" />
+      <LineId Id="842" Count="0" />
+      <LineId Id="846" Count="4" />
+      <LineId Id="845" Count="0" />
+      <LineId Id="852" Count="1" />
+      <LineId Id="851" Count="0" />
+      <LineId Id="855" Count="1" />
+      <LineId Id="854" Count="0" />
+      <LineId Id="867" Count="2" />
+      <LineId Id="879" Count="0" />
+      <LineId Id="886" Count="1" />
+      <LineId Id="880" Count="0" />
+      <LineId Id="884" Count="0" />
+      <LineId Id="870" Count="0" />
+      <LineId Id="875" Count="0" />
+      <LineId Id="890" Count="0" />
+      <LineId Id="888" Count="0" />
+      <LineId Id="893" Count="0" />
+      <LineId Id="891" Count="0" />
+      <LineId Id="889" Count="0" />
+      <LineId Id="316" Count="0" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="7" Count="30" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.TwinCAT_Nt">
+      <LineId Id="2" Count="0" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="229" Count="1" />
+      <LineId Id="476" Count="0" />
+      <LineId Id="231" Count="8" />
+      <LineId Id="477" Count="2" />
+      <LineId Id="471" Count="3" />
+      <LineId Id="48" Count="8" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="461" Count="0" />
+      <LineId Id="464" Count="5" />
+      <LineId Id="463" Count="0" />
+      <LineId Id="475" Count="0" />
+      <LineId Id="470" Count="0" />
+      <LineId Id="462" Count="0" />
+      <LineId Id="73" Count="35" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="124" Count="24" />
+      <LineId Id="174" Count="1" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="180" Count="21" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="113" Count="1" />
+      <LineId Id="217" Count="4" />
+      <LineId Id="216" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.XML">
+      <LineId Id="147" Count="0" />
+      <LineId Id="150" Count="29" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="186" Count="3" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="192" Count="1" />
+      <LineId Id="181" Count="2" />
+      <LineId Id="148" Count="1" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="31" Count="1" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="118" Count="1" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="115" Count="2" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="50" Count="1" />
+      <LineId Id="53" Count="1" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="56" Count="6" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="124" Count="2" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="139" Count="1" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="98" Count="14" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="122" Count="1" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="141" Count="2" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="127" Count="8" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

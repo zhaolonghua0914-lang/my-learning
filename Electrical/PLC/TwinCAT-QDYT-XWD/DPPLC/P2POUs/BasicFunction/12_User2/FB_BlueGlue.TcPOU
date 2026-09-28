@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_BlueGlue" Id="{9f9ae3da-936d-4fd5-bef7-9467ff12347d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_BlueGlue//蓝胶检测自动
+VAR_INPUT
+	Enable:BOOL;//启动条件
+	BlueSenser:BOOL;//蓝胶检测信号
+	An_Quantited:UINT;//正极已叠片极片数
+	An_QuantitSet:UINT;//正极设定叠片片
+	Ca_Quantited:UINT;//负极已叠片极片数
+	Ca_QuantitSet:UINT;//负极设定叠片片
+	Distance:REAL;//蓝胶检测Semer到压刀的距离
+	BluWidth:REAL;//蓝胶宽度
+	Width:REAL;//压刀外边距宽度	 
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR_IN_OUT
+		BluGlueNG:ARRAY[0..1] OF BOOL;
+END_VAR
+VAR
+	// 正、负极已叠极片总数
+	Quantited: UINT;
+	// 正、负极设定极片总数
+	QuantitSet: UINT;
+	// 正、负极未叠片数
+	Quantit: UINT;
+	// 未叠极片所需隔膜长度
+	Distance_DT: REAL;
+	// 蓝胶到压刀距离上限
+	Distance_H: REAL;
+	// 蓝胶到压针距离下限
+	Distance_L: REAL;
+	Step0: INT;
+
+	blue_R_TRIG: R_TRIG;
+	blue_F_TRIG: F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//计算已叠极片总数
+Quantited:=An_Quantited+Ca_Quantited;
+//计算正、负极片设定总数
+QuantitSet:=An_QuantitSet+Ca_QuantitSet;
+//计算未叠片数
+Quantit:=QuantitSet-Quantited;
+//未叠正、负极片所需隔膜总长度
+Distance_DT:=Width*Quantit;
+//蓝胶到压针距离上限
+Distance_H:=Distance+BluWidth+10;
+//蓝胶到压针距离下降
+Distance_L:=Distance+BluWidth-10;
+//蓝胶检测信号上升沿
+blue_R_TRIG(CLK:=BlueSenser, Q=> );
+//蓝胶要信号下降沿
+blue_F_TRIG(CLK:=BlueSenser , Q=> );
+IF Enable THEN
+	CASE Step0 OF
+			0://判断是否检测到蓝胶信号
+				IF blue_R_TRIG.Q THEN
+					Step0:=10;
+				END_IF
+			10://根据未叠片隔膜长度与蓝胶到压刀的距离判断是当前电芯NG、下一个电芯NG、当前以及下一个电芯都NG
+				IF  Distance_DT<Distance_L THEN //未叠片隔膜长度小于蓝胶所需隔膜长度下限，下一个电芯NG
+					BluGlueNG[1]:=TRUE;
+					Step0:=20;
+				ELSIF Distance_DT>Distance_L AND Distance_DT< Distance_H  THEN//未叠片隔膜长度在蓝胶上、下限之间，则当前电芯、下个电芯都NG
+					BluGlueNG[0]:=TRUE;
+					BluGlueNG[1]:=TRUE;
+					Step0:=20;
+				ELSIF Distance_DT> Distance_H THEN//未叠片隔膜长度大于蓝胶所需隔膜长度上限，当前电芯NG
+					BluGlueNG[0]:=TRUE;
+					Step0:=20;
+				END_IF
+			20://判断检测是否结束
+				IF blue_F_TRIG.Q THEN
+					Step0:=0;
+				END_IF
+	END_CASE
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_BlueGlue">
+      <LineId Id="9" Count="0" />
+      <LineId Id="25" Count="1" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="33" Count="1" />
+      <LineId Id="37" Count="1" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="52" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="60" Count="2" />
+      <LineId Id="67" Count="2" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="71" Count="1" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="87" Count="3" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="54" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

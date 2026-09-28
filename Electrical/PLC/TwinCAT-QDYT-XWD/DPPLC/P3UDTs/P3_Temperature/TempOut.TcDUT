@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="TempOut" Id="{c1b388e9-0057-4590-8d84-fb924e73c095}">
+    <Declaration><![CDATA[TYPE TempOut :
+STRUCT
+     (****Output**)
+   iSV:                                    INT;// 设定温度 (模块) 
+   fSV:                                    REAL;// 设定温度温度(转换后)
+   iPV_Offset:                          INT;// 温度偏移
+    fPV_Offset:                         REAL;// 温度偏移
+  (****Ctrl_World**)
+   PIDRun:                              BOOL;           //PID运行中
+   AutoTunning:                      BOOL;           //自动整定中
+   SavePara:                           BOOL;          //保存参数
+   HotRedun:                          BOOL;          //开启冗余功能
+   BIP:                                   BOOL;          //
+
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDio" Id="{92dfb1d8-a479-4597-875f-1fa0b93f23e7}">
+    <Declaration><![CDATA[TYPE ST_CCDio :
+STRUCT
+   hmiChamferPhoto              :BOOL;       (***CCD冲R角定位拍照触发**)
+   hmiCuterPhoto              :BOOL;       (***CCD裁切定位拍照触发**)
+   hmiSizePhoto              :BOOL;       (***CCD尺寸检测拍照触发**)
+   hmiXSPhoto:BOOL;//CCD线扫触发
+   
+   bCalibrationsDo_Cha   :BOOL;		(***CCD冲R角定位标定触发**)
+   bCalibrationsDo_Cut   :BOOL;		(***CCD裁切定位标定触发**)
+   bCalibrationsDo   :BOOL;		(***CCD冲R角&裁切定位标定同时触发**)
+   
+   bDemRuning   :BOOL;		(***标定运行中**)
+   
+   bCalibrationsDone_Cha   :BOOL;		(***CCD冲R角定位标定完成**)   
+   bCalibrationsDone_Cut   :BOOL;		(***CCD裁切定位标定完成**)   
+   
+   bCalibrationsFals_Cha   :BOOL;		(***CCD冲R角定位标定失败**)   
+   bCalibrationsFals_Cut   :BOOL;		(***CCD裁切定位标定失败**)   
+   
+   boChamferPhoto              :BOOL;       (***CCD冲R角定位拍照触发**)
+   boCuterPhoto              :BOOL;       (***CCD裁切定位拍照触发**)
+   boSizePhoto              :BOOL;       (***CCD尺寸检测拍照触发**)
+   boXSPhoto:BOOL;//CCD线扫触发
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

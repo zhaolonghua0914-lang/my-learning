@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_TabNo" Id="{57340c03-6379-4457-a3b0-478c0d8acde5}">
+    <Declaration><![CDATA[TYPE ST_TabNo ://极耳工位（裁断前）
+STRUCT
+MouldPhoto	:INT:=1;		//首工位(R角CCD定位拍照位)   1
+CuterPhoto	:INT:=6;		//首工位(裁切CCD定位拍照位)   6
+LineScanNG	:INT:=3;			//线扫NG踢废位  3
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

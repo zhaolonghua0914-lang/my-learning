@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FingerprintKey" Id="{637d783e-9b21-4e3c-8605-2780d58f0694}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM FingerprintKey
+VAR
+	MachineId: STRING(2);//叠台指纹编号对应标志
+	ID: STRING(49);
+	Level: STRING(49);
+	LoginSuccess: BOOL;//指纹匹配成功
+	Keyton:  ARRAY[0..10] OF TON;//1:获取用户及权限延时
+	LevelHMI_Read: BYTE;//触摸屏权限，用于触摸屏读取用户索引
+	PassWord: STRING(16);//触摸屏密码，用于触摸屏读取用户对应密码
+	LevelHMI_Write: INT;//触摸屏权限，用于触摸屏反馈给PLC
+	KeyStep: INT;//权限判断自动
+	cheshi:BOOL;
+	blogin: BOOL;
+	blogout: BOOL;
+	rKey:  ARRAY[0..10] OF R_TRIG;
+	//error:ARRAY[0..60] OF BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Keyton[1](IN:=LoginSuccess,PT:=T#100MS , Q=> , ET=> );
+
+IF GVL_Par.DT_FingerprintKey.MachineId='03' THEN
+	IF GVL_Par.DT_FingerprintKey.Result='Success' THEN
+		LoginSuccess:=TRUE;//指纹匹配成功
+	END_IF	
+END_IF
+
+CASE KeyStep OF
+0:
+	IF Keyton[1].Q THEN
+		IF GVL_Par.DT_FingerprintKey.UserId<>'' AND GVL_Par.DT_FingerprintKey.UserClassLevel<>'' THEN
+			ID:=GVL_Par.DT_FingerprintKey.UserId;
+			Level:=GVL_Par.DT_FingerprintKey.UserClassLevel;
+			LevelHMI_Read:=0;
+			LevelHMI_Write:=0;
+			blogin:=FALSE;
+			blogout:=FALSE;
+			IF ID=GVL_Par.DT_FingerprintKey.UserId AND Level=GVL_Par.DT_FingerprintKey.UserClassLevel AND NOT blogin THEN
+				GVL_Par.DT_FingerprintKey.Result:='';
+				KeyStep:=100;
+			END_IF
+		END_IF
+	END_IF
+100://用户权限判断	(触摸屏读取时，采用用户索引，顺序要与触摸屏用户顺序一致）
+	Keyton[1].IN:=FALSE;
+	IF Level='PRD' THEN
+		LevelHMI_Read:=1;
+		//PassWord:='1111';
+		IF LevelHMI_Read=1  THEN//AND PassWord='1111'
+			KeyStep:=200;
+		END_IF
+	ELSIF Level='ME' THEN
+		LevelHMI_Read:=2;
+		//PassWord:='SWD123';
+		IF LevelHMI_Read=2  THEN//AND PassWord='SWD123'
+			KeyStep:=200;
+		END_IF
+	ELSIF Level='PRJ' THEN
+		LevelHMI_Read:=3;
+		//PassWord:='SWDQDJ';
+		IF LevelHMI_Read=3  THEN//AND PassWord='SWDQDJ'
+			KeyStep:=200;
+		END_IF
+	ELSIF Level='GYS' THEN
+		LevelHMI_Read:=4;
+		//PassWord:='YK556';
+		IF LevelHMI_Read=4 THEN// AND PassWord='YK556'
+			KeyStep:=200;
+		END_IF
+	ELSIF Level='QA' THEN
+		LevelHMI_Read:=5;
+		//PassWord:='OYX98766';
+		IF LevelHMI_Read=5  THEN//AND PassWord='OYX98766'
+			KeyStep:=200;
+		END_IF
+	ELSIF Level='KF' THEN
+		LevelHMI_Read:=6;
+		//PassWord:='0513';
+		IF LevelHMI_Read=6  THEN//AND PassWord='0513'
+			KeyStep:=200;
+		END_IF
+	ELSIF Level='Safe' THEN
+		LevelHMI_Read:=7;
+		//PassWord:='87558';
+		IF LevelHMI_Read=7 THEN//AND PassWord='87558'
+			KeyStep:=200;
+		END_IF
+	ELSE
+		LoginSuccess:=FALSE;
+		Level:='';
+		GVL_Par.DT_FingerprintKey.Result:='';
+		GVL_Par.DT_FingerprintKey.UserId:='';
+		GVL_Par.DT_FingerprintKey.UserClassLevel:='';
+		GVL_Par.DT_FingerprintKey.MachineId:='';
+		blogin:=FALSE;
+		blogout:=FALSE;
+		KeyStep:=0;
+		//error[1]:=TRUE;指纹未录入弹窗
+	END_IF
+200:
+	blogin:=TRUE;
+	LoginSuccess:=FALSE;
+	KeyStep:=300;
+300:
+	IF LevelHMI_Write=1 THEN
+		LevelHMI_Read:=0;
+		PassWord:='';
+		LoginSuccess:=FALSE;
+		Level:='';
+		GVL_Par.DT_FingerprintKey.Result:='';
+		GVL_Par.DT_FingerprintKey.UserId:='';
+		GVL_Par.DT_FingerprintKey.UserClassLevel:='';
+		GVL_Par.DT_FingerprintKey.MachineId:='';
+		blogin:=FALSE;
+		blogout:=FALSE;
+		KeyStep:=0;
+	END_IF
+END_CASE
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FingerprintKey">
+      <LineId Id="3" Count="106" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_Blink" Id="{4566fe1d-59b4-4a08-adcb-d7e555dde4ff}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Blink   //脉冲发生器
+VAR_INPUT
+	EN:			BOOL;
+	Intervall:		TIME;
+END_VAR
+VAR_OUTPUT
+	Blink:		BOOL;
+END_VAR
+VAR
+	TON_01:		TON;
+	TON_02:		TON;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF EN THEN
+	TON_01	(IN:=	NOT TON_02.Q, PT:=Intervall);
+	TON_02	(IN:=	 TON_01.Q, PT:=Intervall);
+	Blink:= TON_01.Q;
+ELSE
+	Blink := FALSE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Blink">
+      <LineId Id="3" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

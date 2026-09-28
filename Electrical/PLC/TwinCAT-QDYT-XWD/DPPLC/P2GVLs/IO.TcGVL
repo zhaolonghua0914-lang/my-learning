@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="IO" Id="{14a6697f-3043-4307-a9b8-be46df841ac2}">
+    <Declaration><![CDATA[VAR_GLOBAL
+
+//////////////////////////叠片交互////////////////////////////////DP
+AnMQ_MES1	                  AT %I*    	:ST_BeltData; //叠台1  MES交互
+CaMQ_MES1	                  AT %I*    	:ST_BeltData; //叠台1  MES交互
+AnMQ_MES2	                  AT %I*    	:ST_BeltData; //叠台2  MES交互
+CaMQ_MES2	                  AT %I*    	:ST_BeltData; //叠台2 MES交互
+AnMQ_MES3	                  AT %I*    	:ST_BeltData; //叠台3  MES交互
+CaMQ_MES3	                  AT %I*    	:ST_BeltData; //叠台3  MES交互	
+
+//预留数据交互
+YL_I      		    AT %I*:ARRAY[1..50] OF BOOL ; //预留 1、气压不足报警；2、叠台一储气罐压力、3、叠台二储气罐压力、4、叠台三储气罐压力
+YL_Q     				AT %Q*:ARRAY[1..50] OF BOOL ; //预留输；
+YL_INT1     		AT %I*:ARRAY[1..50] OF INT  ; //预留输入INT；
+YL_INT2     		AT %Q*:ARRAY[1..50] OF INT  ; //预留输出INT；
+YL_GVL  :ARRAY [1..60] OF BOOL;//内部预留；1.叠台一正极送片流水线安全点动条件 2.叠台一负极送片流水线安全点动条件 3.叠台二正极送片流水线安全点动条件 4.叠台二负极送片流水线安全点动条件 5.叠台三正极送片流水线安全点动条件 6.叠台三负极送片流水线安全点动条件
+
+//风机；
+ dDrauFan                   :ARRAY[1..30] OF BOOL;   	// 风机  1、风机1开 ；2、风机2开；
+
+
+//网络拓扑状态
+Network1_OP AT %I*        :ARRAY [1..50] OF UINT;
+Network2_OP AT %I*        :ARRAY [1..50] OF UINT;
+Network3_OP AT %I*        :ARRAY [1..50] OF UINT;
+Network4_OP AT %I*        :ARRAY [1..50] OF UINT;
+Network5_OP AT %I*        :ARRAY [1..50] OF UINT;	
+
+bNetwork1_OP  :ARRAY [1..50] OF BOOL;
+bNetwork2_OP  :ARRAY [1..50] OF BOOL;
+bNetwork3_OP  :ARRAY [1..50] OF BOOL;
+bNetwork4_OP  :ARRAY [1..50] OF BOOL;
+bNetwork5_OP :ARRAY [1..50] OF BOOL;	
+
+
+//	与模切交互信号	
+M_Pro    AT %I*: MToD_Process;//只读 模切生产过程信号
+M_Sys    AT %I*: MToD_System;//只读 模切系统信号
+
+D_Pro    AT %Q*: DToM_Process;//只写 叠片生产过程信号
+D_Sys    AT %Q*: DToM_System;//只写 叠片系统信号
+
+//P2M1 输入、输出信号
+	I301 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I302 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I303 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I304 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I305 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I306 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I307 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I308 AT %I* :ARRAY [1..16] OF BOOL; //输入信号	
+	I309 AT %I* :ARRAY [1..16] OF BOOL; //输入信号	
+	
+	Q301 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q302 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q303 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q304 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q305 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q306 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q307 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q308 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q309 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	
+	
+	
+	AI30 AT %I* :ARRAY [1..9] OF INT; //模拟量输入信号
+	AO30 AT %Q* :ARRAY [1..9] OF INT; //模拟量输出信号
+
+
+//P2M2 输入、输出信号
+	I401 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I402 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I403 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I404 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I405 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I406 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I407 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I408 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I409 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	
+	Q401 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q402 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q403 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q404 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q405 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q406 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q407 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q408 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q409 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	
+	AI40 AT %I* :ARRAY [1..9] OF INT; //模拟量输入信号
+	AO40 AT %Q* :ARRAY [1..9] OF INT; //模拟量输出信号	
+	
+//P2M3 输入、输出信号
+	I501 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I502 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I503 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I504 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I505 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I506 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I507 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I508 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I509 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	
+	Q501 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q502 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q503 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q504 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q505 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q506 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q507 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q508 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	Q509 AT %Q* :ARRAY[1..16] OF BOOL;//输出信号
+	
+	AI50 AT %I* :ARRAY [1..9] OF INT; //模拟量输入信号
+	AO50 AT %Q* :ARRAY [1..9] OF INT; //模拟量输出信号	
+//P2传感器信号、按钮
+	P2Senser :ST_P2Senser;//传感器信号
+	P2Btn    :ST_P2Button;//按钮
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	MaxAINo				:INT:=52;		(*ai通道数量*)
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

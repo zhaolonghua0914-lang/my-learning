@@ -1,0 +1,487 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Short_Test" Id="{e77788dc-a122-4d3b-adbc-e6cfaeb5cfe1}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Short_Test
+VAR
+ShortTest_Start_TON :Tc2_Standard.TON;	
+TON_CYShort :Tc2_Standard.TON;
+ShortTest_0: ShortTest;
+Shortdata_ton :Tc2_Standard.TON;
+YS_Short_ton :Tc2_Standard.TON;
+FC_ton :Tc2_Standard.TON;
+I:INT;
+NG_Tim:Tc2_Standard.TON;
+OK_Tim:Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*//短路测试//////////////////开通短路测试要删掉
+IF Permit_ShortTest OR Shield[1] THEN
+	CellMemory[CellNo.Hotpress].ShortTest:=1;
+	ShortTest_Finish:=TRUE;
+	Permit_ShortTest:=FALSE;
+END_IF*)
+shortcese();
+ShortTest_Start_TON(PT:=T#8S);
+TON_CYShort(PT:=T#6S);
+Shortdata_ton(PT:=T#200MS);
+YS_Short_ton(PT:=T#3.5S);
+FC_ton(PT:=T#70MS);
+
+
+
+//IF P3_SystemRUN.iMode=1  THEN//OR P3_SystemRUN.iMode=3
+CASE Step_Short OF
+0:
+	TON_CYShort.IN:=FALSE;
+	ShortTest_Start_TON.IN:=FALSE;
+	arrCyCtrl[P3CYNo.P3ShortTest].Cmd.bOFF:=TRUE;
+	P3Senser.P3_ShortTest_Start:=FALSE;
+	Shortdata_ton.IN:=FALSE;
+	YS_Short_ton.IN:=FALSE;	
+	FC_ton.IN:=FALSE;
+	I:=0;
+	IF arrCyCtrl[P3CYNo.P3ShortTest].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3ShortTest].Status.Error2   THEN	
+		Step_Short:=5;
+	END_IF
+5:
+	IF  NOT ShortTest_Finish AND Permit_ShortTest AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2]
+		 AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving THEN
+		Step_Short:=10;
+	END_IF
+10:
+	IF P3User2_Par.Shield[1] THEN
+		Step_Short:=0;
+		ShortTest_Finish:=TRUE;	
+		CellMemory[CellNo.Hotpress].ShortTest:=1;
+	ELSIF Permit_ShortTest AND NOT ShortTest_Finish AND NOT P3Senser.P3_ShortTest_Testing AND Pressing[2] THEN
+		 Step_Short:=20;
+	END_IF 
+
+20:
+	TON_CYShort.IN:=TRUE;
+    arrCyCtrl[P3CYNo.P3ShortTest].Cmd.bON:=TRUE;	
+	IF (arrCyCtrl[P3CYNo.P3ShortTest].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3ShortTest].Status.Error1) OR TON_CYShort.Q THEN	
+	Step_Short:=30;
+	TON_CYShort.IN:=FALSE;
+	END_IF
+		
+30:
+TON_CYShort.IN:=FALSE;
+ShortTest_Start_TON.IN:=TRUE;
+P3Senser.P3_ShortTest_Start:=TRUE;
+IF ShortTest_Start_TON.Q THEN
+Step_Short:=40;
+ShortTest_Start_TON.IN:=FALSE;
+END_IF
+
+40:
+ShortTest_Start_TON.IN:=FALSE;
+Shortdata_ton.IN:=FALSE;
+OK_Tim(IN:=P3Senser.P3_ShortTest_Pass , PT:=T#0.5S , Q=> , ET=> );
+NG_Tim(IN:=P3Senser.P3_ShortTest_UpperFall OR P3Senser.P3_ShortTest_LowerFall , PT:=T#0.5S , Q=> , ET=> );
+IF NG_Tim.Q THEN
+//IF P3Senser.P3_ShortTest_UpperFall OR P3Senser.P3_ShortTest_LowerFall THEN
+	CellMemory[CellNo.Hotpress].ShortTest:=2;
+	NG_Tim(IN:=FALSE );
+	Step_Short:=50;
+	SHORT_HOT.bStart:=TRUE;
+ELSIF OK_Tim.Q THEN
+//ELSIF P3Senser.P3_ShortTest_Pass THEN
+	CellMemory[CellNo.Hotpress].ShortTest:=1;
+	OK_Tim(IN:=FALSE );
+	Step_Short:=50;
+	SHORT_HOT.bStart:=TRUE;	
+END_IF
+
+50:
+Shortdata_ton.IN:=TRUE;
+IF Shortdata_ton.Q AND SHORT_HOT.bDone THEN
+Step_Short:=60;	
+Shortdata_ton.IN:=FALSE;
+END_IF
+
+60:
+CellMemory[CellNo.Hotpress].Hipot_R:=(SHORT_HOT.Measure);
+CellMemory[CellNo.Hotpress].Hipot_Time:=SHORT_HOT.TestTime;
+CellMemory[CellNo.Hotpress].Hipot_V:=SHORT_HOT.Voltage;
+Step_Short:=70;	
+
+70:
+FC_ton.IN:=FALSE;
+SHORT_HOT.bDone:=FALSE;
+YS_Short_ton.IN:=FALSE;
+P3Senser.P3_ShortTest_Start:=FALSE;
+arrCyCtrl[P3CYNo.P3ShortTest].Cmd.bOFF:=TRUE;
+Step_Short:=73;	
+
+73:
+IF ((CellMemory[CellNo.Hotpress].Hipot_R=0 AND CellMemory[CellNo.Hotpress].ShortTest<>2) 
+OR CellMemory[CellNo.Hotpress].Hipot_Time=0 OR CellMemory[CellNo.Hotpress].Hipot_V=0) AND I<=3 THEN
+	Step_Short:=1000;
+
+	ELSIF ((CellMemory[CellNo.Hotpress].Hipot_R=0 AND CellMemory[CellNo.Hotpress].ShortTest<>2) 
+OR CellMemory[CellNo.Hotpress].Hipot_Time=0 OR CellMemory[CellNo.Hotpress].Hipot_V=0) AND I>3 THEN
+	Step_Short:=75;
+	I:=0;
+	CellMemory[CellNo.Hotpress].Hipot_R:=0;
+	CellMemory[CellNo.Hotpress].ShortTest:=2;
+	ELSE
+	Step_Short:=75;
+END_IF
+
+(*
+75:
+	ShortTest_Finish:=TRUE;
+	Permit_ShortTest:=FALSE;
+	Step_Short:=0;	*)
+75:
+	IF NOT P3User2_Par.Shield[6] OR CellMemory[CellNo.Hotpress].ShortTest=2 THEN
+		ShortTest_Finish:=TRUE;
+		Permit_ShortTest:=FALSE;
+		Step_Short:=0;	
+	ELSE
+	   Step_Short:=80;		
+	END_IF
+
+
+
+80:
+YS_Short_ton.IN:=TRUE;	
+IF YS_Short_ton.Q THEN
+	arrCyCtrl[P3CYNo.P3ShortTest].Cmd.bON:=TRUE;
+	YS_Short_ton.IN:=FALSE;
+	TON_CYShort.IN:=TRUE;
+	Step_Short:=90;
+END_IF
+
+90:
+	IF TON_CYShort.Q THEN
+		ShortTest_Start_TON.IN:=TRUE;
+		P3Senser.P3_ShortTest_Start:=TRUE;
+		TON_CYShort.IN:=FALSE;
+		Step_Short:=100;
+	END_IF
+	
+100:
+	IF ShortTest_Start_TON.Q THEN
+		Step_Short:=110;
+		SHORT_HOT.bStart:=TRUE;
+		ShortTest_Start_TON.IN:=FALSE;
+	END_IF
+
+110:
+  IF P3Senser.P3_ShortTest_Pass AND CellMemory[CellNo.Hotpress].ShortTest=1 THEN
+	  CellMemory[CellNo.Hotpress].ShortTest:=1;
+	  Step_Short:=120;
+	  ELSIF P3Senser.P3_ShortTest_UpperFall OR P3Senser.P3_ShortTest_LowerFall THEN
+	   CellMemory[CellNo.Hotpress].ShortTest:=2;
+	    Step_Short:=120;
+  END_IF
+
+120:
+Shortdata_ton.IN:=TRUE;
+IF Shortdata_ton.Q AND SHORT_HOT.bDone THEN
+Step_Short:=130;	
+Shortdata_ton.IN:=FALSE;
+END_IF
+
+130:
+CellMemory[CellNo.Hotpress].Hipot2_R:=SHORT_HOT.Measure;
+Step_Short:=140;	
+
+140:
+SHORT_HOT.bDone:=FALSE;
+YS_Short_ton.IN:=FALSE;
+P3Senser.P3_ShortTest_Start:=FALSE;
+arrCyCtrl[P3CYNo.P3ShortTest].Cmd.bOFF:=TRUE;
+ShortTest_Finish:=TRUE;
+Permit_ShortTest:=FALSE;
+Step_Short:=0;	
+	
+1000:
+SHORT_HOT.bStart:=TRUE;
+FC_ton.IN:=TRUE;
+Step_Short:=1010;
+
+1010:
+IF  SHORT_HOT.bDone AND FC_ton.Q THEN
+Step_Short:=60;	
+FC_ton.IN:=FALSE;
+I:=I+1;
+END_IF
+
+
+
+	
+	
+END_CASE
+//END_IF
+
+]]></ST>
+    </Implementation>
+    <Action Name="shortcese" Id="{155dd31c-7b45-4dec-a68e-b9094c678800}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeBox">
+                      <o>
+                        <v n="BoxType">"ShortTest"</v>
+                        <o n="Instance" t="Operand">
+                          <v n="Operand">"ShortTest_0"</v>
+                          <v n="Type">"ShortTest"</v>
+                          <v n="Comment">""</v>
+                          <v n="SymbolComment">""</v>
+                          <v n="Address">""</v>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <v n="LValue">false</v>
+                          <v n="Boolean">false</v>
+                          <v n="IsInstance">true</v>
+                          <v n="Id">2L</v>
+                        </o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <n />
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">4L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">5L</v>
+                            </o>
+                            <o>
+                              <v n="Operand">""</v>
+                              <n n="Type" />
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">6L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <n n="InputFlags" />
+                        <l2 n="InputItems" cet="BoxTreeOperand">
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"SHORT_HOT"</v>
+                              <v n="Type">"ShortTestCtrl"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">8L</v>
+                            </o>
+                            <v n="Id">7L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3ShortSendCrtl"</v>
+                              <v n="Type">"ST_SendTestStatus"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">10L</v>
+                            </o>
+                            <v n="Id">9L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3ShortReCrtl"</v>
+                              <v n="Type">"ST_ReceiveTestStatus"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">12L</v>
+                            </o>
+                            <v n="Id">11L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3ShortTestSend"</v>
+                              <v n="Type">"ShortTestSendData"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">14L</v>
+                            </o>
+                            <v n="Id">13L</v>
+                          </o>
+                          <o>
+                            <o n="Operand" t="Operand">
+                              <v n="Operand">"P3ShortTestRec"</v>
+                              <v n="Type">"ShortTestReceiveData"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">false</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">16L</v>
+                            </o>
+                            <v n="Id">15L</v>
+                          </o>
+                        </l2>
+                        <o n="InputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>TestCtrl</v>
+                            <v>T_Send</v>
+                            <v>T_Receive</v>
+                            <v>uSendData</v>
+                            <v>uReceiveData</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>ShortTestCtrl[REF]</v>
+                            <v>ST_SendTestStatus[REF]</v>
+                            <v>ST_ReceiveTestStatus[REF]</v>
+                            <v>ShortTestSendData[REF]</v>
+                            <v>ShortTestReceiveData[REF]</v>
+                          </l2>
+                        </o>
+                        <o n="OutputParam" t="ParamList">
+                          <l2 n="Names" cet="String">
+                            <v>DataError1</v>
+                            <v>DataError2</v>
+                            <v>DataError3</v>
+                            <v>DataError4</v>
+                          </l2>
+                          <l2 n="Types" cet="String">
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                            <v>BOOL</v>
+                          </l2>
+                        </o>
+                        <v n="CallType" t="Operator">FunctionBlock</v>
+                        <v n="EN">false</v>
+                        <v n="ENO">false</v>
+                        <n n="STSnippet" />
+                        <v n="ContainsExtensibleInputs">false</v>
+                        <v n="ProvidesSTSnippet">false</v>
+                        <v n="Id">3L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Short_Test">
+      <LineId Id="413" Count="202" />
+      <LineId Id="52" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

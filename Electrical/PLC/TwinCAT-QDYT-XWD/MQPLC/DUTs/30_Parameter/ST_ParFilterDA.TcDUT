@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ParFilterDA" Id="{7e585e86-ce2d-488c-a618-7d63f0c07af4}">
+    <Declaration><![CDATA[TYPE ST_ParFilterDA :  //P1部分参数
+STRUCT
+	X0:REAL;  //料带张力低限值g
+	Y0:REAL;  //低限对应DA输出值
+	X1:REAL; //料带张力高限值g
+	Y1:REAL;//低限对应DA输出值
+	bMode: BOOL;  //标定模式   TRUE为标定模式    
+	iDAValue:REAL;//比例阀给定值     标定用
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

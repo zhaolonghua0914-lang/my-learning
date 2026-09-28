@@ -1,0 +1,1756 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Auto1_Stick" Id="{6fdab8a2-64d8-42ec-9134-a27a36d4521f}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Auto1_Stick
+VAR
+SingleStep_10 : R_TRIG;
+StickIDGlue_TON					:ARRAY[1..20] OF Tc2_Standard.TON;
+Init3_TON						:ARRAY[1..20] OF Tc2_Standard.TON;
+Alarm3_TON						:ARRAY[1..20] OF Tc2_Standard.TON;
+rMarkesensorR_TRIG				: R_TRIG;
+rMarkGo_TRIG				    : R_TRIG;
+Axis3_condition					:ARRAY[1..10] OF BOOL;
+IDHavetape_TRIG				    : R_TRIG;
+IDHavetape_FRIG				    : F_TRIG;
+IDGlueMount						:INT;//二维码胶卷有料感应器上升沿下降沿计数
+IDGlueMount2					:INT;//二维码胶卷无料计数
+ScanCodeFB						: CS_CodeTcp;
+ScanID_step 					:UINT;
+scan_TON1 						:Tc2_Standard.TON;
+Scan_TON 						:ARRAY[1..7] OF Tc2_Standard.TON;
+Scan_code_Z 					: R_TRIG;
+I								:INT;
+				
+
+	AG: BOOL;
+	AG1: BOOL;
+	BJ:R_TRIG;//备胶上升沿
+	QJ_TON:TON;//切胶延时
+	
+	rtCyBtn:ARRAY [1..10] OF R_TRIG;
+	ftCyBtn:ARRAY [1..10] OF F_TRIG;
+	CodeStartMark:BOOL;//备胶一次标志位
+	ZK_ton:TON;
+	ZK_ton2:TON;
+	ZK_ton3:TON;
+	m:INT;
+    bMoveRel: BOOL;
+	CutStep:INT;//一件拉胶、切胶自动步
+	IDGlueCode_MES: ARRAY[1..10] OF R_TRIG;
+	rtIDGlueSenser: ARRAY[1..10] OF R_TRIG;
+	IDNoMaterial: ARRAY[1..5] OF INT;    //二维码胶拉胶计数
+	ESLE: INT;
+	GlueNGCount:INT;//NG连续NG计数
+	
+	IDCodeBuffer:ARRAY[1..4] OF STRING;//二维码缓存，，1：扫码位条码，，2：中间缓存，，3：取胶位条码
+	IDCodeStatus:ARRAY[1..4] OF INT;//二维码缓存状态，，1：ok，，2：ng，，3：取胶位条码
+	
+	rClear:R_TRIG;//条码清理上升沿
+	fClear:R_TRIG;//条码清理下降沿
+	k:INT;
+	InitBJMark:BOOL;//初始化后备三次胶标志位
+	k2:INT; //重新备胶次数
+END_VAR
+
+VAR PERSISTENT
+		 mark_Rel: REAL;
+END_VAR
+
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************二维码贴胶***************************)
+
+Act_01();
+Act_02();
+Act_03_Alarm();
+Act_04_Condition();
+Act_05_CallScanFB();
+Act_07_Scan();
+Act_08_Init();
+SingeMode();
+
+
+
+
+
+
+
+
+//rMarkesensorR_TRIG(CLK:=P3Senser.Markesensor , Q=> );//二维码胶Mark孔检测
+
+StickIDGlue_TON[1](PT:=T#400MS);//二维码贴胶吸盘真空延时
+StickIDGlue_TON[2](PT:=T#200MS);//二维码贴胶吸盘破真空延时
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="Act_01" Id="{154d74fd-858c-4c2b-b39f-e674dfbbf191}">
+      <Implementation>
+        <ST><![CDATA[////////////////////////////////////贴二维码自动/////////////////////////////////////////////////
+	//Step39 :UINT;//备二维码胶流程
+	//Step40:UINT;//贴二维码胶流程
+	//P3_GlueExtend:INT=285;//二维码蹬胶气缸
+	//P3_GluePress:INT=286;	//二维码压胶气缸
+	//P3_GlueCut:INT=287;	//二维码切胶气缸
+	//P3_GluePull:INT=288;	//二维码拉胶气缸
+	//P3_GlueVacuum:INT:=289;//	二维码贴胶吸盘真空
+	
+//	IDStickStart:BOOL;//二维码贴胶开始
+//	IDStickFinish:BOOL;//二维码贴胶完成
+//P3_IDPut							:INT:=180;//二维码胶拉胶		1:初始位  2:取胶位  3:拉胶位  4:切胶最小位 5:切胶最大位
+//P3_IDLift							:INT:=181;//二维码胶升降		1:初始位  2:取胶位  3:贴胶位  4:避让位  
+	
+IF (P3_SystemRUN.iMode=1 AND LateBlanking_init_OK[10]) OR AG THEN
+CASE Step39 OF 
+0:
+	IF IDStickStart THEN //二维码贴胶开始
+		Step39:=50;
+	END_IF
+50:
+	IDStickFinish:=FALSE;//二维码贴胶完成
+	Step39:=100;
+100://二维码贴胶屏蔽
+	IF NOT	SingleStep[10] THEN
+		IF P3User2_Par.Shield[23] THEN //二维码贴胶屏蔽
+			IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF
+				Step39:=1700;
+		ELSE
+			IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF
+				Step39:=200;
+		END_IF
+		END_IF
+
+200://烤箱上料夹进退走贴二维码胶位
+	IF NOT	SingleStep[10] THEN
+		IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed  THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=46;
+				OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志	
+		ELSIF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46]	 THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=0;
+				Step39:=300;	
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+		END_IF
+		END_IF
+300://烤箱上料夹升降走贴二维码胶位
+	IF NOT	SingleStep[10] THEN
+		IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed  THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=46;	
+		ELSIF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46]	 THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=0;
+				Step39:=400;	
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+		END_IF
+		END_IF
+
+400://烤箱上料夹搬运走贴二维码胶位
+	IF NOT	SingleStep[10] THEN
+		IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[47]  AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed  THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=47;	
+		ELSIF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[47]	 THEN
+				arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=0;
+				Step39:=500;	
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+		END_IF
+		END_IF
+500:
+		IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[46] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[46] 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[47] THEN
+				Step39:=1000;	
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+		END_IF	
+	
+
+		
+		
+1000://贴胶流程
+		IF CellMemory[CellNo.OvenMoveClip1].Cell AND NOT CellMemory[CellNo.OvenMoveClip1].StickIDGlue_Finish AND  StickIDGlue.StandbyCode_Finish    THEN 
+				Step39:=1200;
+		END_IF
+1200://检查贴胶头是否有二维码胶
+		IF arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch AND  arrCyCtrl[P3CYNo.P3_GlueVacuum].Status.ONState THEN
+			Step39:=1300;
+		ELSE
+			arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;
+			arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+			P3_Error[107] :=TRUE;//去贴二维码胶时，真空报警,请重新备胶
+			Step39:=1000;
+		END_IF
+	
+1300://二维码贴胶头升降至贴胶位
+		IF NOT	SingleStep[10] THEN
+				IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+						IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[3] THEN
+								arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+								IF  StepModel[10] THEN
+									SingleStep[10]:=TRUE;
+								ELSE
+									SingleStep[10]:=FALSE;
+								END_IF			
+								Step39:=1400;
+								StickIDGlue_TON[2].IN:=FALSE;	
+						ELSE
+								arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=3;  
+						END_IF
+				END_IF
+		END_IF
+
+1400://二维码贴胶头真空关
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;	
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;	
+		StickIDGlue_TON[2].IN:=TRUE;	
+		IF StickIDGlue_TON[2].Q THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+				Step39:=1500;	
+				StickIDGlue_TON[2].IN:=FALSE;
+		END_IF
+1500://二维码贴胶头破真空关
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=FALSE;	
+		Step39:=1600;
+
+1600://记忆转移至电芯
+		IF NOT	SingleStep[10] THEN
+				CellMemory[CellNo.OvenMoveClip1].Cell_number:=StickIDGlue.strCode_2;//条码
+				CellMemory[CellNo.OvenMoveClip1].ScanCode:=StickIDGlue.Code_State_2;//OKNG
+				Step39:=1700;
+		END_IF
+	
+1700://二维码贴胶头升降至避让位
+		IF NOT	SingleStep[10] THEN
+				IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+						IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[4] THEN
+								arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+								IF  StepModel[10] THEN
+									SingleStep[10]:=TRUE;
+								ELSE
+									SingleStep[10]:=FALSE;
+								END_IF				
+								CellMemory[CellNo.OvenMoveClip1].StickIDGlue_Finish:=TRUE;
+								StickIDGlue.StandbyCode_Finish:=FALSE;//备胶完成
+								IDStickStart:=FALSE;//二维码贴胶开始
+								IDStickFinish:=TRUE;//二维码贴胶完成
+								Step39:=1800;
+						ELSE
+								arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+						END_IF
+				END_IF
+		END_IF	
+1800:
+		IF NOT IDStickFinish THEN
+				Step39:=0;
+		END_IF
+
+
+END_CASE
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Act_02" Id="{c5d61918-68cf-4a7c-b30e-68c2305b8c7e}">
+      <Implementation>
+        <ST><![CDATA[///一键备胶/////--------------------首次备胶二维码要连续备胶三次才能到取胶位
+	//Step39 :UINT;//备二维码胶流程
+	//Step40:UINT;//贴二维码胶流程
+	//P3Senser.P3_IDMark
+rMarkGo_TRIG(CLK:=bMoveRel,Q=>arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bMoveRel);
+rMarkesensorR_TRIG(CLK:=P3Senser.P3_IDMark , Q=> );//二维码胶Mark孔检测
+IDHavetape_TRIG(CLK:=P3Senser.P3_IDHavetape , Q=> );
+IDHavetape_FRIG(CLK:=P3Senser.P3_IDHavetape , Q=> );
+BJ(CLK:=P3Button.IDStickBtn AND P3_SystemRUN.iMode=3 AND NOT CodeStartMark, Q=> );
+IF BJ.Q THEN
+	StickIDGlue.StandbyCode_Step1:=0;
+	StickIDGlue.StandbyCode_Step2:=0;
+	arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bJog_Bw:=FALSE;	
+	StickIDGlue.StandbyCode_Done:=FALSE;
+	StickIDGlue.StandbyCode_Finish:=FALSE;
+	CodeStartMark:=TRUE;//备胶一次标志位
+END_IF
+IF IDHavetape_TRIG.Q OR IDHavetape_FRIG.Q THEN
+	IDGlueMount:=IDGlueMount+1;
+END_IF
+
+ZK_ton(IN:=, PT:=T#0.5S, Q=> , ET=> );
+ZK_ton2(IN:= , PT:=T#2S, Q=> , ET=> );
+ZK_ton2(IN:= , PT:=T#1.5S, Q=> , ET=> );
+//P3_GlueExtend:INT=285;//二维码蹬胶气缸
+//P3_GluePress:INT=286;	//二维码压胶气缸
+//P3_GlueCut:INT=287;	//二维码切胶气缸
+//P3_GluePull:INT=288;	//二维码拉胶气缸
+//P3_GlueVacuum:INT:=289;//	二维码贴胶吸盘真空
+
+
+//拉胶流程
+IF (P3_SystemRUN.iMode=1 OR (CodeStartMark AND P3_SystemRUN.iMode=3)) AND LateBlanking_init_OK[10] AND NOT P3_Error[100] THEN
+ CASE StickIDGlue.StandbyCode_Step1 OF	
+0:
+	IDGlueMount:=0;
+	StickIDGlue.StandbyCode_Step1:=100;
+100:
+	IF  NOT StickIDGlue.StandbyCode_Done  AND (NOT  StickIDGlue.StandbyCode_Finish )
+		AND StickIDGlue.StandbyCode_Step2=500 THEN
+		StickIDGlue.StandbyCode_Step1:=150;
+	END_IF
+150:	
+	IF NOT	SingleStep[10] THEN
+		IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;							
+						StickIDGlue.StandbyCode_Step1:=200;		
+				ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=1;  
+				END_IF
+		END_IF
+	END_IF	
+	
+200://二维码贴胶头升降至避让位
+	IF NOT	SingleStep[10] THEN
+		IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[4] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;							
+						StickIDGlue.StandbyCode_Step1:=300;		
+						StickIDGlue_TON[2].IN:=FALSE;	
+				ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+				END_IF
+		END_IF
+	END_IF						
+300:
+	IF NOT	SingleStep[10] THEN
+			arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.bOFF:=TRUE;//二维码蹬胶气缸上升
+			arrCyCtrl[P3CYNo.P3_GluePress].Cmd.bON:=TRUE;//二维码压胶气缸压紧
+			arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bOFF:=TRUE;//二维码切胶气缸收回
+			arrCyCtrl[P3CYNo.P3_GluePull].Cmd.bOFF:=TRUE;//二维码拉胶夹紧气缸打开
+			IF 	 arrCyCtrl[P3CYNo.P3_GluePress].Io.DIONSwitch AND arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIOFFSwitch 
+			AND arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOFFSwitch  THEN
+					IF  StepModel[10] THEN
+						SingleStep[10]:=TRUE;
+					ELSE
+						SingleStep[10]:=FALSE;
+					END_IF			
+					StickIDGlue.StandbyCode_Step1:=500;
+			END_IF
+	END_IF
+	
+500:	//二维码蹬胶气缸蹬胶
+		IF NOT	SingleStep[10] THEN
+				arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.bON:=TRUE;
+				ZK_ton2.IN:=TRUE;
+				IF 	ZK_ton2.Q THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF
+				ZK_ton2.IN:=FALSE;
+				StickIDGlue.StandbyCode_Step1:=600;
+				END_IF			
+			END_IF
+			
+		
+		
+600:	//二维码蹬胶气缸收回
+		IF NOT	SingleStep[10] THEN
+				arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.bON:=FALSE;
+				arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.bOFF:=TRUE;
+				
+					IF  StepModel[10] THEN
+						SingleStep[10]:=TRUE;
+					ELSE
+						SingleStep[10]:=FALSE;
+					END_IF	
+				IF IDGlueMount<>0 THEN		
+					IDGlueMount2:=0;
+					StickIDGlue.StandbyCode_Step1:=700;
+				ELSE
+					IDGlueMount2:=IDGlueMount2+1;
+					StickIDGlue.StandbyCode_Step1:=700;
+				END_IF
+		END_IF	
+		
+700://二维码拉胶夹紧气缸打开
+		IF NOT	SingleStep[10] THEN
+				arrCyCtrl[P3CYNo.P3_GluePull].Cmd.bOFF:=TRUE;
+			IF 	arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOFFSwitch AND NOT arrCyCtrl[P3CYNo.P3_GluePull].Status.Error2 THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+				StickIDGlue.StandbyCode_Step1:=800;
+			END_IF
+		END_IF
+	
+800://二维码拉胶至取胶位
+		IF NOT	SingleStep[10] THEN
+				IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving  THEN 		//																										                                																 							
+					IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[2] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;
+							IF  StepModel[10] THEN
+								SingleStep[10]:=TRUE;
+							ELSE
+								SingleStep[10]:=FALSE;
+							END_IF			
+							StickIDGlue.StandbyCode_Step1:=900;	
+					ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=2;  
+					END_IF
+				END_IF
+		END_IF
+900://二维码拉胶夹紧气缸夹紧
+		IF NOT	SingleStep[10] THEN
+			arrCyCtrl[P3CYNo.P3_GluePull].Cmd.bON:=TRUE;
+			arrCyCtrl[P3CYNo.P3_GluePull].Cmd.bOff:=FALSE;
+			IF 	arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOnSwitch THEN
+				StickIDGlue.ScanCode_finish:=FALSE;
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+				StickIDGlue.StandbyCode_Step1:=1000;
+			END_IF
+		END_IF	
+		
+1000://屏蔽扫码
+//		IF  NOT P3User2_Par.Shield[4] THEN
+			StickIDGlue.ScanCode_start:=TRUE;
+			StickIDGlue.StandbyCode_Step1:=1100;
+//		ELSE
+//			IDCodeStatus[4]:=1;	
+//			IDCodeBuffer[4]:='';
+//			StickIDGlue.ScanCode_finish:=TRUE;
+//			StickIDGlue.StandbyCode_Step1:=1100;
+//		END_IF
+	
+1100://判定扫码	
+		ZK_ton2.IN:=TRUE; 
+		IF  StickIDGlue.ScanCode_finish OR P3User2_Par.Shield[4] THEN	//AND ZK_ton2.Q	
+			StickIDGlue.ScanCode_finish:=FALSE;			
+			StickIDGlue.StandbyCode_Step1:=1200;
+			ZK_ton2.IN:=FALSE; 
+		END_IF
+	
+1200:
+		IF NOT	SingleStep[10] THEN
+				arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.bOFF:=TRUE;//二维码蹬胶气缸收回
+				arrCyCtrl[P3CYNo.P3_GluePress].Cmd.bOFF:=TRUE;//二维码压胶气缸收回
+				arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bOFF:=TRUE;//二维码切胶压紧气缸打开
+				IF  arrCyCtrl[P3CYNo.P3_GluePress].Io.DIOFFSwitch AND arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIOFFSwitch  THEN
+					IF  StepModel[10] THEN
+						SingleStep[10]:=TRUE;
+					ELSE
+						SingleStep[10]:=FALSE;
+					END_IF			
+						StickIDGlue.StandbyCode_Step1:=1300;
+				END_IF
+		END_IF
+	
+1300://判断定长与Mark孔流程选择
+		IF NOT  P3User2_Par.Shield[24] THEN
+			StickIDGlue.StandbyCode_Step1:=1500;//找Mark孔流程
+		ELSE
+			StickIDGlue.StandbyCode_Step1:=2000;//走定位流程
+		END_IF			
+
+1500://找Mark孔流程
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed THEN
+				arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bJog_Bw:=TRUE;				
+				StickIDGlue.StandbyCode_Step1:=1550;		
+			END_IF
+		END_IF
+		
+		
+
+1600://找到Mark孔后开始走定长--------------数据移位
+	//	arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.fPosition_of_Rel:=arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[6];
+	//	bMoveRel:=TRUE;
+		
+		FOR k:= 3 TO 1 BY -1 DO
+			IDCodeStatus[k+1]:=IDCodeStatus[k];	
+			IDCodeBuffer[k+1]:=IDCodeBuffer[k];
+		END_FOR
+		StickIDGlue.StandbyCode_Step1:=1650;	   
+1650:
+	IDCodeStatus[1]:=0;
+	IDCodeBuffer[1]:='';
+	StickIDGlue.StandbyCode_Step1:=1700;	
+   
+1700: 
+	IF NOT	SingleStep[10] THEN		
+		IF  arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving AND NOT arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Error THEN
+				bMoveRel:=FALSE;
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+				StickIDGlue.StandbyCode_Step1:=1800;
+		END_IF
+	END_IF	
+1800:
+		//找到Mark孔后开始判断Mark位置是否在限定范围内
+	IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos<=arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[4] 
+	AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos>=arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[5] THEN		
+			StickIDGlue.StandbyCode_Step1:=3000;
+	ELSE	
+		IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos>=arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[4] THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+					CodeStartMark:=FALSE;
+					P3_Error[102]:=TRUE; //未达到切胶最小长度位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+		END_IF							
+		IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos<=arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[5] THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+					CodeStartMark:=FALSE;
+					P3_Error[101]:=TRUE; //超过切胶最小位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+		END_IF	
+	END_IF
+2000://二维码拉胶至拉胶位
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN // 																												                                																 							
+					IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[3] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;
+							IF  StepModel[10] THEN
+								SingleStep[10]:=TRUE;
+							ELSE
+								SingleStep[10]:=FALSE;
+							END_IF			
+							StickIDGlue.StandbyCode_Step1:=2050;	
+					ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=3;  
+					END_IF
+			END_IF	
+		END_IF
+2050://数据移位
+	FOR k:= 3 TO 1 BY -1 DO
+		IDCodeStatus[k+1]:=IDCodeStatus[k];	
+		IDCodeBuffer[k+1]:=IDCodeBuffer[k];
+	END_FOR
+	StickIDGlue.StandbyCode_Step1:=2100;	   
+2100:
+	IDCodeStatus[1]:=0;;	
+	IDCodeBuffer[1]:='';
+	StickIDGlue.StandbyCode_Step1:=3000;	   
+				
+3000://切胶流程
+		IF NOT	SingleStep[10] THEN
+			arrCyCtrl[P3CYNo.P3_GluePress].Cmd.bON:=TRUE;//二维码压胶气缸压紧				
+			IF 	 arrCyCtrl[P3CYNo.P3_GluePress].Io.DIONSwitch AND NOT arrCyCtrl[P3CYNo.P3_GluePress].Status.Error2 THEN
+					IF  StepModel[10] THEN
+						SingleStep[10]:=TRUE;
+					ELSE
+						SingleStep[10]:=FALSE;
+					END_IF			
+					StickIDGlue.StandbyCode_Step1:=3100;
+			END_IF
+		END_IF
+		
+3100:
+		StickIDGlue.StandbyCode_Done:=TRUE;
+		StickIDGlue.StandbyCode_Step1:=0;
+END_CASE
+END_IF
+
+IF (P3_SystemRUN.iMode=1 OR  P3_SystemRUN.iMode=3) AND LateBlanking_init_OK[10]  THEN
+ CASE StickIDGlue.StandbyCode_Step1 OF
+1550:
+	IF rMarkesensorR_TRIG.Q AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos<(arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[2]-10) THEN
+		arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bJog_Bw:=FALSE;					
+		IF  StepModel[10] THEN
+			SingleStep[10]:=TRUE;
+		ELSE
+			SingleStep[10]:=FALSE;
+		END_IF			
+		bMoveRel:=FALSE;
+		StickIDGlue.StandbyCode_Step1:=1600;								
+	END_IF		
+	IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos<=arrAxisPar[P3AxisNo.P3_IDPut] .arrTargetPoint[5] THEN
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bJog_Bw:=FALSE;	
+			IF  StepModel[10] THEN
+				SingleStep[10]:=TRUE;
+			ELSE
+				SingleStep[10]:=FALSE;
+			END_IF			
+			CodeStartMark:=FALSE;
+			P3_Error[101]:=TRUE; //超过切胶最小位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+			StickIDGlue.StandbyCode_Step1:=9999;
+	END_IF	
+END_CASE
+END_IF
+
+////////贴胶头取胶//////////////////////////////////////////////////////////////////////////////////////////////////
+IF (P3_SystemRUN.iMode=1 OR (CodeStartMark AND P3_SystemRUN.iMode=3)) AND LateBlanking_init_OK[10]THEN
+CASE StickIDGlue.StandbyCode_Step2 OF	
+0:
+		StickIDGlue.StandbyCode_Step2:=100;	
+100://二维码未取胶
+		IF NOT StickIDGlue.StandbyCode_Finish THEN
+				StickIDGlue.StandbyCode_Step2:=200;
+		ELSE
+				CodeStartMark:=FALSE;
+		END_IF
+200://贴胶头开真空检测有无胶纸残留
+	IF NOT P3_Error[108] THEN
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=TRUE;
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=FALSE;		
+		StickIDGlue.StandbyCode_Step2:=300;
+	END_IF
+300://二维码贴胶头升降至避让位
+		IF NOT	SingleStep[10] THEN
+			IF NOT arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch THEN
+				IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+						IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[4] THEN
+								arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+								arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;		
+								arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+								IF  StepModel[10] THEN
+									SingleStep[10]:=TRUE;
+								ELSE
+									SingleStep[10]:=FALSE;
+								END_IF			
+								StickIDGlue.StandbyCode_Step2:=500;	
+						ELSE
+								arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+						END_IF
+				END_IF
+			END_IF
+		END_IF						
+500://二维码拉胶完成
+		IF StickIDGlue.StandbyCode_Done AND  NOT  StickIDGlue.StandbyCode_Finish THEN
+			StickIDGlue.StandbyCode_Step2:=600;
+		END_IF
+			
+600://二维码贴胶头升降至取胶位
+		IF NOT	SingleStep[10] THEN
+			IF (arrAxisCtrl[P3AxisNo.P3_IDPut	].Cmd.arrbRealPoint[3] OR
+				arrAxisCtrl[P3AxisNo.P3_IDPut	].Status.fActPos <=arrAxisPar[P3AxisNo.P3_IDPut	].arrTargetPoint[4] +0.5)	THEN 																													                                																 							
+					IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[2] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+							IF  StepModel[10] THEN
+								SingleStep[10]:=TRUE;
+							ELSE
+								SingleStep[10]:=FALSE;
+							END_IF			
+							StickIDGlue.StandbyCode_Step2:=700;
+							StickIDGlue_TON[1].IN:=FALSE;
+							ZK_ton2.IN:=FALSE;
+					ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=2;  
+					END_IF
+			END_IF
+		END_IF
+			
+700://二维码贴胶吸盘真空
+			arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=TRUE;
+			arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=FALSE;
+			StickIDGlue_TON[1].IN:=TRUE;
+			IF StickIDGlue_TON[1].Q THEN 
+				//IF  arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch THEN
+						IF  StepModel[10] THEN
+							SingleStep[10]:=TRUE;
+						ELSE
+							SingleStep[10]:=FALSE;
+						END_IF			
+						StickIDGlue.StandbyCode_Step2:=800;
+						StickIDGlue_TON[1].IN:=FALSE;
+				(*ELSE
+						arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;
+						arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+						CodeStartMark:=FALSE;
+						StickIDGlue.StandbyCode_Done:=FALSE;
+						P3_Error[103]:=TRUE;//贴胶头取胶时，真空报警，请人工切断二维码胶重新备胶
+						StickIDGlue.StandbyCode_Step2:=0;*)
+				END_IF
+			//END_IF
+	
+800://二维码切胶气缸伸出
+		IF NOT	SingleStep[10] THEN
+			arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bON:=TRUE;//二维码切胶气缸伸出
+			IF arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIONSwitch AND NOT arrCyCtrl[P3CYNo.P3_GlueCut].Status.Error1  THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+				StickIDGlue.StandbyCode_Step2:=900;
+			END_IF
+		END_IF
+900:
+		IF NOT	SingleStep[10] THEN
+				arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bOFF:=TRUE;//二维码切胶气缸收回
+				arrCyCtrl[P3CYNo.P3_GluePull].Cmd.bOFF:=TRUE;//二维码拉胶夹紧气缸打开
+			IF 	arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIOFFSwitch AND NOT arrCyCtrl[P3CYNo.P3_GlueCut].Status.Error2 
+				AND arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOFFSwitch AND NOT arrCyCtrl[P3CYNo.P3_GluePull].Status.Error2 THEN
+				IF  StepModel[10] THEN
+					SingleStep[10]:=TRUE;
+				ELSE
+					SingleStep[10]:=FALSE;
+				END_IF			
+				StickIDGlue.StandbyCode_Step2:=1000;
+			END_IF
+		END_IF
+		
+1000://条码记忆转移至贴胶头
+		IF NOT	SingleStep[10] THEN
+				IF arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch THEN
+					StickIDGlue.strCode_2:=IDCodeBuffer[4];
+					StickIDGlue.Code_State_2:=IDCodeStatus[4];
+					IF  StepModel[10] THEN
+						SingleStep[10]:=TRUE;
+					ELSE
+						SingleStep[10]:=FALSE;
+					END_IF			
+					StickIDGlue.StandbyCode_Step2:=1050;	
+				ELSE P3_Error[103] :=TRUE;//贴胶头取胶时，真空报警，请人工切断二维码胶重新备胶	
+					arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;
+					arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+					CodeStartMark:=FALSE;
+					StickIDGlue.StandbyCode_Done:=FALSE;
+					StickIDGlue.strCode_2:='';
+					StickIDGlue.Code_State_2:=0;
+					StickIDGlue.StandbyCode_Step2:=0;																	
+				END_IF	
+		END_IF
+1050:
+	IDCodeBuffer[4]:='';
+	IDCodeStatus[4]:=0;
+	StickIDGlue.StandbyCode_Step2:=1100;	
+1100://二维码拉胶去初始位
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] THEN
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;
+						IF  StepModel[10] THEN
+							SingleStep[10]:=TRUE;
+						ELSE
+							SingleStep[10]:=FALSE;
+						END_IF			
+						StickIDGlue.StandbyCode_Step2:=1200;	
+				ELSE
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=1;  
+				END_IF
+			END_IF	
+		END_IF
+	
+1200:	//判断扫码结果   
+	  IF(( StickIDGlue.Code_State_2=1 AND NOT InitBJMark )OR P3User2_Par.Shield[4])AND StickIDGlue.strCode_2<>'' THEN 
+		  StickIDGlue.StandbyCode_Step2:=1300;	
+	  ELSE
+		   StickIDGlue.StandbyCode_Step2:=2000;
+	  END_IF
+		
+		
+/////扫码结果为OK  备胶完成		
+1300://二维码贴胶头升降至避让位
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+					IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[4] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+							IF  StepModel[10] THEN
+								SingleStep[10]:=TRUE;
+							ELSE
+								SingleStep[10]:=FALSE;
+							END_IF			
+							StickIDGlue.StandbyCode_Step2:=1500;	
+					ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+					END_IF
+			END_IF
+		END_IF
+
+1500:
+		CodeStartMark:=FALSE;
+		StickIDGlue.StandbyCode_Done:=FALSE;
+		StickIDGlue.StandbyCode_Finish:=TRUE;
+		StickIDGlue.StandbyCode_Step2:=0;	
+
+		
+		
+//////////扫码结果为NG   抛掉贴胶头上的胶  清除记忆重新备胶
+2000://二维码拉胶去NG位
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[7] THEN
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;
+						IF  StepModel[10] THEN
+							SingleStep[10]:=TRUE;
+						ELSE
+							SingleStep[10]:=FALSE;
+						END_IF			
+						StickIDGlue.StandbyCode_Step2:=2030;	
+				ELSE
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=7;  
+				END_IF
+			END_IF	
+		END_IF
+2030://二维码贴胶头升降至NG位
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+					IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[5] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+							IF  StepModel[10] THEN
+								SingleStep[10]:=TRUE;
+							ELSE
+								SingleStep[10]:=FALSE;
+							END_IF			
+							StickIDGlue.StandbyCode_Step2:=2100;	
+					ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=5;  
+					END_IF
+			END_IF
+		END_IF
+2100: //贴胶头真空关闭，破真空打开
+			arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;
+			arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+			ZK_ton.IN:=TRUE;
+		IF ZK_ton.Q THEN	
+			StickIDGlue.StandbyCode_Step2:=2200;    
+			ZK_ton.IN:=FALSE;
+		END_IF
+
+2200://贴胶头升降去避让位
+	    IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+					IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[4] THEN
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+							IF  StepModel[10] THEN
+								SingleStep[10]:=TRUE;
+							ELSE
+								SingleStep[10]:=FALSE;
+							END_IF			
+							StickIDGlue.StandbyCode_Step2:=2250;	
+					ELSE
+						arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+					END_IF
+			END_IF
+		END_IF
+2250://二维码拉胶去初始位
+		IF NOT	SingleStep[10] THEN
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] THEN
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;
+						IF  StepModel[10] THEN
+							SingleStep[10]:=TRUE;
+						ELSE
+							SingleStep[10]:=FALSE;
+						END_IF			
+						StickIDGlue.StandbyCode_Step2:=2300;	
+				ELSE
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=1;  
+				END_IF
+			END_IF	
+		END_IF	
+	
+2300://判断有无三次备胶标志
+IF InitBJMark THEN
+	k2:=k2+1;
+	StickIDGlue.StandbyCode_Step2:=2400;
+ELSE
+	StickIDGlue.StandbyCode_Step2:=2500;
+END_IF
+
+2400://判断备胶次数
+IF k2>=4 THEN
+	InitBJMark:=FALSE;
+	k2:=0;
+END_IF
+	StickIDGlue.StandbyCode_Step2:=2500;
+	
+2500://清记忆
+	StickIDGlue.strCode_2:='';
+	StickIDGlue.Code_State_2:=0;
+	StickIDGlue.StandbyCode_Done:=FALSE;		
+	StickIDGlue.StandbyCode_Step1:=0;
+	StickIDGlue.StandbyCode_Step2:=0;
+	CodeStartMark:=FALSE;	
+END_CASE
+END_IF
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Act_03_Alarm" Id="{9fc9891b-12ce-463e-830d-eb184a7c6013}">
+      <Implementation>
+        <ST><![CDATA[//P3_Error[100]:=true;//贴胶总报警
+//P3_Error[101]:=TRUE; //超过切胶最大位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+//P3_Error[102]:=TRUE; //未达到切胶最小长度位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+//P3_Error[103]:=TRUE;//贴胶头取胶时，真空报警，请人工切断二维码胶重新备胶
+///P3_Error[104];//扫码Tcp报错
+///P3_Error[105];//扫码故障
+//P3_Error[106];//扫二维码码NG报警
+///P3_Error[107] 去贴二维码胶时，真空报警,请重新备胶	
+///P3_Error[108] 二维码贴胶头有残余胶纸，请人工清理后复位
+///P3_Error[109] 二维码胶无料检测报警
+
+//贴胶总报警
+P3_Error[100]:=P3_Error[101] OR P3_Error[102] OR P3_Error[103] OR P3_Error[104] OR P3_Error[105] OR P3_Error[106] OR P3_Error[107] OR P3_Error[108] OR P3_Error[109];
+//二维码拉胶流程NG处理
+IF( P3_Error[101] OR P3_Error[102]) AND (P3_SystemRUN.bReset OR stSysState.hmiReset) THEN//寻找Mark孔异常
+		InitBJMark:=TRUE;	
+		StickIDGlue.StandbyCode_Step1:=0;
+		arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=1;  
+		arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+		CodeStartMark:=FALSE;
+		k2:=0;
+	FOR i :=1 TO 4 DO
+		IDCodeBuffer[i]:='';//二维码缓存，，1：扫码位条码，，2：中间缓存，，3：取胶位条码
+		IDCodeStatus[i]:=0;//二维码缓存状态，，1：ok，，2：ng，，3：取胶位条码
+	END_FOR
+		P3_Error[101]:=FALSE;	
+		P3_Error[102]:=FALSE;
+END_IF
+
+
+IF (StickIDGlue.StandbyCode_Step2>=800 AND StickIDGlue.StandbyCode_Step2<=1300 )   THEN
+		IF arrCyCtrl[P3CYNo.P3_GlueVacuum].Status.ONState AND  NOT arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch THEN
+				P3_Error[107] :=TRUE;//去贴二维码胶时，真空报警,请重新备胶
+		END_IF	
+END_IF
+IF P3_Error[107]  AND (P3_SystemRUN.bReset OR stSysState.hmiReset ) THEN
+		P3_Error[107]:=FALSE;
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;	
+		StickIDGlue.StandbyCode_Finish:=FALSE;//
+		StickIDGlue.StandbyCode_Step1:=0;	
+		StickIDGlue.StandbyCode_Step2:=0;	
+		StickIDGlue.strCode_2:='';
+		StickIDGlue.Code_State_2:=0;
+		Step39:=1000;
+END_IF
+
+IF StickIDGlue.StandbyCode_Finish AND NOT arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch  AND ( Step39<=1300) THEN 
+	P3_Error[107]:=TRUE;//去贴二维码胶时，真空报警,请重新备胶
+END_IF
+
+IF arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch AND StickIDGlue.StandbyCode_Step2=300 THEN
+	P3_Error[108]:=TRUE;//二维码贴胶头有残余胶纸，请人工清理后复位;
+END_IF
+
+IF IDGlueMount2>=3 THEN
+	P3_Error[109]:=TRUE;//二维码胶无料检测报警
+	IDGlueMount2:=0;
+END_IF
+
+
+
+
+(*
+//P3_Error[101]:=TRUE; //超过切胶最大位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+//P3_Error[102]:=TRUE; //未达到切胶最小长度位报警,请检擦Mark孔间距是否否和标准,找到Mark孔后，拉胶轴当前位置要在最大位跟最小位之间
+//P3_Error[103]:=TRUE;//贴胶头取胶时，真空报警，请人工切断二维码胶重新备胶
+///P3_Error[104];//扫码Tcp报错
+///P3_Error[105];//扫码故障
+//P3_Error[106];//扫二维码码NG报警
+///P3_Error[107] 去贴二维码胶时，真空报警,请重新备胶	
+///P3_Error[108] 二维码贴胶头有残余胶纸，请人工清理后复位
+///P3_Error[109] 二维码胶无料检测报警
+
+//二维码拉胶流程NG处理
+IF( P3_Error[101] OR P3_Error[102]) AND (P3_SystemRUN.bReset OR stSysState.hmiReset) THEN//寻找Mark孔异常
+		P3_Error[101]:=FALSE;	
+		P3_Error[102]:=FALSE;
+		InitBJMark:=TRUE;	
+		StickIDGlue.StandbyCode_Step1:=0;
+		arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=1;  
+		arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=4;  
+		CodeStartMark:=FALSE;
+	FOR i :=1 TO 4 DO
+		IDCodeBuffer[i]:='';//二维码缓存，，1：扫码位条码，，2：中间缓存，，3：取胶位条码
+		IDCodeStatus[i]:=0;//二维码缓存状态，，1：ok，，2：ng，，3：取胶位条码
+	END_FOR
+END_IF
+
+
+IF (StickIDGlue.StandbyCode_Step2>=800 AND StickIDGlue.StandbyCode_Step2<=1300 )   THEN
+		IF arrCyCtrl[P3CYNo.P3_GlueVacuum].Status.ONState AND  NOT arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch THEN
+				P3_Error[107] :=TRUE;//去贴二维码胶时，真空报警,请重新备胶
+				StickIDGlue.strCode_2:='';
+				StickIDGlue.Code_State_2:=0;
+		END_IF	
+END_IF
+IF P3_Error[107]  AND (P3_SystemRUN.bReset OR stSysState.hmiReset ) THEN
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;
+		arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;	
+		StickIDGlue.StandbyCode_Finish:=FALSE;//
+		StickIDGlue.StandbyCode_Step1:=0;	
+		StickIDGlue.StandbyCode_Step2:=0;	
+		Step39:=1000;
+END_IF
+
+IF StickIDGlue.StandbyCode_Finish AND NOT arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch  AND ( Step39<=1300) THEN 
+	P3_Error[107]:=TRUE;//去贴二维码胶时，真空报警,请重新备胶
+	StickIDGlue.strCode_2:='';
+	StickIDGlue.Code_State_2:=0;
+END_IF
+
+IF arrCyCtrl[P3CYNo.P3_GlueVacuum].Io.DIOnSwitch AND StickIDGlue.StandbyCode_Step2=300 THEN
+	P3_Error[108]:=TRUE;//二维码贴胶头有残余胶纸，请人工清理后复位;
+END_IF
+
+IF IDGlueMount2>=3 THEN
+	P3_Error[109]:=TRUE;//二维码胶无料检测报警
+	IDGlueMount2:=0;
+END_IF
+*)
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Act_04_Condition" Id="{4babf806-292e-4e88-b5a3-f48f5034b0bd}">
+      <Implementation>
+        <ST><![CDATA[//P3_IDPut							:INT:=180;//二维码胶拉胶		1:初始位  2:取胶位  3:拉胶位  4:切胶最小位 5:切胶最大位	6,Mark孔后定长 7,NG位
+//P3_IDLift							:INT:=181;//二维码胶升降		1:初始位  2:取胶位  3:贴胶位  4:避让位  5:NG位
+//二维码拉胶安全条件
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.JogN_Condition:=FALSE;
+ END_IF 
+
+IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN//
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[1]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[1]:=FALSE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Error AND P3_SystemRUN.iMode=3 
+	AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving 
+	AND ((*LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_IDLift].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_IDLift].arrTargetPoint[4] OR*)
+	arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[4] OR arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[1])	THEN//
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[2]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[3]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[4]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[5]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[6]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[7]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[2]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[3]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[4]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[5]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[6]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.GoPoint_Condition[7]:=FALSE;
+ END_IF
+ 
+//二维码升降安全条件
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.JogP_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.JogP_Condition:=FALSE;
+ END_IF
+
+IF P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] THEN
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.JogN_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.JogN_Condition:=FALSE;
+ END_IF
+IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN//
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[1]:=TRUE;
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[4]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[1]:=FALSE;
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[4]:=TRUE;
+ END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Error AND P3_SystemRUN.iMode=3 
+	AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving 
+	AND (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_IDPut].Status.fActPos)<=arrAxisParV2[P3AxisNo.P3_IDPut].arrTargetPoint[3])	THEN//
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[2]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[2]:=FALSE;
+ END_IF 
+
+ IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Error AND P3_SystemRUN.iMode=3 
+	AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving 
+	AND arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[7] THEN//
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[5]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[5]:=FALSE;
+ END_IF 
+
+ IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Error AND P3_SystemRUN.iMode=3 
+	AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving 
+	AND  arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1]	THEN//
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[3]:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.GoPoint_Condition[3]:=FALSE;
+ END_IF 
+;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Act_05_CallScanFB" Id="{5a780012-dc68-4ff6-b807-e0ea597dc71a}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"StickIDGlue.bTcpOpen_OK"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">17L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"CS_CodeTcp"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"ScanCodeFB"</v>
+                            <v n="Type">"CS_CodeTcp"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">2L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems" cet="Operand">
+                              <n />
+                              <o>
+                                <v n="Operand">"P3_Error[104]"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">4L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"StickIDGlue.Scan_bDone"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">5L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"P3_Error[105]"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">6L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"StickIDGlue.strCode"</v>
+                                <v n="Type">"STRING"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">7L</v>
+                              </o>
+                              <o>
+                                <v n="Operand">"StickIDGlue.Code_State"</v>
+                                <v n="Type">"INT"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">true</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">8L</v>
+                              </o>
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"StickIDGlue.bScan_start"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">10L</v>
+                              </o>
+                              <v n="Id">9L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"StickIDGlue.Scan_IP"</v>
+                                <v n="Type">"STRING"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">12L</v>
+                              </o>
+                              <v n="Id">11L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"StickIDGlue.bTcpOpen"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">14L</v>
+                              </o>
+                              <v n="Id">13L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"StickIDGlue.bScan_init"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">16L</v>
+                              </o>
+                              <v n="Id">15L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>bLON</v>
+                              <v>sRemoteHost</v>
+                              <v>bComOpen</v>
+                              <v>binit_tcp</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>T_IPv4Addr</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>bComOpenDone</v>
+                              <v>bCodeConError</v>
+                              <v>bDone</v>
+                              <v>bCodeError</v>
+                              <v>strCode</v>
+                              <v>Code_State</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>BOOL</v>
+                              <v>STRING</v>
+                              <v>INT</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">3L</v>
+                        </o>
+                        <v n="Id">18L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <Action Name="Act_07_Scan" Id="{69ee625c-91b2-4de2-96ef-f14b08878829}">
+      <Implementation>
+        <ST><![CDATA[
+StickIDGlue.Scan_IP:='192.168.10.25';
+Scan_TON[1](PT:=T#1MS);
+Scan_TON[2](PT:=T#1MS);
+Scan_TON[3](PT:=T#1MS);
+Scan_TON[4](PT:=T#100MS);
+
+
+////////////////////////人工扫码复扫/////////////////////////////
+Scan_code_Z (CLK:=StickIDGlue.ScanCode_AgainStart, Q=>);
+IF Scan_code_Z.Q AND  ScanID_step=0 THEN
+	 ScanID_step:=10;
+END_IF
+///////////////////////////////////////////////////////////
+
+
+
+CASE ScanID_step OF
+		0:
+		IF StickIDGlue.ScanCode_start AND NOT P3_Error[104] AND NOT P3_Error[105]AND NOT P3User2_Par.Shield[4] THEN
+			StickIDGlue.ScanCode_start:=FALSE;
+		 	StickIDGlue.Code_State:=0;
+			ScanID_step:=10;
+		ELSIF P3User2_Par.Shield[4] THEN
+			StickIDGlue.ScanCode_start:=FALSE;
+		 	StickIDGlue.Code_State:=0;
+			ScanID_step:=70;
+		END_IF
+	
+		10:
+			Scan_TON[1].IN:=FALSE;
+			Scan_TON[2].IN:=FALSE;
+			Scan_TON[3].IN:=FALSE;
+			ScanID_step:=20;
+			
+		20:
+			StickIDGlue.bScan_init:=TRUE;
+			Scan_TON[1].IN:=TRUE;
+			IF Scan_TON[1].Q THEN
+				StickIDGlue.bScan_init:=FALSE;
+				Scan_TON[1].IN:=FALSE;
+				ScanID_step:=30;
+			END_IF
+
+		30:
+			StickIDGlue.bTcpOpen:=TRUE;
+			Scan_TON[2].IN:=TRUE;
+			IF Scan_TON[2].Q THEN
+				StickIDGlue.bTcpOpen:=FALSE;
+				Scan_TON[2].IN:=FALSE;
+				ScanID_step:=40;
+			END_IF
+
+		40:
+			IF StickIDGlue.bTcpOpen_OK THEN
+				StickIDGlue.ScanCode_finish:=FALSE;
+				ScanID_step:=50;
+			END_IF
+		
+		50:
+			StickIDGlue.bScan_start:=TRUE;
+			Scan_TON[3].IN:=TRUE;
+			IF Scan_TON[3].Q THEN
+				StickIDGlue.bScan_start:=FALSE;
+				Scan_TON[3].IN:=FALSE;
+				ScanID_step:=60;
+			END_IF
+		60:
+			Scan_TON[4].IN:=TRUE;
+			IF 	Scan_TON[4].Q THEN
+				ScanID_step:=70;
+				Scan_TON[4].IN:=FALSE;
+			END_IF
+
+		70:
+		IF NOT  P3User2_Par.Shield[4] THEN
+				IF  StickIDGlue.Code_State=1 THEN
+						IDCodeBuffer[1]:=StickIDGlue.strCode;
+						IDCodeStatus[1]:=1;
+						StickIDGlue.ScanCode_finish:=TRUE;
+						ScanID_step:=80;		
+				 ELSIF StickIDGlue.Code_State=2 AND I<3 THEN
+						 ScanID_step:=10;
+						 I:=I+1;	 	
+				ELSIF 	StickIDGlue.Code_State=2 AND I>=3 THEN
+						IDCodeBuffer[1]:='';
+						IDCodeStatus[1]:=2;
+						StickIDGlue.ScanCode_finish:=TRUE;
+						P3_Error[106]:=TRUE;//扫二维码码NG报警
+						I:=0;
+						ScanID_step:=80;
+				END_IF
+		ELSE
+				IDCodeBuffer[1]:='A1234567890ABCDEF';
+				IDCodeStatus[1]:=1;
+				StickIDGlue.ScanCode_finish:=TRUE;
+				ScanID_step:=80;
+		END_IF
+		80:
+			IF NOT StickIDGlue.ScanCode_finish THEN
+				ScanID_step:=0;
+			END_IF
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Act_08_Init" Id="{f5791c9d-bcf0-4ca8-9505-66563f8e0fac}">
+      <Implementation>
+        <ST><![CDATA[//烤箱上下料初始化
+IF P3_SystemRUN.iMode=3 AND LateBlanking_init_start[10] THEN
+		LateBlanking_init_OK[10]:=FALSE;
+		LateBlanking_init_start[10]:=FALSE;	
+		Init_step[10]:=1;
+END_IF
+
+IF P3_SystemRUN.iMode=3 (*AND P3Tail[1].Init_Done AND P3Tail[4].Init_Done	*)THEN
+	CASE Init_step[10] OF
+		1:
+			LateBlanking_init_OK[10]:=FALSE;
+			CodeStartMark:=FALSE;
+			CutStep:=0;
+			Step39:=0;
+			StickIDGlue.StandbyCode_Step1:=0;
+			StickIDGlue.StandbyCode_Step2:=0;
+			StickIDGlue.StandbyCode_Done:=FALSE;
+			StickIDGlue.StandbyCode_Finish:=FALSE;
+			StickIDGlue.PermitFilling:=FALSE;
+			StickIDGlue.PermitMaterial:=FALSE;
+			StickIDGlue.strCode:='';
+			StickIDGlue.Code_State:=0;
+			StickIDGlue.strCode_1:='';
+			StickIDGlue.Code_State_1:=0;
+			StickIDGlue.strCode_2:='';
+			StickIDGlue.Code_State_2:=0;
+			IDGlueMount2:=0;
+			FOR i :=1 TO 4 DO
+				IDCodeBuffer[i]:='';//二维码缓存，，1：扫码位条码，，2：中间缓存，，3：取胶位条码
+				IDCodeStatus[i]:=0;//二维码缓存状态，，1：ok，，2：ng，，3：取胶位条码
+			END_FOR
+			Init_step[10]:=10;
+
+		10:
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN
+					arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bON:=FALSE;	
+					arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.bOFF:=TRUE;	
+					Init_step[10]:=20;
+			END_IF	
+		20:
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bStop:=TRUE;
+			arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bStop:=TRUE;
+			Init_step[10]:=30;
+			
+			
+		30:
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bStop:=FALSE;
+			arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bStop:=FALSE;
+			Init_step[10]:=40;
+			
+		40:
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bReset:=TRUE; 	
+			arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bReset:=TRUE;
+			Init_step[10]:=50;
+			
+		50:
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bReset:=FALSE; 	
+			arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bReset:=FALSE;
+			Init_step[10]:=60;
+			
+		60:
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bEnable:=TRUE; 
+			arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bEnable:=TRUE; 
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Enabled THEN
+					Init_step[10]:=70;	
+			END_IF
+		
+		70://二维码拉胶回原
+	
+			arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bHome:=TRUE;
+			Init_step[10]:=80;	
+			
+		80:
+			Init3_TON[2].IN:=TRUE;	
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Moving  THEN
+				arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.bHome:=FALSE;
+				Init3_TON[2].IN:=FALSE;	
+				Init_step[10]:=90;
+			END_IF
+				
+		90://二维码贴胶平移和二维码拉胶回初始位
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] THEN
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=0;		
+				ELSE
+					arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.iGoSetPos:=1;  
+				END_IF
+			END_IF
+			IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDPut].Status.NoMoving THEN
+				Init_step[10]:=100;
+			END_IF
+	
+		100://二维码贴胶头升降回原
+			arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bHome:=TRUE;
+			Init_step[10]:=110;	
+			
+		110:	
+			IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Moving THEN 
+				arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.bHome:=FALSE;	
+				Init_step[10]:=120;
+			END_IF
+				
+		120://二维码贴胶头升降至初始位
+			IF arrAxisCtrl[P3AxisNo.P3_IDLift].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_IDLift].Status.NoMoving THEN 																													                                																 							
+				IF arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.arrbRealPoint[1] THEN
+					arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=0;
+						Init_step[10]:=130;
+				ELSE
+					arrAxisCtrl[P3AxisNo.P3_IDLift].Cmd.iGoSetPos:=1;  
+				END_IF
+			END_IF
+		
+		130://二维码拉胶夹紧气缸打开
+				arrCyCtrl[P3CYNo.P3_GluePull].Cmd.bOFF:=TRUE;//二维码拉胶夹紧气缸
+			IF arrCyCtrl[P3CYNo.P3_GluePull].Io.DIOFFSwitch AND NOT arrCyCtrl[P3CYNo.P3_GluePull].Status.Error2 THEN
+				Init_step[10]:=140;
+			END_IF		
+			
+		140:
+			arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.bOFF:=TRUE;//二维码蹬胶气缸退回
+			arrCyCtrl[P3CYNo.P3_GluePress].Cmd.bON:=TRUE;//二维码压胶气缸压紧	
+			arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bOFF:=TRUE;//二维码切胶气缸退回
+			IF arrCyCtrl[P3CYNo.P3_GluePress].Io.DIONSwitch  AND arrCyCtrl[P3CYNo.P3_GlueCut].Io.DIOFFSwitch   THEN
+					Init_step[10]:=150;
+			END_IF	
+		150:
+
+			Step39:=0;
+			Init_step[10]:=160;
+			k2:=0;
+			InitBJMark:=TRUE;	
+		160:
+			LateBlanking_init_OK[10]:=TRUE;
+			Init_step[10]:=999;
+
+	END_CASE
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SingeMode" Id="{e32af34d-e5f4-478f-a59d-0b7ea0706cf6}">
+      <Implementation>
+        <ST><![CDATA[
+		
+SingleStep_10 (CLK:=P3_Start[10] , Q=>);
+IF  SingleStep_10.Q OR NOT StepModel[10] THEN
+	SingleStep[10]:=FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Auto1_Stick">
+      <LineId Id="846" Count="32" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.Act_01">
+      <LineId Id="3989" Count="201" />
+      <LineId Id="58" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.Act_02">
+      <LineId Id="11777" Count="628" />
+      <LineId Id="64" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.Act_03_Alarm">
+      <LineId Id="1247" Count="14" />
+      <LineId Id="1264" Count="9" />
+      <LineId Id="1368" Count="1" />
+      <LineId Id="1274" Count="93" />
+      <LineId Id="4" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.Act_04_Condition">
+      <LineId Id="926" Count="84" />
+      <LineId Id="590" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.Act_07_Scan">
+      <LineId Id="315" Count="101" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.Act_08_Init">
+      <LineId Id="935" Count="138" />
+      <LineId Id="204" Count="0" />
+    </LineIds>
+    <LineIds Name="LateBlanking_Auto1_Stick.SingeMode">
+      <LineId Id="7" Count="0" />
+      <LineId Id="9" Count="3" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

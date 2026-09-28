@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P2InteractPart" Id="{cc775c0d-e21f-4769-bd8c-ff246e5d6c25}">
+    <Declaration><![CDATA[TYPE ST_P2InteractPart ://交互_正负区分
+STRUCT
+//→叠台
+	M1Allow:BOOL;//允许1号叠台取料
+	M2Allow:BOOL;//允许2号叠台取料
+	M3Allow:BOOL;//允许3号叠台取料
+
+//→叠台
+	M1Allow2:BOOL;//允许1号叠台取料
+	M2Allow2:BOOL;//允许2号叠台取料
+	M3Allow2:BOOL;//允许3号叠台取料
+	
+//叠台→	
+	M1Done:BOOL;//1号叠台取料完成
+	M2Done:BOOL;//2号叠台取料完成
+	M3Done:BOOL;//3号叠台取料完成
+	
+	M1LockReady:BOOL;//1号叠台准备好取极片
+	M2LockReady:BOOL;//2号叠台准备好取极片
+	M3LockReady:BOOL;//3号叠台准备好取极片
+	
+	M1JumpReady:BOOL;//1号叠台跳过取极片	
+	M2JumpReady:BOOL;//2号叠台跳过取极片	
+	M3JumpReady:BOOL;//3号叠台跳过取极片	
+	
+	M1Safety:BOOL;//1号叠台安全(取料运行时:=FALSE)
+	M2Safety:BOOL;//2号叠台安全(取料运行时:=FALSE)
+	M3Safety:BOOL;//3号叠台安全(取料运行时:=FALSE)
+	
+	iM1Ask:INT:=0;// 1号叠台极片需求量
+	iM2Ask:INT:=0;// 2号叠台极片需求量
+	iM3Ask:INT:=0;// 3号叠台极片需求量
+	
+	M1PoleHave:BOOL;//叠台1取料位无片,,TRue触发上升沿清数据
+	M2PoleHave:BOOL;//叠台2取料位无片,,TRue触发上升沿清数据
+	M3PoleHave:BOOL;//叠台3取料位无片,,TRue触发上升沿清数据
+
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

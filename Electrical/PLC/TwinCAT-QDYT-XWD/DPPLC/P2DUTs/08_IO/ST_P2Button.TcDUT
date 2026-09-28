@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_P2Button" Id="{7bb0f83a-78f0-4ae7-89be-f9d261c8b0bb}">
+    <Declaration><![CDATA[TYPE ST_P2Button ://P2 按钮
+STRUCT
+System_StartLights	:BOOL;	//		控制面板启动按钮灯
+System_ResetLights	:BOOL;	//		控制面板复位按钮灯
+System_StopLights	:BOOL;	//		控制面板停止按钮灯
+System_Autonbtn	:BOOL;	//		控制面板手自动切换按钮
+System_Startbtn	:BOOL;	//		控制面板启动按钮
+System_Rrestbtn	:BOOL;	//		控制面板复位按钮
+System_Stopbtn	:BOOL;	//		控制面板停止按钮
+System_EmStopbtn	:BOOL;	//		控制面板急停按钮
+
+P2M1_Tricolorlamp_Yellow 	:BOOL;	//1号叠台		三色灯_黄
+P2M1_Tricolorlamp_Red 	:BOOL;	//1号叠台		三色灯_绿
+P2M1_Tricolorlamp_Green 	:BOOL;	//1号叠台		三色灯_红
+P2M1_Tricolorlamp_Buzzer	:BOOL;	//1号叠台		三色灯_蜂鸣器
+P2M1_PoleInflationLights	:BOOL;	//1号叠台		隔膜气胀轴按钮灯
+P2M1_PoleTapeSplicerLLights	:BOOL;	//1号叠台		隔膜左压板气缸按钮灯
+P2M1_PoleTapeSplicerRLights	:BOOL;	//1号叠台		隔膜右压板气缸按钮灯
+P2M1_BlueGlueLights	:BOOL;	//1号叠台		压蓝胶按钮灯
+P2M1_codeGlueLights	:BOOL;	//1号叠台		压二维码胶按钮灯
+P2M1_PoleInflationbtn	:BOOL;	//1号叠台		隔膜气胀轴按钮
+P2M1_PoleTapeSplicerLbtn	:BOOL;	//1号叠台		隔膜左压板气缸按钮
+P2M1_PoleTapeSplicerRbtn	:BOOL;	//1号叠台		隔膜右压板气缸按钮
+P2M1_BlueGluebtn	:BOOL;	//1号叠台		一键备蓝胶按钮
+P2M1_BlueGluebtnLights	:BOOL;	//1号叠台		一键备蓝胶按钮灯
+P2M1_BlueGluePressbtn	:BOOL;	//1号叠台		压蓝胶按钮
+P2M1_codeGluebtn	:BOOL;	//1号叠台		一键备二维码胶按钮
+P2M1_codeGluebtnLights	:BOOL;	//1号叠台		一键备二维码胶按钮灯
+P2M1_codeGluePressbtn	:BOOL;	//1号叠台		压二维码胶按钮
+P2M1_EmStopbtn1	:BOOL;	//1号叠台		外罩急停1
+P2M1_EmStopbtn2	:BOOL;	//1号叠台		外罩急停2
+P2M1_EmStopbtn3	:BOOL;	//1号叠台		外罩急停3
+P2M1_EmStopbtn4	:BOOL;	//1号叠台		外罩急停4
+P2M1_Startbtn:BOOL;//1号叠台，启动按钮
+P2M1_Resetebtn:BOOL;//1号叠台，复位按钮
+P2M1_Stopbtn:BOOL;//1号叠台，停止按钮
+P2M1_Autobtn:BOOL;//1号叠台，手自动按钮
+
+
+
+P2M2_Tricolorlamp_Yellow 	:BOOL;	//2号叠台		三色灯_黄
+P2M2_Tricolorlamp_Red 	:BOOL;	//2号叠台		三色灯_绿
+P2M2_Tricolorlamp_Green 	:BOOL;	//2号叠台		三色灯_红
+P2M2_Tricolorlamp_Buzzer	:BOOL;	//2号叠台		三色灯_蜂鸣器
+P2M2_PoleInflationLights	:BOOL;	//2号叠台		隔膜气胀轴按钮灯
+P2M2_PoleTapeSplicerLLights	:BOOL;	//2号叠台		隔膜左压板气缸按钮灯
+P2M2_PoleTapeSplicerRLights	:BOOL;	//2号叠台		隔膜右压板气缸按钮灯
+P2M2_BlueGlueLights	:BOOL;	//2号叠台		压蓝胶按钮灯
+P2M2_codeGlueLights	:BOOL;	//2号叠台		压二维码胶按钮灯
+P2M2_PoleInflationbtn	:BOOL;	//2号叠台		隔膜气胀轴按钮
+P2M2_PoleTapeSplicerLbtn	:BOOL;	//2号叠台		隔膜左压板气缸按钮
+P2M2_PoleTapeSplicerRbtn	:BOOL;	//2号叠台		隔膜右压板气缸按钮
+P2M2_BlueGluebtnLights	:BOOL;	//2号叠台		一键备蓝胶按钮灯
+P2M2_BlueGluebtn	:BOOL;	//2号叠台		一键备蓝胶按钮
+P2M2_BlueGluePressbtn	:BOOL;	//2号叠台		压蓝胶按钮
+P2M2_codeGluebtnLights	:BOOL;	//2号叠台		一键备二维码胶按钮灯
+P2M2_codeGluebtn	:BOOL;	//2号叠台		一键备二维码胶按钮
+P2M2_codeGluePressbtn	:BOOL;	//2号叠台		压二维码胶按钮
+P2M2_EmStopbtn1	:BOOL;	//2号叠台		外罩急停1
+P2M2_EmStopbtn2	:BOOL;	//2号叠台		外罩急停2
+P2M2_EmStopbtn3	:BOOL;	//2号叠台		外罩急停3
+P2M2_EmStopbtn4	:BOOL;	//2号叠台		外罩急停4
+P2M2_Startbtn:BOOL;//2号叠台，启动按钮
+P2M2_Resetebtn:BOOL;//2号叠台，复位按钮
+P2M2_Stopbtn:BOOL;//2号叠台，停止按钮
+P2M2_Autobtn:BOOL;//2号叠台，手自动按钮
+
+
+P2M3_Tricolorlamp_Yellow 	:BOOL;	//2号叠台		三色灯_黄
+P2M3_Tricolorlamp_Red 	:BOOL;	//2号叠台		三色灯_绿
+P2M3_Tricolorlamp_Green 	:BOOL;	//2号叠台		三色灯_红
+P2M3_Tricolorlamp_Buzzer	:BOOL;	//2号叠台		三色灯_蜂鸣器
+P2M3_PoleInflationLights	:BOOL;	//3号叠台		隔膜气胀轴按钮灯
+P2M3_PoleTapeSplicerLLights	:BOOL;	//3号叠台		隔膜左压板气缸按钮灯
+P2M3_PoleTapeSplicerRLights	:BOOL;	//3号叠台		隔膜右压板气缸按钮灯
+P2M3_BlueGlueLights	:BOOL;	//3号叠台		压蓝胶按钮灯
+P2M3_codeGlueLights	:BOOL;	//3号叠台		压二维码胶按钮灯
+P2M3_PoleInflationbtn	:BOOL;	//3号叠台		隔膜气胀轴按钮
+P2M3_PoleTapeSplicerLbtn	:BOOL;	//3号叠台		隔膜左压板气缸按钮
+P2M3_PoleTapeSplicerRbtn	:BOOL;	//3号叠台		隔膜右压板气缸按钮
+P2M3_BlueGluebtnLights	:BOOL;	//3号叠台		一键备蓝胶按钮灯
+P2M3_BlueGluebtn	:BOOL;	//3号叠台		一键备蓝胶按钮
+P2M3_BlueGluePressbtn	:BOOL;	//3号叠台		压蓝胶按钮
+P2M3_codeGluebtnLights	:BOOL;	//3号叠台		一键备二维码胶按钮灯
+P2M3_codeGluebtn	:BOOL;	//3号叠台		一键备二维码胶按钮
+P2M3_codeGluePressbtn	:BOOL;	//3号叠台		压二维码胶按钮
+P2M3_EmStopbtn1	:BOOL;	//3号叠台		外罩急停1
+P2M3_EmStopbtn2	:BOOL;	//3号叠台		外罩急停2
+P2M3_EmStopbtn3	:BOOL;	//3号叠台		外罩急停3
+P2M3_EmStopbtn4	:BOOL;	//3号叠台		外罩急停4
+P2M3_Startbtn:BOOL;//3号叠台，启动按钮
+P2M3_Resetebtn:BOOL;//3号叠台，复位按钮
+P2M3_Stopbtn:BOOL;//3号叠台，停止按钮
+P2M3_Autobtn:BOOL;//3号叠台，手自动按钮
+
+
+P2M3_Securitydoorswitch8	:BOOL;	//3号叠台		外罩门禁8
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

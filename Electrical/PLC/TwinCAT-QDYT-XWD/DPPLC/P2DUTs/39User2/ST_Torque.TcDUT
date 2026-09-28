@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Torque" Id="{e066b7cb-c962-46d6-aa8b-713c25f5b54c}">
+    <Declaration><![CDATA[TYPE ST_Torque :
+STRUCT
+	
+	An_CarryingTorSet:INT;//正极搬运1移位报警力矩设定
+	An_DTCarryingTorSet:INT;//正极叠台搬运报警力矩值设定
+	Ca_Carrying1TorSet:INT;//负极搬运1平移报警力矩设定
+	Ca_Carrying2TorSet:INT;//负极搬运2平移报警力矩设定
+	Ca_DTCarryingTorSet:INT;//负极叠台搬运平移报警力矩设定
+	TailCurlTorSet:INT;//尾卷夹电芯平移报警力矩设定
+	TailCurlWhirlTorSet:INT;//尾卷夹电芯旋转报警力矩设定
+	TailCurlSEPTATorSet:INT;//夹膜平移报警力矩设定
+	//TailCurlRetTorSet:INT;//尾卷夹电芯伸缩力矩设定
+	
+	An_CarryingTor:INT;//正极搬运1移位实时力矩
+	An_DTCarryingTor:INT;//正极叠台搬运实时力矩
+	Ca_Carrying1Tor:INT;//负极搬运1平移实时力矩
+	Ca_Carrying2Tor:INT;//负极搬运2平移实时力矩
+	Ca_DTCarryingTor:INT;//负极叠台搬运平移实时力矩
+	TailCurlTor:INT;//尾卷夹电芯平移实时力矩
+	TailCurlWhirlTor:INT;//尾卷夹电芯旋转实时力矩
+	TailCurlSEPTATor:INT;//夹膜平移实时力矩
+	//TailCurlRetTor:INT;//尾卷夹电芯伸缩实时力矩
+	
+	An_CarryingTorAlarm:BOOL;//正极搬运1移位力矩超限报警
+	An_DTCarryingTorAlarm:BOOL;//正极叠台搬运力矩超限报警
+	Ca_Carrying1TorAlarm:BOOL;//负极搬运1平移力矩超限报警
+	Ca_Carrying2TorAlarm:BOOL;//负极搬运2平移力矩超限报警
+	Ca_DTCarryingTorAlarm:BOOL;//负极叠台搬运平移力矩超限报警
+	TailCurlTorAlarm:BOOL;//尾卷夹电芯平移力矩超限报警
+	TailCurlWhirlTorAlarm:BOOL;//尾卷夹电芯旋转力矩超限报警
+	TailCurlSEPTATorAlarm:BOOL;//夹膜平移力矩超限报警
+	//TailCurlRetTorAlarm:BOOL;//尾卷夹电芯伸缩力矩超限报警
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

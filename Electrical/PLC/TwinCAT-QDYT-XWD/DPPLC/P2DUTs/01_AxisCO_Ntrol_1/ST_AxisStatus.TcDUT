@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AxisStatus" Id="{3898bc55-4445-45b6-839a-cf85a6ad99c2}">
+    <Declaration><![CDATA[TYPE ST_AxisStatus :   //轴相关状态
+STRUCT
+
+(*status*)
+	AxisName		     :STRING(31);		     (*轴名称*)
+	AxisID			     :UDINT;		      (*轴在NC中的编号*)
+	
+    Enabled		         :BOOL;              //使能状态
+	Moving              :BOOL;                //轴运行中
+	NoMoving          :BOOL;   //轴停止中
+    Coupled             :BOOL;   //轴耦合中
+
+	fActPos			     :LREAL;  //轴的当前位置               
+	fSetPos			     :LREAL;   //轴的指令位置              
+    fModuloActPos		 :REAL;   //轴的当前模长位置             
+    fModuloSetPos		 :REAL;      //轴的指令模长位置 
+    fActVelo			   :REAL;    //轴的当前速度             
+    fSetVelo			   :REAL;    //轴的指令速度
+	Homed                :BOOL;        //轴回原点完成         
+ 
+	Error                   :BOOL;//轴报错
+	ErrorID                  :UDINT;//轴报错ID号
+    WarningDynamitcsPar    :BOOL; //运动参数警告
+
+     ErrorLimitSwitch           :BOOL; //限位报警
+	 Errorcomp                   :BOOL; //手自动报警
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

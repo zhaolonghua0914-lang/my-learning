@@ -1,0 +1,244 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_CcdTcp" Id="{18d05cda-7cee-4686-bef6-63d1d1cabd16}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PUBLIC CS_CcdTcp
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR_IN_OUT
+   iCcd2:ICCD;
+   Data:STCcdData;
+END_VAR
+
+
+VAR
+	ccdDataSend:STCcdDataSend;
+	
+	fbTcpCon:FB_SocketConnect;
+	fbTcpSend:FB_SocketSend;
+	fbTcpRec:FB_SocketReceive;
+	fbTcpClose: FB_SocketClose;
+	bConnect: BOOL;
+	bClose: BOOL;
+	hTcpSock: T_HSOCKET;
+	//aTcpSend:ARRAY[1..10] OF BYTE;
+	//aTcpReceive:ARRAY[1..10] OF BYTE;	
+	StrSend:STRING;
+	StrReceive:STRING;
+	fbUdpCreate:FB_SocketUdpCreate;
+	hUdp: T_HSOCKET;
+	bCreate: BOOL;
+	port: UDINT:=9004;
+	bSendTcp: BOOL;
+	bReceiveTcp: BOOL;
+	fbSwingHalt2: MC_Halt;
+
+
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+	Config();
+	
+	M_SendReceive();
+
+
+	
+	
+
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+(*	
+   fbUdpCreate(
+	sSrvNetId:= , 
+	sLocalHost:= , 
+	nLocalPort:= port, 
+	bExecute:=bCreate , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=> hUdp);
+	
+	
+	*)
+	
+	
+	]]></ST>
+    </Implementation>
+    <Action Name="Config" Id="{7c66f485-c4b4-4c8b-9109-02cc3179af50}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+  IF iCcd2.bComOpen THEN
+	 bConnect:=TRUE;	
+	 bClose:=FALSE;
+	 iCcd2.bComOpen:=FALSE;
+  END_IF
+  
+   IF iCcd2.bComClose THEN
+	 bConnect:=FALSE;	
+	 bClose:=TRUE;
+	 iCcd2.bComClose:=FALSE;
+  END_IF 
+  
+  
+  //第一步，编写 TCP/IP 连接功能块
+fbTcpCon(
+	sSrvNetId:= ''   ,          //       (*'169.254.46.193.1.1'*) , 
+	sRemoteHost:='192.168.2.11'     , 
+	nRemotePort:= 2020, //端口号；
+	bExecute:=bConnect , //连接执行位；
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=>hTcpSock );
+	
+	
+//第四步，编写 TCP/IP 关闭功能块
+fbTcpClose(
+	sSrvNetId:= ''   , 
+	hSocket:=hTcpSock , 
+	bExecute:=bClose , 
+	tTimeout:=T#5S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+
+
+IF fbTcpCon.bBusy THEN
+	bConnect:=FALSE;
+END_IF
+
+IF fbTcpClose.bBusy THEN
+   bClose:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="M_SendReceive" Id="{38400018-1506-4217-8754-76b6a273ff82}">
+      <Implementation>
+        <ST><![CDATA[
+
+  IF iCcd2.bSend THEN
+	 bSendTcp:=TRUE;
+	 iCcd2.bDone:=FALSE;
+	 iCcd2.bError:=FALSE;
+	 //iCcd2.strReceive:='';
+    MEMSET(ADR(ccdDataSend.strBetryName),0,SIZEOF(ccdDataSend.strBetryName));
+	MEMSET(ADR(ccdDataSend.strCode),0,SIZEOF(ccdDataSend.strCode));
+	MEMSET(ADR(ccdDataSend.strShortData),0,SIZEOF(ccdDataSend.strShortData));
+	MEMSET(ADR(ccdDataSend.strHotPress),0,SIZEOF(ccdDataSend.strHotPress));
+    STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strBetryName) , pSrcSTRING:=ADR(Data.strBetryName) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strBetryName )+1) );
+    STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strCode) , pSrcSTRING:=ADR(Data.strCode) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strCode )+1) ); 
+    STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strShortData) , pSrcSTRING:=ADR(Data.strShortData) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strShortData )+1) );
+	STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strHotPress) , pSrcSTRING:=ADR(Data.strHotPress) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strHotPress )+1) );
+    iCcd2.bSend:=FALSE;
+END_IF
+	 
+
+//第二步，编写 TCP/IP 发送功能块
+fbTcpSend(
+		sSrvNetId:= , 
+		hSocket:=hTcpSock , //句柄；
+		cbLen:=SIZEOF(ccdDataSend), //发送数据的长度；
+		pSrc:= ADR(ccdDataSend), //发送数据指针的起始地址；
+		bExecute:= bSendTcp, //发送执行位；
+		tTimeout:= T#2S , 
+		bBusy=> , 
+		bError=> , 
+		nErrId=> );
+		
+	IF bSendTcp AND fbTcpSend.bBusy THEN
+		bSendTcp:=FALSE;
+	END_IF
+	
+	
+bReceiveTcp:=NOT bReceiveTcp;
+
+//第三步，编写 TCP/IP 接收功能块
+fbTcpRec(
+	sSrvNetId:= , 
+	hSocket:= hTcpSock, 
+	cbLen:=SIZEOF(StrReceive) , //接收数据的长度；
+	pDest:=ADR(StrReceive) , //接收数据指针的起始地址；
+	bExecute:=bReceiveTcp , //接收执行位；
+	tTimeout:= T#5S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	nRecBytes=> );
+
+IF LEN(STR:=StrReceive )>=10 THEN
+  iCcd2.strReceive:=StrReceive;
+  StrReceive:='';
+ // iCcd2.bDone:=TRUE;
+END_IF
+
+
+//IF LEN(STR:=StrReceive )=0 THEN
+
+ 
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="CS_CcdTcp">
+      <LineId Id="3" Count="48" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_CcdTcp.Config">
+      <LineId Id="2" Count="27" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="30" Count="28" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_CcdTcp.M_SendReceive">
+      <LineId Id="2" Count="29" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="32" Count="5" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="38" Count="24" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

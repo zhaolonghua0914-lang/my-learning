@@ -1,0 +1,451 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlankingCylinderManual" Id="{11f42c33-fe5b-4872-a6f1-6bf0582e5019}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlankingCylinderManual
+VAR
+    rGluebtn: R_TRIG;//拉胶按钮
+	rCutbtn: R_TRIG;//切胶按钮
+	rIDGluebtn: R_TRIG;//拉胶按钮
+	rIDCutbtn: R_TRIG;//切胶按钮		
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//冷压上料夹气缸点动
+arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3ColdPressClip].Cmd.OnCondition:=TRUE;
+
+//冷压麦拉张紧气缸点动
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Cmd.iType:=3;
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Cmd.OnCondition:=TRUE;
+
+//烤箱上料夹气缸点动
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.OnCondition:=TRUE;
+
+
+//P3 1_1烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven1].Cmd.ErrorTime:=8;
+arrCyCtrl[P3CYNo.P3Oven1].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven1].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven1].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven1].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven1].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 1_2烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven2].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven2].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven2].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven2].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven2].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven2].Cmd.OnCondition:=FALSE;	
+END_IF
+
+
+//P3 1_3烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven3].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven3].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]THEN
+arrCyCtrl[P3CYNo.P3Oven3].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven3].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven3].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven3].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 1_4烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven4].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven4].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven4].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven4].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven4].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven4].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 1_5烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven5].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven5].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]THEN
+arrCyCtrl[P3CYNo.P3Oven5].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven5].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven5].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven5].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 1_6烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven6].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven6].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven6].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven6].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven6].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven6].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 1_7烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven7].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven7].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven7].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven7].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven7].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven7].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_1烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven8].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven8].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven8].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven8].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven8].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven8].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_2烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven9].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven9].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven9].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven9].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven9].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven9].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_3烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven10].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven10].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven10].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven10].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven10].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven10].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_4烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven11].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven11].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven11].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven11].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven11].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven11].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_5烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven12].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven12].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven12].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven12].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven12].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven12].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_6烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven13].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven13].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven13].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven13].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven13].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven13].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 2_7烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven14].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven14].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven14].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven14].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven14].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven14].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_1烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven15].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven15].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven15].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven15].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven15].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven15].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_2烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven16].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven16].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven16].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven16].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven16].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven16].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_3烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven17].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven17].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven17].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven17].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven17].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven17].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_4烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven18].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven18].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven18].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven18].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven18].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven18].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_5烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven19].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven19].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven19].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven19].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven19].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven19].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_6烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven20].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven20].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven20].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven20].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven20].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven20].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 3_7烤箱托板气缸点动
+arrCyCtrl[P3CYNo.P3Oven21].Cmd.ErrorTime:=7;
+arrCyCtrl[P3CYNo.P3Oven21].Cmd.iType:=1;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] THEN
+arrCyCtrl[P3CYNo.P3Oven21].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3Oven21].Cmd.OnCondition:=TRUE;
+ELSE
+arrCyCtrl[P3CYNo.P3Oven21].Cmd.OffCondition:=FALSE;
+arrCyCtrl[P3CYNo.P3Oven21].Cmd.OnCondition:=FALSE;	
+END_IF
+
+//P3 热压麦拉张紧气缸点动
+arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.iType:=3;
+arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3HotPressTensed].Cmd.OnCondition:=TRUE;
+
+//P3 短路测试夹气缸点动
+arrCyCtrl[P3CYNo.P3ShortTest].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3ShortTest].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3ShortTest].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3ShortTest].Cmd.OnCondition:=TRUE;
+
+//P3 称重上料夹气缸点动
+arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Cmd.OnCondition:=TRUE;
+
+//P3 测厚台切换气缸点动
+arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.iType:=1;
+//arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.OffCondition:=TRUE;
+//arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Cmd.OnCondition:=TRUE;
+
+//P3 测厚台托板气缸点动
+arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.iType:=1;
+//arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.OffCondition:=TRUE;
+//arrCyCtrl[P3CYNo.P3ThicknessSupport].Cmd.OnCondition:=TRUE;
+
+//P3 测厚台压板气缸点动
+arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.OffCondition:=TRUE;
+//arrCyCtrl[P3CYNo.P3ThicknessPressure].Cmd.OnCondition:=TRUE;
+
+//电芯分选夹开合气缸点动
+arrCyCtrl[P3CYNo.P3SortClamp].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3SortClamp].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3SortClamp].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3SortClamp].Cmd.OnCondition:=TRUE;
+
+//电芯分选夹升降气缸点动
+arrCyCtrl[P3CYNo.P3SortLifting].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3SortLifting].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3SortLifting].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3SortLifting].Cmd.OnCondition:=TRUE;
+
+//电芯分选夹旋转气缸点动
+arrCyCtrl[P3CYNo.P3SortRotate].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3SortRotate].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3SortRotate].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3SortRotate].Cmd.OnCondition:=TRUE;
+
+//电芯下料夹开合气缸点动
+arrCyCtrl[P3CYNo.P3BlankingClamp].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3BlankingClamp].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3BlankingClamp].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3BlankingClamp].Cmd.OnCondition:=TRUE;
+
+//P3电芯下料夹升降气缸点动
+arrCyCtrl[P3CYNo.P3BlankingLifting].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3BlankingLifting].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3BlankingLifting].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3BlankingLifting].Cmd.OnCondition:=TRUE;
+
+//P3电芯NG1料盒锁定气缸点动
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3BoxLock1_NG].Cmd.OnCondition:=TRUE;
+
+//P3电芯NG2料盒锁定气缸点动
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3BoxLock2_NG].Cmd.OnCondition:=TRUE;
+
+//P3电芯NG3料盒锁定气缸点动
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Cmd.ErrorTime:=5;
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Cmd.iType:=1;
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Cmd.OffCondition:=TRUE;
+arrCyCtrl[P3CYNo.P3BoxLock3_NG].Cmd.OnCondition:=TRUE;
+
+//电芯压紧气缸
+arrCyCtrl[P3CYNo.P3CellPush].Cmd.iType:=2;
+
+//电电芯平移气缸
+arrCyCtrl[P3CYNo.P3CellAdvance].Cmd.iType:=1;
+
+//贴胶头夹紧气缸
+arrCyCtrl[P3CYNo.P3TapePush].Cmd.iType:=1;
+
+//拉带夹紧气缸
+arrCyCtrl[P3CYNo.P3TapePull].Cmd.iType:=1;
+
+//拉带升降气缸
+arrCyCtrl[P3CYNo.P3TapeLift].Cmd.iType:=1;
+
+//切胶气缸
+arrCyCtrl[P3CYNo.P3TapeCut].Cmd.iType:=1;
+
+//压胶气缸
+arrCyCtrl[P3CYNo.P3GluePush].Cmd.iType:=1;
+
+//贴胶缓存气缸
+arrCyCtrl[P3CYNo.P3TapeBuffer].Cmd.iType:=1;
+
+//流水线下料旋转气缸
+arrCyCtrl[P3CYNo.P3TapeSpin].Cmd.iType:=1;
+
+//贴胶头真空
+arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.iType:=4;
+
+
+//P3称重上料夹归正气缸
+arrCyCtrl[P3CYNo.P3WgightUP].Cmd.iType:=2;
+
+//P3下料分选夹归正气缸
+arrCyCtrl[P3CYNo.P3SortPush].Cmd.iType:=2;
+
+//冷压吹气
+arrCyCtrl[P3CYNo.P3ColdBlow].Cmd.iType:=4;
+
+//热压吹气
+arrCyCtrl[P3CYNo.P3HotBlow].Cmd.iType:=4;
+
+//P3电芯旋转定位气缸 
+arrCyCtrl[P3CYNo.P3CellPushSpin].Cmd.iType:=2;
+
+//P3电芯旋转气缸
+arrCyCtrl[P3CYNo.P3CellSpin].Cmd.iType:=1;
+
+
+arrCyCtrl[P3CYNo.P3_GlueExtend].Cmd.iType:=4;//二维码蹬胶气缸蹬出
+
+arrCyCtrl[P3CYNo.P3_GluePress].Cmd.iType:=2;//二维码压胶气缸压紧
+
+arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.iType:=2;//二维码切胶气缸切胶
+arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.OffCondition:=TRUE;
+IF arrAxisCtrl[P3AxisNo.P3_IDPut].Cmd.arrbRealPoint[1] OR P3_SystemRUN.iMode=1 OR (LateBlanking_Auto1_Stick.CodeStartMark AND P3_SystemRUN.iMode=3) THEN
+arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.OnCondition:=TRUE;	
+ELSE
+arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.OnCondition:=FALSE;	
+END_IF
+
+
+arrCyCtrl[P3CYNo.P3_GluePull].Cmd.iType:=2;//二维码拉胶气缸夹紧
+
+arrCyCtrl[P3CYNo.P3_GlueVacuum].Cmd.iType:=4;//	二维码贴胶吸盘真空
+
+
+
+
+
+
+//拉胶气缸手动
+rGluebtn(CLK:=P3Press.Gluebtn , Q=> );
+IF NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState AND rGluebtn.Q AND P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1]  
+  (* LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.fActPos) <= (arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[1]+1)*) THEN
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.bOFF:=TRUE;
+ELSIF NOT arrCyCtrl[P3CYNo.P3TapeLift].Status.ONState AND rGluebtn.Q AND P3_SystemRUN.iMode=3 AND arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.arrbRealPoint[1]  AND
+          arrCyCtrl[P3CYNo.P3TapeCut].Status.OFFState  THEN
+	arrCyCtrl[P3CYNo.P3TapeLift].Cmd.bON:=TRUE;
+END_IF
+
+//切胶气缸手动
+rCutbtn(CLK:=P3Press.Cutbtn , Q=> );
+IF NOT arrCyCtrl[P3CYNo.P3TapeCut].Status.OFFState AND rCutbtn.Q AND P3_SystemRUN.iMode=3 THEN
+	arrCyCtrl[P3CYNo.P3TapeCut].Cmd.bOFF:=TRUE;
+ELSIF NOT arrCyCtrl[P3CYNo.P3TapeCut].Status.ONState AND rCutbtn.Q AND P3_SystemRUN.iMode=3 AND
+      arrCyCtrl[P3CYNo.P3TapeLift].Status.OFFState THEN
+	arrCyCtrl[P3CYNo.P3TapeCut].Cmd.bON:=TRUE;
+END_IF
+//切胶气缸手动
+rIDCutbtn(CLK:=P3Button.IDCutbtn , Q=> );
+IF NOT arrCyCtrl[P3CYNo.P3_GlueCut].Status.OFFState AND rIDCutbtn.Q AND P3_SystemRUN.iMode=3 THEN
+	arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bOFF:=TRUE;
+ELSIF NOT arrCyCtrl[P3CYNo.P3_GlueCut].Status.ONState AND rIDCutbtn.Q AND P3_SystemRUN.iMode=3 THEN
+	arrCyCtrl[P3CYNo.P3_GlueCut].Cmd.bON:=TRUE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlankingCylinderManual">
+      <LineId Id="3847" Count="430" />
+      <LineId Id="1245" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

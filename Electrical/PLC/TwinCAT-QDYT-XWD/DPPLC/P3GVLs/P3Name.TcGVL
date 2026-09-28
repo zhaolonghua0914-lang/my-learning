@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="P3Name" Id="{bc45ceb6-3c14-4359-9239-41d244d43713}">
+    <Declaration><![CDATA[
+VAR_GLOBAL  //常量
+(**轴**)  
+	P3AxisNo:      ST_P3AxisName;
+(**气缸**)
+	P3CYNo:        ST_P3CylinderName;
+(**电磁阀**)
+
+(***温控*)
+    TempNo:      ST_TempName;
+END_VAR
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

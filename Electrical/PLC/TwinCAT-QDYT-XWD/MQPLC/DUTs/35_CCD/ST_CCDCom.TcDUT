@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDCom" Id="{1ea87f7c-746a-47f0-865f-e4b5fbe15fa6}">
+    <Declaration><![CDATA[TYPE ST_CCDCom : 
+STRUCT
+	bLineHeart :BOOL;  //模切线扫相机部分软件心跳
+	bAreaHeart:BOOL;//模切面阵相机部分软件心跳
+	iDemResult_Cut:INT;//裁切定位标定结果指示(1=OK;2=NG;0=无效)
+	iDemResult_Cha:INT;//冲R角定位标定结果指示(1=OK;2=NG;0=无效)
+	
+	iDemCount:INT;//标定拍照计数
+	fDemLength:REAL:=20;//标定长度
+	
+	Scan:ST_CCDComLineScan;//线扫工位
+	Chamfer:ST_CCDComR_Mould;//倒角前极耳定位工位
+	Cuter:ST_CCDComCuter;//裁切前极耳定位工位
+	Size:ST_CCDComSize;//裁切后尺寸检测工位
+	
+	
+	iLineScanPhotoCount:   DINT;     
+	iLineScanReceiveResultCount_UP:     DINT;
+	iLineScanReceiveResultCount_Down:   DINT;
+	bLineScanPhotoCountClear  :BOOL;
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,778 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_ProductionDataLocal" Id="{3fcd48ee-8b80-4f3e-b50d-0bc6532549b1}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ProductionDataLocal
+
+VAR_INPUT
+	NowTimeData	:TIMESTRUCT;(*当前系统时间*)
+	OutFlag1:BOOL;(*产量计数标志1*)
+	OutFlag2:BOOL;(*产量计数标志2*)
+	NGFlag:ARRAY[1..50] OF BOOL;(*NG计数标志*)
+
+	RunFlag:BOOL;(*运行标志*)
+	WaitFlag:BOOL;(*待料标志*)
+	AlarmFlag:BOOL;(*故障标志*)
+	DelDataAMBtn:BOOL;(*白班数据清除按钮*)
+	DelDataPMBtn:BOOL;(*夜班数据清除按钮*)
+	NGClearAMBtn:ARRAY[1..50] OF BOOL;//白班NG类型计数清零
+	NGClearPMBtn:ARRAY[1..50] OF BOOL;//夜班NG类型计数清零
+END_VAR
+
+
+
+VAR_OUTPUT
+	NowOutTotal:REAL;(*当前班次加工总数*)
+	NowRate:REAL;(*当前班次良率*)
+	OEE:REAL;//稼动率
+END_VAR
+
+VAR_IN_OUT
+	NowDay				:INT;(*数据移位时所保存当前日*)
+	NowMonth			:INT;(*数据移位时所保存当前月*)
+	DayHistory			:ARRAY[1..7 ] 	OF INT;(*历史日*)
+	MonthHistory		:ARRAY[1..7 ] 	OF INT;(*历史月*)
+	TodayTotal:REAL;(*当天24H生产总数*)
+	TodayOK:REAL;(*当天24H生产OK总数*)
+	TodayNG:REAL;(*当天24H生产NG总数*)
+	TodayTotal_AM:REAL;(*当天白班生产总数*)
+	TodayTotal_PM:REAL;(*当天夜班生产总数*)
+	TodayRate_AM:REAL;(*当天白班良率*)
+	TodayRate_PM:REAL;(*当天夜班良率*)
+	TodayOK_AM:REAL;(*当天白班生产OK总数*)
+	TodayOK_PM:REAL;(*当天夜班生产OK总数*)
+	TodayNG_AM:REAL;(*当天白班生产NG总数*)
+	TodayNG_PM:REAL;(*当天夜班生产NG总数*)
+	TodayHour_AM		:ARRAY[8..19 ] 	OF REAL;(*当天白班每小时产量ARRAY[8..19 ]*)
+	TodayHour_PM		:ARRAY[0..23] 	OF REAL;(*当天夜班每小时产量ARRAY[0..23]*)
+	TodayNGClass_AM		:ARRAY[1..50 ] 	OF REAL;(*当天白班各类NG数量ARRAY[1..30 ]*)
+	TodayNGClass_PM		:ARRAY[1..50 ] 	OF REAL;(*当天夜班各类NG数量ARRAY[1..30 ]*)
+	TodayRun_AM			:REAL;(*当天白班总运行时间合计/分*)
+	TodayRun_PM			:REAL;(*当天夜班总运行时间合计/分*)
+	TodayWait_AM		:REAL;(*当天白班总待料时间合计/分*)
+	TodayWait_PM		:REAL;(*当天夜班总待料时间合计/分*)
+	TodayAlarm_AM		:REAL;(*当天白班总报警时间合计/分*)
+	TodayAlarm_PM		:REAL;(*当天夜班总报警时间合计/分*)
+
+	RunCnt_AM:ARRAY[8..19 ] 	OF UDINT;	(*白班运行时间计数*)
+	RunCnt_PM:ARRAY[0..23] 		OF UDINT;	(*夜班运行时间计数*)
+	WaitCnt_AM:ARRAY[8..19 ] 	OF UDINT;	(*白班待料时间计数*)
+	WaitCnt_PM:ARRAY[0..23] 	OF UDINT;	(*夜班待料时间计数*)
+	AlarmCnt_AM:ARRAY[8..19 ] 	OF UDINT;	(*白班报警时间计数*)
+	AlarmCnt_PM:ARRAY[0..23] 	OF UDINT;	(*夜班报警时间计数*)
+
+	TodayRun_AMH:ARRAY[8..19 ] OF REAL;(*当天白班每小时运行时间合计/分*)
+	TodayRun_PMH:ARRAY[0..23]OF REAL;(*当天夜班每小时运行时间合计/分*)
+	TodayWait_AMH:ARRAY[8..19 ] OF REAL;(*当天白班每小时待料时间合计/分*)
+	TodayWait_PMH:ARRAY[0..23]OF REAL;(*当天夜班每小时待料时间合计/分*)
+	TodayAlarm_AMH	:ARRAY[8..19 ] 	OF	REAL;(*当天白班每小时报警时间合计/分*)
+	TodayAlarm_PMH	:ARRAY[0..23]OF REAL;(*当天夜班每小时报警时间合计/分*)
+
+	HistoryTotal:ARRAY[1..7 ] OF REAL;(*历史每天24H生产总数ARRAY[1..7 ]*)
+	HistoryOK:ARRAY[1..7 ] OF REAL;(*历史每天24H生产OK总数ARRAY[1..7 ]*)
+	HistoryNG:ARRAY[1..7 ] OF REAL;(*历史每天24H生产NG总数ARRAY[1..7 ]*)
+	HistoryTotal_AM:ARRAY[1..7 ] OF REAL;(*历史每天白班生产总数ARRAY[1..7 ]*)
+	HistoryTotal_PM:ARRAY[1..7 ] OF REAL;(*历史每天夜班生产总数ARRAY[1..7 ]*)
+	HistoryRate_AM:ARRAY[1..7 ] OF REAL;(*历史每天白班良率ARRAY[1..7 ]*)
+	HistoryRate_PM:ARRAY[1..7 ] OF REAL;(*历史每天夜班良率ARRAY[1..7 ]*)
+	HistoryOK_AM:ARRAY[1..7 ] OF REAL;(*历史每天白班生产OK总数ARRAY[1..7 ]*)
+	HistoryOK_PM:ARRAY[1..7 ] OF REAL;(*历史每天夜班生产OK总数ARRAY[1..7 ]*)
+	HistoryNG_AM:ARRAY[1..7 ] OF REAL;(*历史每天白班生产NG总数ARRAY[1..7 ]*)
+	HistoryNG_PM:ARRAY[1..7 ] OF REAL;(*历史每天夜班生产NG总数ARRAY[1..7 ]*)
+	HistoryHour_AM		:ARRAY[1..7,8..19 ] 	OF REAL;(*历史每天白班每小时产量ARRAY[1..7,8..19 ]*)
+	HistoryHour_PM		:ARRAY[1..7,0..23] 		OF REAL;(*历史每天夜班每小时产量ARRAY[1..7,0..23]*)
+	HistoryNGClass_AM	:ARRAY[1..7,1..50 ] 	OF REAL;(*历史每天白班各类NG数量ARRAY[1..7,1..30 ]*)
+	HistoryNGClass_PM	:ARRAY[1..7,1..50 ] 	OF REAL;(*历史每天夜班各类NG数量ARRAY[1..7,1..30 ]*)
+	HistoryRun_AM		:ARRAY[1..7 ] OF REAL;(*历史每天白班总运行时间合计ARRAY[1..7 ]*)
+	HistoryRun_PM		:ARRAY[1..7 ] OF REAL;(*历史每天夜班总运行时间合计ARRAY[1..7 ]*)
+	HistoryWait_AM		:ARRAY[1..7 ] OF REAL;(*历史每天白班总待料时间合计ARRAY[1..7 ]*)
+	HistoryWait_PM		:ARRAY[1..7 ] OF REAL;(*历史每天夜班总待料时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_AM		:ARRAY[1..7 ] OF REAL;(*历史每天白班总报警时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_PM		:ARRAY[1..7 ] OF REAL;(*历史每天夜班总报警时间合计ARRAY[1..7 ]*)
+
+	HistoryRun_AMH		:ARRAY[1..7,8..19 ] OF REAL;(*历史每天白班每小时运行时间合计ARRAY[1..7 ]*)
+	HistoryRun_PMH		:ARRAY[1..7,0..23 ] OF REAL;(*历史每天夜班每小时运行时间合计ARRAY[1..7 ]*)
+	HistoryWait_AMH		:ARRAY[1..7,8..19 ] OF REAL;(*历史每天白班每小时待料时间合计ARRAY[1..7 ]*)
+	HistoryWait_PMH		:ARRAY[1..7,0..23 ] OF REAL;(*历史每天夜班每小时待料时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_AMH	:ARRAY[1..7,8..19 ] OF REAL;(*历史每天白班每小时报警时间合计ARRAY[1..7 ]*)
+	HistoryAlarm_PMH	:ARRAY[1..7,0..23 ] OF REAL;(*历史每天夜班每小时报警时间合计ARRAY[1..7 ]*)
+	
+	TodayNgHour_Day:ARRAY[1..50,0..23] OF REAL;//白班每小时NG类型统计,,
+	TodayNgHour_Night:ARRAY[1..50,0..23] OF REAL;//夜班每小时NG类型统计,,
+	HisTodayNgHour_Day:ARRAY[1..50,0..23,1..7] OF REAL;//l历史白班每小时NG类型统计,,
+	HisTodayNgHour_Night:ARRAY[1..50,0..23,1..7] OF REAL;//历史夜班每小时NG类型统计,,			
+		
+	TodayNGQualified:ARRAY[1..50] OF REAL;//当天白班各种NG类型NG率
+	NightNGQualified:ARRAY[1..50] OF REAL;//当天夜班各种NG类型NG率	
+	
+	HisTodayNGQualified:ARRAY[1..50,1..7] OF REAL;//历史白班各种NG类型NG率
+	HisNightNGQualified:ARRAY[1..50,1..7] OF REAL;//历史夜班各种NG类型NG率
+END_VAR
+
+
+VAR
+	i:INT;
+	j: INT;
+	K:INT;
+	m:INT;
+	d:INT;
+	TrigOutAdd1:R_TRIG ;	(*产量计数上升沿1*)
+	TrigOutAdd2:R_TRIG ;	(*产量计数上升沿1*)
+	TrigNgAdd: ARRAY[1..50 ] OF R_TRIG;(*1-30类ng计数统计*)
+	HistoryData_Step:UINT;(*历史数据保存步*)
+	SaveDataDelay:TON;(*历史数据保存延时，防止处理周期内多次存储*)
+	rNGClearAMBtn:ARRAY [1..50] OF R_TRIG;//白班ng类型清零上升沿
+	rNGClearPMBtn:ARRAY [1..50] OF R_TRIG;//夜班NG类型清零上升沿
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+(**********************  分段产能  ***************************************)
+TrigOutAdd1(CLK:=OutFlag1,Q=> );(*产量计数上升沿1*)
+TrigOutAdd2(CLK:=OutFlag2,Q=> );(*产量计数上升沿1*)
+FOR i:=1 TO 50 DO
+	rNGClearAMBtn[i](CLK:=NGClearAMBtn[i],Q=> );//白班ng类型清零上升沿
+	rNGClearPMBtn[i](CLK:=NGClearPMBtn[i],Q=> );//夜班NG类型清零上升沿
+END_FOR
+FOR m:=1 TO 50 DO
+	IF  rNGClearAMBtn[m].Q THEN
+		TodayNGClass_AM[m]:=0;
+		TodayNGQualified[m]:=0;
+	END_IF
+	IF  rNGClearPMBtn[m].Q THEN
+		TodayNGClass_PM[m]:=0;
+		NightNGQualified[m]:=0;
+	END_IF
+END_FOR
+
+//NG分类统计触发
+TrigNgAdd[1](CLK:=NGFlag[1],Q=> );(*1类ng*)//极片长度不良
+TrigNgAdd[2](CLK:=NGFlag[2],Q=> );(*2类ng*)//极片CIL宽度不良
+TrigNgAdd[3](CLK:=NGFlag[3],Q=> );(*3类ng*)//极片宽度不良
+TrigNgAdd[4](CLK:=NGFlag[4],Q=> );(*4类ng*)//极耳宽度不良
+TrigNgAdd[5](CLK:=NGFlag[5],Q=> );(*5类ng*)//极耳高度不良
+TrigNgAdd[6](CLK:=NGFlag[6],Q=> );(*6类ng*)//极耳侧边距不良
+TrigNgAdd[7](CLK:=NGFlag[7],Q=> );(*7类ng*)//极耳面积不良
+TrigNgAdd[8](CLK:=NGFlag[8],Q=> );(*8类ng*)//圆角深度不良
+TrigNgAdd[9](CLK:=NGFlag[9],Q=> );(*9类ng*)//极耳边缘角度不良
+TrigNgAdd[10](CLK:=NGFlag[10],Q=> );(*10类ng*)//圆角宽度不良
+TrigNgAdd[11](CLK:=NGFlag[11],Q=> );(*11类ng*)//圆角轮廓不良
+TrigNgAdd[12](CLK:=NGFlag[12],Q=> );(*12类ng*)//圆角面积不良
+TrigNgAdd[13](CLK:=NGFlag[13],Q=> );(*13类ng*)//圆角余料不良
+TrigNgAdd[14](CLK:=NGFlag[14],Q=> );(*14类ng*)//尺寸其他不良
+TrigNgAdd[15](CLK:=NGFlag[15],Q=> );(*15类ng*)//来料极耳间距不良
+TrigNgAdd[16](CLK:=NGFlag[16],Q=> );(*16类ng*)
+TrigNgAdd[17](CLK:=NGFlag[17],Q=> );(*17类ng*)
+TrigNgAdd[18](CLK:=NGFlag[18],Q=> );(*18类ng*)
+TrigNgAdd[19](CLK:=NGFlag[19],Q=> );(*19类ng*)
+TrigNgAdd[20](CLK:=NGFlag[20],Q=> );(*20类ng*)
+TrigNgAdd[21](CLK:=NGFlag[21],Q=> );(*21类ng*)//抓边失败
+TrigNgAdd[22](CLK:=NGFlag[22],Q=> );(*22类ng*)//直边不良标志位
+TrigNgAdd[23](CLK:=NGFlag[23],Q=> );(*23类ng*)//极片缺失
+TrigNgAdd[24](CLK:=NGFlag[24],Q=> );(*24类ng*)//接带
+TrigNgAdd[25](CLK:=NGFlag[25],Q=> );(*25类ng*)//线扫黄标
+TrigNgAdd[26](CLK:=NGFlag[26],Q=> );(*26类ng*)//漏金属
+TrigNgAdd[27](CLK:=NGFlag[27],Q=> );(*27类ng*)//气泡
+TrigNgAdd[28](CLK:=NGFlag[28],Q=> );(*28类ng*)//暗条痕
+TrigNgAdd[29](CLK:=NGFlag[29],Q=> );(*29类ng*)//亮条痕
+TrigNgAdd[30](CLK:=NGFlag[30],Q=> );(*30类ng*)//破损
+TrigNgAdd[31](CLK:=NGFlag[31],Q=> );(*31类ng*)//碎屑
+TrigNgAdd[32](CLK:=NGFlag[32],Q=> );(*32类ng*)//通讯超时
+TrigNgAdd[33](CLK:=NGFlag[33],Q=> );(*33类ng*)//脱碳
+TrigNgAdd[34](CLK:=NGFlag[34],Q=> );(*34类ng*)//其他
+TrigNgAdd[35](CLK:=NGFlag[35],Q=> );(*35类ng*)
+TrigNgAdd[36](CLK:=NGFlag[36],Q=> );(*36类ng*)
+TrigNgAdd[37](CLK:=NGFlag[37],Q=> );(*37类ng*)
+TrigNgAdd[38](CLK:=NGFlag[38],Q=> );(*38类ng*)
+TrigNgAdd[39](CLK:=NGFlag[39],Q=> );(*39类ng*)
+TrigNgAdd[40](CLK:=NGFlag[40],Q=> );(*40类ng*)
+TrigNgAdd[41](CLK:=NGFlag[41],Q=> );(*41类ng*)
+TrigNgAdd[42](CLK:=NGFlag[42],Q=> );(*42类ng*)
+TrigNgAdd[43](CLK:=NGFlag[43],Q=> );(*43类ng*)//接带计数
+TrigNgAdd[44](CLK:=NGFlag[44],Q=> );(*44类ng*)//黄标跳切计数
+TrigNgAdd[45](CLK:=NGFlag[45],Q=> );(*45类ng*)//黄标计数
+TrigNgAdd[46](CLK:=NGFlag[46],Q=> );(*46类ng*)
+TrigNgAdd[47](CLK:=NGFlag[47],Q=> );(*47类ng*)
+TrigNgAdd[48](CLK:=NGFlag[48],Q=> );(*48类ng*)//线扫NG数
+TrigNgAdd[49](CLK:=NGFlag[49],Q=> );(*49类ng*)//尺寸NG数
+TrigNgAdd[50](CLK:=NGFlag[50],Q=> );(*50类ng*)//
+
+(***白班数据统计******)
+FOR i:=8 TO 19 DO
+	IF NowTimeData.wHour=i THEN
+		IF i>=8 AND i<=19 THEN
+			(********产量计数**********)
+			IF TrigOutAdd1.Q  THEN
+				TodayHour_AM[i]:=TodayHour_AM[i]+1;
+			END_IF
+			IF TrigOutAdd2.Q  THEN
+				TodayHour_AM[i]:=TodayHour_AM[i]+1;
+			END_IF
+			(*******白班NG不良分类统计*)
+			FOR m:=1 TO 50 DO
+				IF TrigNgAdd[m].Q THEN
+					TodayNGClass_AM[m]:=TodayNGClass_AM[m]+1;
+				END_IF 
+				(*
+				IF  rNGClearAMBtn[m].Q THEN
+					TodayNGClass_AM[m]:=0;
+				END_IF
+				*)
+			END_FOR
+			(******************白班每小时NG类型统计*******************)
+			FOR m:=1 TO 50 DO
+				IF TrigNgAdd[m].Q THEN
+					TodayNgHour_Day[m,i]:=TodayNgHour_Day[m,i]+1;//白班每小时NG类型统计
+				END_IF
+			END_FOR
+			
+			 (*运行时间统计*)
+			IF RunFlag THEN
+				RunCnt_AM[i]:=RunCnt_AM[i]+1;
+			END_IF
+			IF RunCnt_AM[i] <>0 THEN
+				TodayRun_AMH[i]:=UDINT_TO_REAL(RunCnt_AM[i]/(500*60)) ;
+			END_IF
+			
+			 (*待料时间统计*)
+			IF  WaitFlag  THEN
+				WaitCnt_AM[i]:=WaitCnt_AM[i]+1;
+			END_IF
+			IF WaitCnt_AM[i]<>0 THEN
+				TodayWait_AMH[i]:=UDINT_TO_REAL(WaitCnt_AM[i]/(500*60)) ;
+			END_IF
+			(*报警时间统计*)
+			IF  AlarmFlag THEN
+				AlarmCnt_AM[i]:=AlarmCnt_AM[i]+1;
+			END_IF
+			IF AlarmCnt_AM[i]<>0 THEN
+				TodayAlarm_AMH[i]:=UDINT_TO_REAL(AlarmCnt_AM[i]/(500*60)) ;
+			END_IF
+			(*当前生产输出*)
+			NowOutTotal:=TodayTotal_AM;
+			NowRate:=TodayRate_AM;
+			
+			
+			//欣旺达个性生产数据
+			IF TodayTotal_AM<>0 THEN
+				FOR k:=1 TO 50 DO
+					TodayNGQualified[k]:=100*(TodayNGClass_AM[k]/TodayTotal_AM);//当天夜班尺寸NG率
+				END_FOR
+			END_IF
+		
+			
+		END_IF
+	END_IF
+END_FOR
+
+(***手动清除白班产量统计数据******)
+IF DelDataAMBtn THEN
+	FOR m:=1 TO 50 DO
+		TodayNGQualified[m]:=0;
+		TodayNGClass_AM[m]:=0;
+	END_FOR
+	FOR j := 8 TO 19 DO
+		TodayHour_AM[j]:=0 ;
+		RunCnt_AM[j]:= 0 ;(*白班运行时间计数*)
+		AlarmCnt_AM[j]:= 0 ;(*白班报警时间计数*)
+		WaitCnt_AM[j]:= 0 ;(*白班待料时间计数*)
+		
+		RunCnt_AM[j]:=0;
+		TodayRun_AMH[j]:=0;
+		WaitCnt_AM[j]:=0;
+		TodayWait_AMH[j]:=0;
+		AlarmCnt_AM[j]:=0;
+		TodayAlarm_AMH[j]:=0;
+		FOR d:=1 TO 50 DO
+			TodayNgHour_Day[d,j]:=0;
+			TodayNGQualified[d]:=0;
+		END_FOR
+	END_FOR
+	(*
+	FOR j := 1 TO 20 DO
+		TodayNGClass_AM[j] := 0 ;
+	END_FOR
+	*)
+	TodayTotal_AM:=0;(*当天白班生产总数*)
+	TodayRate_AM:=0;(*当天白班良率*)
+	TodayOK_AM:=0;(*当天白班生产OK总数*)
+	TodayNG_AM:=0;(*当天白班生产NG总数*)
+	
+END_IF
+(*当天白班生产总数*)
+TodayTotal_AM:=TodayHour_AM[8]+TodayHour_AM[9]+TodayHour_AM[10]+TodayHour_AM[11]+TodayHour_AM[12]+TodayHour_AM[13]+
+				TodayHour_AM[14]+TodayHour_AM[15]+TodayHour_AM[16]+TodayHour_AM[17]+TodayHour_AM[18]+TodayHour_AM[19];
+(*当天白班生产NG总数*)
+TodayNG_AM:=TodayNGClass_AM[1]+TodayNGClass_AM[2]+TodayNGClass_AM[3]+TodayNGClass_AM[4]+TodayNGClass_AM[5]+
+				TodayNGClass_AM[6]+TodayNGClass_AM[7]+TodayNGClass_AM[8]+TodayNGClass_AM[9]+TodayNGClass_AM[10]+
+				TodayNGClass_AM[11]+TodayNGClass_AM[12]+TodayNGClass_AM[13]+TodayNGClass_AM[14]+(*TodayNGClass_AM[15]+*)
+				TodayNGClass_AM[16]+TodayNGClass_AM[17]+TodayNGClass_AM[18]+TodayNGClass_AM[19]+TodayNGClass_AM[20]+
+				TodayNGClass_AM[21]+TodayNGClass_AM[22]+TodayNGClass_AM[23]+TodayNGClass_AM[24]+TodayNGClass_AM[25]+
+				TodayNGClass_AM[26]+TodayNGClass_AM[27]+TodayNGClass_AM[28]+TodayNGClass_AM[29]+TodayNGClass_AM[30]+
+				TodayNGClass_AM[31]+TodayNGClass_AM[32]+TodayNGClass_AM[33]+TodayNGClass_AM[34]+TodayNGClass_AM[35];
+(*当天白班生产OK总数*)
+TodayOK_AM:=TodayTotal_AM-TodayNG_AM;
+(*当天白班良率*)
+IF TodayTotal_AM<>0 THEN
+	TodayRate_AM:=100*TodayOK_AM/TodayTotal_AM;
+END_IF
+
+(*当天白班总运行时间合计/分*)
+TodayRun_AM:=TodayRun_AMH[8]+TodayRun_AMH[9]+TodayRun_AMH[10]+TodayRun_AMH[11]+TodayRun_AMH[12]+TodayRun_AMH[13]+
+				TodayRun_AMH[14]+TodayRun_AMH[15]+TodayRun_AMH[16]+TodayRun_AMH[17]+TodayRun_AMH[18]+TodayRun_AMH[19];
+(*当天白班总待料时间合计/分*)
+TodayWait_AM:=TodayWait_AMH[8]+TodayWait_AMH[9]+TodayWait_AMH[10]+TodayWait_AMH[11]+TodayWait_AMH[12]+TodayWait_AMH[13]+
+				TodayWait_AMH[14]+TodayWait_AMH[15]+TodayWait_AMH[16]+TodayWait_AMH[17]+TodayWait_AMH[18]+TodayWait_AMH[19];
+(*当天白班总报警时间合计/分*)
+TodayAlarm_AM:=TodayAlarm_AMH[8]+TodayAlarm_AMH[9]+TodayAlarm_AMH[10]+TodayAlarm_AMH[11]+TodayAlarm_AMH[12]+TodayAlarm_AMH[13]+
+				TodayAlarm_AMH[14]+TodayAlarm_AMH[15]+TodayAlarm_AMH[16]+TodayAlarm_AMH[17]+TodayAlarm_AMH[18]+TodayAlarm_AMH[19];
+(***白班数据统计******)
+
+
+(*******夜班数据统计******)
+FOR i:=0 TO 23 DO
+	IF NowTimeData.wHour=i THEN
+		IF i<=7 OR i>=20 THEN
+			(********产量计数**********)
+			IF TrigOutAdd1.Q  THEN
+				TodayHour_PM[i]:=TodayHour_PM[i]+1;
+			END_IF
+			IF TrigOutAdd2.Q  THEN
+				TodayHour_PM[i]:=TodayHour_PM[i]+1;
+			END_IF
+			(*******夜班NG不良分类统计*)
+			FOR m:= 1 TO 50 DO
+				IF TrigNgAdd[m].Q THEN
+					TodayNGClass_PM[m]:=TodayNGClass_PM[m]+1;
+				END_IF
+				(*
+				IF  rNGClearPMBtn[m].Q THEN
+					TodayNGClass_PM[m]:=0;
+				END_IF
+				*)
+			END_FOR
+			(******************夜班每小时NG类型统计*******************)
+			FOR m:= 1 TO 50 DO
+				IF TrigNgAdd[m].Q THEN
+					TodayNgHour_Night[m,i]:=TodayNgHour_Night[m,i]+1;//夜班每小时NG类型统计
+				END_IF
+			END_FOR
+			 (*运行时间统计*)
+			IF RunFlag THEN
+				RunCnt_PM[i]:=RunCnt_PM[i]+1;
+			END_IF
+			IF RunCnt_PM[i]<>0 THEN
+				TodayRun_PMH[i]:=UDINT_TO_REAL(RunCnt_PM[i]/(500*60)) ;
+			END_IF
+			 (*待料时间统计*)
+			IF  WaitFlag  THEN
+				WaitCnt_PM[i]:=WaitCnt_PM[i]+1;
+			END_IF
+			IF WaitCnt_PM[i]<>0 THEN
+				TodayWait_PMH[i]:=UDINT_TO_REAL(WaitCnt_PM[i]/(500*60)) ;
+			END_IF
+			(*报警时间统计*)
+			IF  AlarmFlag THEN
+				AlarmCnt_PM[i]:=AlarmCnt_PM[i]+1;
+			END_IF
+			IF AlarmCnt_PM[i]<>0 THEN
+				TodayAlarm_PMH[i]:=UDINT_TO_REAL(AlarmCnt_PM[i]/(500*60)) ;
+			END_IF
+			(*当前生产输出*)
+			NowOutTotal:=TodayTotal_PM;
+			NowRate:=TodayRate_PM;
+			
+			//欣旺达个性生产数据
+			IF TodayTotal_PM<>0 THEN
+				FOR k:=1 TO 50 DO
+					NightNGQualified[k]:=100*(TodayNGClass_PM[k]/TodayTotal_PM);//当天夜班尺寸NG率
+				END_FOR
+			END_IF
+		END_IF
+	END_IF
+END_FOR
+
+(***手动清除夜班产量统计数据******)
+IF DelDataPMBtn THEN
+	FOR m:=1 TO 50 DO
+		NightNGQualified[m]:=0;
+		TodayNGClass_PM[m]:=0;
+	END_FOR
+	FOR j:=0 TO 23 DO
+		TodayHour_PM[j]:=0 ;
+		RunCnt_PM[j]:= 0 ;(*夜班运行时间计数*)
+		AlarmCnt_PM[j]:=0;(*夜班报警时间计数*)
+		WaitCnt_PM[j]:= 0 ;(*夜班待料时间计数*)
+		RunCnt_PM[j]:=0;
+		TodayRun_PMH[j]:=0;
+		WaitCnt_PM[j]:=0;
+		TodayWait_PMH[j]:=0;
+		AlarmCnt_PM[j]:=0;
+		TodayAlarm_PMH[j]:=0;
+		FOR d:=1 TO 50 DO
+			TodayNgHour_Night[d,j]:=0;
+		END_FOR
+(*
+	FOR j := 1 TO 20 DO
+		TodayNGClass_PM[j] := 0 ;
+	END_FOR
+*)
+	TodayTotal_PM:=0;(*当天夜班生产总数*)
+	TodayRate_PM:=0;(*当天夜班良率*)
+	TodayOK_PM:=0;(*当天夜班生产OK总数*)
+	TodayNG_PM:=0;(*当天夜班生产NG总数*)
+	END_FOR
+END_IF
+
+(*当天夜班生产总数*)
+TodayTotal_PM:=TodayHour_PM[20]+TodayHour_PM[21]+TodayHour_PM[22]+TodayHour_PM[23]+TodayHour_PM[0]+TodayHour_PM[1]+
+					TodayHour_PM[2]+TodayHour_PM[3]+TodayHour_PM[4]+TodayHour_PM[5]+TodayHour_PM[6]+TodayHour_PM[7];
+(*当天夜班生产NG总数*)
+TodayNG_PM:=TodayNGClass_PM[1]+TodayNGClass_PM[2]+TodayNGClass_PM[3]+TodayNGClass_PM[4]+TodayNGClass_PM[5]+
+				TodayNGClass_PM[6]+TodayNGClass_PM[7]+TodayNGClass_PM[8]+TodayNGClass_PM[9]+TodayNGClass_PM[10]+
+				TodayNGClass_PM[11]+TodayNGClass_PM[12]+TodayNGClass_PM[13]+TodayNGClass_PM[14]+(*TodayNGClass_PM[15]+*)
+				TodayNGClass_PM[16]+TodayNGClass_PM[17]+TodayNGClass_PM[18]+TodayNGClass_PM[19]+TodayNGClass_PM[20]+
+				TodayNGClass_PM[21]+TodayNGClass_PM[22]+TodayNGClass_PM[23]+TodayNGClass_PM[24]+TodayNGClass_PM[25]+
+				TodayNGClass_PM[26]+TodayNGClass_PM[27]+TodayNGClass_PM[28]+TodayNGClass_PM[29]+TodayNGClass_PM[30]+
+				TodayNGClass_PM[31]+TodayNGClass_PM[32]+TodayNGClass_PM[33]+TodayNGClass_PM[34]+TodayNGClass_PM[35];
+(*当天夜班生产OK总数*)
+TodayOK_PM:=TodayTotal_PM-TodayNG_PM;
+(*当天夜班良率*)
+IF TodayTotal_PM<>0 THEN
+	TodayRate_PM:=100*TodayOK_PM/TodayTotal_PM;
+END_IF
+(*当天夜班总运行时间合计/分*)
+TodayRun_PM:=TodayRun_PMH[20]+TodayRun_PMH[21]+TodayRun_PMH[22]+TodayRun_PMH[23]+TodayRun_PMH[0]+TodayRun_PMH[1]+
+			TodayRun_PMH[2]+TodayRun_PMH[3]+TodayRun_PMH[4]+TodayRun_PMH[5]+TodayRun_PMH[6]+TodayRun_PMH[7];
+(*当天夜班总待料时间合计/分*)
+TodayWait_PM:=TodayWait_PMH[20]+TodayWait_PMH[21]+TodayWait_PMH[22]+TodayWait_PMH[23]+TodayWait_PMH[0]+TodayWait_PMH[1]+
+			TodayWait_PMH[2]+TodayWait_PMH[3]+TodayWait_PMH[4]+TodayWait_PMH[5]+TodayWait_PMH[6]+TodayWait_PMH[7];
+(*当天夜班总报警时间合计/分*)
+TodayAlarm_PM:=TodayAlarm_PMH[20]+TodayAlarm_PMH[21]+TodayAlarm_PMH[22]+TodayAlarm_PMH[23]+TodayAlarm_PMH[0]+TodayAlarm_PMH[1]+
+			TodayAlarm_PMH[2]+TodayAlarm_PMH[3]+TodayAlarm_PMH[4]+TodayAlarm_PMH[5]+TodayAlarm_PMH[6]+TodayAlarm_PMH[7];
+
+(*******夜班数据统计******)
+
+
+(*******白班+夜班数据汇总******)
+TodayTotal:=TodayTotal_AM+TodayTotal_PM;(*当天生产总数*)
+TodayNG:=TodayNG_AM+TodayNG_PM;(*当天生产NG总数*)
+TodayOK:=TodayTotal-TodayNG;(*当天生产OK总数*)
+(*******白班+夜班数据汇总******)
+
+
+(*************历史数据存储**************)
+CASE HistoryData_Step OF
+0:
+	IF NowTimeData.wHour>=8 AND NowTimeData.wMinute>=00  AND NowTimeData.wSecond>=00 AND NowDay<>NowTimeData.wDay THEN
+		HistoryData_Step:=100;(*8点钟机台断电，错过数据移位。重新移位数据*)
+	ELSIF NowTimeData.wHour=8 AND NowTimeData.wMinute=00  AND NowTimeData.wSecond=00 AND NowDay=NowTimeData.wDay THEN
+		HistoryData_Step:=100;
+	END_IF
+100:
+(**************************************前一天白班夜班的历史数据移位*************************************************)
+	FOR  i :=6 TO 1 BY -1 DO
+			DayHistory[i+1]:=DayHistory[i] ;(*日*)
+			MonthHistory[i+1]:=MonthHistory[i] ;(*月*)
+			HistoryTotal[i+1]:=HistoryTotal[i];(*历史每天生产总数*)
+			HistoryOK[i+1]:=HistoryOK[i];(*历史每天生产OK总数*)
+			HistoryNG[i+1]:=HistoryNG[i];(*历史每天生产NG总数*)
+			HistoryTotal_AM[i+1]:=HistoryTotal_AM[i];(*历史每天白班生产总数*)
+			HistoryTotal_PM[i+1]:=HistoryTotal_PM[i];(*历史每天夜班生产总数*)
+			HistoryRate_AM[i+1]:=HistoryRate_AM[i];(*历史每天白班良率*)
+			HistoryRate_PM[i+1]:=HistoryRate_PM[i];(*历史每天夜班良率*)
+			HistoryOK_AM[i+1]:=HistoryOK_AM[i];(*历史每天白班生产OK总数*)
+			HistoryOK_PM[i+1]:=HistoryOK_PM[i];(*历史每天夜班生产OK总数*)
+			HistoryNG_AM[i+1]:=HistoryNG_AM[i];(*历史每天白班生产NG总数*)
+			HistoryNG_PM[i+1]:=HistoryNG_PM[i];(*历史每天夜班生产NG总数*)
+			HistoryRun_AM[i+1]:=HistoryRun_AM[i];(*历史每天白班总运行时间合计*)
+			HistoryRun_PM[i+1]:=HistoryRun_PM[i];(*历史每天夜班总运行时间合计*)
+			HistoryWait_AM[i+1]:=HistoryWait_AM[i];(*历史每天白班总待料时间合计*)
+			HistoryWait_PM[i+1]:=HistoryWait_PM[i];(*历史每天夜班总待料时间合计*)
+			HistoryAlarm_AM[i+1]:=HistoryAlarm_AM[i];(*历史每天白班总报警时间合计*)
+			HistoryAlarm_PM[i+1]:=HistoryAlarm_PM[i];(*历史每天夜班总报警时间合计*)
+			
+			FOR j := 1 TO 50 DO(*i表示天数，j表示1-10不良分类*)
+				HistoryNGClass_AM[i+1,j]:=HistoryNGClass_AM[i,j];(*历史每天白班各类NG数量*)
+				HistoryNGClass_PM[i+1,j]:=HistoryNGClass_PM[i,j];(*历史每天夜班各类NG数量*)
+				HisTodayNGQualified[i+1,j]:=HisTodayNGQualified[i,j];//历史白班各种NG类型NG率
+				HisNightNGQualified[i+1,j]:=HisNightNGQualified[i,j];//历史夜班各种NG类型NG率
+			END_FOR
+			FOR j := 8 TO 19 DO(*j表示小时*)
+				HistoryHour_AM[i+1,j]:=HistoryHour_AM[i,j];(*历史每天白班每小时产量*)
+				HistoryRun_AMH[i+1,j]:=HistoryRun_AMH[i,j];(*历史每天白班每小时运行时间合计ARRAY[1..7 ]*)
+				HistoryWait_AMH[i+1,j]:=HistoryWait_AMH[i,j];(*历史每天白班每小时待料时间合计ARRAY[1..7 ]*)
+				HistoryAlarm_AMH[i+1,j]:=HistoryAlarm_AMH[i,j];(*历史每天白班每小时报警时间合计ARRAY[1..7 ]*)
+			END_FOR
+			FOR j := 0 TO 23 DO(*j表示小时*)
+				HistoryHour_PM[i+1,j]:=HistoryHour_PM [i,j];(*夜班移位每小时产量*)
+				HistoryRun_PMH[i+1,j]:=HistoryRun_PMH[i,j];(*历史每天夜班每小时运行时间合计ARRAY[1..7 ]*)
+				HistoryWait_PMH[i+1,j]:=HistoryWait_PMH[i,j];(*历史每天夜班每小时待料时间合计ARRAY[1..7 ]*)
+				HistoryAlarm_PMH[i+1,j]:=HistoryAlarm_PMH[i,j];(*历史每天夜班每小时报警时间合计ARRAY[1..7 ]*)
+			END_FOR
+	END_FOR
+	HistoryData_Step:=200;
+200:
+(*******将当天日期和数据传送到历史数据存储区***************)
+	DayHistory[1]:= NowDay;
+	MonthHistory[1]:=NowMonth;
+	HistoryTotal[1]:=TodayTotal;(*历史每天生产总数*)
+	HistoryOK[1]:=TodayOK;(*历史每天生产OK总数*)
+	HistoryNG[1]:=TodayNG;(*历史每天生产NG总数*)
+	HistoryTotal_AM[1]:=TodayTotal_AM;(*历史每天白班生产总数*)
+	HistoryTotal_PM[1]:=TodayTotal_PM;(*历史每天夜班生产总数*)
+	HistoryRate_AM[1]:=TodayRate_AM;(*历史每天白班良率*)
+	HistoryRate_PM[1]:=TodayRate_PM;(*历史每天夜班良率*)
+	HistoryOK_AM[1]:=TodayOK_AM;(*历史每天白班生产OK总数*)
+	HistoryOK_PM[1]:=TodayOK_PM;(*历史每天夜班生产OK总数*)
+	HistoryNG_AM[1]:=TodayNG_AM;(*历史每天白班生产NG总数*)
+	HistoryNG_PM[1]:=TodayNG_PM;(*历史每天夜班生产NG总数*)
+	HistoryRun_AM	[1]:=TodayRun_AM;(*历史每天白班总运行时间合计*)
+	HistoryRun_PM[1]:=TodayRun_PM;(*历史每天夜班总运行时间合计*)
+	HistoryWait_AM[1]:=TodayWait_AM;(*历史每天白班总待料时间合计*)
+	HistoryWait_PM[1]:=TodayWait_PM;(*历史每天夜班总待料时间合计*)
+	HistoryAlarm_AM[1]:=TodayAlarm_AM;(*历史每天白班总报警时间合计*)
+	HistoryAlarm_PM[1]:=TodayAlarm_PM;(*历史每天夜班总报警时间合计*)
+	FOR j := 1 TO 50 DO(*i表示天数，j表示1-30不良分类*)
+		HistoryNGClass_AM[1,j]:=TodayNGClass_AM[j];(*历史每天白班各类NG数量*)
+		HistoryNGClass_PM[1,j]:=TodayNGClass_PM[j];(*历史每天夜班各类NG数量*)
+		HisTodayNGQualified[1,j]:=TodayNGQualified[j];//历史白班各种NG类型NG率
+		HisNightNGQualified[1,j]:=NightNGQualified[j];//历史夜班各种NG类型NG率
+	END_FOR
+	FOR j := 8 TO 19 DO(*j表示小时*)
+		HistoryHour_AM[1,j]:=TodayHour_AM[j];(*历史每天白班每小时产量*)
+		HistoryRun_AMH[1,j]:=TodayRun_AMH[j];(*历史每天白班每小时运行时间合计ARRAY[1..7 ]*)
+		HistoryWait_AMH[1,j]:=TodayWait_AMH[j];(*历史每天白班每小时待料时间合计ARRAY[1..7 ]*)
+		HistoryAlarm_AMH[1,j]:=TodayAlarm_AMH[j];(*历史每天白班每小时报警时间合计ARRAY[1..7 ]*)
+	END_FOR
+	FOR j := 0 TO 23 DO(*j表示小时*)
+		HistoryHour_PM[1,j]:=TodayHour_PM [j];(*夜班移位每小时产量*)
+		HistoryRun_PMH[1,j]:=TodayRun_PMH[j];(*历史每天夜班每小时运行时间合计ARRAY[1..7 ]*)
+		HistoryWait_PMH[1,j]:=TodayWait_PMH[j];(*历史每天夜班每小时待料时间合计ARRAY[1..7 ]*)
+		HistoryAlarm_PMH[1,j]:=TodayAlarm_PMH[j];(*历史每天夜班每小时报警时间合计ARRAY[1..7 ]*)
+	END_FOR
+	
+	FOR j:=0 TO 23 DO
+			FOR i:=1 TO 50 DO
+					HisTodayNgHour_Day[i,j,1] :=TodayNgHour_Day[i,j];//l历史白班每小时NG类型统计,,
+					HisTodayNgHour_Night[i,j,1]:=TodayNgHour_Night[i,j];//历史夜班每小时NG类型统计,,
+			END_FOR
+	END_FOR
+	HistoryData_Step:=300;
+300:
+(******清除当天数据，并记录当天日期*******)
+	NowDay:=NowTimeData.wDay;
+	NowMonth:=NowTimeData.wMonth;
+	FOR i:=8 TO 19 DO
+		TodayHour_AM[i]:=0;(*当天白班每小时产量*)
+		RunCnt_AM[i]:=0;		(*白班运行时间计数*)
+		WaitCnt_AM[i]:=0;	(*白班待料时间计数*)
+		AlarmCnt_AM[i]:=0;	(*白班报警时间计数*)
+		TodayRun_AMH[i]:=0;
+		TodayWait_AMH[i]:=0;
+		TodayAlarm_AMH[i]:=0;
+	END_FOR
+	FOR i:=0 TO 23 DO
+		TodayHour_PM[i]:=0;(*当天夜班每小时产量*)
+		RunCnt_PM[i]:=0;		(*夜班运行时间计数*)
+		WaitCnt_PM[i]:=0;	(*夜班待料时间计数*)
+		AlarmCnt_PM[i]:=0;	(*夜班报警时间计数*)
+		TodayRun_PMH[i]:=0;
+		TodayWait_PMH[i]:=0;
+		TodayAlarm_PMH[i]:=0;
+	END_FOR
+	FOR i:=1 TO 50 DO
+		TodayNGClass_AM[i]:=0;(*当天白班各类NG数量*)
+		TodayNGClass_PM[i]:=0;(*当天夜班各类NG数量*)
+		TodayNGQualified[i]:=0;//当天白班各种NG类型NG率
+		NightNGQualified[i]:=0;//当天夜班各种NG类型NG率	
+	END_FOR
+	TodayTotal:=0;(*当天生产总数*)
+	TodayOK:=0;(*当天生产OK总数*)
+	TodayNG:=0;(*当天生产NG总数*)
+	TodayTotal_AM:=0;(*当天白班生产总数*)
+	TodayTotal_PM:=0;(*当天夜班生产总数*)
+	TodayRate_AM:=0;(*当天白班良率*)
+	TodayRate_PM:=0;(*当天夜班良率*)
+	TodayOK_AM:=0;(*当天白班生产OK总数*)
+	TodayOK_PM:=0;(*当天夜班生产OK总数*)
+	TodayNG_AM:=0;(*当天白班生产NG总数*)
+	TodayNG_PM:=0;(*当天夜班生产NG总数*)
+	TodayRun_AM:=0;(*当天白班总运行时间合计*)
+	TodayRun_PM:=0;(*当天夜班总运行时间合计*)
+	TodayWait_AM:=0;(*当天白班总待料时间合计*)
+	TodayWait_PM:=0;(*当天夜班总待料时间合计*)
+	TodayAlarm_AM:=0;(*当天白班总报警时间合计*)
+	TodayAlarm_PM:=0;(*当天夜班总报警时间合计*)
+	FOR i:=1 TO 50 DO
+		FOR j:= 0 TO 23 DO
+			TodayNgHour_Day[i,j]:=0;//白班每小时NG类型统计,,
+			TodayNgHour_Night[i,j]:=0;//夜班每小时NG类型统计,,
+		END_FOR
+	END_FOR
+	SaveDataDelay(IN:=FALSE);
+	HistoryData_Step:=400;
+400:
+	SaveDataDelay(IN:=TRUE,PT:=t#2s, Q=> , ET=> );
+	IF SaveDataDelay.Q THEN
+		SaveDataDelay(IN:=FALSE);
+		HistoryData_Step:=0;
+	END_IF
+END_CASE
+(*************历史数据存储**************)
+
+
+
+//	OEE稼动率:=24小时总运行时间/总报警时间+总运行时间
+//OEE:=(TodayRun_AM+TodayRun_PM)/((TodayRun_AM+TodayRun_PM)+(TodayAlarm_AM+TodayAlarm_PM));
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_ProductionDataLocal">
+      <LineId Id="361" Count="3" />
+      <LineId Id="1123" Count="0" />
+      <LineId Id="1122" Count="0" />
+      <LineId Id="1121" Count="0" />
+      <LineId Id="1124" Count="0" />
+      <LineId Id="1794" Count="0" />
+      <LineId Id="1798" Count="1" />
+      <LineId Id="2387" Count="0" />
+      <LineId Id="1800" Count="0" />
+      <LineId Id="1806" Count="1" />
+      <LineId Id="2388" Count="0" />
+      <LineId Id="1805" Count="0" />
+      <LineId Id="1793" Count="0" />
+      <LineId Id="2522" Count="0" />
+      <LineId Id="913" Count="0" />
+      <LineId Id="961" Count="19" />
+      <LineId Id="2661" Count="12" />
+      <LineId Id="1920" Count="6" />
+      <LineId Id="1928" Count="9" />
+      <LineId Id="394" Count="7" />
+      <LineId Id="1001" Count="0" />
+      <LineId Id="1005" Count="1" />
+      <LineId Id="1004" Count="0" />
+      <LineId Id="406" Count="0" />
+      <LineId Id="957" Count="3" />
+      <LineId Id="1801" Count="0" />
+      <LineId Id="1117" Count="2" />
+      <LineId Id="1802" Count="0" />
+      <LineId Id="918" Count="0" />
+      <LineId Id="1945" Count="4" />
+      <LineId Id="497" Count="0" />
+      <LineId Id="1950" Count="0" />
+      <LineId Id="498" Count="3" />
+      <LineId Id="2204" Count="2" />
+      <LineId Id="502" Count="4" />
+      <LineId Id="2207" Count="0" />
+      <LineId Id="507" Count="0" />
+      <LineId Id="2208" Count="0" />
+      <LineId Id="508" Count="3" />
+      <LineId Id="2209" Count="0" />
+      <LineId Id="512" Count="4" />
+      <LineId Id="2364" Count="1" />
+      <LineId Id="2382" Count="4" />
+      <LineId Id="2362" Count="1" />
+      <LineId Id="2335" Count="0" />
+      <LineId Id="533" Count="2" />
+      <LineId Id="1387" Count="2" />
+      <LineId Id="2531" Count="0" />
+      <LineId Id="2533" Count="0" />
+      <LineId Id="2538" Count="0" />
+      <LineId Id="2530" Count="0" />
+      <LineId Id="1390" Count="11" />
+      <LineId Id="2523" Count="1" />
+      <LineId Id="2529" Count="0" />
+      <LineId Id="2525" Count="0" />
+      <LineId Id="1402" Count="5" />
+      <LineId Id="1413" Count="2" />
+      <LineId Id="1412" Count="0" />
+      <LineId Id="1411" Count="0" />
+      <LineId Id="1386" Count="0" />
+      <LineId Id="536" Count="7" />
+      <LineId Id="1551" Count="1" />
+      <LineId Id="1969" Count="0" />
+      <LineId Id="546" Count="2" />
+      <LineId Id="1570" Count="0" />
+      <LineId Id="549" Count="0" />
+      <LineId Id="1571" Count="0" />
+      <LineId Id="550" Count="20" />
+      <LineId Id="1007" Count="1" />
+      <LineId Id="573" Count="1" />
+      <LineId Id="921" Count="0" />
+      <LineId Id="924" Count="1" />
+      <LineId Id="922" Count="0" />
+      <LineId Id="1803" Count="0" />
+      <LineId Id="1126" Count="1" />
+      <LineId Id="1125" Count="0" />
+      <LineId Id="1804" Count="0" />
+      <LineId Id="923" Count="0" />
+      <LineId Id="1964" Count="4" />
+      <LineId Id="1963" Count="0" />
+      <LineId Id="666" Count="3" />
+      <LineId Id="2211" Count="0" />
+      <LineId Id="670" Count="0" />
+      <LineId Id="2212" Count="0" />
+      <LineId Id="671" Count="3" />
+      <LineId Id="2213" Count="0" />
+      <LineId Id="675" Count="0" />
+      <LineId Id="2214" Count="0" />
+      <LineId Id="676" Count="3" />
+      <LineId Id="2215" Count="0" />
+      <LineId Id="680" Count="0" />
+      <LineId Id="2216" Count="0" />
+      <LineId Id="681" Count="2" />
+      <LineId Id="2368" Count="0" />
+      <LineId Id="2370" Count="1" />
+      <LineId Id="2375" Count="0" />
+      <LineId Id="2372" Count="0" />
+      <LineId Id="2376" Count="0" />
+      <LineId Id="2369" Count="0" />
+      <LineId Id="700" Count="2" />
+      <LineId Id="1417" Count="1" />
+      <LineId Id="1682" Count="0" />
+      <LineId Id="2535" Count="2" />
+      <LineId Id="2534" Count="0" />
+      <LineId Id="1419" Count="0" />
+      <LineId Id="1422" Count="9" />
+      <LineId Id="2527" Count="1" />
+      <LineId Id="2526" Count="0" />
+      <LineId Id="1432" Count="8" />
+      <LineId Id="1683" Count="0" />
+      <LineId Id="1441" Count="0" />
+      <LineId Id="1416" Count="0" />
+      <LineId Id="703" Count="7" />
+      <LineId Id="1562" Count="1" />
+      <LineId Id="1970" Count="0" />
+      <LineId Id="713" Count="2" />
+      <LineId Id="1572" Count="0" />
+      <LineId Id="716" Count="55" />
+      <LineId Id="2389" Count="1" />
+      <LineId Id="772" Count="38" />
+      <LineId Id="2391" Count="0" />
+      <LineId Id="2395" Count="0" />
+      <LineId Id="811" Count="12" />
+      <LineId Id="1951" Count="0" />
+      <LineId Id="1953" Count="4" />
+      <LineId Id="1952" Count="0" />
+      <LineId Id="824" Count="9" />
+      <LineId Id="1564" Count="2" />
+      <LineId Id="834" Count="5" />
+      <LineId Id="1567" Count="2" />
+      <LineId Id="840" Count="3" />
+      <LineId Id="2396" Count="1" />
+      <LineId Id="844" Count="17" />
+      <LineId Id="1958" Count="4" />
+      <LineId Id="862" Count="10" />
+      <LineId Id="874" Count="0" />
+      <LineId Id="899" Count="0" />
+      <LineId Id="2086" Count="2" />
+      <LineId Id="900" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

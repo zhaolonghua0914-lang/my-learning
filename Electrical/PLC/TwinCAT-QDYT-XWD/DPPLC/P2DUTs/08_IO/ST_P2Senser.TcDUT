@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P2Senser" Id="{e8aa8109-f913-445f-bca3-389a8fe5d8fb}">
+    <Declaration><![CDATA[TYPE ST_P2Senser ://P2 传感器
+STRUCT
+NGBatteries_H:BOOL;//电芯NG1料盒高度感应
+NGBatteries_L:BOOL;//电芯NG1料盒到位感应
+P2M1_AnBeltsensor	:BOOL;	//1号叠台		正极模切送料分段皮带1有料感应
+P2M1_CaBeltsensor	:BOOL;	//1号叠台		负极模切送料分段皮带1有料感应
+P2M1_Offloadingsensor	:BOOL;	//1号叠台		取料位感应
+P2M1_BlueGluetsensor	:BOOL;	//1号叠台		蓝胶料盘检测
+P2M1_codeGluesensor	:BOOL;	//1号叠台		二维码胶料盘检测
+P2M1_Markesensor	:BOOL;	//1号叠台		二维码胶Mark孔检测
+P2M1_GluebHave      :BOOL;  //1号叠台		一号贴胶旋转电芯感应
+P2M1_Coldpressingesensor	:BOOL;	//1号叠台		冷压上料夹平移电机1号叠台处检测
+P2M1_Securitydoorswitch1	:BOOL;	//1号叠台		外罩门禁1
+P2M1_Securitydoorswitch2	:BOOL;	//1号叠台		外罩门禁2
+P2M1_Securitydoorswitch3	:BOOL;	//1号叠台		外罩门禁3
+P2M1_Securitydoorswitch4	:BOOL;	//1号叠台		外罩门禁4
+P2M1_Securitydoorswitch5	:BOOL;	//1号叠台		外罩门禁5
+P2M1_Securitydoorswitch6	:BOOL;	//1号叠台		外罩门禁6
+P2M1_Securitydoorswitch7	:BOOL;	//1号叠台		外罩门禁7
+P2M1_Securitydoorswitch8	:BOOL;	//1号叠台		外罩门禁8
+P2M1_Securitydoorswitch9	:BOOL;	//1号叠台		外罩门禁9
+P2M1_Securitydoorswitch10	:BOOL;	//1号叠台		外罩门禁10
+P2M1_Yellowmark       :BOOL;  //1号叠台		一号隔膜黄标感应    
+P2M1_Ceramics:BOOL;// //1号叠台		一号隔膜陶瓷面检测    
+P2M1_AnDTCarryingJROnSwitch:BOOL;//1号正极极耳真空信号
+P2M1_CaDTCarryingJROnSwitch:BOOL;//1号负极极耳真空信号
+P2M1_AnNGboxsensor 	:BOOL;		//1叠台正极NG料盒满料感应
+P2M1_CaNGboxsensor 	:BOOL;		//1叠台负极NG料盒满料感应
+
+P2M2_AnBeltsensor	:BOOL;	//2号叠台		正极模切送料分段皮带1有料感应
+P2M2_CaBeltsensor	:BOOL;	//2号叠台		负极模切送料分段皮带1有料感应
+P2M2_Offloadingsensor	:BOOL;	//2号叠台		取料位感应
+P2M2_BlueGluetsensor	:BOOL;	//2号叠台		蓝胶料盘检测
+P2M2_codeGluesensor	:BOOL;	//2号叠台		二维码胶料盘检测
+P2M2_Markesensor	:BOOL;	//2号叠台		二维码胶Mark孔检测
+P2M2_GluebHave      :BOOL;  //2号叠台		二号贴胶旋转电芯感应
+P2M2_Coldpressingesensor	:BOOL;	//2号叠台		冷压上料夹平移电机1号叠台处检测
+P2M2_Securitydoorswitch1	:BOOL;	//2号叠台		外罩门禁1
+P2M2_Securitydoorswitch2	:BOOL;	//2号叠台		外罩门禁2
+P2M2_Securitydoorswitch3	:BOOL;	//2号叠台		外罩门禁3
+P2M2_Securitydoorswitch4	:BOOL;	//2号叠台		外罩门禁4
+P2M2_Securitydoorswitch5	:BOOL;	//2号叠台		外罩门禁5
+P2M2_Securitydoorswitch6	:BOOL;	//2号叠台		外罩门禁6
+P2M2_Securitydoorswitch7	:BOOL;	//2号叠台		外罩门禁7
+P2M2_Securitydoorswitch8	:BOOL;	//2号叠台		外罩门禁8
+P2M2_Securitydoorswitch9	:BOOL;	//2号叠台		外罩门禁9
+P2M2_Securitydoorswitch10	:BOOL;	//2号叠台		外罩门禁10
+P2M2_Yellowmark       :BOOL;  //2号叠台		二号隔膜黄标感应    
+P2M2_Ceramics:BOOL;// //1号叠台		2号隔膜陶瓷面检测   
+P2M2_AnDTCarryingJROnSwitch:BOOL;//2号正极极耳真空信号
+P2M2_CaDTCarryingJROnSwitch:BOOL;//2号负极极耳真空信号 
+P2M2_AnNGboxsensor 	:BOOL;		//2叠台正极NG料盒满料感应
+P2M2_CaNGboxsensor 	:BOOL;		//2叠台负极NG料盒满料感应
+
+P2M3_AnBeltsensor	:BOOL;	//3号叠台		正极模切送料分段皮带1有料感应
+P2M3_CaBeltsensor	:BOOL;	//3号叠台		负极模切送料分段皮带1有料感应
+P2M3_Offloadingsensor	:BOOL;	//3号叠台		取料位感应
+P2M3_BlueGluetsensor	:BOOL;	//3号叠台		蓝胶料盘检测
+P2M3_codeGluesensor	:BOOL;	//3号叠台		二维码胶料盘检测
+P2M3_Markesensor	:BOOL;	//3号叠台		二维码胶Mark孔检测
+P2M3_GluebHave      :BOOL;  //3号叠台	    三号贴胶旋转电芯感应
+P2M3_Coldpressingesensor	:BOOL;	//3号叠台		冷压上料夹平移电机1号叠台处检测
+P2M3_Securitydoorswitch1	:BOOL;	//3号叠台		外罩门禁1
+P2M3_Securitydoorswitch2	:BOOL;	//3号叠台		外罩门禁2
+P2M3_Securitydoorswitch3	:BOOL;	//3号叠台		外罩门禁3
+P2M3_Securitydoorswitch4	:BOOL;	//3号叠台		外罩门禁4
+P2M3_Securitydoorswitch5	:BOOL;	//3号叠台		外罩门禁5
+P2M3_Securitydoorswitch6	:BOOL;	//3号叠台		外罩门禁6
+P2M3_Securitydoorswitch7	:BOOL;	//3号叠台		外罩门禁7
+P2M3_Securitydoorswitch8	:BOOL;	//3号叠台		外罩门禁8
+P2M3_Securitydoorswitch9	:BOOL;	//3号叠台		外罩门禁9
+P2M3_Securitydoorswitch10	:BOOL;	//3号叠台		外罩门禁10
+
+
+
+P2M3_Yellowmark       :BOOL;  //3号叠台		三号隔膜黄标感应    
+P2M3_Ceramics:BOOL;// //3号叠台		3号隔膜陶瓷面检测    
+P2M3_AnDTCarryingJROnSwitch:BOOL;//3号正极极耳真空信号
+P2M3_CaDTCarryingJROnSwitch:BOOL;//3号负极极耳真空信号
+P2M3_AnNGboxsensor 	:BOOL;		//3叠台正极NG料盒满料感应
+P2M3_CaNGboxsensor 	:BOOL;		//3叠台负极NG料盒满料感应
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

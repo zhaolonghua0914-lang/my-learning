@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_TableNo" Id="{931a7c62-14fd-4d56-8100-ed1cfa69648f}">
+    <Declaration><![CDATA[TYPE ST_TableNo ://    凸轮表号
+STRUCT
+         Cuter	:UINT ;(*裁切切刀凸轮编号*)
+		 CuterStop	:UINT ;(*裁切切刀停止凸轮编号*)
+		 Mould	:UINT;(*模具切刀凸轮编号*)
+		 MouldStop	:UINT;(*模具切刀停止凸轮编号*)
+         Dirver	:UINT;(*主驱动凸轮编号*)
+		 VirDirver:UINT;(*虚驱动凸轮编号*)
+         VirBelt	:UINT;(*虚拟皮带凸轮编号*)
+         NgPush	:UINT;(*NG踢料凸轮编号*)
+		 NgPushStop	:UINT;(*NG踢料停止凸轮编号*)
+         BufferLine	:UINT;(*极片缓存凸轮编号*)
+		 CCDPress:UINT;(*CCD压片凸轮编号*)
+		 BufferLine_1	:UINT;(*极片缓存凸轮编号*)
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

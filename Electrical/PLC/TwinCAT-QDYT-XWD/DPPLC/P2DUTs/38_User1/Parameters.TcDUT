@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="Parameters" Id="{622ccd5b-d1fa-409f-9b90-c6b2243ec8be}">
+    <Declaration><![CDATA[TYPE  Parameters :
+STRUCT
+	(*
+	An_Quantity:UINT;//正极设定极片数		
+	Ca_Quantity:UINT;//负极设定极片数
+	Ca_betlCount:word_bool;//负极极片级存流水线记录极片数
+	
+	Stickersettings:word_bool;//贴胶设置需要贴的胶道数
+	StickerDone:word_bool;//已贴胶的道数
+	*)
+
+    stDT_date:parDT_date;//叠台设定断电保持参数
+
+    Mechaical:  parMechanical;  //机械参数
+	
+	stWJ_date:parTailCurl_date;//尾卷设定参数
+
+   
+    iStationNO:    INT;  //叠片站好    1:1#叠片     2:1#叠片     3:1#叠片   
+   
+  	Code:     ParCode;   //二维码参数
+	iModeEN             : IModeEN;//功能屏蔽
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

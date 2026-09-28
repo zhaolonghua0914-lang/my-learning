@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="conAn_date" Id="{8bb7fa6c-9ef7-4108-969f-b247adc70907}">
+    <Declaration><![CDATA[TYPE conAn_date ://正极取片
+STRUCT
+	
+	An_GohomeHMI:BOOL;//正极回原点启动
+	An_GohomeDone:BOOL;//正极回原点完成
+	An_Quantited:UINT;//正极已叠数量
+	An_KDQuantited:UINT;//正极空叠隔膜已叠片数
+	An_EmptyRunKDQuantited:UINT;//正极空跑模式空叠隔膜已叠层数
+	//An_KDQuantited:UINT;//正极空叠隔膜已叠片数
+	An_CarryingFalg:BOOL;//正极搬运吸盘有无料标记
+	An_QuLiaoOK:BOOL;//正极取流水线极片允许
+	An_deviationFalg:BOOL;//正极纠偏平台有无料标记
+	An_DPCarryingFalg:BOOL;//正极叠台搬运 吸盘有无料标记
+	An_DPRequest:BOOL;//正极叠片请求
+	An_BlueflagingKDSet:UINT;//正极接带空叠隔膜设定片数
+	An_YellowmarkKDSet:UINT;//正极极色标空叠隔膜设定片数
+	An_Blueflaging_TF:UINT;//正极蓝胶标记空叠层数	
+	
+	
+	//An_deviationCCDOK:BOOL;//正极纠偏平台拍照OK
+	//An_deviationCCDNG:BOOL;//正极纠偏平台拍照NG
+	An_CCDStart:BOOL;//正极CCD拍照启动
+	An_deviationCCDDone:BOOL;//正极CCD拍照完成
+	
+	An_deviationFPOK:BOOL;//正极纠偏平台允许放极片
+	An_deviationDPOK:BOOL;//正极纠偏平台允许取极片
+	An_deviationDone:BOOL;//正极纠偏平台纠偏完成
+	An_MainBeltOK:BOOL;//正极流水线主分料皮带允许取极片
+	An_MainBelting:BOOL;//正极流水线主分料皮带取极片中
+	AN_AxisCarrying:BOOL;//正极各轴正在运行到初始位中
+	AN_BeltDone:BOOL;//正极取主分料流水线极片完成
+	AN_BeltSafe:BOOL;//正极取主分料流水线极片安全位
+	GetPiceReady:BOOL;//正极准备好取分段流水线上的极片
+	JumpPiceReady:BOOL;//正极放弃取分段流水线上的极片	
+	bAn_PoleHave:BOOL;//正极取料位无片
+	
+	An_StandbyStep:ARRAY[0..9] OF UINT;//正极备极片程序步
+	CarryingSafepos:ARRAY[0..9] OF BOOL;//正极搬动轴在安全位置指示
+	Error: ARRAY[0..80] OF BOOL;//报警
+	Error_tips	:ARRAY[0..60] OF BOOL;//报警提示
+	
+	RectifydevStart:BOOL; //纠偏启动
+	RectifydevDone:BOOL; //纠偏完成
+	
+	//CCD_X1:REAL; //纠偏平台X1的纠偏量
+	//CCD_X2:REAL;//纠偏平台X2的纠偏量
+	//CCD_Y:REAL;//纠偏平台Y的纠偏量	
+	
+	DemarcateStart:BOOL; //标定启动	
+	DemarcateDone:BOOL; //CCD标定完成
+	Demarcateing:BOOL;//CCD标定中
+	
+	CreateCamStart:BOOL;//正极取片凸轮创建
+	CreateCamDone:BOOL;//正极取片凸轮创建完成
+	
+	bAnCCD_TestDo:BOOL;//正极CCD测试开始
+	iAnCCD_PhotoCT:INT;//正极拍照取图时间
+	iAnCCD_RectifyCT:INT;//正极纠偏时间	
+	An_CCD_amount :int;//正极连续NG计数
+	An_DTqr :BOOL;//正极极片掉片人工确认按钮
+	An_Rectifydev_CQ :BOOL;//正极纠偏平台除尘
+	An_Rectifydev_CS :INT;//纠偏计数
+	
+	An_Rectifydev_PB :BOOL;//二次纠偏屏蔽 OFF：屏蔽二次纠偏
+	An_VacuumErrorNG :BOOL;//正极抛真空NG料标志
+	//新增，首层隔膜
+	An_FirstFoldCnt:INT;//正极首层隔膜已叠次数
+	An_FirstFoldSet:INT:=1;//正极首层隔膜设定次数
+		//20240414WCZ
+	RectifyTryStart:BOOL;//CCD重复精度测试启动
+	SuckerTestStart:BOOL;//吸盘重复精度测试启动
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

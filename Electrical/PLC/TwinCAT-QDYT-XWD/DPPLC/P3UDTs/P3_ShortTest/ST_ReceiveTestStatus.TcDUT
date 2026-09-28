@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ReceiveTestStatus" Id="{cfd31f5c-6029-448d-b20e-b191953f3ed0}">
+    <Declaration><![CDATA[TYPE ST_ReceiveTestStatus :
+STRUCT
+	TransmitDone        :BOOL;   //数据发送完成
+    ReceiveRequest      :BOOL;    
+    InitAccepted        :BOOL;
+    SndBufferFull       :BOOL;
+    PutDataDone         :BOOL;
+    InputLength         :USINT;
+    TotalInputLength    :UINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

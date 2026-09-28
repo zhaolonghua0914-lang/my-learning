@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ControlSignal" Id="{6166c5d8-df35-4b09-8033-aed1dfda02a7}">
+    <Declaration><![CDATA[TYPE ControlSignal :
+STRUCT
+	btn:ST_Button;//机架按钮
+	se:ST_Senser;//机架信号
+	U:ST_UserControl;//用户控制信号
+	An_b:conAn_date;//正极取片数据包
+	Ca_b:conCa_date;//负极取片数据包
+	DT_b:conDT_Date;//叠台数据包
+	WJ_b:conTailCurl_date;//尾卷数据包
+	TJ_b:conStickGlue_date;//贴胶数据包
+	DTRunStatus:conDT_RunStatus;//叠台运行数据	
+	
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

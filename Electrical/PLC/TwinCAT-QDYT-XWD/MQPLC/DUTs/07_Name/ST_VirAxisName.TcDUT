@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_VirAxisName" Id="{fa03eb46-7536-4662-b758-ec2ceeacfc18}">
+    <Declaration><![CDATA[TYPE ST_VirAxisName :   //正极虚轴名称
+STRUCT
+ VirMain:INT;//模切虚拟主轴
+ VirDriver:INT;//模切虚拟驱动辊
+ VirBelt:INT;//模切虚拟皮带轴
+  
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

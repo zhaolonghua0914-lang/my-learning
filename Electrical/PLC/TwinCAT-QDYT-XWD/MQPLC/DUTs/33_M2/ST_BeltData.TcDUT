@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_BeltData" Id="{820517be-885f-4d90-b137-e541c472d7d6}">
+    <Declaration><![CDATA[TYPE ST_BeltData ://皮带数据（裁断后）
+STRUCT
+	bHavePole   :BOOL;  //是否有极片
+	iPanoramaNG:INT;//尺寸检测状态  1:OK  2:NG   3:无极片    0:无效
+	iJumpCutNG:INT;//跳切连续NG  1:OK  2:NG  0:无效
+	fPoleWidth:REAL;//片宽
+	fPoleHeigh:REAL;//片高
+	stPoleNo:STRING(256);//极片编号
+ // fbST_CCDComSize:ST_CCDComSize;
+	fTabWidth:REAL;  //尺寸检测CCD结果(极耳宽度)
+	fTabHeigh:REAL;  //尺寸检测CCD结果(极耳高度)
+	fTabSite   : REAL; // 极耳左，右边距(就是极耳位置，不分左右)
+	//fOffsetDeg:REAL; //尺寸检测CCD结果(极片裁切面角度偏移)
+	RoundedSize1                                :        REAL        ;//        圆角尺寸1 面积   叠片侧(正极)       负极相反
+	RoundedSize2                                :        REAL        ;//         圆角尺寸2 面积    切刀侧(正极)        负极相反
+	RoundedSize3                                :        REAL        ;//         圆角尺寸3纵深 叠片侧(正极)        负极相反
+	RoundedSize4                                :        REAL        ;//        圆角尺寸4纵深 切刀侧(正极)     负极相反
+	RoundedSize5                                :        REAL        ;//        圆角尺寸5 横深
+	RoundedSize6                                :        REAL        ;//        圆角尺寸6横深
+	RoundedSize7                                :        REAL        ;//      圆角尺寸7横深 叠片侧(正极)     负极相反
+	RoundedSize8                               :        REAL        ;//        圆角尺寸8横深 切刀侧(正极)     负极相反
+	PolePlateAngle1                                :        REAL        ;//        极片角度1  极片角度
+	PolePlateAngle2                                :        REAL        ;//        极片角度2
+	PolePlateAngle3                                :        REAL        ;//        极片角度3
+	PolePlateAngle4                                :        REAL        ;//        极片角度4
+	fPoleNGSizeNo:REAL;  //尺寸检测CCD结果(NG分类编号)
+	iTabNGSizeNo:INT;  //尺寸检测CCD极耳抓边异常分类     1： OK  2: 极片抓边异常    3:极耳抓边异常     4：都抓边异常     5：极片或极耳角度异常    
+	
+	iPoleRAngleNG:INT;//尺寸检测CCD结果(R角NG)
+	iFinish:INT;  //尺寸检测CCD结果指示(1=完成;2=NG;3=无片;0=无效)  SizeResults
+	AppearanceResult:INT;// 极片外观判定结果   线扫NG、OK
+
+	UnreelingTension                        :        REAL        ;//        放卷张力
+	SlicingSpeed                                :        REAL        ;//        切片速度
+	PolePlateLenth                                :        REAL        ;//        极片长度（走带方向）
+	fPoleNGSacnNo:REAL;  //极片先扫NG编号(NG分类编号)
+	
+	bYellowMark:BOOL;//黄标标志--TRUE为黄标
+	bBlueMark:BOOL;//接带标志--TRUE为接带
+	Code				:STRING(49);//料卷条码
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

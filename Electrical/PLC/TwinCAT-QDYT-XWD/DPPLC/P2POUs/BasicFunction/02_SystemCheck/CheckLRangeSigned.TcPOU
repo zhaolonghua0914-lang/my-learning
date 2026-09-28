@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CheckLRangeSigned" Id="{37844e98-0fe5-4379-a481-b5355ec4a82d}" SpecialFunc="CheckLRangeSigned">
+    <Declaration><![CDATA[// 隐含生成代码：不要编辑
+FUNCTION CheckLRangeSigned : LINT
+VAR_INPUT
+	value, lower, upper: LINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 隐含生成代码：这里只是对代码实现的建议
+{noflow}
+IF (value < lower) THEN
+	CheckLRangeSigned := lower;
+ELSIF(value > upper) THEN
+	CheckLRangeSigned := upper;
+ELSE
+	CheckLRangeSigned := value;
+END_IF
+
+{flow}]]></ST>
+    </Implementation>
+    <LineIds Name="CheckLRangeSigned">
+      <LineId Id="7" Count="9" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

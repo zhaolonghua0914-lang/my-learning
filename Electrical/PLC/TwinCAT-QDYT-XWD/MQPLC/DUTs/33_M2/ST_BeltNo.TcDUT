@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_BeltNo" Id="{372c2d00-65bb-4a0f-b2b9-d53e1bbb51aa}">
+    <Declaration><![CDATA[TYPE ST_BeltNo ://皮带工位号（裁断后）
+STRUCT
+First	:INT:=1;		//	首片数据
+OverHang	:INT:=2;		//	尺寸检测工位
+NGBox1	:INT:=4;		//	踢废工位1（连续）
+NGBox2	:INT:=6;		//	踢废工位2（单片）
+BrushDustU	:INT:=7;		//	极片上表面毛刷除尘工位
+WindDustU	:INT:=8;		//	极片上表面风刀除尘工位
+BrushDustD	:INT:=9;		//	极片下表面毛刷除尘工位
+WindDustD	:INT:=10;		//	极片下表面风刀除尘工位(除尘倒装皮带末位)
+//DedustRevBelt     :INT;  //除尘倒装皮带末位
+SubBelt1	:INT;		//	分段皮带1取料工位
+SubBelt2	:INT;		//	分段皮带2取料工位
+SubBelt3	:INT;		//	分段皮带3取料工位
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

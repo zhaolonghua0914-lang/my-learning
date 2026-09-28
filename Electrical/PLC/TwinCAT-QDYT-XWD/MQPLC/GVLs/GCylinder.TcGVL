@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="GCylinder" Id="{e8476972-8edd-4ab5-9817-9804ecaadd29}">
+    <Declaration><![CDATA[	
+VAR_GLOBAL
+	arrCyCtrl			                  :ARRAY[1..MaxCy] OF ST_CyCtrl;	(*气缸控制接口*)
+     AA1: INT;
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	MaxCy			                  	:UINT:=80;		(*气缸数量*)
+END_VAR
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

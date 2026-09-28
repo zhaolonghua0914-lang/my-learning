@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Three_Scale" Id="{bb85c247-3129-41b1-87c7-befa4b51d559}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION Three_Scale : REAL
+VAR_INPUT
+	X:REAL;
+	Sall: REAL;
+	T:REAL;
+END_VAR
+VAR
+	a2: REAL;
+	a3: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[a2:=3*Sall/EXPT(T,REAL#2);
+a3:=-2*Sall/EXPT(T,REAL#3);
+Three_Scale:=a3*EXPT(X,REAL#3) + a2*EXPT(X,REAL#2);]]></ST>
+    </Implementation>
+    <LineIds Name="Three_Scale">
+      <LineId Id="8" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

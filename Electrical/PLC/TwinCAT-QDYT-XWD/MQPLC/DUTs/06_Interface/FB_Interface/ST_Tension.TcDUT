@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Tension" Id="{a94d3437-6156-4240-898d-54c613f17e08}">
+    <Declaration><![CDATA[TYPE ST_Tension :  //张力FB 接口信号
+STRUCT
+	fWindDiameter           :REAL;//放卷实时直径
+    fDanserDegree           :REAL;//摆杆实时位置
+   
+   	bTenExecute		        :BOOL;	//张力使能
+	bStudyExecute           :BOOL;  //摆杆学习开始     
+   	fStudyDiameter          :REAL;  //摆杆学习时放卷直径
+	
+	bReady                    :BOOL;  //张力功能准备好
+	bTensionOK		       :BOOL;	//张力使能OK
+
+	bError			           :BOOL;	//张力出错
+                         
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

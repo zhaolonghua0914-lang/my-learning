@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_AxisIo" Id="{07b7b809-e3e3-4065-9a16-92dce29df0bd}">
+    <Declaration><![CDATA[TYPE ST_AxisIo :   //轴IO信号
+STRUCT
+
+	biNegLimit	             :BOOL;		            (*负限位触发信号*)
+	biPosLimit	             :BOOL;		            (*正限位触发信号*)
+	biHomeSwitch	     :BOOL;		         (*原点触发信号*)
+    DigitalInputs          AT %I*	:  UDINT;
+	ErrorCode          AT %I*	:  UINT;//错误代码
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

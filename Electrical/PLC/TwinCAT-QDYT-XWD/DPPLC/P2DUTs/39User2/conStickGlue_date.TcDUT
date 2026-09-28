@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="conStickGlue_date" Id="{80e32e41-f16b-4ced-a400-59ed4e034354}">
+    <Declaration><![CDATA[TYPE conStickGlue_date :
+STRUCT
+	
+	StickMark_L1:BOOL;//左短边1贴胶完成
+	StickMark_L2:BOOL;//左短边2贴胶完成
+	StickMark_R1:BOOL;//右短边1贴胶完成
+	StickMark_R2:BOOL;//右短边2贴胶完成
+	StickMark1_L:BOOL;//非极耳侧贴胶完成---------
+	StickMark1_L2:BOOL;//极耳侧贴胶完成---------
+	StickPermit:BOOL;//贴胶允许
+	StickFinish:BOOL;//贴胶完成
+	Sticking_L:BOOL;//左短边贴胶
+	Sticking_R:BOOL;//右短边贴胶
+	Sticking_Lg:BOOL;//非极耳侧长边贴胶--------
+	Sticking_Lg2:BOOL;//极耳侧长边贴胶--------
+	
+	
+	//Stickersettings:word_bool;//贴胶设置需要贴的胶道数
+	Stickersetting:ARRAY[0..9] OF BOOL;//贴胶设置需要贴的胶道数
+	
+	//StickerDoneNo:word_bool;//已贴胶的道数
+	StickerDoneNo:ARRAY[0..9] OF BOOL;//已贴胶的道数
+		
+	Stickerragree:BOOL;//贴胶允许尾卷下电芯
+	StickerFlag:BOOL;//贴胶夹爪有无电芯标志
+	StickerDone:BOOL;//贴胶完成
+	StickerOffloading:BOOL;//贴胶下电芯请求
+	StickerOffloadingDone:BOOL;//贴胶下电芯完成	
+	StickerStandbyDone:BOOL;//贴胶备胶完成
+	StickerStandbyCode:BOOL;//备二维码胶请求
+	StickerStandbyBule:BOOL;//备蓝胶请求
+	TJIniti_Done:BOOL;//贴胶初始化完成
+	TJIniti_Hbtn:BOOL;//贴胶初始化，触摸屏按鋕
+	
+	SinStepMode:BOOL;//单步模式
+	
+	ScanStarte:BOOL;//扫码启动
+	ScanOK:BOOL;//扫码OK
+	ScanNG:BOOL;//扫码NG
+	Scan_gross :INT;//1、OK 2、NG
+	ScanMode:BOOL;//扫码模式，是否屏蔽
+	ScanStatus:ARRAY[0..2] OF BOOL;//记录扫码的状芯
+	
+	Error:ARRAY[0..29] OF BOOL;//报警
+	
+	StickerStart_HMI:BOOL;//尾卷贴胶启动
+	
+	AxisConditionEN:BOOL;//TRUE:电机运动条件屏蔽
+	TJ_Memory   :INT;//贴胶电芯记忆
+	WhirlingSafe :BOOL;//贴胶旋转安全条件
+	strCode :STRING;//扫码码条
+	Scan_IP :T_IPv4Addr;
+	bTcpOpen :BOOL;//扫码Tcp 连接
+	Scan_Men :ARRAY[1..4] OF Scan_TJ;//贴胶扫码记忆
+	Scan_TS   :BOOL; //扫码提示
+	Scan_CT :BOOL;//扫码数据传递
+	
+	Stick_Judge:BOOL;//贴胶软限位判断
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

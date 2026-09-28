@@ -1,0 +1,236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlankingMotorManual" Id="{ac8fcf6e-546a-4ce0-90c2-a759025388e8}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlankingMotorManual
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*//P3_M1冷压上料夹平移点动
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M1冷压上料夹进退点动
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M1冷压上料夹旋转点动
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M1冷压上料夹升降点动
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M1冷压托板开合点动
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M1冷压驱动点动
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M2烤箱上料夹搬运点动
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.hmiJog_Fw THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.hmibJog_Bw THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M2烤箱上料夹进退点动
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.hmiJog_Fw THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.hmibJog_Bw THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M2烤箱上料夹升降点动
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.hmiJog_Fw THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.hmibJog_Bw THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M3热压托板开合点动
+IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M3热压驱动点动
+IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4称重上料夹平移点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4称重上料夹升降点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4称重上料夹旋转点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4电芯分选夹搬运点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4电芯分选夹升降点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4电芯下料夹搬运点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bJog_Bw:=FALSE;
+END_IF
+
+//P3_M4电芯下料夹升降点动
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.hmiJog_Fw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bJog_Fw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bJog_Fw:=FALSE;
+END_IF
+IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.hmibJog_Bw THEN
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bJog_Bw:=TRUE;
+ELSE
+arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Cmd.bJog_Bw:=FALSE;
+END_IF
+*)
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlankingMotorManual">
+      <LineId Id="231" Count="214" />
+      <LineId Id="220" Count="1" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

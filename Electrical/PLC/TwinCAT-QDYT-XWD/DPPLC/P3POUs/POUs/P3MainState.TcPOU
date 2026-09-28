@@ -1,0 +1,1666 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="P3MainState" Id="{918451f5-3d10-4127-9ad2-aee55c33fb8b}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P3MainState
+VAR
+	iMainSetp :INT;
+	bEstop: BOOL;
+
+	I1: UINT;
+	iErrorSetp: INT;
+	iLightSel: INT;
+	bTurnOn: BOOL;
+	bDoor_Stop: BOOL;
+	I2: INT;
+	I4: INT;
+	I5: INT;
+	i: UINT;
+	iCode2: ICode;
+	ExtSetVel: LREAL;
+	ExtSetPos: LREAL;
+	ExtSetAcc: LREAL;
+	ExtSetDec: DINT;
+	InitSetp: INT;
+	rtStoping: R_TRIG;
+	iMainInitSetp: INT;
+	iMainEStopSetp: INT;
+	K1: UINT;
+	bInitReset: BOOL;
+	DA1: INT;
+	Code1: BOOL;
+	Code2: BOOL;
+	Code3: BOOL;
+	Code4: BOOL;
+	CyCtrl: INT;
+	bWaterOn: BOOL;
+	
+	Execute: BOOL;
+	bCoeWrite_GlueFeed: BOOL;
+	bWaterOn2: BOOL;
+	
+	P2M1_tonEStop1: INT;
+	IN: INT;
+	tCycleTimer: TON;
+	bSave: BOOL;
+	rt10: R_TRIG;
+	bReadDataFirstCyle: BOOL;
+	testii: INT;
+	bSaveDataTest: BOOL;
+	testii2: INT;
+	bReadDataCyle2: BOOL;
+	rtSaveData: R_TRIG;
+END_VAR
+
+VAR
+	iMainSetp_TON :ARRAY[1..5] OF TON;
+	R_TRIG_Bt: 			ARRAY[1..10]OF R_TRIG;
+	TON20:Tc2_Standard.TON;	
+//	TON21:Tc2_Standard.TON;	
+	rt100:Tc2_Standard.R_TRIG;
+	rt101:Tc2_Standard.R_TRIG;
+	
+	tDelayBuzze:TON;
+
+	RT200:ARRAY[1..4] OF Tc2_Standard.R_TRIG;
+
+	csAxis                 :ARRAY[160..185] OF   CS_AxisCtrl;
+	csAxisV2               :ARRAY[166..168] OF     CS_AxisCtrlV2;
+	fbCy                   :ARRAY[230..289]    OF   FB_Cylinder;
+  //  fbRec                 :ARRAY[1..MaxRec]   OF   FB_Rectify;
+    fbTemp             :ARRAY[1..MaxTemp]   OF   FB_Temperature;
+
+
+
+    csCodeTcp:CS_CodeTcp;
+    fbCamInTest: MC_CamIn;//主轴与驱动凸轮耦合
+
+//速度模式验证
+	MC_ExtSetPointGenDisable: MC_ExtSetPointGenDisable;
+	MC_ExtSetPointGenEnable: MC_ExtSetPointGenEnable;
+    MC_ExtSetPointGenOut:        Tc2_MC2.ST_McOutputs;
+    MC_ExtSetPointGenOut2:        Tc2_MC2.ST_McOutputs;
+
+    tonEStop:                     Tc2_Standard.TON;
+
+   
+  fbP4NGSetpMoter  : CS_SetpMoter;
+ 
+
+
+mc_Home    :MC_Home;
+
+     fbCoeWrite_GlueFeed:       FB_EcCoeSdoWrite;
+     	wEncodeHome                    :WORD:=6;
+        //fbDataXML  :FB_DataXMLP3;  
+	rMES:ARRAY[1..20]OF R_TRIG;//
+	tMES:ARRAY[1..10]OF TON;//
+END_VAR
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[P3_SystemRUN.btnAuto;
+P3_SystemRUN.btnManul;
+P3_SystemRUN.btnStart;
+P3_SystemRUN.btnStop;
+P3_SystemRUN.btnReset;
+P3_SystemRUN.btnEstop;//常开  
+
+
+
+
+IF P3_SystemRUN.hmiAuto AND P3Button.P3_Autobtn THEN
+	P3_SystemRUN.FlgManua:=FALSE;//尾端下料手动标志
+	P3_SystemRUN.FlgAuto:=TRUE;//尾端下料自动标志
+ELSE
+	P3_SystemRUN.FlgManua:=TRUE;//尾端下料手动标志
+	P3_SystemRUN.FlgAuto:=FALSE;///尾端下料自动标志
+END_IF
+
+
+R_TRIG_Bt[1](CLK:=  P3_SystemRUN.hmiStart (*OR P3Button.P3_Startbtn*) );
+R_TRIG_Bt[7](CLK:=P3_SystemRUN.btnReset OR  P3_SystemRUN.hmiReset OR stSysState.hmiReset OR P3Button.P3_Resetebtn);
+P3_SystemRUN.bReset:=R_TRIG_Bt[7].Q  OR  bInitReset    ;  //复位
+
+
+
+//尾段急停
+IF   P3_SystemRUN.btnStop OR NOT P3Button.LateStop THEN
+	iMainSetp:=400;     
+END_IF
+
+IF R_TRIG_Bt[7].Q THEN
+	FOR i:=160 TO 177 DO
+		HMI_TorAlarm_D[i]:=FALSE;//扭矩报警复位
+	END_FOR
+END_IF
+
+
+
+CASE  iMainSetp OF
+		0://   INIT
+			Init();
+			P3_SystemRUN.iMode:=0;
+		 IF  P3_SystemRUN.bInitDone THEN
+			 iMainSetp:=88;	
+		  END_IF
+		88://切换手动
+		  IF  P3_SystemRUN.FlgManua OR P3_SystemRUN.btnStop THEN
+			  iMainSetp:=300;
+		  END_IF
+		 
+		300://手动状态
+				P3_SystemRUN.iMode:=3;//手动状态
+				iMainSetp:=310;
+		310://等待切换到自动启动  
+				IF  P3_SystemRUN.hmiAuto AND NOT P3_SystemRUN.btnStop AND NOT b_Alarm[4]THEN//在自动下、在轴回原点完成、没有报警
+							IF R_TRIG_Bt[1].Q THEN
+								P3_SystemRUN.iMode:=1;//自动状态
+								iMainSetp:=320;
+							END_IF
+				END_IF
+		320://判断是否切换到手动、是否有报警，则切换到手动
+				IF NOT P3_SystemRUN.hmiAuto OR P3_SystemRUN.hmiStop  OR  b_Alarm[4] OR P3Button.P3_Stopbtn THEN//
+					P3_SystemRUN.hmiAuto:=FALSE;
+					iMainSetp:=300;
+				END_IF
+ (************************急停********************************) 
+		400://Stoping
+		   P3_SystemRUN.iMode:=4;
+			EStop();  
+		   iMainSetp:=450;  
+			  
+		450: //急停跳出 
+			IF  NOT  P3_SystemRUN.btnEstop   THEN  
+				iMainSetp_TON[2](IN:=FALSE , PT:=T#50MS );
+				iMainSetp:=300;
+			ELSE
+				 iMainSetp_TON[2](IN:=TRUE , PT:=T#50MS );
+				 IF  iMainSetp_TON[2].Q THEN
+					  iMainSetp_TON[2](IN:=FALSE , PT:=T#50MS );
+					  iMainSetp:=400;   
+				 END_IF
+			 END_IF						
+				
+				
+				
+END_CASE
+
+IF P3_SystemRUN.iMode=3 THEN
+	P3_manual:=TRUE;
+	ELSE
+	P3_manual:=FALSE;	
+	END_IF
+
+
+
+
+
+
+
+
+
+(*
+R_TRIG_Bt[1](CLK:= P3_SystemRUN.btnStart   OR  P3_SystemRUN.hmiStart  );
+R_TRIG_Bt[2](CLK:= P3_SystemRUN.btnStop   OR  P3_SystemRUN.hmiStop);
+R_TRIG_Bt[4](CLK:=   P3_SystemRUN.btnAuto OR  P3_SystemRUN.hmiAuto);
+R_TRIG_Bt[5](CLK:=  NOT P3_SystemRUN.btnAuto);
+R_TRIG_Bt[6](CLK:=P3_SystemRUN.btnEstop);
+R_TRIG_Bt[7](CLK:=P3_SystemRUN.btnReset OR  P3_SystemRUN.hmiReset OR stSysState.hmiReset);
+R_TRIG_Bt[8](CLK:=  NOT P3_SystemRUN.hmiAuto);
+
+IF R_TRIG_Bt[4].Q THEN  //自动
+	P3_SystemRUN.FlgAuto:=TRUE;
+	P3_SystemRUN.FlgManua:=FALSE;
+END_IF
+IF R_TRIG_Bt[5].Q  OR  R_TRIG_Bt[8].Q   THEN  //手动
+	P3_SystemRUN.FlgAuto:=FALSE;
+	P3_SystemRUN.FlgManua:=TRUE;
+END_IF
+P3_SystemRUN.bReset:=R_TRIG_Bt[7].Q  OR  bInitReset    ;  //复位
+
+IF NOT b_Alarm[4] THEN
+	P3_SystemRUN.bAutoCondition:=TRUE;
+ELSE	
+P3_SystemRUN.bAutoCondition:=TRUE;
+END_IF
+//TON20(IN:=stSysState.btnReset AND stSysState.btnStop , PT:=T#5S , Q=> , ET=> ); //长按复位和停止5秒系统复位
+
+CASE iMainSetp OF 
+0://   INIT
+    Init();
+    P3_SystemRUN.iMode:=0;
+ IF  P3_SystemRUN.bInitDone THEN
+     iMainSetp:=88;	
+  END_IF
+88://切换手动
+  IF  P3_SystemRUN.FlgManua THEN
+	  iMainSetp:=300;
+  END_IF
+   
+ (***********************手动*********************************) 
+300:
+   P3_SystemRUN.iMode:=3;
+   iMainSetp:=350;  
+   
+350: 
+  	IF  R_TRIG_Bt[1].Q  OR  P3_SystemRUN.hmiAuto THEN  //启动按钮  
+		IF  P3_SystemRUN.FlgAuto  AND  P3_SystemRUN.bAutoCondition THEN //AND gstM1.IM1.bAutoCondition  暂时屏蔽
+	      iMainSetp:=100;
+	    END_IF
+	END_IF 
+	
+	IF  P3_SystemRUN.FlgManua AND TON20.Q THEN  //系统清除
+	   iMainSetp:=999;
+	END_IF
+
+ (************************自动********************************) 
+100:
+   P3_SystemRUN.iMode:=1;
+   iMainSetp:=150;  
+150:  //系统停止中......
+    rtStoping(Clk:=P3_SystemRUN.FlgManua OR  P3_SystemRUN.btnStop   OR   P3_SystemRUN.bErrorStop );  //自动中触发手动 停止 按钮  stSysRun.bErrorStop 包括正极和负极
+    IF rtStoping.Q AND NOT P3_SystemRUN.hmiAuto THEN //自动触发停止
+		P3_SystemRUN.Stoping:=TRUE;
+		iMainSetp:=160; //
+	END_IF;
+160: //判断停止完成
+   (*	IF  P3_SystemRUN.bStopFinished  THEN
+        P3_SystemRUN.bStopFinished :=FALSE;
+        P3_SystemRUN.Stoping:=FALSE;
+		iMainSetp:=300; 
+	END_IF  ;*)
+	iMainSetp:=300; 
+
+
+ (************************急停********************************) 
+400://Stoping
+   P3_SystemRUN.iMode:=4;
+    EStop();  
+   iMainSetp:=450;  
+      
+450: //急停跳出 
+	IF  NOT  P3_SystemRUN.btnEstop   THEN  
+        tonEStop(IN:=FALSE , PT:=T#50MS );
+	    iMainSetp:=0;
+    ELSE
+         tonEStop(IN:=TRUE , PT:=T#50MS );
+         IF  tonEStop.Q THEN
+              tonEStop(IN:=FALSE , PT:=T#50MS );
+              iMainSetp:=400;   
+         END_IF
+   	 END_IF
+
+END_CASE
+
+IF P3_SystemRUN.hmiAuto THEN
+	P3_SystemRUN.FlgManua:=FALSE;//叠台手动标志
+	P3_SystemRUN.FlgAuto:=TRUE;//叠台自动标志
+ELSE
+	P3_SystemRUN.FlgManua:=TRUE;//叠台手动标志
+	P3_SystemRUN.FlgAuto:=FALSE;//叠台自动标志	
+END_IF
+
+IF   P3_SystemRUN.btnEstop  AND  P3_SystemRUN.iMode<>4  THEN  //
+	  iMainSetp:=400;
+      P3_SystemRUN.bInitDone:=FALSE;
+      P3_SystemRUN.bStopFinished :=FALSE;
+      P3_SystemRUN.Stoping:=FALSE;
+END_IF
+*)
+
+
+(***************程序调用*********************)
+
+  // Auto1_Method();
+
+
+
+
+
+
+    Condition();
+    MotionBasic();
+    CyBasic();
+   
+    TempBasic();
+    Alarm();
+    Pusle();
+	
+	//尾段
+	LateBlanking_Alarm();
+	LateBlanking_Auto1();
+	LateBlanking_Auto2();
+	LateBlanking_Auto3();
+	LateBlanking_Auto4();
+	LateBlanking_Auto5();
+	LateBlanking_Auto6();
+	LateBlanking_Auto7();
+	LateBlanking_Auto8_01Sticke();
+	LateBlanking_Auto9_02Sticke();
+	LateBlanking_Auto1_Stick();
+	LateBlanking_Condition();
+	L_Init1();
+	L_Init2();
+	L_Init3();
+	L_Init4();
+	L_Init5();
+	L_Init6();
+	L_Init7();
+	L_Init8();
+	LateBlanking_Temperature();
+	LateBlanking_Thickness_Test();
+	LateBlanking_Weight_Test();
+	LateBlankingCylinderManual();
+	LateBlankingMotorManual();
+	LateBlanking_Short_Test();
+	LateBlanking_Scan();
+	
+	Output_statistics();
+	MES_JT_ZT();
+	LateBlanking_Tips();
+	MQ_FSY();
+	
+
+//Auto();]]></ST>
+    </Implementation>
+    <Action Name="Alarm" Id="{f625f5d8-4827-42ab-b49e-69ee18a1fbcb}">
+      <Implementation>
+        <ST><![CDATA[
+
+(******************气缸报警*******************)
+FOR K1:=1 TO MaxCy DO 
+     arrCYOnAlarm[K1]:=  arrCyCtrl[K1] .Status.Error1;
+     arrCYOFFAlarm[K1]:=  arrCyCtrl[K1] .Status.Error2;
+END_FOR
+
+bCYHaveAlarm:=FALSE;
+FOR K1:=1 TO MaxCy DO 
+      bCYHaveAlarm:=bCYHaveAlarm OR arrCYOnAlarm[K1] OR  arrCYOFFAlarm[K1];
+END_FOR
+
+
+
+(********轴报警**************)
+FOR K1:=1 TO MaxAxes DO 
+     arrAxisAlarm[K1]:=  arrAxis[K1] .Status.Error AND  arrAxis[K1] .Status.ErrorID<>16#42A0 ;
+	 
+END_FOR
+
+
+
+bAxisHaveAlarm:=FALSE;
+FOR K1:=1 TO MaxAxes DO 
+      bAxisHaveAlarm:=bAxisHaveAlarm OR arrAxisAlarm[K1];
+END_FOR
+
+
+
+
+(*
+
+(***超温报警*****自整定故障*****温控有报警*****)
+FOR K1:=1 TO MaxTemp DO 
+     arrTemHIAlarm[K1]:=         arrTempCtrl[K1].bTempError_HI ;
+     arrTemSenserAlarm[K1]:=  arrTempCtrl[K1].bSenserError ;
+     arrTemTuningAlarm[K1]:=  arrTempCtrl[K1].bTuningError ;
+END_FOR
+
+bTemHaveAlarm:=FALSE;
+FOR K1:=1 TO MaxTemp DO 
+      bTemHaveAlarm:=bTemHaveAlarm OR arrTemHIAlarm[K1]  OR   arrTemSenserAlarm[K1] OR   arrTemTuningAlarm[K1]  ;
+END_FOR
+
+
+(***************张力报警********************)
+     arrTenAlarm[1]:=stP1PoleTen.bError;
+     arrTenAlarm[2]:=stP1GMTen_U.bError;
+     arrTenAlarm[3]:=stP1GMTen_D.bError;
+     arrTenAlarm[4]:=stP1AuxDriverTen.bError;
+
+     arrTenAlarm[5]:=stP2PoleTen_U.bError;
+     arrTenAlarm[6]:=stP2PoleTen_D.bError;
+     arrTenAlarm[7]:=stP2GMTen_U.bError;
+     arrTenAlarm[8]:=stP2GMTen_D.bError;
+     arrTenAlarm[9]:=stP2YFHTen.bError;
+
+     arrTenAlarm[10]:=stP3PoleTen_U.bError;
+     arrTenAlarm[11]:=stP3PoleTen_D.bError;
+
+bTenHaveAlarm:=FALSE;
+FOR K1:=1 TO 12 DO 
+      bTenHaveAlarm:=bTenHaveAlarm OR arrTenAlarm[K1]   ;
+END_FOR
+
+
+
+(***************纠偏报警********************)
+FOR K1:=1 TO MaxRec DO 
+     arrRecAlarm[K1]:=arrRecCtrl[K1].Status.bError ;
+END_FOR
+
+bRecHaveAlarm:=FALSE;
+FOR K1:=1 TO MaxRec DO 
+      bRecHaveAlarm:=bRecHaveAlarm OR arrRecAlarm[K1]   ;
+END_FOR
+
+
+
+(***************创建凸轮报警*******************)
+    arrCreatTableAlarm[1]:=stP1MQDriverCam.bCreatTableError;
+    arrCreatTableAlarm[2]:=stP1MQCuterCam.bCreatTableError;
+    arrCreatTableAlarm[3]:=stP1MQLineCam.bCreatTableError;
+    arrCreatTableAlarm[4]:=stP1MQClampCam.bCreatTableError;
+    arrCreatTableAlarm[5]:=stP1PoleBufferCam.bCreatTableError;
+
+    arrCreatTableAlarm[6]:=stP2MQDriverCam_U.bCreatTableError;
+    arrCreatTableAlarm[7]:=stP2MQCuterCam_U.bCreatTableError;
+    arrCreatTableAlarm[8]:=stP2MQLineCam_U.bCreatTableError;
+    arrCreatTableAlarm[9]:=stP2MQClampCam_U.bCreatTableError;
+    arrCreatTableAlarm[10]:=stP2PoleBufferCam_U.bCreatTableError;
+
+    arrCreatTableAlarm[11]:=stP2MQDriverCam_D.bCreatTableError;
+    arrCreatTableAlarm[12]:=stP2MQCuterCam_D.bCreatTableError;
+    arrCreatTableAlarm[13]:=stP2MQLineCam_D.bCreatTableError;
+    arrCreatTableAlarm[14]:=stP2MQClampCam_D.bCreatTableError;
+    arrCreatTableAlarm[15]:=stP2PoleBufferCam_D.bCreatTableError;
+
+    arrCreatTableAlarm[16]:=stP3MQDriverCam_U.bCreatTableError;
+    arrCreatTableAlarm[17]:=stP3MQCuterCam_U.bCreatTableError;
+    arrCreatTableAlarm[18]:=stP3MQLineCam_U.bCreatTableError;
+    arrCreatTableAlarm[19]:=stP3MQClampCam_U.bCreatTableError;
+    arrCreatTableAlarm[20]:=stP3PoleBufferCam_U.bCreatTableError;
+
+    arrCreatTableAlarm[21]:=stP3MQDriverCam_D.bCreatTableError;  
+    arrCreatTableAlarm[22]:=stP3MQCuterCam_D.bCreatTableError;
+    arrCreatTableAlarm[23]:=stP3MQLineCam_D.bCreatTableError;  
+    arrCreatTableAlarm[24]:=stP3MQClampCam_D.bCreatTableError;
+    arrCreatTableAlarm[25]:=stP3PoleBufferCam_D.bCreatTableError;  
+
+  bCreatTableHaveAlarm:=FALSE;
+  FOR K1:=1 TO 28 DO 
+		bCreatTableHaveAlarm:=bCreatTableHaveAlarm OR arrCreatTableAlarm[K1]   ;
+  END_FOR
+
+
+(***************凸轮耦合报警*******************)
+    arrCamInAlarm[1]:=stP1MQDriverCam.bError;
+    arrCamInAlarm[2]:=stP1MQCuterCam.bError;
+    arrCamInAlarm[3]:=stP1MQLineCam.bError;
+    arrCamInAlarm[4]:=stP1MQClampCam.bError;
+    arrCamInAlarm[5]:=stP1PoleBufferCam.bError;
+
+    arrCamInAlarm[6]:=stP2MQDriverCam_U.bError;
+    arrCamInAlarm[7]:=stP2MQCuterCam_U.bError;
+    arrCamInAlarm[8]:=stP2MQLineCam_U.bError;
+    arrCamInAlarm[9]:=stP2MQClampCam_U.bError;
+    arrCamInAlarm[10]:=stP2PoleBufferCam_U.bError;
+
+    arrCamInAlarm[11]:=stP2MQDriverCam_D.bError;
+    arrCamInAlarm[12]:=stP2MQCuterCam_D.bError;
+    arrCamInAlarm[13]:=stP2MQLineCam_D.bError;
+    arrCamInAlarm[14]:=stP2MQClampCam_D.bError;
+    arrCamInAlarm[15]:=stP2PoleBufferCam_D.bError;
+
+    arrCamInAlarm[16]:=stP3MQDriverCam_U.bError;
+    arrCamInAlarm[17]:=stP3MQCuterCam_U.bError;
+    arrCamInAlarm[18]:=stP3MQLineCam_U.bError;
+    arrCamInAlarm[19]:=stP3MQClampCam_U.bError;
+    arrCamInAlarm[20]:=stP3PoleBufferCam_U.bError;
+
+    arrCamInAlarm[21]:=stP3MQDriverCam_D.bError;  
+    arrCamInAlarm[22]:=stP3MQCuterCam_D.bError;
+    arrCamInAlarm[23]:=stP3MQLineCam_D.bError;  
+    arrCamInAlarm[24]:=stP3MQClampCam_D.bError;
+    arrCamInAlarm[25]:=stP3PoleBufferCam_D.bError;  
+    arrCamInAlarm[26];  
+  bCamHaveAlarm:=FALSE;
+  FOR K1:=1 TO 28 DO 
+		bCamHaveAlarm:=bCamHaveAlarm OR arrCamInAlarm[K1]   ;
+  END_FOR
+
+
+(***************齿轮报警*******************)
+    arrGearAlarm[1]:=stP1YFHDriverGear_D.bError;
+    arrGearAlarm[2]:=stP1YFHDriverInGear.bError;
+    arrGearAlarm[3]:=stP1MQVirMainGear2.bError;
+
+    arrGearAlarm[4]:=stP2GMDriverGear_D.bError;
+    arrGearAlarm[5]:=stP2YFHDriverGear_U.bError;
+    arrGearAlarm[6]:=stP2YFHDriverGear_D.bError;
+    arrGearAlarm[7]:=stP2YFHDriverInGear.bError;
+    arrGearAlarm[8]:=stP2MQVirMainGear_U.bError;
+    arrGearAlarm[9]:=stP2MQVirMainGear_D.bError;
+
+    arrGearAlarm[10]:=stP3YFHRollGear_U.bError;
+    arrGearAlarm[11]:=stP3YFHRollGear_D.bError;
+    arrGearAlarm[12]:=stP3YFHDriverGear_U.bError;
+    arrGearAlarm[13]:=stP3YFHDriverGear_D.bError;
+    arrGearAlarm[14]:=stP3YFHDriverInGear.bError;
+    arrGearAlarm[15]:=stP3MQVirMainGear_U.bError;
+    arrGearAlarm[16]:=stP3MQVirMainGear_D.bError;
+
+    arrGearAlarm[17]:=stP1MQVirDriverGear.bError;
+    arrGearAlarm[18]:=stP2MQVirDriverGear_U.bError;
+    arrGearAlarm[19]:=stP2MQVirDriverGear_D.bError;
+    arrGearAlarm[20]:=stP3MQVirDriverGear_U.bError;
+     arrGearAlarm[21]:=stP3MQVirDriverGear_D.bError;
+
+
+  bGearHaveAlarm:=FALSE;
+  FOR K1:=1 TO 21 DO 
+		bGearHaveAlarm:=bGearHaveAlarm OR arrGearAlarm[K1]   ;
+  END_FOR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*
+
+IF  iModeEN.bDoorEN THEN //屏蔽
+   bDoor_Stop:=FALSE;
+ELSE//屏蔽
+  bDoor_Stop:=NOT stSysState.btnDoor[1] OR NOT stSysState.btnDoor[2] OR NOT stSysState.btnDoor[3] OR NOT stSysState.btnDoor[4] 
+              OR NOT stSysState.btnDoor[5] OR NOT stSysState.btnDoor[6] OR NOT stSysState.btnDoor[7];
+END_IF
+
+
+bEstop:=stSysState.btnEstop[1] OR stSysState.btnEstop[2] OR stSysState.btnEstop[3] OR stSysState.btnEstop[4] OR stSysState.btnEstop[5];
+
+(*===============================================报警信息============================================================*)
+////判断是否有轴报警   arrError[1]
+arrError[1]:=FALSE;
+FOR I1:=1 TO MaxAxes BY 1 DO
+	arrAxisError[I1] :=arrAxis[I1].Status.Error;  
+    arrError[1]:= arrError[1] OR  arrAxisError[I1] ;	
+END_FOR
+
+(*****************M1 气缸报警****************) 
+(*
+arrActuatorsError[1]:= gstM1.acDriver1Press.Error;
+arrActuatorsError[2]:= gstM1.acDriver2Press.Error;
+arrActuatorsError[3]:= gstM1.acBoard1Press.Error;
+arrActuatorsError[4]:= gstM1.acBoard2Press.Error ;
+
+arrActuatorsError[11]:= gstM2.acPoleLock1.Error;
+arrActuatorsError[12]:= gstM2.acPoleLock2.Error;
+arrActuatorsError[13]:= gstM2.acBoxLock1.Error;
+arrActuatorsError[14]:= gstM2.acBoxLock2.Error;
+arrActuatorsError[15]:= gstM2.acDustClear1.Error ;
+arrActuatorsError[16]:= gstM2.acDustClear2.Error ;
+*)
+
+(*****************功能报警****************)
+arrFunctionError[1]:=gstM1.ctrlTension1.bError;
+arrFunctionError[2]:=gstM1.ctrlTension2.bError;
+arrFunctionError[3]:=gstM1.ctrlTension3.bError;
+arrFunctionError[4]:=gstM1.ctrlTension4.bError;
+arrFunctionError[5]:=gstM1.ctrlCuterCam.bError;
+//arrFunctionError[6]:=gstM1.ctrlGearInVirDriver1.bError;
+arrFunctionError[7]:=gstM1.ctrlRectify1.Error;
+arrFunctionError[8]:=gstM1.ctrlRectify2.Error;
+
+arrFunctionError[9]:=gstM2.ctrlGearBelt2.bError;
+arrFunctionError[10]:=gstM2.ctrlVirBeltCan.bError;
+arrFunctionError[11]:=gstM2.ctrlCcdCam.bError;
+arrFunctionError[12]:=gstM2.ctrlNG1Cam.bError;
+arrFunctionError[13]:=gstM2.ctrlNG2Cam.bError;
+arrFunctionError[14]:=gstM2.ctrlOK1Cam.bError;
+arrFunctionError[15]:=gstM2.ctrlOK2Cam.bError;
+
+arrError[2]:=FALSE;
+FOR I2:=1 TO 10 BY 1 DO  //红灯报警
+    arrError[2]:= arrError[2] OR  arrActuatorsError[I2] ;	
+END_FOR
+
+arrError[3]:=FALSE;
+FOR I5:=11 TO 20 BY 1 DO  //警告报警
+    arrError[3]:= arrError[3] OR  arrActuatorsError[I5] ;	
+END_FOR
+
+arrError[4]:=FALSE;
+FOR I4:=1 TO 20 BY 1 DO  //红灯报警
+    arrError[4]:= arrError[4] OR  arrFunctionError[I4] ;	
+END_FOR
+
+
+stSysState.bAlarmStop:= arrError[1] OR arrError[2] OR arrError[4] ;
+
+
+(*==============报警复位=========================*)
+//轴  气缸报警  红灯亮       蜂鸣器 0.5秒 频率 响 8 秒后停止    
+
+IF stSysState.iMode=3 THEN
+	stSysState.bReset:=stSysState.btnReset;
+END_IF
+
+(*****蜂鸣器*****)
+rt100(CLK:=arrError[1] OR arrError[2] OR arrError[4] , Q=> );
+rt101(CLK:=arrError[3]  , Q=> );
+IF rt100.Q THEN
+	iErrorSetp:=100;//故障报警
+END_IF
+
+IF rt101.Q THEN
+	iErrorSetp:=200;//警告报警
+END_IF
+
+
+tDelayBuzze(IN:= , PT:= , Q=> , ET=> );
+CASE iErrorSetp   OF
+100:
+  tDelayBuzze.PT:=T#8S;
+  tDelayBuzze.IN:=TRUE;
+  iErrorSetp:=500;
+200:
+  tDelayBuzze.PT:=T#4S;
+   tDelayBuzze.IN:=TRUE;
+  iErrorSetp:=600;
+500:
+		stSysState.boBuzzer:= Pulse._250ms.Q;  //   (NOT bError1 AND NOT bError2) AND
+		IF tDelayBuzze.Q  THEN
+			iErrorSetp:=0;
+			tDelayBuzze.IN:=FALSE;
+			stSysState.boBuzzer:=FALSE;
+		END_IF
+600:
+		stSysState.boBuzzer:= Pulse._1s.Q;  //    (NOT bError1 AND NOT bError2) AND
+		IF tDelayBuzze.Q  THEN
+			iErrorSetp:=0;
+			tDelayBuzze.IN:=FALSE;
+			stSysState.boBuzzer:=FALSE;
+		END_IF
+
+END_CASE
+
+
+(*****三色灯控制*********)
+//自动   绿
+    RT200[1](CLK:=stSysState.iMode=1 , Q=> ); 
+   IF RT200[1].Q THEN
+	  bTurnOn:=TRUE;
+      iLightSel:=3;
+   END_IF       
+//手动  黄
+    RT200[2](CLK:=stSysState.iMode=3 , Q=> ); 
+   IF RT200[2].Q THEN
+	  bTurnOn:=TRUE;
+      iLightSel:=2;
+   END_IF 
+
+//暂停   黄
+    RT200[3](CLK:=stSysState.iMode=2 , Q=> ); 
+   IF RT200[3].Q THEN
+	  bTurnOn:=TRUE;
+      iLightSel:=2;
+   END_IF 
+   
+//暂停   红   //急停 OR 故障
+    RT200[4](CLK:=stSysState.iMode=4  OR rt100.Q  , Q=> ); 
+   IF RT200[4].Q THEN
+	  bTurnOn:=TRUE;
+      iLightSel:=1;
+   END_IF    
+   
+IF bTurnOn THEN
+	CASE iLightSel OF 
+	  1: //红灯
+		stSysState.boGreenLight:=FALSE;
+		stSysState.boRedLight:=TRUE;
+		stSysState.boYellowLight:=FALSE;
+	
+	  2://黄灯
+		stSysState.boGreenLight:=FALSE;
+		stSysState.boRedLight:=FALSE;
+		stSysState.boYellowLight:=TRUE;
+	
+	  3://绿灯
+		stSysState.boGreenLight:=TRUE;
+		stSysState.boRedLight:=FALSE;
+		stSysState.boYellowLight:=FALSE;
+	
+	END_CASE
+   bTurnOn:=FALSE;
+END_IF
+
+
+
+
+*)
+*)]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Condition" Id="{66acbcce-c3ce-4470-a763-c084a6c02907}">
+      <Implementation>
+        <ST><![CDATA[
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.biNegLimit THEN    ////烤箱上料夹搬运电机
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogN_Condition:=FALSE;
+  ELSE
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogN_Condition:=TRUE;
+END_IF
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Io.biPosLimit THEN
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogP_Condition:=FALSE;
+  ELSE
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.JogP_Condition:=TRUE;
+END_IF
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biNegLimit  THEN    ////烤箱上料夹进退电机
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogN_Condition:=FALSE;
+  ELSE
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogN_Condition:=TRUE;
+END_IF
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biPosLimit THEN
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogP_Condition:=FALSE;
+  ELSE
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.JogP_Condition:=TRUE;
+END_IF
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.biNegLimit THEN    ////烤箱上料夹升降电机
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogN_Condition:=FALSE;
+  ELSE
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogN_Condition:=TRUE;
+END_IF
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Io.biPosLimit THEN
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogP_Condition:=FALSE;
+  ELSE
+	 arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.JogP_Condition:=TRUE;
+END_IF
+
+
+
+
+
+
+
+//MES下发数据写入
+DT_To_MQ_MES.PostiveCode1:=P3_PLC_PC_MES.PostiveCode1;//正极左1条码		1
+DT_To_MQ_MES.PostiveCode2:=P3_PLC_PC_MES.PostiveCode2;//正极右2条码		2
+DT_To_MQ_MES.NegativeCode1:=P3_PLC_PC_MES.NegativeCode1;//负极左1条码		3
+DT_To_MQ_MES.NegativeCode2:=P3_PLC_PC_MES.NegativeCode2;//负极右2条码		4
+DT_To_MQ_MES.Station1_Code:=P3_PLC_PC_MES.Station1_Code;//叠台1隔膜条码		5
+DT_To_MQ_MES.Station2_Code	:=P3_PLC_PC_MES.Station2_Code;//叠台2隔膜条码		6
+DT_To_MQ_MES.Station3_Code	:=P3_PLC_PC_MES.Station3_Code;//叠台3隔膜条码		7
+DT_To_MQ_MES.Station1_BlueCode:=P3_PLC_PC_MES.Station1_BlueCode;//叠台1l蓝胶条码		8
+DT_To_MQ_MES.Station2_BlueCode:=P3_PLC_PC_MES.Station2_BlueCode;//叠台2蓝胶条码		9
+DT_To_MQ_MES.Station3_BlueCode:=P3_PLC_PC_MES.Station3_BlueCode;//叠台3蓝胶条码		10
+DT_To_MQ_MES.CellCode	:=P3_PLC_PC_MES.CellCode;//后段二维码胶条码	11
+DT_To_MQ_MES.BlueCode:=P3_PLC_PC_MES.BlueCode;//后段蓝胶条码		12
+
+//MES条码校验信号交互----PC_To_PLC
+DT_To_MQ_MES.Mes_PcToPlc1:=P3_PLC_PC_MES. Mes_PcToPlc1       ;   //正极左1条码条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc2:=P3_PLC_PC_MES.Mes_PcToPlc2        ;   //正极右2条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc3:=P3_PLC_PC_MES.Mes_PcToPlc3        ;   //负极左1条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc4:=P3_PLC_PC_MES.Mes_PcToPlc4      ;   //负极右2条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc5:=P3_PLC_PC_MES.Mes_PcToPlc5      ;   //叠台1隔膜条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc6:=P3_PLC_PC_MES.Mes_PcToPlc6       ;   //叠台2隔膜条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc7:=P3_PLC_PC_MES.Mes_PcToPlc7       ;   //叠台3隔膜条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc8:=P3_PLC_PC_MES.Mes_PcToPlc8        ;   //叠台1l蓝胶条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc9:=P3_PLC_PC_MES.Mes_PcToPlc9       ;   //叠台2蓝胶条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc10:=P3_PLC_PC_MES.Mes_PcToPlc10        ;  //叠台3蓝胶条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc11:=P3_PLC_PC_MES.Mes_PcToPlc11      ;   //后段二维码胶条码校验完成信号
+DT_To_MQ_MES.Mes_PcToPlc12:=P3_PLC_PC_MES.Mes_PcToPlc12       ;   //后段蓝胶条码校验完成信号	
+
+
+
+
+//MES物料码交互------------条码清理及校验完成信号清理
+//正极
+rMES[1](CLK:=MQ_To_DT_MES.Mes_PlcToPc1,Q=>);
+rMES[2](CLK:=MQ_To_DT_MES.Mes_PlcToPc2,Q=>);
+rMES[3](CLK:=MQ_To_DT_MES.Mes_PlcToPc3,Q=>);
+rMES[4](CLK:=MQ_To_DT_MES.Mes_PlcToPc4,Q=>);
+
+IF rMES[1].Q THEN//正极左换卷---请求换卷时清当前条码
+	P3_PLC_PC_MES.PostiveCode1:='';
+	P3_PLC_PC_MES.Mes_PcToPlc1:=FALSE;
+	DT_To_MQ_MES.MesClear_Pc1:=TRUE;
+END_IF
+IF rMES[2].Q THEN//正极右换卷---请求换卷时清当前条码
+	P3_PLC_PC_MES.PostiveCode2:='';
+	P3_PLC_PC_MES.Mes_PcToPlc2:=FALSE;
+	DT_To_MQ_MES.MesClear_Pc2:=TRUE;
+END_IF
+//负极
+IF rMES[3].Q THEN//负极左换卷---请求换卷时清当前条码
+	P3_PLC_PC_MES.NegativeCode1:='';
+	P3_PLC_PC_MES.Mes_PcToPlc3:=FALSE;
+	DT_To_MQ_MES.MesClear_Pc3:=TRUE;
+END_IF
+IF rMES[4].Q THEN//负极右换卷---请求换卷时清当前条码
+	P3_PLC_PC_MES.NegativeCode2:='';
+	P3_PLC_PC_MES.Mes_PcToPlc4:=FALSE;
+	DT_To_MQ_MES.MesClear_Pc4:=TRUE;
+END_IF
+
+tMES[1](IN:=DT_To_MQ_MES.MesClear_Pc1 , PT:=T#100MS , Q=> , ET=> );
+tMES[2](IN:=DT_To_MQ_MES.MesClear_Pc2 , PT:=T#100MS , Q=> , ET=> );
+tMES[3](IN:=DT_To_MQ_MES.MesClear_Pc3 , PT:=T#100MS , Q=> , ET=> );
+tMES[4](IN:=DT_To_MQ_MES.MesClear_Pc4 , PT:=T#100MS , Q=> , ET=> );
+IF tMES[1].Q THEN
+	DT_To_MQ_MES.MesClear_Pc1:=FALSE;
+END_IF
+IF tMES[2].Q THEN
+	DT_To_MQ_MES.MesClear_Pc2:=FALSE;
+END_IF
+IF tMES[3].Q THEN
+	DT_To_MQ_MES.MesClear_Pc3:=FALSE;
+END_IF
+IF tMES[4].Q THEN
+	DT_To_MQ_MES.MesClear_Pc4:=FALSE;
+END_IF
+
+
+
+
+
+
+//后段二维码条码校验
+IF  (P3_PLC_PC_MES.Mes_PcToPlc11 AND  LEN(P3_PLC_PC_MES.CellCode)>6  ) OR P3User2_Par.Shield[8] THEN
+	StickIDGlue.IDGlueNumberOK:=TRUE;
+ELSE
+	StickIDGlue.IDGlueNumberOK:=FALSE;
+END_IF
+
+IF StickIDGlue.IDGlueNumberOK THEN//二维码料号OK
+	CellMemory[12].P3CellCode :=P3_PLC_PC_MES.CellCode;	
+ELSE
+	CellMemory[12].P3CellCode :='';	
+END_IF
+//二维码条码重新校验
+
+rMES[5](CLK:=P3User2_Par.Shield[9] , Q=> );  //二维码胶有无料检测报警
+IF rMES[5].Q THEN
+	StickIDGlue.IDGlueNumberOK:=FALSE;
+	P3_PLC_PC_MES.CellCode:='';
+	P3_PLC_PC_MES.Mes_PcToPlc11:=FALSE;
+END_IF	
+
+
+//后段蓝胶重新校验
+IF  (P3_PLC_PC_MES.Mes_PcToPlc12 AND  LEN(P3_PLC_PC_MES.BlueCode)>6  ) OR P3User2_Par.Shield[8] THEN
+	BlueGlueNumberOK:=TRUE;//蓝胶条码校验OK
+ELSE
+	BlueGlueNumberOK:=FALSE;//蓝胶条码校验OK
+END_IF
+
+IF BlueGlueNumberOK THEN//蓝胶条码
+	CellMemory[12].P3BlueCode :=P3_PLC_PC_MES.BlueCode;	
+ELSE
+	CellMemory[12].P3BlueCode :='';	
+END_IF
+//蓝胶条码重新校验
+rMES[6](CLK:=P3User2_Par.Shield[10] , Q=> );   //蓝胶有无料检测报警
+IF rMES[6].Q THEN
+	BlueGlueNumberOK:=FALSE;
+	P3_PLC_PC_MES.BlueCode:='';
+	P3_PLC_PC_MES.Mes_PcToPlc12:=FALSE;
+END_IF	
+
+
+IF NOT  StickIDGlue.IDGlueNumberOK AND NOT P3User2_Par.Shield[8] THEN
+	P3_Error[57]:=TRUE;//后段二维码条码校验未通过
+ELSE
+	P3_Error[57]:=FALSE;//后段二维码条码校验未通过
+END_IF
+IF NOT  BlueGlueNumberOK AND NOT P3User2_Par.Shield[8] THEN
+	P3_Error[58]:=TRUE;//后段蓝胶条码校验未通过
+ELSE
+	P3_Error[58]:=FALSE;//后段蓝胶条码校验未通过
+END_IF
+
+
+
+(*
+PostiveCode1				:STRING;//正极左1条码		1
+PostiveCode2				:STRING;//正极右2条码		2
+NegativeCode1				:STRING;//负极左1条码		3
+NegativeCode2				:STRING;//负极右2条码		4
+Station1_Code				:STRING;//叠台1隔膜条码		5
+Station2_Code				:STRING;//叠台2隔膜条码		6
+Station3_Code				:STRING;//叠台3隔膜条码		7
+Station1_BlueCode			:STRING;//叠台1l蓝胶条码		8
+Station2_BlueCode			:STRING;//叠台2蓝胶条码		9
+Station3_BlueCode			:STRING;//叠台3蓝胶条码		10
+CellCode					:STRING;//后段二维码胶条码	11
+BlueCode					:STRING;//后段蓝胶条码		12
+
+//MES条码校验信号交互----PC_To_PLC
+Mes_PcToPlc1:        BOOL;   //正极左1条码条码校验完成信号
+Mes_PcToPlc2:        BOOL;   //正极右2条码校验完成信号
+Mes_PcToPlc3:        BOOL;   //负极左1条码	校验完成信号
+Mes_PcToPlc4:        BOOL;   //负极右2条码校验完成信号
+Mes_PcToPlc5:        BOOL;   //叠台1隔膜条码校验完成信号
+Mes_PcToPlc6:        BOOL;   //叠台2隔膜条码校验完成信号
+Mes_PcToPlc7:        BOOL;   //叠台3隔膜条码校验完成信号
+Mes_PcToPlc8:        BOOL;   //叠台1l蓝胶条码校验完成信号
+Mes_PcToPlc9:        BOOL;   //叠台2蓝胶条码校验完成信号
+Mes_PcToPlc10:        BOOL;  //叠台3蓝胶条码校验完成信号
+Mes_PcToPlc11:        BOOL;   //后段二维码胶条码校验完成信号
+Mes_PcToPlc12:        BOOL;   //后段蓝胶条码校验完成信号	
+
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="CyBasic" Id="{6d0fac44-ba02-46c8-a613-da779303b457}">
+      <Implementation>
+        <ST><![CDATA[
+//气缸控制   刷新周期可以慢
+FOR i:=230 TO 289  DO//MaxCy
+	  fbCy[i](bReset:=P3_SystemRUN.bReset ,AutoRun:=P3_SystemRUN.iMode=1 , stCyCtrl:=arrCyCtrl[i] );
+    //fbCy[i](bReset:=P3_SystemRUN.bReset , stCyCtrl:=arrCyCtrl[i] );
+END_FOR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="EStop" Id="{d93f5d02-6c75-4436-bcee-5028cbbe1507}">
+      <Implementation>
+        <ST><![CDATA[
+//CASE iMainEStopSetp OF
+
+
+
+
+ FOR I1:=160 TO 185 BY 1 DO//MaxAxes
+	IF I1<=165 OR I1>=169 THEN
+		arrAxisCtrl[I1].Cmd. bHome:=FALSE;
+		arrAxisCtrl[I1].Cmd. bJog_Bw:=FALSE;	
+		arrAxisCtrl[I1].Cmd. bJog_Fw:=FALSE;		
+		arrAxisCtrl[I1].Cmd. bMoveAbs:=FALSE;		
+		arrAxisCtrl[I1].Cmd. bMoveRel:=FALSE;	
+		arrAxisCtrl[I1].Cmd. bMoveVelo:=FALSE;		
+		arrAxisCtrl[I1].Cmd.bMoveModulo:=FALSE;	
+		arrAxisCtrl[I1].Cmd. bSetPos:=FALSE;	    	
+		arrAxisCtrl[I1].Cmd. iGoSetPos:=0;	  		
+		//arrAxisCtrl[I1].bEnable:=TRUE;
+		IF  arrAxisCtrl[I1].Status.Moving  AND NOT arrAxisCtrl[I1].Cmd.bStop   AND  NOT arrAxis[I1] .Status.Coupled THEN   //对运动中的轴执行STOP
+	    	arrAxisCtrl[I1].Cmd. bStop:=TRUE;	
+		END_IF;		
+   END_IF 
+   IF I1>=166 AND I1<=168 THEN
+		arrAxisCtrlV2[I1].Cmd. bHome:=FALSE;
+		arrAxisCtrlV2[I1].Cmd. bJog_Bw:=FALSE;	
+		arrAxisCtrlV2[I1].Cmd. bJog_Fw:=FALSE;		
+		arrAxisCtrlV2[I1].Cmd. bMoveAbs:=FALSE;		
+		arrAxisCtrlV2[I1].Cmd. bMoveRel:=FALSE;	
+		arrAxisCtrlV2[I1].Cmd. bMoveVelo:=FALSE;		
+		arrAxisCtrlV2[I1].Cmd.bMoveModulo:=FALSE;	
+		arrAxisCtrlV2[I1].Cmd. bSetPos:=FALSE;	    	
+		arrAxisCtrlV2[I1].Cmd. iGoSetPos:=0;	  		
+//arrAxisCtrl[I1].bEnable:=TRUE;
+IF  arrAxisCtrlV2[I1].Status.Moving  AND NOT arrAxisCtrlV2[I1].Cmd.bStop   AND  NOT arrAxis[I1] .Status.Coupled THEN   //对运动中的轴执行STOP
+arrAxisCtrl[I1].Cmd. bStop:=TRUE;	
+		END_IF;		
+   END_IF
+  END_FOR;
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Init" Id="{38125b65-299f-4868-a510-489d472c8638}">
+      <Implementation>
+        <ST><![CDATA[
+//整机初始化
+(**
+1.P1INIT  
+2.P2INIT
+3.P3INIT
+4.P4INIT
+5.缓存凸轮表创建
+6.Time轴跑速度模式
+*)
+
+CASE iMainInitSetp OF
+0:
+    IF  NOT   P3_SystemRUN.bInitDone THEN
+         iMainInitSetp:=10;
+    END_IF
+10:
+    FOR i:=160 TO 185  DO 
+		IF i<=165 OR i>=169 THEN
+			arrAxisCtrl[i].Cmd.bEnable:=TRUE;
+			arrAxisCtrl[i].Cmd.bEnableFw:=TRUE;
+			arrAxisCtrl[i].Cmd.bEnableBw:=TRUE;
+			(*其他操作指令*)  
+			arrAxisCtrl[i].Cmd.bHome:=FALSE;
+			arrAxisCtrl[i].Cmd.bJog_Bw:=FALSE;
+			arrAxisCtrl[i].Cmd.bHalt:=FALSE;
+			arrAxisCtrl[i].Cmd.bJog_Fw:=FALSE;
+			arrAxisCtrl[i].Cmd.bMoveAbs:=FALSE;
+			arrAxisCtrl[i].Cmd.bMoveVelo:=FALSE;
+			arrAxisCtrl[i].Cmd.bMoveRel:=FALSE;
+			arrAxisCtrl[i].Cmd.bReset:=FALSE;
+			arrAxisCtrl[i].Cmd.bStop:=FALSE;
+			arrAxisCtrl[i].Cmd.bSetPos:=FALSE;
+			arrAxisPar[i].bLimitSwitchEn:=TRUE;
+		
+		
+			arrAxisCtrl[i].Cmd.Home_Condition:=TRUE;
+			arrAxisCtrl[i].Cmd.JogN_Condition:=TRUE;
+			arrAxisCtrl[i].Cmd.JogP_Condition:=TRUE;		
+		END_IF
+		
+		IF i>=166 AND i<=168 THEN
+			arrAxisCtrlV2[i].Cmd.bEnable:=TRUE;
+			arrAxisCtrlV2[i].Cmd.bEnableFw:=TRUE;
+			arrAxisCtrlV2[i].Cmd.bEnableBw:=TRUE;
+			(*其他操作指令*)  
+			arrAxisCtrlV2[i].Cmd.bHome:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bJog_Bw:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bHalt:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bJog_Fw:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bMoveAbs:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bMoveVelo:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bMoveRel:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bReset:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bStop:=FALSE;
+			arrAxisCtrlV2[i].Cmd.bSetPos:=FALSE;
+			
+		
+			arrAxisCtrlV2[i].Cmd.Home_Condition:=TRUE;
+			arrAxisCtrlV2[i].Cmd.JogN_Condition:=TRUE;
+			arrAxisCtrlV2[i].Cmd.JogP_Condition:=TRUE;			
+		END_IF
+    END_FOR
+    
+    K1:=0;
+    iMainInitSetp:=20;
+20: //复位一次
+   bInitReset:=TRUE;
+   iMainInitSetp:=30;
+30:
+   K1:=K1+1;
+   IF  K1>=10 THEN
+        bInitReset:=FALSE;
+        iMainInitSetp:=40;
+   ELSE
+     iMainInitSetp:=20;
+   END_IF
+
+40://P1---P4 Init
+  P3_SystemRUN.bInitDone:=TRUE;
+  P3_SystemRUN.TheFirstTimebool:=TRUE;
+  iMainInitSetp:=0;
+END_CASE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="MotionBasic" Id="{3986e376-6c15-446e-845d-43158916976b}">
+      <Implementation>
+        <ST><![CDATA[
+FOR i:=160 TO MaxP3Axes DO
+	IF i<=165 OR i>=169 THEN
+  		csAxis[i](bReset:=P3_SystemRUN.bReset ,AutoRun:=P3_SystemRUN.iMode=1, Axis:=arrAxis[i] , stAxisCtrl:=arrAxisCtrl[i] , stAxisPar:=arrAxisPar[i] );
+ 	 END_IF
+	 IF i>=166 AND i<=168 THEN
+		csAxisV2[i](bReset:=P3_SystemRUN.bReset , AutoRun:=P3_SystemRUN.iMode=1,Axis:=arrAxis[i] , stAxisCtrl:=arrAxisCtrlV2[i] , stAxisPar:=arrAxisParV2[i] ); 
+	 END_IF
+END_FOR
+(*
+//		
+FOR i:=160 TO MaxP3Axes DO
+	IF i<=165 OR i>=169 THEN
+  		csAxis[i](bReset:=P3_SystemRUN.bReset , Axis:=arrAxis[i] , stAxisCtrl:=arrAxisCtrl[i] , stAxisPar:=arrAxisPar[i] );
+ 	 END_IF
+	 IF i>=166 AND i<=168 THEN
+		csAxisV2[i](bReset:=P3_SystemRUN.bReset , Axis:=arrAxis[i] , stAxisCtrl:=arrAxisCtrlV2[i] , stAxisPar:=arrAxisParV2[i] ); 
+	 END_IF
+END_FOR
+
+*)
+
+
+
+
+
+(*
+fbP4NGSetpMoter(stSetpMotor:=stP4NgPushMoter );//P4NG 排杆电机
+
+fbP4CutElectric_CY(
+	bServON:=               stP4CutCtrl.bServON , 
+	bHome:=                  stP4CutCtrl.bHome , 
+	bReset:=                   stSysState.bReset , 
+	bStop:=                    stP4CutCtrl.bStop , 
+	bJog_P:=                   stP4CutCtrl.bJog_P, 
+	bJog_N:=                   stP4CutCtrl.bJog_N, 
+	Pos_Start:=                 stP4CutCtrl.Pos_Start, 
+	fTagetPos:=               stP4CutCtrl.fTagetPos , 
+	fVel:=                       500  , //stP4CutCtrl.fVel
+	fAcc:=                       8000 , //  stP4CutCtrl.fAcc
+	fDec:=                      8000 , //stP4CutCtrl.fDec
+	Delay_Time:=             T#5S , 
+	bHomed=>               stP4CutCtrl.bHomed  , 
+	Pos_Done=>             stP4CutCtrl.Pos_Done, 
+	Home_Alm=>            stP4CutCtrl.Home_Alm, 
+	Pos_Alm=>                stP4CutCtrl.Pos_Alm , 
+	stJXCE:=                    stP4Cut                    );
+stP4Cut.in_Act_Pos;
+
+
+//stP4CutCtrl.bStop:=(stP4CutCtrl.Home_Alm OR   stP4CutCtrl.Pos_Alm ) AND stSysState.bReset;
+
+
+IF stSysState.bReset THEN
+  IF  arrAxis[VirAxisNo.P2_VirTimeWind].Status.ControlLoopClosed  AND arrAxis[VirAxisNo.P2_VirTimeWind].Status.NotMoving   THEN
+	  arrAxisPar[VirAxisNo.P2_VirTimeWind].fVelocity_of_Velo:=100;
+	  arrAxisCtrl[VirAxisNo.P2_VirTimeWind].Cmd.bMoveVelo:=TRUE;
+  END_IF
+END_IF
+
+mc_Home(
+	Axis:=                    arrAxis[71]  , 
+	Execute:=              Execute , 
+	Position:=            66 , 
+	HomingMode:=  Tc2_MC2.MC_Direct , 
+	BufferMode:= , 
+	Options:= , 
+	bCalibrationCam:=TRUE , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+
+
+mc_Home.Done;
+mc_Home.Busy;
+
+
+fbCoeWrite_GlueFeed(
+	sNetId:='192.168.20.10.6.1' , 
+	nSlaveAddr:=  1015, 
+	nSubIndex:=    16#1F, 
+	nIndex:=        16#2005, 
+	pSrcBuf:=ADR(wEncodeHome) , 
+	cbBufLen:= 2, 
+	bExecute:=bCoeWrite_GlueFeed , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+
+
+
+
+
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="Pusle" Id="{87e0ff25-a954-4bba-9464-ae6c719d5af0}">
+      <Implementation>
+        <ST><![CDATA[(*
+/////////////////////////////////////////时钟脉冲////////////////////////////////////////////////////////////
+//fbPulseCtrl1(PT_OFF:=T#2MS, PT_ON:=T#2MS, Q=>, RT=>);
+fbPulseCtrl[1](PT_OFF:=T#2MS, PT_ON:=T#2MS,   );
+fbPulseCtrl[2](PT_OFF:=T#4MS, PT_ON:=T#4MS,    );
+fbPulseCtrl[3](PT_OFF:=T#10MS, PT_ON:=T#10MS,   );
+
+fbPulseCtrl[4](PT_OFF:=T#300MS, PT_ON:=T#300MS,   );
+fbPulseCtrl[5](PT_OFF:=T#3S, PT_ON:=T#3S,    );
+fbPulseCtrl[6](PT_OFF:=T#5S, PT_ON:=T#5S,   );
+fbPulseCtrl[7](PT_OFF:=T#10S, PT_ON:=T#10S,  );
+fbPulseCtrl[8](PT_OFF:=T#250MS, PT_ON:=T#250MS,   );
+
+fbPulseCtrl[9](PT_OFF:=T#2S, PT_ON:=T#200MS,   );
+
+fbPulseCtrl[1].Q;
+fbPulseCtrl[1].RT;
+fbPulseCtrl[2].Q;
+fbPulseCtrl[2].RT;
+fbPulseCtrl[3].Q;
+fbPulseCtrl[3].RT;
+fbPulseCtrl[4].Q;
+fbPulseCtrl[4].RT;
+fbPulseCtrl[5].Q;
+fbPulseCtrl[5].RT;
+fbPulseCtrl[6].Q;
+fbPulseCtrl[6].RT;
+fbPulseCtrl[7].Q;
+fbPulseCtrl[7].RT;
+fbPulseCtrl[8].Q;
+fbPulseCtrl[8].RT;
+
+
+IF bWaterOn AND ( bWaterOn2   OR    ABS( arrAxisCtrl[P1AxisNo.GMWind_U].Status.fActVelo)>=5 AND  ABS (arrAxisCtrl[P1AxisNo.GMWind_D].Status.fActVelo)>=5 )   THEN
+  //P3EL2889S[3,5]:= fbPulseCtrl[9].Q;
+   P1EL2889S[3,1]:= fbPulseCtrl[9].Q;
+   P1EL2889S[3,2]:= fbPulseCtrl[9].Q;
+
+   P2EL2889S[4,1]:=fbPulseCtrl[9].Q	;	
+   P2EL2889S[4,2]:=fbPulseCtrl[9].Q;	
+
+   P2EL2889S[4,3]:=fbPulseCtrl[9].Q	;	
+   P2EL2889S[4,4]:=fbPulseCtrl[9].Q;	
+
+ELSE
+  //P3EL2889S[3,5]:= FALSE;
+   P1EL2889S[3,1]:= FALSE;
+   P1EL2889S[3,2]:= FALSE;
+   P2EL2889S[4,1]:= FALSE	;	
+   P2EL2889S[4,2]:= FALSE;	
+
+   P2EL2889S[4,3]:=FALSE	;	
+   P2EL2889S[4,4]:=FALSE;	
+END_IF
+
+
+//P1EL2889S[3,1]
+
+
+*)
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="TempBasic" Id="{57d4ab82-770c-4f71-bb9a-03580deee2f7}">
+      <Implementation>
+        <ST><![CDATA[
+
+FOR i:=1 TO MaxTemp DO   //显示温度转换
+	IF TempPVs[i].iPV1<>9999 THEN
+		TempPVs[i].fPV1:=TempPVs[i].iPV1/10;	
+	ELSE
+		TempPVs[i].fPV1:=999.9;
+	END_IF
+    arrTempCtrl[i].fPVShow1:=TempPVs[i].fPV1;
+	
+	IF TempPVs[i].iPV2<>9999 THEN
+		TempPVs[i].fPV2:=TempPVs[i].iPV2/10;
+	ELSE
+		TempPVs[i].fPV2:=999.9;
+	END_IF
+	 arrTempCtrl[i].fPVShow2:=TempPVs[i].fPV2;
+
+	IF TempPVs[i].iPV3<>9999 THEN
+		TempPVs[i].fPV3:=TempPVs[i].iPV3/10;
+	ELSE
+		TempPVs[i].fPV3:=999.9;
+	END_IF
+	 arrTempCtrl[i].fPVShow3:=TempPVs[i].fPV3;
+
+	IF TempPVs[i].iPV4<>9999 THEN
+		TempPVs[i].fPV4:=TempPVs[i].iPV4/10;
+	ELSE
+		TempPVs[i].fPV4:=999.9;
+	END_IF
+    arrTempCtrl[i].fPVShow4:=TempPVs[i].fPV4;
+END_FOR
+
+//温度控制
+FOR i:=1 TO MaxTemp DO
+     fbTemp[i](bReset:=P3_SystemRUN.bReset , ParTemp:=arrTempPar[i] , TempCtrl:=arrTempCtrl[i] );
+END_FOR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P3MainState">
+      <LineId Id="3" Count="5" />
+      <LineId Id="412" Count="0" />
+      <LineId Id="507" Count="0" />
+      <LineId Id="570" Count="1" />
+      <LineId Id="582" Count="5" />
+      <LineId Id="574" Count="0" />
+      <LineId Id="508" Count="0" />
+      <LineId Id="413" Count="0" />
+      <LineId Id="420" Count="0" />
+      <LineId Id="597" Count="3" />
+      <LineId Id="596" Count="0" />
+      <LineId Id="588" Count="2" />
+      <LineId Id="576" Count="0" />
+      <LineId Id="593" Count="1" />
+      <LineId Id="954" Count="0" />
+      <LineId Id="956" Count="1" />
+      <LineId Id="955" Count="0" />
+      <LineId Id="595" Count="0" />
+      <LineId Id="577" Count="0" />
+      <LineId Id="575" Count="0" />
+      <LineId Id="523" Count="0" />
+      <LineId Id="561" Count="8" />
+      <LineId Id="560" Count="0" />
+      <LineId Id="601" Count="0" />
+      <LineId Id="470" Count="4" />
+      <LineId Id="476" Count="29" />
+      <LineId Id="421" Count="0" />
+      <LineId Id="688" Count="0" />
+      <LineId Id="687" Count="0" />
+      <LineId Id="460" Count="0" />
+      <LineId Id="689" Count="2" />
+      <LineId Id="461" Count="7" />
+      <LineId Id="9" Count="20" />
+      <LineId Id="323" Count="0" />
+      <LineId Id="325" Count="0" />
+      <LineId Id="327" Count="0" />
+      <LineId Id="324" Count="0" />
+      <LineId Id="30" Count="1" />
+      <LineId Id="550" Count="9" />
+      <LineId Id="42" Count="33" />
+      <LineId Id="328" Count="0" />
+      <LineId Id="76" Count="20" />
+      <LineId Id="316" Count="6" />
+      <LineId Id="97" Count="13" />
+      <LineId Id="112" Count="12" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="213" Count="5" />
+      <LineId Id="1053" Count="1" />
+      <LineId Id="1149" Count="0" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="777" Count="1" />
+      <LineId Id="782" Count="0" />
+      <LineId Id="779" Count="2" />
+      <LineId Id="1052" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="229" Count="2" />
+      <LineId Id="228" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="868" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.Alarm">
+      <LineId Id="2" Count="17" />
+      <LineId Id="381" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="383" Count="1" />
+      <LineId Id="382" Count="0" />
+      <LineId Id="22" Count="3" />
+      <LineId Id="385" Count="1" />
+      <LineId Id="399" Count="0" />
+      <LineId Id="394" Count="0" />
+      <LineId Id="27" Count="353" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.Condition">
+      <LineId Id="2" Count="0" />
+      <LineId Id="28" Count="32" />
+      <LineId Id="3" Count="4" />
+      <LineId Id="61" Count="96" />
+      <LineId Id="241" Count="0" />
+      <LineId Id="158" Count="26" />
+      <LineId Id="243" Count="0" />
+      <LineId Id="219" Count="2" />
+      <LineId Id="224" Count="1" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="227" Count="3" />
+      <LineId Id="185" Count="1" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="188" Count="28" />
+      <LineId Id="8" Count="19" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.CyBasic">
+      <LineId Id="2" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="5" Count="43" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.EStop">
+      <LineId Id="2" Count="7" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="10" Count="12" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="73" Count="11" />
+      <LineId Id="71" Count="1" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="26" Count="11" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.Init">
+      <LineId Id="2" Count="18" />
+      <LineId Id="162" Count="13" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="176" Count="3" />
+      <LineId Id="160" Count="1" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="181" Count="0" />
+      <LineId Id="201" Count="13" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="216" Count="2" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="180" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="36" Count="14" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="82" Count="26" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.MotionBasic">
+      <LineId Id="120" Count="7" />
+      <LineId Id="2" Count="3" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="116" Count="3" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="104" Count="5" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="8" Count="93" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.Pusle">
+      <LineId Id="2" Count="72" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MainState.TempBasic">
+      <LineId Id="2" Count="77" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

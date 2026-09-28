@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Method" Id="{9e1c029a-17c8-4ad9-9136-ab995f2e613d}">
+    <Declaration><![CDATA[TYPE ST_Method :  //    方法
+STRUCT
+
+             AllTempTurnON                            :ST_MethodOut;//温控开
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

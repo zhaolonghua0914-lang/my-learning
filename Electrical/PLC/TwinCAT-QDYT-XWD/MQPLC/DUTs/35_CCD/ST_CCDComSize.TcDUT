@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDComSize" Id="{0795a76c-54e8-4c42-a6fe-dabc66aa4504}">
+    <Declaration><![CDATA[TYPE ST_CCDComSize :
+STRUCT
+	fPoleWidth:REAL;  //尺寸检测CCD结果(极片宽度)
+	fPoleHeigh:REAL;  //尺寸检测CCD结果(极片高度)
+	fTabWidth:REAL;  //尺寸检测CCD结果(极耳宽度)
+	fTabHeigh:REAL;  //尺寸检测CCD结果(极耳高度)
+	fTabSite   : REAL; // 极耳左，右边距(就是极耳位置，不分左右)
+	fOffsetDeg:REAL; //尺寸检测CCD结果(极片裁切面角度偏移)
+	
+	RoundedSize1                                :        REAL        ;//        圆角尺寸1 纵深
+	RoundedSize2                                :        REAL        ;//        圆角尺寸2纵深
+	RoundedSize3                                :        REAL        ;//        圆角尺寸3纵深
+	RoundedSize4                                :        REAL        ;//        圆角尺寸4纵深
+	RoundedSize5                                :        REAL        ;//        圆角尺寸5 横深
+	RoundedSize6                                :        REAL        ;//        圆角尺寸6横深
+	RoundedSize7                                :        REAL        ;//        圆角尺寸7横深
+	RoundedSize8                               :        REAL        ;//        圆角尺寸8横深
+	
+	PolePlateAngle1                                :        REAL        ;//        极片角度1  极片角度
+	PolePlateAngle2                                :        REAL        ;//        极片角度2
+	PolePlateAngle3                                :        REAL        ;//        极片角度3
+	PolePlateAngle4                                :        REAL        ;//        极片角度4
+	
+	fPoleNGSizeNo:REAL;  //尺寸检测CCD结果(NG分类编号)
+	iTabNGSizeNo:INT;  //尺寸检测CCD极耳抓边异常分类     1： OK  2: 极片抓边异常    3:极耳抓边异常     4：都抓边异常     5：极片或极耳角度异常    
+	
+	iPoleRAngleNG:INT;//尺寸检测CCD结果(R角NG)
+	iFinish:INT;  //尺寸检测CCD结果指示(1=完成;2=NG;3=无片;0=无效)  SizeResults
+	
+	AppearanceResult:INT;// 极片外观判定结果   线扫NG、OK
+	stPoleNo:	STRING(256);//极片编号  PC 发送给PLC 预留   区分正负极
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

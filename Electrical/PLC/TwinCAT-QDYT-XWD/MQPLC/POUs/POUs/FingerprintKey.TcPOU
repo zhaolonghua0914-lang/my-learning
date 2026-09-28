@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FingerprintKey" Id="{872ea9fe-f02f-42e7-89c8-06ed2efe6434}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM FingerprintKey
+VAR
+	AnID: STRING(49);
+	CaID: STRING(49);
+	AnLevel: STRING(49);
+	CaLevel: STRING(49);
+	AnLoginSuccess: BOOL;//正极指纹匹配成功
+	CaLoginSuccess: BOOL;//负极指纹匹配成功
+	Keyton:  ARRAY[0..10] OF TON;//1:获取用户及权限延时
+	AnLevelHMI_Read: BYTE;//触摸屏权限，用于触摸屏读取用户索引
+	CaLevelHMI_Read: BYTE;//触摸屏权限，用于触摸屏读取用户索引
+	AnPassWord: STRING(16);//触摸屏密码，用于触摸屏读取用户对应密码
+	CaPassWord: STRING(16);//触摸屏密码，用于触摸屏读取用户对应密码
+	AnLevelHMI_Write: INT;//触摸屏权限，用于触摸屏反馈给PLC
+	CaLevelHMI_Write: INT;//触摸屏权限，用于触摸屏反馈给PLC
+	AnKeyStep: INT;//正极权限判断自动
+	CaKeyStep: INT;//正极权限判断自动
+	Anblogin: BOOL;
+	Cablogin: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//正极模切变量（指纹机1）
+User01.AnMQ_FingerprintKey.MachineId ;//指纹器编号
+User01.AnMQ_FingerprintKey.UserId;//用户名
+User01.AnMQ_FingerprintKey.UserClassLevel;//用户权限
+User01.AnMQ_FingerprintKey.Fid;//本地文件id
+User01.AnMQ_FingerprintKey.MatchScore;//指纹匹配评分
+User01.AnMQ_FingerprintKey.Result;//匹配结果
+User01.AnMQ_FingerprintKey.FileName;//本地文件路径
+
+
+
+////////////////////////////////////////////////////////////////////////正极指纹仪自动程序///////////////////////////////////////////////////////////////
+Keyton[1](IN:=AnLoginSuccess , PT:=T#100MS , Q=> , ET=> );
+
+IF User01.AnMQ_FingerprintKey.MachineId='01' THEN
+	IF User01.AnMQ_FingerprintKey.Result='Success' THEN
+		AnLoginSuccess:=TRUE;//指纹匹配成功
+	END_IF	
+END_IF
+
+
+CASE AnKeyStep OF
+0:
+	IF Keyton[1].Q THEN
+		IF User01.AnMQ_FingerprintKey.UserId<>'' AND User01.AnMQ_FingerprintKey.UserClassLevel<>'' THEN
+			AnID:=User01.AnMQ_FingerprintKey.UserId;
+			AnLevel:=User01.AnMQ_FingerprintKey.UserClassLevel;
+			AnLevelHMI_Read:=0;
+			IF AnID=User01.AnMQ_FingerprintKey.UserId AND AnLevel=User01.AnMQ_FingerprintKey.UserClassLevel THEN
+				AnKeyStep:=100;
+			END_IF
+		END_IF
+	END_IF
+100://用户权限判断	(触摸屏读取时，采用用户索引，顺序要与触摸屏用户顺序一致）
+	IF AnLevel='PRD' THEN
+		AnLevelHMI_Read:=1;
+		//PassWord:='1111';
+		IF AnLevelHMI_Read=1  THEN//AND PassWord='1111'
+			AnKeyStep:=200;
+		END_IF
+	ELSIF AnLevel='ME' THEN
+		AnLevelHMI_Read:=2;
+		//PassWord:='SWD123';
+		IF AnLevelHMI_Read=2  THEN//AND PassWord='SWD123'
+			AnKeyStep:=200;
+		END_IF
+	ELSIF AnLevel='PRJ' THEN
+		AnLevelHMI_Read:=3;
+		//PassWord:='SWDQDJ';
+		IF AnLevelHMI_Read=3  THEN//AND PassWord='SWDQDJ'
+			AnKeyStep:=200;
+		END_IF
+	ELSIF AnLevel='GYS' THEN
+		AnLevelHMI_Read:=4;
+		//PassWord:='YK556';
+		IF AnLevelHMI_Read=4 THEN// AND PassWord='YK556'
+			AnKeyStep:=200;
+		END_IF
+	ELSIF AnLevel='QA' THEN
+		AnLevelHMI_Read:=5;
+		//PassWord:='OYX98766';
+		IF AnLevelHMI_Read=5  THEN//AND PassWord='OYX98766'
+			AnKeyStep:=200;
+		END_IF
+	ELSIF AnLevel='KF' THEN
+		AnLevelHMI_Read:=6;
+		//PassWord:='0513';
+		IF AnLevelHMI_Read=6  THEN//AND PassWord='0513'
+			AnKeyStep:=200;
+		END_IF
+	ELSIF AnLevel='Safe' THEN
+		AnLevelHMI_Read:=7;
+		//PassWord:='87558';
+		IF AnLevelHMI_Read=7 THEN//AND PassWord='87558'
+			AnKeyStep:=200;
+		END_IF
+	ELSE
+		AnLoginSuccess:=FALSE;
+		AnLevel:='';
+		User01.AnMQ_FingerprintKey.Result:='';
+		User01.AnMQ_FingerprintKey.UserId:='';
+		User01.AnMQ_FingerprintKey.UserClassLevel:='';
+		User01.AnMQ_FingerprintKey.MachineId:='';
+		AnKeyStep:=0;
+	END_IF
+	
+200:
+		Anblogin:=TRUE;
+		AnLoginSuccess:=FALSE;
+		AnKeyStep:=300;
+
+300:
+		IF AnLevelHMI_Write=1 THEN
+		AnLevelHMI_Read:=0;
+		AnPassWord:='';
+		AnLoginSuccess:=FALSE;
+		AnLevel:='';
+		User01.AnMQ_FingerprintKey.Result:='';
+		User01.AnMQ_FingerprintKey.UserId:='';
+		User01.AnMQ_FingerprintKey.UserClassLevel:='';
+		User01.AnMQ_FingerprintKey.MachineId:='';
+		AnKeyStep:=0;
+		Anblogin:=FALSE;
+		AnLoginSuccess:=FALSE;
+		AnLevelHMI_Write:=0;
+		END_IF
+END_CASE
+
+
+
+//负极模切变量（指纹机2）
+User01.CaMQ_FingerprintKey.MachineId ;//指纹器编号
+User01.CaMQ_FingerprintKey.UserId;//用户名
+User01.CaMQ_FingerprintKey.UserClassLevel;//用户权限
+User01.CaMQ_FingerprintKey.Fid;//本地文件id
+User01.CaMQ_FingerprintKey.MatchScore;//指纹匹配评分
+User01.CaMQ_FingerprintKey.Result;//匹配结果
+User01.CaMQ_FingerprintKey.FileName;//本地文件路径
+
+
+///////////////////////////////////////////////////////////////////////////负极指纹仪自动程序/////////////////////////////////////////////////////////////////////
+Keyton[2](IN:=CaLoginSuccess , PT:=T#100MS , Q=> , ET=> );
+
+IF User01.CaMQ_FingerprintKey.MachineId='02' THEN
+	IF User01.CaMQ_FingerprintKey.Result='Success' THEN
+		CaLoginSuccess:=TRUE;//指纹匹配成功
+	END_IF	
+END_IF
+
+
+CASE CaKeyStep OF
+0:
+	IF Keyton[2].Q THEN
+		IF User01.CaMQ_FingerprintKey.UserId<>'' AND User01.CaMQ_FingerprintKey.UserClassLevel<>'' THEN
+			CaID:=User01.CaMQ_FingerprintKey.UserId;
+			CaLevel:=User01.CaMQ_FingerprintKey.UserClassLevel;
+			CaLevelHMI_Read:=0;
+			IF CaID=User01.CaMQ_FingerprintKey.UserId AND CaLevel=User01.CaMQ_FingerprintKey.UserClassLevel THEN
+				CaKeyStep:=100;
+			END_IF
+		END_IF
+	END_IF
+100://用户权限判断	(触摸屏读取时，采用用户索引，顺序要与触摸屏用户顺序一致）
+	IF CaLevel='PRD' THEN
+		CaLevelHMI_Read:=1;
+		//PassWord:='1111';
+		IF CaLevelHMI_Read=1  THEN//AND PassWord='1111'
+			CaKeyStep:=200;
+		END_IF
+	ELSIF CaLevel='ME' THEN
+		CaLevelHMI_Read:=2;
+		//PassWord:='SWD123';
+		IF CaLevelHMI_Read=2  THEN//AND PassWord='SWD123'
+			CaKeyStep:=200;
+		END_IF
+	ELSIF CaLevel='PRJ' THEN
+		CaLevelHMI_Read:=3;
+		//PassWord:='SWDQDJ';
+		IF CaLevelHMI_Read=3  THEN//AND PassWord='SWDQDJ'
+			CaKeyStep:=200;
+		END_IF
+	ELSIF CaLevel='GYS' THEN
+		CaLevelHMI_Read:=4;
+		//PassWord:='YK556';
+		IF CaLevelHMI_Read=4 THEN// AND PassWord='YK556'
+			CaKeyStep:=200;
+		END_IF
+	ELSIF CaLevel='QA' THEN
+		CaLevelHMI_Read:=5;
+		//PassWord:='OYX98766';
+		IF CaLevelHMI_Read=5  THEN//AND PassWord='OYX98766'
+			CaKeyStep:=200;
+		END_IF
+	ELSIF CaLevel='KF' THEN
+		CaLevelHMI_Read:=6;
+		//PassWord:='0513';
+		IF CaLevelHMI_Read=6  THEN//AND PassWord='0513'
+			CaKeyStep:=200;
+		END_IF
+	ELSIF CaLevel='Safe' THEN
+		CaLevelHMI_Read:=7;
+		//PassWord:='87558';
+		IF CaLevelHMI_Read=7 THEN//AND PassWord='87558'
+			CaKeyStep:=200;
+		END_IF
+	ELSE
+		CaLoginSuccess:=FALSE;
+		CaLevel:='';
+		User01.CaMQ_FingerprintKey.Result:='';
+		User01.CaMQ_FingerprintKey.UserId:='';
+		User01.CaMQ_FingerprintKey.UserClassLevel:='';
+		User01.CaMQ_FingerprintKey.MachineId:='';
+		CaKeyStep:=0;
+	END_IF
+	
+200:
+		Cablogin:=TRUE;
+		CaLoginSuccess:=FALSE;
+		CaKeyStep:=300;
+300:
+	IF CaLevelHMI_Write=1 THEN
+		CaLevelHMI_Read:=0;
+		CaPassWord:='';
+		CaLoginSuccess:=FALSE;
+		CaLevel:='';
+		User01.CaMQ_FingerprintKey.Result:='';
+		User01.CaMQ_FingerprintKey.UserId:='';
+		User01.CaMQ_FingerprintKey.UserClassLevel:='';
+		User01.CaMQ_FingerprintKey.MachineId:='';
+		CaLevelHMI_Write:=0;
+		CaKeyStep:=0;
+	END_IF
+END_CASE
+]]></ST>
+    </Implementation>
+    <LineIds Name="FingerprintKey">
+      <LineId Id="614" Count="212" />
+      <LineId Id="35" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

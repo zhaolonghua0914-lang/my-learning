@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="conDT_RunStatus" Id="{e85ab4e0-227d-4f96-8f96-e30e8ec26ee9}">
+    <Declaration><![CDATA[TYPE conDT_RunStatus :
+STRUCT
+	DT_AutoRuning: BOOL;//叠台自动运行中--无跳片
+	DT_ReadyTemp: BOOL;//叠台输出取片准备好信号
+	DT_ReadyAllow: BOOL;//模切调度让叠台容许取片信号
+	ReadyAllow2:BOOL;//模切调度让叠台容许取片信号
+	//叠台当前状态	
+	iDTRunStatus:INT;//叠台当前状态
+	
+	//20240504 CF
+	bSyncReady:BOOL;//同步准备好
+	bJumpSync:BOOL;//放弃同步
+	bSyncStart:BOOL;//开始同步
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

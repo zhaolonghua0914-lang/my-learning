@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_Senser" Id="{199c91d5-ecbd-4274-bd2d-e5840786d307}">
+    <Declaration><![CDATA[TYPE ST_Senser :
+STRUCT
+AnBeltsensor	:BOOL;		//		正极模切送料分段皮带1有料感应
+AnLimitSwitch:BOOL;//正极取片搬运、叠片搬运防撞感应
+CaBeltsensor	:BOOL;		//		负极模切送料分段皮带1有料感应
+CaLimitSwitch:BOOL;//负极取片搬运、叠片搬运防撞感应
+Offloadingsensor	:BOOL;		//		取料位感应
+BlueGluetsensor	:BOOL;		//		蓝胶料盘检测
+codeGluesensor	:BOOL;		//		二维码胶料盘检测
+Markesensor	:BOOL;		//		二维码胶Mark孔检测
+GluebHave	:BOOL;		//		贴胶旋转电芯感应
+Coldpressingesensor		:BOOL;		//		冷压上料夹平移电机1号叠台处检测
+Securitydoorswitch1		:BOOL;		//		外罩门禁1
+Securitydoorswitch2		:BOOL;		//		外罩门禁2
+Securitydoorswitch3		:BOOL;		//		外罩门禁3
+Securitydoorswitch4		:BOOL;		//		外罩门禁4
+Securitydoorswitch5		:BOOL;		//		外罩门禁5
+Securitydoorswitch6		:BOOL;		//		外罩门禁6
+Securitydoorswitch7		:BOOL;		//		外罩门禁7
+Securitydoorswitch8		:BOOL;		//		外罩门禁8
+Securitydoorswitch9		:BOOL;		//		外罩门禁9
+Securitydoorswitch10	:BOOL;		//		外罩门禁10
+QYcode  :BOOL;//叠台储气罐真空信号
+Yellowmark       :BOOL;  //叠台隔膜黄标感应    
+Ceramics:BOOL;//隔膜陶瓷面感应器
+AnDTCarryingJROnSwitch:BOOL;//正极极耳真空信号
+CaDTCarryingJROnSwitch:BOOL;//负极极耳真空信号
+AnNGboxsensor 	:BOOL;		//叠台正极NG料盒满料感应
+CaNGboxsensor 	:BOOL;		//叠台负极NG料盒满料感应
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

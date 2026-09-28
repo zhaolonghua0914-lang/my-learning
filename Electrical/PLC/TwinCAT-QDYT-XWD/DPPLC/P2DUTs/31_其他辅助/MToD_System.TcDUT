@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="MToD_System" Id="{37525c87-b9de-4286-b1b7-92a5bd47a5a6}">
+    <Declaration><![CDATA[TYPE MToD_System ://模切→叠片  系统数据
+STRUCT
+	bP1Estop:BOOL;//TRUE 模切急停
+	bP1Start:BOOL;//TRUE 模切启动
+	bP1Runing:BOOL;//TRUE 模切自动中
+	iCarryPoleMode:INT:=3;//极片仅流至1.2.3工位
+	p1state:INT;//模切状态 1:自动中   2:自动-Ready  3:手动   4:急停    5：报警    6.自动-NoReady
+	P1SaveParDone      :BOOL;//模切保存参数完成
+	P1ReadParDone     :BOOL;//模切读取参数完成
+//清尾料
+	bP1ClearDo:BOOL;//模切开始清尾料   注：模切部分程序必须在叠片开始清尾料后，在进入清尾料流程
+	bP1ClearDone:BOOL;//模切清尾料完成	注：必须叠台部分叠完所有极片立马给模切 叠片清尾料完成，最后模切反馈清尾料完成
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

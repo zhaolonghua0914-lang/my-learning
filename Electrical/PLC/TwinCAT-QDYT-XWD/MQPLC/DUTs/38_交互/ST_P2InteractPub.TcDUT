@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_P2InteractPub" Id="{c6a757a4-3840-4183-939d-974fec81007f}">
+    <Declaration><![CDATA[TYPE ST_P2InteractPub ://交互_公共
+STRUCT
+//→叠台
+	bP1Estop:BOOL;//TRUE 模切急停
+	bP1Start:BOOL;//TRUE 模切启动
+	bP1Runing:BOOL;//TRUE 模切自动中
+	
+	bP1ClearDo:BOOL;//模切开始清尾料   注：模切部分程序必须在叠片开始清尾料后，在进入清尾料流程
+	bP1ClearDone:BOOL;//模切清尾料完成	注：必须叠台部分叠完所有极片立马给模切 叠片清尾料完成，最后模切反馈清尾料完成
+	
+//叠台→		
+	P2M1Enable:BOOL;//TRUE 1号叠片启用
+	P2M2Enable:BOOL;//TRUE 2号叠片启用
+	P2M3Enable:BOOL;//TRUE 3号叠片启用
+	
+	bP2Estop:BOOL;//TRUE 叠片急停
+	bP2Start:BOOL;//TRUE 叠片启动
+	bP2Runing:BOOL;//TRUE 叠片自动中
+	
+	bP2ClearDo:BOOL;//叠片开始清尾料   注：先发需求量，再发清尾料开始信号
+	bP2ClearDone:BOOL;//叠片清尾料完成	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

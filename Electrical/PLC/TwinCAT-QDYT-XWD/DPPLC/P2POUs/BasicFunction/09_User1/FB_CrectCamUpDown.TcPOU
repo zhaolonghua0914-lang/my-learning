@@ -1,0 +1,273 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_CrectCamUpDown" Id="{901f2817-c555-417a-9a64-474ddaea8297}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CrectCamUpDown	
+VAR_INPUT
+   	bCreatTable		                         :BOOL;	
+	Reset                                        :BOOL;  
+	iTable		                                :UINT;    
+
+	fInitLength									:REAL;//耦合的初始高度
+    fMoveLength                              :REAL;   //目标取或放料高度
+    fSaveLength                               :REAL;    //升降安全高度
+
+    fMasterKeyPos1                           :REAL:=208;   
+    fMasterKeyPos2                           :REAL:=256;   
+    fMasterKeyPos3                           :REAL:=328;   
+	fMasterKeyPos4                           :REAL:=328;   
+	fMasterKeyPos5                           :REAL;   
+	fMasterKeyPos6                           :REAL;   
+	
+	fSlaveVelo                                    :REAL:=0.32;  
+	
+END_VAR
+
+VAR_IN_OUT
+	axisSlave		                            :axis_ref;  
+	axisMaster		                            :axis_ref;  
+END_VAR
+
+VAR_OUTPUT
+    bCreatTableDone                        :BOOL;
+    bCreatTableError                        :BOOL;
+	bError                         :BOOL;
+
+END_VAR
+
+
+VAR
+	rtrigs		                                      :ARRAY[1..3]OF R_TRIG;
+	ftrigs		                                      :ARRAY[1..3]OF F_TRIG;
+    PositionData1			                  :ARRAY[1..8] OF MC_MotionFunctionPoint;	////
+	fbCamtableselect:		               	MC_CamTableSelect;////
+	Cam_table:				MC_CAM_REF;////
+	bWriteCamData: BOOL;
+    iCreatTableStep       :INT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+rtrigs[1](CLK:=bCreatTable);  
+ftrigs[1](CLK:=bCreatTable);  
+
+CASE iCreatTableStep OF   
+0:  
+    IF  rtrigs[1].Q  AND NOT bCreatTableError  THEN
+         fbCamtableselect.Execute:=FALSE;
+         bCreatTableDone:=FALSE;
+         bCreatTable:=FALSE;
+         bWriteCamData:=TRUE;
+         iCreatTableStep:=10;
+    END_IF 
+
+10: 
+   IF NOT bWriteCamData THEN 
+	  fbCamtableselect.Execute:=TRUE;   
+	 iCreatTableStep:=20;	
+  END_IF
+
+20:		
+	IF NOT  fbCamtableselect.Execute   THEN
+        bCreatTableDone:=TRUE;
+		iCreatTableStep:=0;	
+    ELSIF  fbCamtableselect.Error        THEN
+       bCreatTableError:=TRUE;
+       iCreatTableStep:=999;	//创建凸轮失败
+	END_IF		
+END_CASE
+
+(**********故障***********)
+	IF  Reset  AND bCreatTableError  THEN  
+	   bCreatTableError:=FALSE;
+	   iCreatTableStep:=0;
+	END_IF
+
+
+ModifyCam();
+]]></ST>
+    </Implementation>
+    <Action Name="ModifyCam" Id="{2c6a02ed-9f34-4d1b-96e4-2dbd7428ff95}">
+      <Implementation>
+        <ST><![CDATA[
+fbCamtableselect(   
+	Execute:=                        fbCamtableselect.Execute ,
+	Periodic:=                        FALSE ,
+	MasterAbsolute:=             FALSE,
+	SlaveAbsolute:=                FALSE ,
+	CamTableID:=                  iTable,
+	Master:=                         axisMaster ,
+	Slave:=                            axisSlave ,
+	CamTable:=                     Cam_table , );
+
+IF fbCamtableselect.Done THEN
+    fbCamtableselect.Execute:=FALSE;
+END_IF
+
+
+IF bWriteCamData  THEN
+	  Cam_table.ArraySize:=SIZEOF(PositionData1); 
+	  Cam_table.NoOfColumns:=1;
+	  Cam_table.NoOfRows:=4;
+	  Cam_table.pArray:=ADR(PositionData1);
+	  Cam_table.TableType:=MC_TABLETYPE_MOTIONFUNCTION;
+  
+      //MOTIONFUNCTYPE_BESCHLTRAPEZ     MOTIONFUNCTYPE_POLYNOM7_MM    MOTIONFUNCTYPE_BESCHLTRAPEZ   MOTIONFUNCTYPE_POLYNOM1
+	  PositionData1[1].	PointIndex	:=	        1;
+	  PositionData1[1].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;//MOTIONFUNCTYPE_BESCHLTRAPEZ     MOTIONFUNCTYPE_POLYNOM7_MM    MOTIONFUNCTYPE_BESCHLTRAPEZ
+	  PositionData1[1].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[1].	RelIndexNextPoint	:=  1;
+	  PositionData1[1].	MasterPos	:=	        0;
+	  PositionData1[1].	SlavePos	:=	        0;		//fMoveLength
+	  PositionData1[1].	SlaveVelo	:=	        0;
+	  
+	  PositionData1[2].	PointIndex	:=	        2;
+	  PositionData1[2].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;
+	  PositionData1[2].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[2].	RelIndexNextPoint	:=  1;
+	  PositionData1[2].	MasterPos	:=	        fMasterKeyPos1;//fMasterKeyPos
+	  PositionData1[2].	SlavePos	:=	        fSaveLength ;	
+	  PositionData1[2].	SlaveVelo	:=	        0;//(fInitLength-fSaveLength)/fMasterKeyPos1	;
+	  
+	  PositionData1[3].	PointIndex	:=	        3;
+	  PositionData1[3].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM1;
+	  PositionData1[3].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[3].	RelIndexNextPoint	:=  1;
+	  PositionData1[3].	MasterPos	:=	        fMasterKeyPos2;//fMasterKeyPos
+	  PositionData1[3].	SlavePos	:=	        fMoveLength;	
+	  PositionData1[3].	SlaveVelo	:=	        0;//(fInitLength-fSaveLength)/fMasterKeyPos1	;  
+	  
+	  PositionData1[4].	PointIndex	:=	        4;
+	  PositionData1[4].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;
+	  PositionData1[4].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[4].	RelIndexNextPoint	:=  0;
+	  PositionData1[4].	MasterPos	:=	        360;
+	  PositionData1[4].	SlavePos	:=	        fMoveLength;	
+	  PositionData1[4].	SlaveVelo	:=	        0	;
+     bWriteCamData:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*
+IF bWriteCamData  THEN
+ 
+	  Cam_table.ArraySize:=SIZEOF(PositionData1); 
+	  Cam_table.NoOfColumns:=1;
+	  Cam_table.NoOfRows:=7;
+	  Cam_table.pArray:=ADR(PositionData1);
+	  Cam_table.TableType:=MC_TABLETYPE_MOTIONFUNCTION;
+  
+      //MOTIONFUNCTYPE_BESCHLTRAPEZ     MOTIONFUNCTYPE_POLYNOM7_MM    MOTIONFUNCTYPE_BESCHLTRAPEZ   MOTIONFUNCTYPE_POLYNOM1
+
+	  PositionData1[1].	PointIndex	:=	        1;
+	  PositionData1[1].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;//MOTIONFUNCTYPE_BESCHLTRAPEZ     MOTIONFUNCTYPE_POLYNOM7_MM    MOTIONFUNCTYPE_BESCHLTRAPEZ
+	  PositionData1[1].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[1].	RelIndexNextPoint	:=  1;
+	  PositionData1[1].	MasterPos	:=	        0;
+	  PositionData1[1].	SlavePos	:=	        0;		//fMoveLength
+	  PositionData1[1].	SlaveVelo	:=	        0;
+	  
+	  PositionData1[2].	PointIndex	:=	        2;
+	  PositionData1[2].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;
+	  PositionData1[2].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[2].	RelIndexNextPoint	:=  1;
+	  PositionData1[2].	MasterPos	:=	        fMasterKeyPos1;//fMasterKeyPos
+	  PositionData1[2].	SlavePos	:=	        fSaveLength - fInitLength;	
+	  PositionData1[2].	SlaveVelo	:=	        0;//(fInitLength-fSaveLength)/fMasterKeyPos1	;
+
+	  PositionData1[3].	PointIndex	:=	        3;//SJ
+	  PositionData1[3].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM1;
+	  PositionData1[3].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[3].	RelIndexNextPoint	:=  1;
+	  PositionData1[3].	MasterPos	:=	        fMasterKeyPos2-10;//fMasterKeyPos
+	  PositionData1[3].	SlavePos	:=	        0;	
+	  PositionData1[3].	SlaveVelo	:=	        0;//(fInitLength-fSaveLength)/fMasterKeyPos1	;	  
+	  
+	  
+	  PositionData1[4].	PointIndex	:=	        4;
+	  PositionData1[4].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;
+	  PositionData1[4].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[4].	RelIndexNextPoint	:=  1;
+	  PositionData1[4].	MasterPos	:=	        fMasterKeyPos2;//fMasterKeyPos
+	  PositionData1[4].	SlavePos	:=	        0;	
+	  PositionData1[4].	SlaveVelo	:=	        0;//(fInitLength-fSaveLength)/fMasterKeyPos1	;
+	  
+	  PositionData1[5].	PointIndex	:=	        5;
+	  PositionData1[5].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM1;
+	  PositionData1[5].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[5].	RelIndexNextPoint	:=  1;
+	  PositionData1[5].	MasterPos	:=	        fMasterKeyPos3;
+	  PositionData1[5].	SlavePos	:=	        12;	//
+	  PositionData1[5].	SlaveVelo	:=	        0	;
+
+	  PositionData1[6].	PointIndex	:=	        6;
+	  PositionData1[6].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;
+	  PositionData1[6].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[6].	RelIndexNextPoint	:=  1;
+	  PositionData1[6].	MasterPos	:=	        fMasterKeyPos4;//fMasterKeyPos
+	  PositionData1[6].	SlavePos	:=	    12   ;	 // fMoveLength-fInitLength
+	  PositionData1[6].	SlaveVelo	:=	       0	;
+
+	  PositionData1[7].	PointIndex	:=	        7;
+	  PositionData1[7].	FunctionType	:=		MOTIONFUNCTYPE_POLYNOM5_MM;
+	  PositionData1[7].	PointType	:=	        MOTIONPOINTTYPE_MOTION;
+	  PositionData1[7].	RelIndexNextPoint	:=  0;
+	  PositionData1[7].	MasterPos	:=	        360;
+	  PositionData1[7].	SlavePos	:=	        12;	
+	  PositionData1[7].	SlaveVelo	:=	       0	;
+
+
+     bWriteCamData:=FALSE;
+END_IF
+
+*)
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="FB_CrectCamUpDown">
+      <LineId Id="4227" Count="0" />
+      <LineId Id="4082" Count="11" />
+      <LineId Id="4945" Count="0" />
+      <LineId Id="4094" Count="4" />
+      <LineId Id="4944" Count="0" />
+      <LineId Id="4099" Count="8" />
+      <LineId Id="4213" Count="4" />
+      <LineId Id="4219" Count="0" />
+      <LineId Id="4228" Count="0" />
+      <LineId Id="4196" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_CrectCamUpDown.ModifyCam">
+      <LineId Id="975" Count="13" />
+      <LineId Id="1073" Count="0" />
+      <LineId Id="1087" Count="1" />
+      <LineId Id="1090" Count="6" />
+      <LineId Id="1098" Count="30" />
+      <LineId Id="1154" Count="2" />
+      <LineId Id="1077" Count="9" />
+      <LineId Id="1074" Count="1" />
+      <LineId Id="989" Count="83" />
+      <LineId Id="151" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

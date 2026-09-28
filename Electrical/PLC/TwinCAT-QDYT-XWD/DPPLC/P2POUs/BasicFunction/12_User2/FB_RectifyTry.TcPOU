@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_RectifyTry" Id="{c692b437-6096-4f35-baf3-d18be15cd47c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_RectifyTry
+VAR_INPUT
+	Execute: BOOL;// 测试启动HMI
+	AxisNO_X: INT; // X轴	
+	AxisNO_Y: INT; // Y轴	
+	AxisNO_R: INT; // R轴	
+	Demarcate_X:REAL;//X轴纠偏位
+	Demarcate_Y:REAL;//Y轴纠偏位	
+	Demarcate_R:REAL;//R轴纠偏位		
+	// CCD拍照记录次数
+	CCDNo: INT;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	Step0: INT;
+	r_TRIG: R_TRIG;
+
+	// 延时复位CCD拍照启动
+	TON1: TON;
+	TON2: TON;
+	i: INT;
+END_VAR
+
+VAR_IN_OUT
+	// 启动CCD拍照
+	CCDStart: BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//纠偏平台定位精度数据测试
+r_TRIG(CLK:=Execute , Q=> );
+TON1(IN:= , PT:=T#2S , Q=> , ET=> );
+TON2(IN:= , PT:=T#0.3S , Q=> , ET=> );
+
+CASE Step0 OF
+	0://判断是否启动测试
+		IF r_TRIG.Q THEN
+			i:=0;
+			Step0:=10;
+			TON2.IN:=FALSE;
+		END_IF
+	10://纠偏平台X、Y回初始位
+		IF arrAxisCtrl[AxisNO_X].Status.Homed AND arrAxisCtrl[AxisNO_X].Status.NoMoving THEN
+				IF arrAxisCtrl[AxisNO_X].Cmd.arrbRealPoint[1] THEN
+					arrAxisCtrl[AxisNO_X].Cmd.iGoSetPos:=0;
+				ELSE
+					arrAxisCtrl[AxisNO_X].Cmd.iGoSetPos:=1;
+				END_IF
+		END_IF
+		IF arrAxisCtrl[AxisNO_Y].Status.Homed AND arrAxisCtrl[AxisNO_Y].Status.NoMoving  THEN
+				IF arrAxisCtrl[AxisNO_Y].Cmd.arrbRealPoint[1] THEN
+					arrAxisCtrl[AxisNO_Y].Cmd.iGoSetPos:=0;
+				ELSE
+					arrAxisCtrl[AxisNO_Y].Cmd.iGoSetPos:=1;
+				END_IF
+		END_IF	
+	  IF arrAxisCtrl[AxisNO_R].Status.Homed AND arrAxisCtrl[AxisNO_R].Status.NoMoving  THEN
+			IF arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[1] THEN
+				arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=0;							       
+			ELSE
+				arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=1;
+			END_IF
+		END_IF		
+		
+		IF  arrAxisCtrl[AxisNO_X].Cmd.arrbRealPoint[1]  AND arrAxisCtrl[AxisNO_Y].Cmd.arrbRealPoint[1]  AND arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[1] AND
+			 arrAxisCtrl[AxisNO_X].Status.Homed AND  arrAxisCtrl[AxisNO_Y].Status.Homed AND arrAxisCtrl[AxisNO_R].Status.Homed THEN
+				Step0:=30;
+				TON2.IN:=TRUE;
+		END_IF	
+	(*20://纠偏平台R回初始位
+		IF arrAxisCtrl[AxisNO_R].Status.Homed AND arrAxisCtrl[AxisNO_R].Status.NoMoving  THEN
+			IF arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[1] THEN
+				arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=0;
+				Step0:=30;									       
+			ELSE
+				arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=1;
+			END_IF
+		END_IF*)
+	30://启动CCD拍照
+	  IF TON2.Q THEN
+		CCDStart:=TRUE;   //CCD拍照启动
+		TON2.IN:=FALSE;
+		Step0:=40;
+	  END_IF	
+	40://延时复位CDD拍照启动信号
+		IF NOT TON1.Q THEN
+			TON1.IN:=TRUE;
+		ELSE
+			CCDStart:=FALSE;   //CCD拍照启动
+			TON1.IN:=FALSE;
+			Step0:=50;
+		END_IF
+	50://纠偏平台X、Y纠偏量
+		arrAxisPar[AxisNO_X].arrTargetPoint[6]:=arrAxisPar[AxisNO_X].arrTargetPoint[1] + Demarcate_X;
+		arrAxisPar[AxisNO_Y].arrTargetPoint[6]:=arrAxisPar[AxisNO_Y].arrTargetPoint[1] + Demarcate_Y;
+		arrAxisPar[AxisNO_R].arrTargetPoint[6]:=arrAxisPar[AxisNO_R].arrTargetPoint[1] +Demarcate_R;
+		Step0:=60;	
+		TON2.IN:=FALSE;
+	60://纠偏平台X、Y移动至纠偏位
+ 		IF arrAxisCtrl[AxisNO_X].Status.Homed AND arrAxisCtrl[AxisNO_X].Status.NoMoving THEN
+				IF arrAxisCtrl[AxisNO_X].Cmd.arrbRealPoint[6] THEN
+					arrAxisCtrl[AxisNO_X].Cmd.iGoSetPos:=0;
+				ELSE
+					arrAxisCtrl[AxisNO_X].Cmd.iGoSetPos:=6;
+				END_IF
+		END_IF
+		IF arrAxisCtrl[AxisNO_Y].Status.Homed AND arrAxisCtrl[AxisNO_Y].Status.NoMoving  THEN
+				IF arrAxisCtrl[AxisNO_Y].Cmd.arrbRealPoint[6] THEN
+					arrAxisCtrl[AxisNO_Y].Cmd.iGoSetPos:=0;
+				ELSE
+					arrAxisCtrl[AxisNO_Y].Cmd.iGoSetPos:=6;
+				END_IF
+		END_IF	
+		
+	 	IF arrAxisCtrl[AxisNO_R].Status.Homed AND arrAxisCtrl[AxisNO_R].Status.NoMoving THEN
+				IF arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[6] THEN
+					arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=0;
+				ELSE
+					arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=6;
+				END_IF
+		END_IF
+	
+		IF  arrAxisCtrl[AxisNO_X].Cmd.arrbRealPoint[6]  AND arrAxisCtrl[AxisNO_Y].Cmd.arrbRealPoint[6] AND arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[6]  AND 
+			 arrAxisCtrl[AxisNO_X].Status.Homed AND  arrAxisCtrl[AxisNO_Y].Status.Homed AND  arrAxisCtrl[AxisNO_R].Status.Homed  THEN
+			 Step0:=90;
+			 TON2.IN:=TRUE;
+		END_IF	 
+	(*	
+	70://纠偏平台R纠偏量
+		arrAxisPar[AxisNO_R].arrTargetPoint[4]:=arrAxisPar[AxisNO_R].arrTargetPoint[1] +Demarcate_R;//arrAxisPar[AxisNO_R].arrTargetPoint[1] + 80*SIN(DEG_TO_RAD(Demarcate_R)) ;
+		Step0:=80;
+	80://纠偏平台R移动到纠偏位
+ 		IF arrAxisCtrl[AxisNO_R].Status.Homed AND arrAxisCtrl[AxisNO_R].Status.NoMoving THEN
+				IF arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[4] THEN
+					arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=0;
+				ELSE
+					arrAxisCtrl[AxisNO_R].Cmd.iGoSetPos:=4;
+				END_IF
+		END_IF
+		IF  arrAxisCtrl[AxisNO_R].Cmd.arrbRealPoint[4]  AND arrAxisCtrl[AxisNO_R].Status.Homed THEN
+			 Step0:=90;
+		END_IF	 *)
+	90://启动CCD拍照
+	IF TON2.Q THEN
+		CCDStart:=TRUE;   //CCD拍照启动
+		i:=i+1;
+		Step0:=100;
+		 TON2.IN:=FALSE;
+	END_IF		
+	100://延时复位CDD拍照启动信号
+		IF NOT TON1.Q THEN
+			TON1.IN:=TRUE;
+		ELSE
+			CCDStart:=FALSE;   //CCD拍照启动
+			TON1.IN:=FALSE;
+			Step0:=110;
+		END_IF
+	110://判断是否达到设定次数
+		IF i>=CCDNo THEN
+			i:=0;
+			Step0:=0;
+		ELSE
+			Step0:=10;
+		END_IF
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_RectifyTry">
+      <LineId Id="144" Count="3" />
+      <LineId Id="279" Count="0" />
+      <LineId Id="148" Count="129" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

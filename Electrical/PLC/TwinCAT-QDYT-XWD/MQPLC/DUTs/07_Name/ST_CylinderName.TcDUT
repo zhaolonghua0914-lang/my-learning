@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CylinderName" Id="{6489611f-f78c-4057-bbf2-6a6e2814e551}">
+    <Declaration><![CDATA[TYPE ST_CylinderName :   //气缸名称
+STRUCT
+Inflation_L	:INT;(*左放卷气胀轴气缸*)	
+Inflation_R	:INT;(*右放卷气胀轴气缸*)	
+BoardPressL	:INT;(*左接带压板气缸*)	
+BoardPressR	:INT;(*右接带压板气缸*)	
+DriverPressAux	:INT;(*辅助驱动压辊气缸*)	
+CoderRollPress	:INT;(*编码器辊压辊气缸*)	
+DriverPressDDR	:INT;(*主驱动压辊气缸*)	
+NGRevBeltUpDown	:INT;(*踢废倒装皮带升降气缸*)	
+NGRevBeltTension	:INT;(*踢废倒装皮带张紧气缸*)	
+PoleBrushDustPush_U	:INT;(*极片上表面毛刷除尘升降缸*)	
+PoleWindDustPush_U	:INT;(*极片上表面风刀除尘升降缸*)	
+PoleBrushDustPush_D	:INT;(*极片下表面毛刷除尘升降缸*)	
+PoleWindDustPush_D	:INT;(*极片下表面风刀除尘升降缸*)	
+DustRevBeltUpDown	:INT;(*极片下表面除尘倒装皮带升降气缸*)	
+NGBoxLock1	:INT;(*NG料盒归正气缸1*)	
+NGBoxLock2	:INT;(*NG料盒归正气缸2*)	
+WasteBoxPush	:INT;(*连续废料收集箱推料气缸*)	
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <Task Name="Task_P2M3" Id="{8709fc83-e9c8-4099-926b-fc07f72917dc}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>2000</CycleTime>
+    <Priority>12</Priority>
+    <PouCall>
+      <Name>P2M3_Auto</Name>
+    </PouCall>
+    <TaskFBGuid>{4b6c479d-5ca6-4d2e-9ff1-eea731d3876e}</TaskFBGuid>
+    <Fb_init>{233b53bd-37da-4ca8-b81e-f94b65c548da}</Fb_init>
+    <Fb_exit>{b51634a0-127c-487a-8a11-a89d1736a64f}</Fb_exit>
+    <CycleUpdate>{a5f8966c-9ef8-43b1-93b0-ad0c3401007a}</CycleUpdate>
+    <PostCycleUpdate>{3e9bd282-8af8-49fc-9baa-db6309536a7a}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

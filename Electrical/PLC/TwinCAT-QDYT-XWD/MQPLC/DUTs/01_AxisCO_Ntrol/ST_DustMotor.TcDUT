@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_DustMotor" Id="{b516de45-9fab-4dac-ace6-04c05ee8a7a0}">
+    <Declaration><![CDATA[TYPE ST_DustMotor :
+STRUCT
+	bJog_FW			:BOOL;		//手动正转
+	bJog_BW			:BOOL;	 //手动反转
+	
+	bRun_FW			:BOOL;		//正转
+	bRun_BW			:BOOL;	 //反转
+	
+	bo_Pul			:BOOL;		//电机启动
+	bo_Dir			:BOOL;//电机方向(0=正转)
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

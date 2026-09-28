@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ParProduct" Id="{99f92e44-3f3a-44e2-a568-868a75096c54}">
+    <Declaration><![CDATA[TYPE ST_ParProduct ://工艺参数
+STRUCT
+(***HMI***)
+	fYellowWidth :REAL:=25 ;    //黄标宽度
+	fTapeWidth :REAL:=30 ;    //接带胶纸宽度
+	fPoleWidth                          		  :REAL:=100 ;    //片宽
+	fBeltSpacePos            :REAL:=280;//皮带运行定长
+	
+	//fCentreWidth_L								:REAL;//极耳中心_极片左侧宽度基准（程序内称左肩宽）
+	//fCentreWidth_R								:REAL;//极耳中心_极片右侧宽度基准（程序内称右肩宽）
+	fBlue_Mould                                :REAL;//蓝胶检测到模具倒角前的距离
+	//iMould_Cuter                               :INT;//模具与裁切间的极耳个数
+	fLineNG_Mould							   :REAL;//缺陷NG点到模具倒角前的距离
+	bEarCheckMode                            :BOOL;   //极耳检测模式     FALSE:定长     TRUE：检测极耳
+	fEarCheckLength                            :REAL;   //检测到极耳后走定长长度
+	
+	
+	fFr_TenValuehmi									:REAL;//后摆杆张力比例阀大小HMI设置   单位%   范围：0-100
+	fPressDDRhmi									:REAL;//主驱压辊比例阀大小HMI设置   单位%   范围：0-100
+	
+	iMouldCount1									:DINT;//前模具切刀计数
+	iMouldCount2									:DINT;//后模具切刀计数
+	iCuterCount									:DINT;//裁切切刀计数
+	iMouldclear1                                 :BOOL;//前倒角模具切刀清零
+	iMouldclear2                                 :BOOL;//后倒角模具切刀清零
+	iCuterclear                                 :BOOL;//裁切切刀清零
+	iMouldCountAlarm1						    :DINT;//前模具切刀计数报警
+	iMouldCountAlarm2						    :DINT;//后模具切刀计数报警
+	iCuterCountAlarm						     :DINT;//裁切切刀计数报警
+	iCuterCountWarning							:DINT;//裁切切刀计数预警
+	iCuterBarCode								:STRING(49);//切刀条码
+	iReplaceCuterTime							:STRING(49);//换刀时间
+	
+	iMainVel                                  :UINT:=10;  //设置速度 PPM (最小值1,最大值200)          
+	fMainHmiVel                                  :REAL;  //显示料带速度 M/min  
+	fDiameterWarn_L:REAL;//左放卷卷径临界设置(警告)
+	fDiameterWarn_R:REAL;//右放卷卷径临界设置(警告)
+	fDiameterAlarm_L:REAL;//左放卷卷径临界设置(报警)
+	fDiameterAlarm_R:REAL;//右放卷卷径临界设置(报警)
+	
+	MQ:ST_MoQiePar; (******放卷部分参数******)
+	Rec:ST_MouldRecY;(******Y纠偏部分参数******)
+	Machine: ST_ParMachine;   //机械参数常量   不允许外部改变
+/////////////////////////////////////////////////////////////////////////////////////////////////CCD  R角闭环纠偏参数/////////////////////////////////////////////////////////////////////		
+	Databace_R3:REAL;//CCD_R3 非极耳侧纵深基准正极5.6  负极2.6
+	Databace_R4:REAL;//CCD_R4非极耳侧纵深基准正极5.6  负极2.6
+	IntervalNum:UINT:=7; //片间距
+	KI_Riao:REAL:=0.3;//比例系数		
+	Limt_Max:REAL:=0.5; //最大补偿值
+	Limt_Min:REAL:=-0.5;//最小补偿值
+	TabSitebace:REAL;//基准肩宽
+	TabWidthBace: REAL;//标准间距		
+	AddAlarm:INT;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+(***内部使用**)
+	fPoleWithOffset						:REAL; //主驱片宽补偿值（计算后）
+	fMouldX_Offset						:REAL; //模具肩宽补偿值（计算后）
+	fDegreeRectify						:REAL; //裁切角度纠偏值（计算后）
+	fMouldY_Rectify						:REAL; //倒角深度纠偏值（计算后）
+	
+	
+	fTension   							:REAL;//模切张力
+	fSpeed								:REAL;//模切速度
+
+//皮带齿轮比计算
+	BeltDust1Great:REAL;//皮带1齿轮比计算系数
+	BeltDust2Great:REAL;//皮带2齿轮比计算系数
+	BeltDust3Great:REAL;//皮带3齿轮比计算系数
+
+      
+
+//新黄标、接带检测
+	fLugBreadth:REAL:=59;//极耳宽度
+	fCutBreadth:REAL:=22;//极耳边到切刀切点宽度---23.5+-1
+	fYellowBreadth:REAL:=35;//黄标宽度
+	fTapeBreadth:REAL:=35;//接带宽度
+	
+//初始卷径标定 ----demarcate
+	rRoll_L:REAL:=1000;//缓存极片总长度(mm)
+	rRollStartView:REAL;//放卷开始角度
+        rRollFinishView:REAL;//放卷结束角度 
+	rRollView :REAL;//放卷运动总角度  
+	rRollDia:REAL;//初始卷径(计数输出)
+	bDemarcateBtn:BOOL;//标定开始按钮
+
+fTape_Mould                                :REAL;//接带检测到模具倒角前的距离	
+fTape1_2                                :REAL;//前接带检到后接带检测的距离
+(*****************************************************极耳基准20240101SJ*********************************************************************)	  
+
+	fTabWidth: REAL;//极耳标准宽
+	fDriverStanderBasePos: REAL;//极耳下降沿基准主驱凸轮位置
+	fReadDriverPos3: REAL;//读取极耳下降沿主驱凸轮表位置
+	bDriverStanderBasePosEN: BOOL;  //极耳大范围调整屏蔽	
+	
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

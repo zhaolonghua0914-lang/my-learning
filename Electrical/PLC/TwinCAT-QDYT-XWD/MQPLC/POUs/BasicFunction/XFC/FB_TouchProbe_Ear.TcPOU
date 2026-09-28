@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_TouchProbe_Ear" Id="{ec2b6452-7868-4fcb-9a39-8043e6eaa3b8}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK  FB_TouchProbe_Ear   //负极极而XFC
+
+VAR_INPUT
+   	aIE_Time   :  UDINT;  (*上升沿或者下降沿的Event 时间*)
+  	aIE_State   : BOOL;	(*State为TRUE，表示Event为上升沿，为False，表示Event是下降沿*)
+	nNoOfInputEvents :USINT;			(*本周期发生的Event数量*)
+	bInputState :  BOOL ;				(*当前输入最后一次更新状态*)
+END_VAR
+
+VAR_IN_OUT
+	bXfcOk :BOOL;
+ 	Axis			:	 Axis_Ref ;
+	TriggerInput	:	XFC_TRIGGER_REF;
+END_VAR
+
+VAR_OUTPUT
+	bFunBlockError :BOOL;
+	RecordedPos	: LREAL;(*锁存结果*)
+END_VAR
+
+VAR
+	XFC_TouchProbe:  XFC_TouchProbe;// XFCFB
+	XFC_TriggerInput: XFC_TRIGGER_REF;
+	R_TRGIG: R_TRIG;
+	rTrigClear: F_TRIG;
+	rTrigStart: R_TRIG;
+	
+	fTrigStart: F_TRIG;	
+	fPosIo: LREAL;
+	fPosDelta: LREAL;
+	arrfPosDelta: ARRAY[1..500] OF LREAL;
+	fPos1: LREAL;
+	K1 :DINT:=1;
+	bClear: BOOL;
+	iSetp: INT;
+    iXFCStatus: INT;
+	uI1: UINT;
+	b2: BOOL;
+	aIE_StateTemp: BOOL;
+	bIoRecordDataOk: BOOL;
+	//RecordedPos1: LREAL;
+	DD1: INT;
+	//AA1: BOOL;
+	//AA2: BOOL;
+	//AA3: INT;
+	bAxisMoving: BOOL;
+	fPos3: LREAL;
+	RecordedPositionXFC: LREAL;
+	K2: INT;
+	K3: DINT;
+	K4: DINT;
+	MB3: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[XFC_TriggerInput:=TriggerInput;  //配置参数传递
+
+
+rTrigStart(CLK:= XFC_TriggerInput.Signal , Q=> ); // nNoOfInputEvents>0	
+fTrigStart(CLK:= XFC_TriggerInput.Signal , Q=> ); // nNoOfInputEvents>0
+
+bAxisMoving:= Axis.Status.Moving ;
+
+IF fTrigStart.Q AND bAxisMoving THEN    //下降沿取值
+    fPosIo:=Axis.NcToPlc.ModuloActPos; //IO记录位置
+	bIoRecordDataOk:=TRUE;
+END_IF
+
+//确保XFC 和IO数据传递过来
+IF bIoRecordDataOk AND iXFCStatus=1  THEN
+	fPosDelta:=RecordedPositionXFC-fPosIo;	 //差值	
+	arrfPosDelta[K1]:=fPosDelta;	//偏差值记录
+ 
+	 K1:=K1+1;
+    bIoRecordDataOk:=FALSE;
+	iXFCStatus:=3;
+END_IF
+
+IF K1>=500 THEN 
+	K1:=1;
+END_IF
+
+rTrigClear(CLK:=bClear , Q=> );   
+IF rTrigClear.Q THEN					(*清空记录*)
+	MEMSET(ADR(arrfPosDelta),0,SIZEOF(arrfPosDelta)); 
+    K1:=K4:=K3:=1;
+END_IF
+
+(*****XFC******)
+R_TRGIG(CLK:=nNoOfInputEvents>=1 AND bAxisMoving , Q=> );
+IF R_TRGIG.Q THEN
+	bXfcOk:=FALSE;
+	RecordedPositionXFC:=0;
+    K2:=K2+1;
+	iSetP:=10;
+END_IF
+
+
+IF aIE_State THEN
+  XFC_TriggerInput.Edge:=Tc2_MC2.RisingEdge;
+  XFC_TriggerInput.TimestampRisingEdge := aIE_Time;  //识别时间输入 上升沿
+   MB3:=TRUE;
+ELSE
+    XFC_TriggerInput.Edge:=Tc2_MC2.FallingEdge;
+	XFC_TriggerInput.TimestampFallingEdge := aIE_Time;  //识别时间输入  下降沿
+   MB3:=FALSE;
+END_IF
+
+IF  nNoOfInputEvents=0 THEN
+	 RETURN;
+END_IF
+
+IF iSetp=10 THEN
+	bXfcOk:=FALSE;
+    K4:=K4+1;
+	XFC_TouchProbe(
+		Axis:=                     Axis , 
+		TriggerInput:=         XFC_TriggerInput, 
+		Execute:=                TRUE, 
+		WindowOnly:=        FALSE , 
+		FirstPosition:=          0 , 
+		LastPosition:=          0, 
+		Options:= , 
+		Done=> , 
+		Busy=> , 
+		Error=> , 
+		ErrorID=> , 
+		RecordedPosition=> );//XFC_TouchProbe.RecordedPosition
+	   XFC_TouchProbe.Done;		
+	   XFC_TouchProbe.Busy;		
+	  XFC_TouchProbe.Error;		
+	  XFC_TouchProbe.ErrorID;	 
+
+    IF XFC_TriggerInput.Edge=FallingEdge THEN
+      RecordedPositionXFC:=XFC_TouchProbe.RecordedPosition;
+       RecordedPos:=RecordedPositionXFC;
+          K3:=K3+1;
+       	bXfcOk:=TRUE;
+       iXFCStatus:=1; 
+    ELSE 
+       iXFCStatus:=2; 
+   END_IF
+     iSetp:=88 ;
+END_IF
+
+
+
+(*
+IF  nNoOfInputEvents=0 THEN
+	 RETURN;
+END_IF
+*)
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_TouchProbe_Ear">
+      <LineId Id="1788" Count="20" />
+      <LineId Id="1810" Count="14" />
+      <LineId Id="1827" Count="0" />
+      <LineId Id="1829" Count="0" />
+      <LineId Id="1907" Count="0" />
+      <LineId Id="1830" Count="2" />
+      <LineId Id="1839" Count="3" />
+      <LineId Id="1844" Count="3" />
+      <LineId Id="1849" Count="1" />
+      <LineId Id="1908" Count="0" />
+      <LineId Id="1910" Count="1" />
+      <LineId Id="1909" Count="0" />
+      <LineId Id="1852" Count="1" />
+      <LineId Id="1855" Count="0" />
+      <LineId Id="1859" Count="13" />
+      <LineId Id="1916" Count="2" />
+      <LineId Id="1914" Count="0" />
+      <LineId Id="1919" Count="0" />
+      <LineId Id="1901" Count="0" />
+      <LineId Id="1873" Count="0" />
+      <LineId Id="1924" Count="0" />
+      <LineId Id="1923" Count="0" />
+      <LineId Id="1920" Count="0" />
+      <LineId Id="1904" Count="2" />
+      <LineId Id="1903" Count="0" />
+      <LineId Id="1922" Count="0" />
+      <LineId Id="1888" Count="3" />
+      <LineId Id="1897" Count="3" />
+      <LineId Id="1892" Count="4" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

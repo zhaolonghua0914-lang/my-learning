@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="TaskInfoCtrl" Id="{839754ba-d274-4462-bdf7-951574ac13d0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK TaskInfoCtrl
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+	index						:	INT;
+	active					:	BOOL; 		(* Diese Variable zeigt an, ob die Task aktiv ist.*)
+	taskName					:	STRING(16);	(* Der Taskname.*)
+	firstCycle				:	BOOL;			(* Diese Variable hat im ersten Zyklus der SPS-Task den Wert: TRUE.*)
+	cycleTimeExceeded		:	BOOL;			(* In dieser Variablen wird ein 躡erschreiten der eingestellten Taskzykluszeit gemeldet*)
+	cycleTime				:	UDINT;		(* Eingestellte Taskzykluszeit in Vielfachen von 100ns*)
+	lastExecTime			:	UDINT;		(* Ben鰐igte Zykluszeit f黵 den letzten Zyklus in Vielfachen von 100 ns*)
+	MaxExecTime				:	UDINT;		(* Maximale Zykluszeit *)
+	priority					:	BYTE;			(* Eingestellte Prioritaet der Task*)
+	cycleCount				: 	UDINT;		(* Zykluszaehler*)
+END_VAR
+
+VAR
+	GETCURTASKINDEX		: GETCURTASKINDEX;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	(*********************************************************************************)
+	(*	(c) by Beckhoff Automation																		*)
+	(*																											*)
+	(*		B E C K H O F F   N E W   A U T O M A T I O N   T E C H N O L O G Y        *)
+	(*																											*)
+	(*		Eiserstr.5	D-33415 Verl	Germany	phone:	+49-5246-0	www.Beckhoff.com	*)
+   (*																											*)
+   (*		Bausteinbeschreibung	: Auswerten des SystemInfoTaskArrays 						*)
+	(*																											*)
+	(*		Version				:	V1.0																	*)
+	(*		Stand					:	04.2009																*)
+ 	(*		Autor					:	Daniel Schlingmann												*)
+	(*																											*)
+	(*********************************************************************************)
+
+(* Get Current Task Index ************************************************************************)
+	GETCURTASKINDEX(index => index);
+
+	(* Retein/Persisten Data Err *)
+	//active :=  _TaskInfo[index].active;
+	taskName :=  _TaskInfo[index].TaskName;
+	firstCycle :=  _TaskInfo[index].FirstCycle;
+	cycleTimeExceeded :=  _TaskInfo[index].CycleTimeExceeded;
+	cycleTime :=  _TaskInfo[index].CycleTime;
+	lastExecTime :=  _TaskInfo[index].LastExecTime;
+	MaxExecTime	:= MAX(lastExecTime,MaxExecTime);
+//	priority :=  _TaskInfo[index].Priority;
+	firstCycle :=  _TaskInfo[index].FirstCycle;
+	cycleCount :=  _TaskInfo[index].CycleCount;
+
+(**************************************************************************************************)]]></ST>
+    </Implementation>
+    <LineIds Name="TaskInfoCtrl">
+      <LineId Id="3" Count="29" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

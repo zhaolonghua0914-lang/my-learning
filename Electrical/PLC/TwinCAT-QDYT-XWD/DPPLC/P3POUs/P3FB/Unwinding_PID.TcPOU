@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Unwinding_PID" Id="{faa6b346-9d54-4253-b69a-e51dc8d87072}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Unwinding_PID
+VAR_INPUT
+	Enable:BOOL;
+	RUN:BOOL;//模块的使能
+	direction:BOOL;//方向选择
+	PV:REAL;//过程值
+	SV:REAL;//设定值
+	P:REAL := 0.0;//P参数
+	I:REAL := 0.0;//I参数
+	D:REAL := 0.0;//D参数
+	stander: REAL := 30.0;//残差标准量	
+	Pv_H:REAL;//过程值的最大值
+	Pv_L:REAL;//过程值的最小值
+END_VAR
+VAR_OUTPUT
+	MV_OUT:REAL;//MV输出值
+	DONE:BOOL;//计算完成
+END_VAR
+VAR
+	
+	Total: REAL;
+	DATA011: REAL;
+	DATA01: REAL;
+	DATA021: REAL;
+	DATA02: REAL;
+	DATA03: REAL;
+	DATA031: REAL;
+	Ek: REAL;
+	Pvalue: REAL;
+	R_TRIG_instance: R_TRIG;
+	PD_Control: BOOL;
+	Trigger: BOOL;
+	Ivalue: REAL;
+	PID_Control: BOOL;
+	R_TRIG_instance1: R_TRIG;
+	Trigger1: BOOL;
+	D_Point: REAL;
+	Dvalue: REAL;
+	MV: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF Enable THEN
+	DONE:=TRUE;
+	DATA011:=100.00*(Pv_H-SV)/(Pv_H-Pv_L);
+	DATA01:=ABS(DATA011);
+	DATA021:=100.00*(SV-Pv_L)/(Pv_H-Pv_L);
+	DATA02:=ABS(DATA021);
+	DATA03:=Min(DATA01,DATA02);
+	DATA031:=300*DATA03;
+  IF RUN=TRUE THEN
+	Ek:=(SV-PV)*100.00/(Pv_H-Pv_L); //	转换为0-300
+	Pvalue:=P*Ek;
+ 	R_TRIG_instance(CLK:=PD_Control , Q=> Trigger);
+	IF Trigger THEN 
+	 Total:=0.0;
+	 Ivalue:=0.0;
+    END_IF; 
+	IF PID_Control=TRUE THEN
+		Total:=Total+Ek;
+		IF Total>=DATA031	 THEN
+			Total:=DATA031;
+		END_IF;
+		IF Total<-(DATA031) THEN
+			Total:=-(DATA031);
+		END_IF;
+		Ivalue:=I*Total/100.00;  //100.00;  //I值放大100倍
+	END_IF;
+	R_TRIG_instance1(CLK:=PD_Control , Q=> Trigger1);
+	IF Trigger1=TRUE THEN
+			D_Point:=0.0;
+		END_IF;
+	Dvalue:=D*(Ek-D_Point);
+	D_Point:=Ek;
+	IF (ABS(Ek)-stander)>0.0 THEN
+		PD_Control:=TRUE; 
+		PID_Control:=FALSE;
+	ELSIF (ABS(Ek)-stander)<0.0 THEN
+		PID_Control:=TRUE;
+		PD_Control:=FALSE; 
+	END_IF;
+	IF PD_Control THEN
+		MV:=100*(Pvalue+Dvalue)/(DATA03*100.00+DATA03*D);
+	ELSIF PID_Control THEN
+		MV:=100*(Pvalue+Dvalue)/(DATA03*100.00+DATA03*D)+100*Ivalue/(DATA031);
+	END_IF;
+  END_IF;
+  IF direction=FALSE THEN
+	  MV_OUT:=LIMIT(REAL#-100.00,MV,REAL#100.00);
+  ELSE
+	  MV_OUT:=-(LIMIT(REAL#-100.00,MV,REAL#100.00));
+  END_IF; 	
+ELSE
+	Total:=0.00;
+	MV_OUT:=0.00;
+	DONE:=FALSE;	
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="Unwinding_PID">
+      <LineId Id="9" Count="0" />
+      <LineId Id="98" Count="1" />
+      <LineId Id="105" Count="3" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="116" Count="6" />
+      <LineId Id="124" Count="9" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="135" Count="16" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="179" Count="1" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="159" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

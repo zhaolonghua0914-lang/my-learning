@@ -1,0 +1,467 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MES_JT_ZT" Id="{32907fa3-5303-44f2-b143-4f0cb7de8f77}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MES_JT_ZT
+VAR
+	status_switching:R_TRIG;
+    status_switching2:R_TRIG;
+	Equipment_parameter_check_R:R_TRIG;
+    Bullet_window1 : BOOL ;//弹窗条件
+    Bullet_window2 : BOOL ;//弹窗
+    Bounce_TON :TON ;//弹窗延时
+    Status_switching_TON :TON ;//状态切换延时
+    Status_switching2_TON :TON ;//状态切换延时2
+    Standby_TON :TON;//待料状态切换延时
+	
+	ExcelRate_R	:R_TRIG;	//Mes读取优报表
+	MTDExcelRate_R:R_TRIG;	//模切给叠台数据完成
+	Mes1RdStep	:UINT;	//Mes1读数据步	
+	tonWaitMQdata	:TON;	//等待模切数据超时
+	ton2	:TON;
+	rt:R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+status_switching(CLK:=Device_Status_code=9  , Q=> );
+status_switching2(CLK:=Device_Status_code=18  , Q=> ); 
+IF status_switching.Q OR status_switching2.Q THEN
+   Bullet_window2:=TRUE ;
+END_IF
+  
+ Bounce_TON(IN:= , PT:=(UDINT_TO_TIME(P3User2_Par.Bounce_time*1000)) , Q=> , ET=> );
+ Status_switching_TON(IN:= , PT:=(UDINT_TO_TIME(P3User2_Par.Status_switching_time*1000)) , Q=> , ET=> );
+ Status_switching2_TON(IN:= , PT:=(UDINT_TO_TIME(P3User2_Par.Status_switching_time*1000)) , Q=> , ET=> );
+ Standby_TON(IN:=(Manual_click_code=6) , PT:=(UDINT_TO_TIME(P3User2_Par.Standby_time*1000)) , Q=> , ET=> );
+
+ 
+IF Bullet_window2 THEN
+   Bounce_TON.IN:=TRUE ;
+ELSE
+   Bounce_TON.IN:=FALSE ;
+END_IF
+
+IF Bounce_TON.Q  THEN
+   Bullet_window:=TRUE ;//弹窗触发
+   Bullet_window2 :=FALSE ;
+  
+END_IF
+ 
+IF P3Press.Make_sure THEN
+   Bullet_window:=FALSE ;//弹窗关闭
+   P3Press.Make_sure:=FALSE ;
+END_IF
+ 
+//设备状态
+IF P2Btn.P2M1_Tricolorlamp_Green OR P2Btn.P2M2_Tricolorlamp_Green OR P2Btn.P2M3_Tricolorlamp_Green THEN
+	 P3Press.Device_Status_code:=7 ; //设备自动中
+	 Status_switching_TON.IN:=FALSE ;
+	 Status_switching2_TON.IN:=FALSE ;
+END_IF
+
+IF ((P2Btn.P2M1_Tricolorlamp_Red AND P2Btn.P2M2_Tricolorlamp_Red AND P2Btn.P2M3_Tricolorlamp_Red  ) OR 
+   ((P2M1_DTSysState.bErrorStop OR P2M1_WJSysState.bErrorStop OR P2M1_WJSysState.bErrorStop) AND 
+    (P2M2_DTSysState.bErrorStop OR P2M2_WJSysState.bErrorStop OR P2M2_WJSysState.bErrorStop) AND 
+   (P2M3_DTSysState.bErrorStop OR P2M3_WJSysState.bErrorStop OR P2M3_WJSysState.bErrorStop)) OR
+((P2M1_DTSysState.bErrorStop OR P2M1_WJSysState.bErrorStop OR P2M1_WJSysState.bErrorStop) AND (P2M2_DTSysState.bErrorStop OR P2M2_WJSysState.bErrorStop OR P2M2_WJSysState.bErrorStop)) OR
+((P2M1_DTSysState.bErrorStop OR P2M1_WJSysState.bErrorStop OR P2M1_WJSysState.bErrorStop) AND (P2M3_DTSysState.bErrorStop OR P2M3_WJSysState.bErrorStop OR P2M3_WJSysState.bErrorStop)) OR
+((P2M2_DTSysState.bErrorStop OR P2M2_WJSysState.bErrorStop OR P2M2_WJSysState.bErrorStop) AND (P2M3_DTSysState.bErrorStop OR P2M3_WJSysState.bErrorStop OR P2M3_WJSysState.bErrorStop))) AND
+NOT P2Btn.P2M1_Tricolorlamp_Green AND NOT P2Btn.P2M2_Tricolorlamp_Green AND NOT P2Btn.P2M3_Tricolorlamp_Green AND Manual_click_code<>6  THEN
+     Status_switching_TON.IN:=TRUE ;
+	 Status_switching2_TON.IN:=FALSE ;
+END_IF
+
+IF  Status_switching_TON.Q THEN 
+   P3Press.Device_Status_code:=9 ; //设备故障
+  
+END_IF
+
+IF ((P2Btn.P2M1_Tricolorlamp_Yellow AND NOT P2M1_DTSysState.bErrorStop AND NOT P2M1_WJSysState.bErrorStop AND NOT P2M1_WJSysState.bErrorStop AND
+    P2Btn.P2M2_Tricolorlamp_Yellow AND NOT P2M2_DTSysState.bErrorStop AND NOT P2M2_WJSysState.bErrorStop AND NOT P2M2_WJSysState.bErrorStop AND
+    P2Btn.P2M3_Tricolorlamp_Yellow AND NOT P2M3_DTSysState.bErrorStop AND NOT P2M3_WJSysState.bErrorStop AND NOT P2M3_WJSysState.bErrorStop ) OR 
+	((P2M1_DTSysState.bErrorStop OR P2M1_WJSysState.bErrorStop OR P2M1_WJSysState.bErrorStop) AND
+    (P2Btn.P2M2_Tricolorlamp_Yellow AND NOT P2M2_DTSysState.bErrorStop AND NOT P2M2_WJSysState.bErrorStop AND NOT P2M2_WJSysState.bErrorStop) AND
+	(P2Btn.P2M3_Tricolorlamp_Yellow AND NOT P2M3_DTSysState.bErrorStop AND NOT P2M3_WJSysState.bErrorStop AND NOT P2M3_WJSysState.bErrorStop)) OR
+	((P2Btn.P2M1_Tricolorlamp_Yellow AND NOT P2M1_DTSysState.bErrorStop AND NOT P2M1_WJSysState.bErrorStop AND NOT P2M1_WJSysState.bErrorStop) AND
+	(P2M2_DTSysState.bErrorStop OR P2M2_WJSysState.bErrorStop OR P2M2_WJSysState.bErrorStop) AND	
+	(P2Btn.P2M3_Tricolorlamp_Yellow AND NOT P2M3_DTSysState.bErrorStop AND NOT P2M3_WJSysState.bErrorStop AND NOT P2M3_WJSysState.bErrorStop)) OR
+	((P2Btn.P2M1_Tricolorlamp_Yellow AND NOT P2M1_DTSysState.bErrorStop AND NOT P2M1_WJSysState.bErrorStop AND NOT P2M1_WJSysState.bErrorStop) AND
+	(P2Btn.P2M2_Tricolorlamp_Yellow AND NOT P2M2_DTSysState.bErrorStop AND NOT P2M2_WJSysState.bErrorStop AND NOT P2M2_WJSysState.bErrorStop) AND
+	(P2M3_DTSysState.bErrorStop OR P2M3_WJSysState.bErrorStop OR P2M3_WJSysState.bErrorStop) ) OR  Standby_TON.Q) AND
+	NOT P2Btn.P2M1_Tricolorlamp_Green AND NOT P2Btn.P2M2_Tricolorlamp_Green AND NOT P2Btn.P2M3_Tricolorlamp_Green THEN
+	 Status_switching2_TON.IN:=TRUE ;
+	 Status_switching_TON.IN:=FALSE ;
+END_IF
+
+IF  Status_switching2_TON.Q THEN 
+    P3Press.Device_Status_code:=18 ; //设备待机
+END_IF	
+
+Equipment_parameter_check_R(CLK:=Equipment_parameter_check=2  , Q=> ); //Equipment_parameter_check=1参数校验OK,Equipment_parameter_check=1参数校验NG
+IF Equipment_parameter_check_R.Q THEN
+   P3_Error[40]:=TRUE ;	//MES校验热压、称重、测厚参数报警，请检查参数设置s是否正确
+   Equipment_parameter_check:=0 ;
+END_IF
+
+//xfp20240315 与MES交互优报表
+
+ton2(IN:=NOT ton2.Q , PT:=T#5M , Q=> , ET=> );
+IF ton2.Q THEN
+   Mes1.uOther[0]:=1;
+END_IF
+ExcelRate_R(clk:=(Mes1.uOther[0]=1),Q=>);	//MES读取触发上升沿
+MTDExcelRate_R(clk:=(MTD_Mes1.uOther[0]=2),Q=>);	//MTD完成上升沿
+tonWaitMQdata(pt:=T#2S);
+IF ExcelRate_R.Q THEN
+	Mes1RdStep:=10;
+END_IF	
+CASE Mes1RdStep OF
+	10:
+		DTM_Mes1.uOther[0]:=1;
+		Mes1RdStep:=20;
+	20:	
+		IF MTDExcelRate_R.Q THEN
+			DTM_Mes1.uOther[0]:=0;
+			Mes1RdStep:=30;
+		END_IF
+		IF NOT tonWaitMQdata.Q THEN
+			tonWaitMQdata.IN:=TRUE;
+		ELSE
+			tonWaitMQdata.IN:=FALSE;
+			Mes1.uOther[0]:=3;
+			DTM_Mes1.uOther[0]:=0;
+			Mes1RdStep:=0;	
+		END_IF
+	30:
+		tonWaitMQdata.IN:=FALSE;
+		IF system.stTime.wHour >=8 AND system.stTime.wHour <20 THEN
+			Mes1.rExcelRate[0]:=1;	//班次，白班
+			Mes1.rExcelRate[1]:=0;
+			Mes1.rExcelRate[2]:=P3_Production.HMI_DayOkCount;	//生产良品数量
+			Mes1.rExcelRate[3]:=P3_Production.HMI_DayNgCount;	//生产不良品数量
+			Mes1.rExcelRate[4]:=P3_Production.HMI_DayQualified;	//良率			
+			Mes1.rExcelRate[5]	:=MTD_Mes1.rExcelRate[0];
+			Mes1.rExcelRate[6]	:=MTD_Mes1.rExcelRate[1];
+			Mes1.rExcelRate[7]	:=MTD_Mes1.rExcelRate[2];
+			Mes1.rExcelRate[8]	:=MTD_Mes1.rExcelRate[3];
+			Mes1.rExcelRate[9]	:=MTD_Mes1.rExcelRate[4];
+			Mes1.rExcelRate[10]	:=MTD_Mes1.rExcelRate[5];
+			Mes1.rExcelRate[11]	:=MTD_Mes1.rExcelRate[6];
+			Mes1.rExcelRate[12]	:=MTD_Mes1.rExcelRate[7];
+			Mes1.rExcelRate[13]	:=MTD_Mes1.rExcelRate[8];
+			Mes1.rExcelRate[14]	:=MTD_Mes1.rExcelRate[9];
+			Mes1.rExcelRate[15]	:=MTD_Mes1.rExcelRate[10];
+			Mes1.rExcelRate[16]	:=MTD_Mes1.rExcelRate[11];
+			Mes1.rExcelRate[17]	:=MTD_Mes1.rExcelRate[12];
+			Mes1.rExcelRate[18]	:=MTD_Mes1.rExcelRate[13];
+			Mes1.rExcelRate[19]	:=MTD_Mes1.rExcelRate[14];
+			Mes1.rExcelRate[20]	:=MTD_Mes1.rExcelRate[15];
+			Mes1.rExcelRate[21]	:=MTD_Mes1.rExcelRate[16];
+			Mes1.rExcelRate[22]	:=MTD_Mes1.rExcelRate[17];
+			Mes1.rExcelRate[23]	:=MTD_Mes1.rExcelRate[18];
+			Mes1.rExcelRate[24]	:=MTD_Mes1.rExcelRate[19];
+			Mes1.rExcelRate[25]	:=MTD_Mes1.rExcelRate[20];
+			Mes1.rExcelRate[26]	:=MTD_Mes1.rExcelRate[21];
+			Mes1.rExcelRate[27]	:=MTD_Mes1.rExcelRate[22];
+			Mes1.rExcelRate[28]	:=MTD_Mes1.rExcelRate[23];
+			Mes1.rExcelRate[29]	:=MTD_Mes1.rExcelRate[24];
+			Mes1.rExcelRate[30]	:=MTD_Mes1.rExcelRate[25];
+			Mes1.rExcelRate[31]	:=MTD_Mes1.rExcelRate[26];			
+			Mes1.rExcelRate[32]:=User01.P2M1_CCD.AnRec.DayNgclassification.X1_NG;	//叠台一正极X1纠偏轴不良数
+			Mes1.rExcelRate[33]:=User01.P2M1_CCD.AnRec.DayNgclassification.X2_NG;	//叠台一正极X2纠偏轴不良数
+			Mes1.rExcelRate[34]:=User01.P2M1_CCD.AnRec.DayNgclassification.Y_NG;	//叠台一正极Y纠偏轴不良数
+			Mes1.rExcelRate[35]:=User01.P2M1_CCD.AnRec.DayNgclassification.R_NG;	//叠台一正极R角轮廓不良数
+			Mes1.rExcelRate[36]:=User01.P2M1_CCD.AnRec.DayNgclassification.other_NG;	//叠台一正极其他类不良数
+			Mes1.rExcelRate[37]:=User01.P2M2_CCD.AnRec.DayNgclassification.X1_NG;	//叠台二正极X1纠偏轴不良数
+			Mes1.rExcelRate[38]:=User01.P2M2_CCD.AnRec.DayNgclassification.X2_NG;	//叠台二正极X2纠偏轴不良数
+			Mes1.rExcelRate[39]:=User01.P2M2_CCD.AnRec.DayNgclassification.Y_NG;	//叠台二正极Y纠偏轴不良数
+			Mes1.rExcelRate[40]:=User01.P2M2_CCD.AnRec.DayNgclassification.R_NG;	//叠台二正极R角轮廓不良数
+			Mes1.rExcelRate[41]:=User01.P2M2_CCD.AnRec.DayNgclassification.other_NG;	//叠台二正极其他类不良数
+			Mes1.rExcelRate[42]:=User01.P2M3_CCD.AnRec.DayNgclassification.X1_NG;	//叠台三正极X1纠偏轴不良数
+			Mes1.rExcelRate[43]:=User01.P2M3_CCD.AnRec.DayNgclassification.X2_NG;	//叠台三正极X2纠偏轴不良数
+			Mes1.rExcelRate[44]:=User01.P2M3_CCD.AnRec.DayNgclassification.Y_NG;	//叠台三正极Y纠偏轴不良数
+			Mes1.rExcelRate[45]:=User01.P2M3_CCD.AnRec.DayNgclassification.R_NG;	//叠台三正极R角轮廓不良数
+			Mes1.rExcelRate[46]:=User01.P2M3_CCD.AnRec.DayNgclassification.other_NG;	//叠台三正极其他类不良数
+			//Mes1.rExcelRate[47]:=User01.P2M1_MachCtrl.DT_b.DT_DayHough_U;	//1#叠台OH不良，NG个数
+			Mes1.rExcelRate[47]:=User01.P2M1_MachCtrl.DT_b.DT_DayHoughAn;		//1#叠台OH不良，正极NG数
+			//Mes1.rExcelRate[49]:=User01.P2M2_MachCtrl.DT_b.DT_DayHough_U;	//2#叠台OH不良，NG个数
+			Mes1.rExcelRate[49]:=User01.P2M2_MachCtrl.DT_b.DT_DayHoughAn;		//2#叠台OH不良，正极NG数
+		//	Mes1.rExcelRate[51]:=User01.P2M3_MachCtrl.DT_b.DT_DayHough_U;	//3#叠台OH不良，NG个数
+			Mes1.rExcelRate[51]:=User01.P2M3_MachCtrl.DT_b.DT_DayHoughAn;		//3#叠台OH不良，正极NG数
+			Mes1.rExcelRate[53]:=P3_Production.NgPerHourDayCount[2];	//hi-potNG
+			Mes1.rExcelRate[54]:=P3_Production.NgPerHourDayCount[4];	//厚度NG
+			Mes1.rExcelRate[55]:=P3_Production.NgPerHourDayCount[6];	//烘烤超时NG
+			Mes1.rExcelRate[56]:=P3_Production.NgPerHourDayCount[5];	//MESNG
+			Mes1.rExcelRate[57]:=P3_Production.NgPerHourDayCount[1];	//扫码NG
+			Mes1.rExcelRate[58]:=P3_Production.NgPerHourDayCount[3];	//其他不良	
+			Mes1.rExcelRate[59]	:=MTD_Mes1.rExcelRate[27];
+			Mes1.rExcelRate[60]	:=MTD_Mes1.rExcelRate[28];
+			Mes1.rExcelRate[61]	:=MTD_Mes1.rExcelRate[29];
+			Mes1.rExcelRate[62]	:=MTD_Mes1.rExcelRate[30];
+			Mes1.rExcelRate[63]	:=MTD_Mes1.rExcelRate[31];
+			Mes1.rExcelRate[64]	:=MTD_Mes1.rExcelRate[32];
+			Mes1.rExcelRate[65]	:=MTD_Mes1.rExcelRate[33];
+			Mes1.rExcelRate[66]	:=MTD_Mes1.rExcelRate[34];
+			Mes1.rExcelRate[67]	:=MTD_Mes1.rExcelRate[35];
+			Mes1.rExcelRate[68]	:=MTD_Mes1.rExcelRate[36];
+			Mes1.rExcelRate[69]	:=MTD_Mes1.rExcelRate[37];
+			Mes1.rExcelRate[70]	:=MTD_Mes1.rExcelRate[38];
+			Mes1.rExcelRate[71]	:=MTD_Mes1.rExcelRate[39];
+			Mes1.rExcelRate[72]	:=MTD_Mes1.rExcelRate[40];
+			Mes1.rExcelRate[73]	:=MTD_Mes1.rExcelRate[41];
+			Mes1.rExcelRate[74]	:=MTD_Mes1.rExcelRate[42];
+			Mes1.rExcelRate[75]	:=MTD_Mes1.rExcelRate[43];
+			Mes1.rExcelRate[76]	:=MTD_Mes1.rExcelRate[44];
+			Mes1.rExcelRate[77]	:=MTD_Mes1.rExcelRate[45];
+			Mes1.rExcelRate[78]	:=MTD_Mes1.rExcelRate[46];
+			Mes1.rExcelRate[79]	:=MTD_Mes1.rExcelRate[47];
+			Mes1.rExcelRate[80]	:=MTD_Mes1.rExcelRate[48];
+			Mes1.rExcelRate[81]	:=MTD_Mes1.rExcelRate[49];
+			Mes1.rExcelRate[82]	:=MTD_Mes1.rExcelRate[50];
+			Mes1.rExcelRate[83]	:=MTD_Mes1.rExcelRate[51];
+			Mes1.rExcelRate[84]	:=MTD_Mes1.rExcelRate[52];			
+			Mes1.rExcelRate[85]:=User01.P2M1_CCD.CaRec.DayNgclassification.X1_NG;	//叠台一负极X1纠偏轴不良数
+			Mes1.rExcelRate[86]:=User01.P2M1_CCD.CaRec.DayNgclassification.X2_NG;	//叠台一负极X2纠偏轴不良数
+			Mes1.rExcelRate[87]:=User01.P2M1_CCD.CaRec.DayNgclassification.Y_NG;	//叠台一负极Y纠偏轴不良数
+			Mes1.rExcelRate[88]:=User01.P2M1_CCD.CaRec.DayNgclassification.R_NG;	//叠台一负极R角轮廓不良数
+			Mes1.rExcelRate[89]:=User01.P2M1_CCD.CaRec.DayNgclassification.other_NG;	//叠台一负极其他类不良数
+			Mes1.rExcelRate[90]:=User01.P2M2_CCD.CaRec.DayNgclassification.X1_NG;	//叠台二负极X1纠偏轴不良数
+			Mes1.rExcelRate[91]:=User01.P2M2_CCD.CaRec.DayNgclassification.X2_NG;	//叠台二负极X2纠偏轴不良数
+			Mes1.rExcelRate[92]:=User01.P2M2_CCD.CaRec.DayNgclassification.Y_NG;	//叠台二负极Y纠偏轴不良数
+			Mes1.rExcelRate[93]:=User01.P2M2_CCD.CaRec.DayNgclassification.R_NG;	//叠台二负极R角轮廓不良数
+			Mes1.rExcelRate[94]:=User01.P2M2_CCD.CaRec.DayNgclassification.other_NG;	//叠台二负极其他类不良数
+			Mes1.rExcelRate[95]:=User01.P2M3_CCD.CaRec.DayNgclassification.X1_NG;	//叠台三负极X1纠偏轴不良数
+			Mes1.rExcelRate[96]:=User01.P2M3_CCD.CaRec.DayNgclassification.X2_NG;	//叠台三负极X2纠偏轴不良数
+			Mes1.rExcelRate[97]:=User01.P2M3_CCD.CaRec.DayNgclassification.Y_NG;	//叠台三负极Y纠偏轴不良数
+			Mes1.rExcelRate[98]:=User01.P2M3_CCD.CaRec.DayNgclassification.R_NG;	//叠台三负极R角轮廓不良数
+			Mes1.rExcelRate[99]:=User01.P2M3_CCD.CaRec.DayNgclassification.other_NG;	//叠台三负极其他类不良数			
+			Mes1.rExcelRate[100]:=User01.P2M1_MachCtrl.DT_b.DT_DayHoughCa;	//1#叠台OH不良负极NG数
+			Mes1.rExcelRate[101]:=User01.P2M2_MachCtrl.DT_b.DT_DayHoughCa;	//2#叠台OH不良负极NG数
+			Mes1.rExcelRate[102]:=User01.P2M3_MachCtrl.DT_b.DT_DayHoughCa;	//3#叠台OH不良负极NG数
+			Mes1.rExcelRate[103]	:=MTD_Mes1.rExcelRate[53];			
+			Mes1.rExcelRate[104]	:=MTD_Mes1.rExcelRate[54];	
+			Mes1.rExcelRate[105]	:=MTD_Mes1.rExcelRate[55];			
+			Mes1.rExcelRate[106]	:=MTD_Mes1.rExcelRate[56];	
+			Mes1.rExcelRate[107]	:=MTD_Mes1.rExcelRate[57];			
+			Mes1.rExcelRate[108]	:=MTD_Mes1.rExcelRate[58];	
+			Mes1.rExcelRate[109]	:=(MTD_Mes1.rExcelRate[0]+MTD_Mes1.rExcelRate[15])/P2M1_Par.stDT_date.An_Quantity;		
+			Mes1.rExcelRate[110]	:=(MTD_Mes1.rExcelRate[27]+MTD_Mes1.rExcelRate[41])/P2M1_Par.stDT_date.Ca_Quantity;			
+			Mes1.uOther[0]:=2;	//plc数据写入完成
+			Mes1RdStep:=0;
+		ELSIF system.stTime.wHour >=20 OR system.stTime.wHour<8 THEN
+			Mes1.rExcelRate[0]:=2;	//班次，夜班
+			Mes1.rExcelRate[1]:=0;
+			Mes1.rExcelRate[2]:=P3_Production.HMI_NightOkCount;	//生产良品数量
+			Mes1.rExcelRate[3]:=P3_Production.HMI_NightNgCount;	//生产不良品数量
+			Mes1.rExcelRate[4]:=P3_Production.HMI_NightQualified;	//良率			
+			Mes1.rExcelRate[5]	:=MTD_Mes1.rExcelRate[0];
+			Mes1.rExcelRate[6]	:=MTD_Mes1.rExcelRate[1];
+			Mes1.rExcelRate[7]	:=MTD_Mes1.rExcelRate[2];
+			Mes1.rExcelRate[8]	:=MTD_Mes1.rExcelRate[3];
+			Mes1.rExcelRate[9]	:=MTD_Mes1.rExcelRate[4];
+			Mes1.rExcelRate[10]	:=MTD_Mes1.rExcelRate[5];
+			Mes1.rExcelRate[11]	:=MTD_Mes1.rExcelRate[6];
+			Mes1.rExcelRate[12]	:=MTD_Mes1.rExcelRate[7];
+			Mes1.rExcelRate[13]	:=MTD_Mes1.rExcelRate[8];
+			Mes1.rExcelRate[14]	:=MTD_Mes1.rExcelRate[9];
+			Mes1.rExcelRate[15]	:=MTD_Mes1.rExcelRate[10];
+			Mes1.rExcelRate[16]	:=MTD_Mes1.rExcelRate[11];
+			Mes1.rExcelRate[17]	:=MTD_Mes1.rExcelRate[12];
+			Mes1.rExcelRate[18]	:=MTD_Mes1.rExcelRate[13];
+			Mes1.rExcelRate[19]	:=MTD_Mes1.rExcelRate[14];
+			Mes1.rExcelRate[20]	:=MTD_Mes1.rExcelRate[15];
+			Mes1.rExcelRate[21]	:=MTD_Mes1.rExcelRate[16];
+			Mes1.rExcelRate[22]	:=MTD_Mes1.rExcelRate[17];
+			Mes1.rExcelRate[23]	:=MTD_Mes1.rExcelRate[18];
+			Mes1.rExcelRate[24]	:=MTD_Mes1.rExcelRate[19];
+			Mes1.rExcelRate[25]	:=MTD_Mes1.rExcelRate[20];
+			Mes1.rExcelRate[26]	:=MTD_Mes1.rExcelRate[21];
+			Mes1.rExcelRate[27]	:=MTD_Mes1.rExcelRate[22];
+			Mes1.rExcelRate[28]	:=MTD_Mes1.rExcelRate[23];
+			Mes1.rExcelRate[29]	:=MTD_Mes1.rExcelRate[24];
+			Mes1.rExcelRate[30]	:=MTD_Mes1.rExcelRate[25];
+			Mes1.rExcelRate[31]	:=MTD_Mes1.rExcelRate[26];			
+			Mes1.rExcelRate[32]:=User01.P2M1_CCD.AnRec.NightNgclassification.X1_NG;	//叠台一正极X1纠偏轴不良数
+			Mes1.rExcelRate[33]:=User01.P2M1_CCD.AnRec.NightNgclassification.X2_NG;	//叠台一正极X2纠偏轴不良数
+			Mes1.rExcelRate[34]:=User01.P2M1_CCD.AnRec.NightNgclassification.Y_NG;	//叠台一正极Y纠偏轴不良数
+			Mes1.rExcelRate[35]:=User01.P2M1_CCD.AnRec.NightNgclassification.R_NG;	//叠台一正极R角轮廓不良数
+			Mes1.rExcelRate[36]:=User01.P2M1_CCD.AnRec.NightNgclassification.other_NG;	//叠台一正极其他类不良数
+			Mes1.rExcelRate[37]:=User01.P2M2_CCD.AnRec.NightNgclassification.X1_NG;	//叠台二正极X1纠偏轴不良数
+			Mes1.rExcelRate[38]:=User01.P2M2_CCD.AnRec.NightNgclassification.X2_NG;	//叠台二正极X2纠偏轴不良数
+			Mes1.rExcelRate[39]:=User01.P2M2_CCD.AnRec.NightNgclassification.Y_NG;	//叠台二正极Y纠偏轴不良数
+			Mes1.rExcelRate[40]:=User01.P2M2_CCD.AnRec.NightNgclassification.R_NG;	//叠台二正极R角轮廓不良数
+			Mes1.rExcelRate[41]:=User01.P2M2_CCD.AnRec.NightNgclassification.other_NG;	//叠台二正极其他类不良数
+			Mes1.rExcelRate[42]:=User01.P2M3_CCD.AnRec.NightNgclassification.X1_NG;	//叠台三正极X1纠偏轴不良数
+			Mes1.rExcelRate[43]:=User01.P2M3_CCD.AnRec.NightNgclassification.X2_NG;	//叠台三正极X2纠偏轴不良数
+			Mes1.rExcelRate[44]:=User01.P2M3_CCD.AnRec.NightNgclassification.Y_NG;	//叠台三正极Y纠偏轴不良数
+			Mes1.rExcelRate[45]:=User01.P2M3_CCD.AnRec.NightNgclassification.R_NG;	//叠台三正极R角轮廓不良数
+			Mes1.rExcelRate[46]:=User01.P2M3_CCD.AnRec.NightNgclassification.other_NG;	//叠台三正极其他类不良数
+		//	Mes1.rExcelRate[47]:=User01.P2M1_MachCtrl.DT_b.DT_NightHough_U;	//1#叠台OH不良，NG个数
+			Mes1.rExcelRate[47]:=User01.P2M1_MachCtrl.DT_b.DT_NightHoughAn;		//1#叠台OH不良，正极NG数
+		//	Mes1.rExcelRate[49]:=User01.P2M2_MachCtrl.DT_b.DT_NightHough_U;	//2#叠台OH不良，NG个数
+			Mes1.rExcelRate[49]:=User01.P2M2_MachCtrl.DT_b.DT_NightHoughAn;		//2#叠台OH不良，正极NG数
+		//	Mes1.rExcelRate[51]:=User01.P2M3_MachCtrl.DT_b.DT_NightHough_U;	//3#叠台OH不良，NG个数
+			Mes1.rExcelRate[51]:=User01.P2M3_MachCtrl.DT_b.DT_NightHoughAn;		//3#叠台OH不良，正极NG数
+			Mes1.rExcelRate[53]:=P3_Production.NgPerHourNightCount[2];	//hi-potNG
+			Mes1.rExcelRate[54]:=P3_Production.NgPerHourNightCount[4];	//厚度NG
+			Mes1.rExcelRate[55]:=P3_Production.NgPerHourNightCount[6];	//烘烤超时NG
+			Mes1.rExcelRate[56]:=P3_Production.NgPerHourNightCount[5];	//MESNG
+			Mes1.rExcelRate[57]:=P3_Production.NgPerHourNightCount[1];	//扫码NG
+			Mes1.rExcelRate[58]:=P3_Production.NgPerHourNightCount[3];	//其他不良	
+			Mes1.rExcelRate[59]	:=MTD_Mes1.rExcelRate[27];
+			Mes1.rExcelRate[60]	:=MTD_Mes1.rExcelRate[28];
+			Mes1.rExcelRate[61]	:=MTD_Mes1.rExcelRate[29];
+			Mes1.rExcelRate[62]	:=MTD_Mes1.rExcelRate[30];
+			Mes1.rExcelRate[63]	:=MTD_Mes1.rExcelRate[31];
+			Mes1.rExcelRate[64]	:=MTD_Mes1.rExcelRate[32];
+			Mes1.rExcelRate[65]	:=MTD_Mes1.rExcelRate[33];
+			Mes1.rExcelRate[66]	:=MTD_Mes1.rExcelRate[34];
+			Mes1.rExcelRate[67]	:=MTD_Mes1.rExcelRate[35];
+			Mes1.rExcelRate[68]	:=MTD_Mes1.rExcelRate[36];
+			Mes1.rExcelRate[69]	:=MTD_Mes1.rExcelRate[37];
+			Mes1.rExcelRate[70]	:=MTD_Mes1.rExcelRate[38];
+			Mes1.rExcelRate[71]	:=MTD_Mes1.rExcelRate[39];
+			Mes1.rExcelRate[72]	:=MTD_Mes1.rExcelRate[40];
+			Mes1.rExcelRate[73]	:=MTD_Mes1.rExcelRate[41];
+			Mes1.rExcelRate[74]	:=MTD_Mes1.rExcelRate[42];
+			Mes1.rExcelRate[75]	:=MTD_Mes1.rExcelRate[43];
+			Mes1.rExcelRate[76]	:=MTD_Mes1.rExcelRate[44];
+			Mes1.rExcelRate[77]	:=MTD_Mes1.rExcelRate[45];
+			Mes1.rExcelRate[78]	:=MTD_Mes1.rExcelRate[46];
+			Mes1.rExcelRate[79]	:=MTD_Mes1.rExcelRate[47];
+			Mes1.rExcelRate[80]	:=MTD_Mes1.rExcelRate[48];
+			Mes1.rExcelRate[81]	:=MTD_Mes1.rExcelRate[49];
+			Mes1.rExcelRate[82]	:=MTD_Mes1.rExcelRate[50];
+			Mes1.rExcelRate[83]	:=MTD_Mes1.rExcelRate[51];
+			Mes1.rExcelRate[84]	:=MTD_Mes1.rExcelRate[52];			
+			Mes1.rExcelRate[85]:=User01.P2M1_CCD.CaRec.NightNgclassification.X1_NG;	//叠台一负极X1纠偏轴不良数
+			Mes1.rExcelRate[86]:=User01.P2M1_CCD.CaRec.NightNgclassification.X2_NG;	//叠台一负极X2纠偏轴不良数
+			Mes1.rExcelRate[87]:=User01.P2M1_CCD.CaRec.NightNgclassification.Y_NG;	//叠台一负极Y纠偏轴不良数
+			Mes1.rExcelRate[88]:=User01.P2M1_CCD.CaRec.NightNgclassification.R_NG;	//叠台一负极R角轮廓不良数
+			Mes1.rExcelRate[89]:=User01.P2M1_CCD.CaRec.NightNgclassification.other_NG;	//叠台一负极其他类不良数
+			Mes1.rExcelRate[90]:=User01.P2M2_CCD.CaRec.NightNgclassification.X1_NG;	//叠台二负极X1纠偏轴不良数
+			Mes1.rExcelRate[91]:=User01.P2M2_CCD.CaRec.NightNgclassification.X2_NG;	//叠台二负极X2纠偏轴不良数
+			Mes1.rExcelRate[92]:=User01.P2M2_CCD.CaRec.NightNgclassification.Y_NG;	//叠台二负极Y纠偏轴不良数
+			Mes1.rExcelRate[93]:=User01.P2M2_CCD.CaRec.NightNgclassification.R_NG;	//叠台二负极R角轮廓不良数
+			Mes1.rExcelRate[94]:=User01.P2M2_CCD.CaRec.NightNgclassification.other_NG;	//叠台二负极其他类不良数
+			Mes1.rExcelRate[95]:=User01.P2M3_CCD.CaRec.NightNgclassification.X1_NG;	//叠台三负极X1纠偏轴不良数
+			Mes1.rExcelRate[96]:=User01.P2M3_CCD.CaRec.NightNgclassification.X2_NG;	//叠台三负极X2纠偏轴不良数
+			Mes1.rExcelRate[97]:=User01.P2M3_CCD.CaRec.NightNgclassification.Y_NG;	//叠台三负极Y纠偏轴不良数
+			Mes1.rExcelRate[98]:=User01.P2M3_CCD.CaRec.NightNgclassification.R_NG;	//叠台三负极R角轮廓不良数
+			Mes1.rExcelRate[99]:=User01.P2M3_CCD.CaRec.NightNgclassification.other_NG;	//叠台三负极其他类不良数			
+			Mes1.rExcelRate[100]:=User01.P2M1_MachCtrl.DT_b.DT_NightHoughCa;	//1#叠台OH不良负极NG数
+			Mes1.rExcelRate[101]:=User01.P2M2_MachCtrl.DT_b.DT_NightHoughCa;	//2#叠台OH不良负极NG数
+			Mes1.rExcelRate[102]:=User01.P2M3_MachCtrl.DT_b.DT_NightHoughCa;	//3#叠台OH不良负极NG数
+			Mes1.rExcelRate[103]	:=MTD_Mes1.rExcelRate[53];			
+			Mes1.rExcelRate[104]	:=MTD_Mes1.rExcelRate[54];	
+			Mes1.rExcelRate[105]	:=MTD_Mes1.rExcelRate[55];			
+			Mes1.rExcelRate[106]	:=MTD_Mes1.rExcelRate[56];	
+			Mes1.rExcelRate[107]	:=MTD_Mes1.rExcelRate[57];			
+			Mes1.rExcelRate[108]	:=MTD_Mes1.rExcelRate[58];		
+     		Mes1.rExcelRate[109]	:=(MTD_Mes1.rExcelRate[0]+MTD_Mes1.rExcelRate[15])/P2M1_Par.stDT_date.An_Quantity;		
+			Mes1.rExcelRate[110]	:=(MTD_Mes1.rExcelRate[27]+MTD_Mes1.rExcelRate[41])/P2M1_Par.stDT_date.Ca_Quantity;	;		
+			Mes1.uOther[0]:=2;	//plc数据写入完成
+			Mes1RdStep:=0;
+		END_IF	
+END_CASE
+
+
+//功能开关状态
+Mes1.bFuncEN[1]:=MTD_Mes1.bFuncEN[1];//模切段CCD通讯开关状态
+Mes1.bFuncEN[2]:=MTD_Mes1.bFuncEN[2];//线扫CCD开关状态
+Mes1.bFuncEN[3]:=MTD_Mes1.bFuncEN[3];//冲R角定位开关状态
+Mes1.bFuncEN[4]:=MTD_Mes1.bFuncEN[4];//裁切定位开关状态
+Mes1.bFuncEN[5]:=MTD_Mes1.bFuncEN[5];//尺寸检测开关状态
+Mes1.bFuncEN[6]:=MTD_Mes1.bFuncEN[6];//物料校验功能开关状态
+Mes1.bFuncEN[7]:=MTD_Mes1.bFuncEN[7];//来料不良检测开关状态
+Mes1.bFuncEN[8]:=P2M1_Par.iModeEN.CCD_ChosesHMIEN;//一叠台CCD通讯开关状态
+Mes1.bFuncEN[9]:=P2M2_Par.iModeEN.CCD_ChosesHMIEN;
+Mes1.bFuncEN[10]:=P2M3_Par.iModeEN.CCD_ChosesHMIEN;
+Mes1.bFuncEN[11]:=P2M1_Par.iModeEN.DT_CCD_TwoModelEN;//一叠台CCD复检开关状态
+Mes1.bFuncEN[12]:=P2M2_Par.iModeEN.DT_CCD_TwoModelEN;
+Mes1.bFuncEN[13]:=P2M3_Par.iModeEN.DT_CCD_TwoModelEN;
+Mes1.bFuncEN[14]:=P2M1_Par.iModeEN.DT_OverhangEN;//一叠台对齐度开关状态
+Mes1.bFuncEN[15]:=P2M2_Par.iModeEN.DT_OverhangEN;
+Mes1.bFuncEN[16]:=P2M3_Par.iModeEN.DT_OverhangEN;
+Mes1.bFuncEN[17]:=P2M1_Par.iModeEN.DT_CellNG_TFEN;//一叠台对齐度踢废开关状态
+Mes1.bFuncEN[18]:=P2M2_Par.iModeEN.DT_CellNG_TFEN;
+Mes1.bFuncEN[19]:=P2M3_Par.iModeEN.DT_CellNG_TFEN;
+Mes1.bFuncEN[20]:=P2M1_MachCtrl.DT_b.PartNumberOff;//一叠台MES物料码校验开关状态
+Mes1.bFuncEN[21]:=P2M2_MachCtrl.DT_b.PartNumberOff;
+Mes1.bFuncEN[22]:=P2M3_MachCtrl.DT_b.PartNumberOff;
+Mes1.bFuncEN[23]:=P2M1_MachCtrl.DT_b.Yellowmark_TF;//一叠台隔膜色标开关状态
+Mes1.bFuncEN[24]:=P2M2_MachCtrl.DT_b.Yellowmark_TF;
+Mes1.bFuncEN[25]:=P2M3_MachCtrl.DT_b.Yellowmark_TF;
+Mes1.bFuncEN[26]:=P3User2_Par.Shield[1];//短路测试开关状态
+Mes1.bFuncEN[27]:=P3User2_Par.Shield[2];//称重测试开关状态
+Mes1.bFuncEN[28]:=P3User2_Par.Shield[3];//测厚测试开关状态
+Mes1.bFuncEN[29]:=P3User2_Par.Shield[8];//后段条码校验开关状态
+
+DTM_Mes1.bFuncEN[0]:=P3User2_Par.Shield[5];
+DTM_Mes1.bFuncEN[1]:=Mes1.Error[1];
+DTM_Mes1.bFuncEN[2]:=Mes1.Error[2];
+DTM_Mes1.bFuncEN[3]:=Mes1.Error[3];
+DTM_Mes1.bFuncEN[4]:=Mes1.Error[4];
+DTM_Mes1.bFuncEN[5]:=Mes1.Error[5];
+DTM_Mes1.bFuncEN[6]:=Mes1.Error[6];
+DTM_Mes1.bFuncEN[7]:=Mes1.Error[7];
+
+IF stSysState.hmiReset THEN
+	MEMSET(ADR(Mes1.Error),0,SIZEOF(Mes1.Error)); 
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="MES_JT_ZT">
+      <LineId Id="67" Count="72" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="143" Count="0" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="291" Count="0" />
+      <LineId Id="555" Count="1" />
+      <LineId Id="554" Count="0" />
+      <LineId Id="557" Count="1" />
+      <LineId Id="292" Count="23" />
+      <LineId Id="529" Count="0" />
+      <LineId Id="316" Count="103" />
+      <LineId Id="548" Count="1" />
+      <LineId Id="608" Count="0" />
+      <LineId Id="604" Count="0" />
+      <LineId Id="609" Count="0" />
+      <LineId Id="605" Count="0" />
+      <LineId Id="660" Count="0" />
+      <LineId Id="680" Count="0" />
+      <LineId Id="420" Count="0" />
+      <LineId Id="527" Count="0" />
+      <LineId Id="421" Count="103" />
+      <LineId Id="551" Count="1" />
+      <LineId Id="614" Count="0" />
+      <LineId Id="612" Count="0" />
+      <LineId Id="615" Count="0" />
+      <LineId Id="613" Count="0" />
+      <LineId Id="659" Count="0" />
+      <LineId Id="681" Count="0" />
+      <LineId Id="525" Count="0" />
+      <LineId Id="528" Count="0" />
+      <LineId Id="526" Count="0" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="587" Count="1" />
+      <LineId Id="581" Count="0" />
+      <LineId Id="166" Count="0" />
+      <LineId Id="582" Count="1" />
+      <LineId Id="559" Count="0" />
+      <LineId Id="584" Count="2" />
+      <LineId Id="560" Count="20" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="589" Count="0" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="590" Count="6" />
+      <LineId Id="636" Count="0" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="637" Count="1" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

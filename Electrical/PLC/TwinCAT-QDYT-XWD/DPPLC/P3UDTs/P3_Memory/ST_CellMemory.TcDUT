@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CellMemory" Id="{6fd21736-2a42-499b-b878-58f466d5e12a}">
+    <Declaration><![CDATA[TYPE ST_CellMemory :
+STRUCT
+Cell      				 :BOOL;//ON、有电芯，OFF、无电芯
+BlueGlue  				 :INT;//1、蓝胶OK，2、蓝胶NG
+ShortTest 				 :INT;//1、短路测试OK，2、短路测试NG
+Weight     				 :INT;//1、称重测试OK，2、称重测试NG
+Thickness  				 :INT;//1、测厚测试OK，2、测厚测试NG
+StickIDGlue_Finish :BOOL;//二维码胶贴胶完成信号
+
+DiaphragmUnwindingTension		:	REAL	;//	隔膜放卷张力
+DiaphragmUnwindingTension_max	:	REAL	;//	隔膜放卷张力-最大值
+DiaphragmUnwindingTension_min	:	REAL	;//	隔膜放卷张力-最小值
+DiaphragmUnwindingTension_ave	:	REAL	;//	隔膜放卷张力-平均值
+DiaphragmUnwindingTension_set	:	REAL	;//	隔膜放卷张力设定值
+DT_speed						:	REAL	;//	叠片速度
+
+Overhang_Result                     :ARRAY[1..240]  OF      INT;//对齐度每一片结果
+OverhandiPliesNo					:ARRAY[1..240]  OF 		INT;//返回极片层数
+
+An_Ear_Overhang_A_C					:ARRAY[1..120]  OF		REAL	;//	正极极耳侧A/C Overhang
+An_Ear_Overhang_S_CIL				:ARRAY[1..120]  OF		REAL	;//	正极极耳侧S/CIL Overhang
+An_Ear_Overhang_CIL_A				:ARRAY[1..120]  OF		REAL	;//	正极极耳侧CIL/A Overhang
+An_Ear_No_Overhang_A_C				:ARRAY[1..120]  OF		REAL	;//	正极非极耳侧A/C Overhang
+An_Ear_No_Overhang_S_A				:ARRAY[1..120]  OF		REAL	;//	正极非极耳侧S/A Overhang
+An_Ear_L_Overhang_A_C				:ARRAY[1..120]  OF		REAL	;//	正极左侧边 A/C Overhang
+An_Ear_L_Overhang_S_A				:ARRAY[1..120]  OF		REAL	;//	正极左侧边 S/A Overhang
+An_Ear_R_Overhang_A_C				:ARRAY[1..120]  OF		REAL	;//	正极右侧边 A/C Overhang
+An_Ear_R_Overhang_S_A				:ARRAY[1..120]  OF		REAL	;//	正极右侧边 S/A Overhang
+
+Ca_Ear_Overhang_A_C					:ARRAY[1..120]  OF		REAL	;//	负极极耳侧A/C Overhang
+Ca_Ear_Overhang_S_CIL				:ARRAY[1..120]  OF		REAL	;//	负极极耳侧S/CIL Overhang
+Ca_Ear_Overhang_CIL_A				:ARRAY[1..120]  OF		REAL	;//	负极极耳侧CIL/A Overhang
+Ca_Ear_No_Overhang_A_C				:ARRAY[1..120]  OF		REAL	;//	负极非极耳侧A/C Overhang
+Ca_Ear_No_Overhang_S_A				:ARRAY[1..120]  OF		REAL	;//	负极非极耳侧S/A Overhang
+Ca_Ear_L_Overhang_A_C				:ARRAY[1..120]  OF		REAL	;//	负极左侧边 A/C Overhang
+Ca_Ear_L_Overhang_S_A				:ARRAY[1..120]  OF		REAL	;//	负极左侧边 S/A Overhang
+Ca_Ear_R_Overhang_A_C				:ARRAY[1..120]  OF		REAL	;//	负极右侧边 A/C Overhang
+Ca_Ear_R_Overhang_S_A				:ARRAY[1..120]  OF		REAL	;//	负极右侧边 S/A Overhang
+
+
+An_PoleOverhandX2					:ARRAY[1..120]  OF		REAL	;//	正极片  极片与隔膜X2
+An_PoleOverhandY2					:ARRAY[1..120]  OF		REAL	;//	正极片  极片与隔膜Y2
+An_PoleOverhandX3					:ARRAY[1..120]  OF		REAL	;//	正极片  极片与隔膜X3
+An_PoleOverhandY3					:ARRAY[1..120]  OF		REAL	;//	正极片  极片与隔膜Y3
+An_AnCaOverhandX2					:ARRAY[1..120]  OF		REAL	;//	正极片  正极到负极X2
+An_AnCaOverhandY2					:ARRAY[1..120]  OF		REAL	;//	正极片  正极到负极Y2
+An_AnCaOverhandX3					:ARRAY[1..120]  OF		REAL	;//	正极片  正极到负极X3
+An_AnCaOverhandY3					:ARRAY[1..120]  OF		REAL	;//	正极片  正极到负极Y3
+An_AddOverhangX2					:		REAL	;//	正极片  极片整体对齐度X2
+An_AddOverhangY2					:		REAL	;//	正极片  极片整体对齐度Y2
+An_AddOverhangX3					:		REAL	;//	正极片  极片整体对齐度X3
+An_AddOverhangY3					:		REAL	;//	正极片  极片整体对齐度Y3
+
+
+Ca_PoleOverhandX2					:ARRAY[1..120]  OF		REAL	;//	负极片  极片与隔膜X2
+Ca_PoleOverhandY2					:ARRAY[1..120]  OF		REAL	;//	负极片  极片与隔膜Y2
+Ca_PoleOverhandX3					:ARRAY[1..120]  OF		REAL	;//	负极片  极片与隔膜X3
+Ca_PoleOverhandY3					:ARRAY[1..120]  OF		REAL	;//	负极片  极片与隔膜Y3
+Ca_AnCaOverhandX2					:ARRAY[1..120]  OF		REAL	;//	负极片  正极到负极X2
+Ca_AnCaOverhandY2					:ARRAY[1..120]  OF		REAL	;//	负极片  正极到负极Y2
+Ca_AnCaOverhandX3					:ARRAY[1..120]  OF		REAL	;//	负极片  正极到负极X3
+Ca_AnCaOverhandY3					:ARRAY[1..120]  OF		REAL	;//	负极片  正极到负极Y3
+Ca_AddOverhangX2					:		REAL	;//	负极片  极片整体对齐度X2
+Ca_AddOverhangY2					:		REAL	;//	负极片  极片整体对齐度Y2
+Ca_AddOverhangX3					:		REAL	;//	负极片  极片整体对齐度X3
+Ca_AddOverhangY3					:		REAL	;//	负极片  极片整体对齐度Y3
+
+Sequeue								:ARRAY[1..120]  OF		REAL     ;//系号（无意义）
+
+An_Cell_Overhang				:	REAL	;//	正极片整体对齐度-极耳侧
+An_Cell_Overhang_No				:	REAL	;//	正极片整体对齐度-非极耳侧
+An_Cell_Overhang_L				:	REAL	;//	正极片整体对齐度-左侧边
+An_Cell_Overhang_R				:	REAL	;//	正极片整体对齐度-右侧边
+Ca_Cell_Overhang				:	REAL	;//	负极片整体对齐度-极耳侧
+Ca_Cell_Overhang_No				:	REAL	;//	负极片整体对齐度-非极耳侧
+Ca_Cell_Overhang_L				:	REAL	;//	负极片整体对齐度-左侧边
+Ca_Cell_Overhang_R				:	REAL	;//	负极片整体对齐度-右侧边
+
+An_Quantity              :UINT;//正极叠片层数
+Ca_Quantity              :UINT;//负极叠片层数
+Machine_No				 :STRING;//叠片机编号
+DT_station_No			 :STRING;//叠台工位编号*
+Cleanliness_Time		 :INT;//洁净度测试时间
+Cleanliness				 :INT;//洁净度
+Hough     				 :INT;//(叠片台CCD综合评定结果 /对齐度) 1、对齐度OK，2、对齐度NG
+ScanCode   				 :INT;//1、扫贴胶码OK,2、贴胶扫码NG
+ColdPress_SV			 :REAL;//冷压压力设定值
+ColdPress_PV			 :REAL;//冷压压力实际值
+ColdPress_SV_H			 :REAL;//冷压压力设定值上限
+ColdPress_SV_L			 :REAL;//冷压压力设定值下限
+ColdPress_Time			 :UINT;//冷压时间设定值
+OvenTemp_SV				 :REAL;//预热温度设定值
+
+OvenTemp_PV				 :REAL;//预热温度实际值
+
+OvenTemp_H				 :REAL;//预热温度上限
+OvenTemp_L				 :REAL;//预热温度下限
+OvenTemp_Time			 :INT;//预热时间(单位：S)
+
+OvenShift_Time			:UDINT;//预热转移时间
+OvenShift_NG_T			:BOOL;//转移时间NG
+
+
+HotTemp_SV				 :REAL;//热压温度设定值
+
+HotTemp_PV				 :REAL;//热压温度实际值
+
+HotTemp_H				 :REAL;//热压温度设定上限
+HotTemp_L				 :REAL;//热压温度设定下限
+HotPress_SV			     :REAL;//热压压力设定值
+HotPress_PV			     :REAL;//热压压力实际值
+HotPress_SV_H			 :REAL;//热压压力设定值上限
+HotPress_SV_L			 :REAL;//热压压力设定值下限
+HotPress_Time			 :UINT;//热压时间设定值
+
+Hipot_V					 :REAL;//hopot测试电压
+Hipot_Time				 :REAL;//hopot测试时间
+Hipot_R					 :REAL;//hopot测试电阻阻值
+Hipot2_R				 :REAL;//hopot二次测试电阻阻值
+Cell_Thickness       	 :REAL;//电芯厚度
+Cell_weight              :REAL;//电芯重量
+Operator_name			 :STRING;//作业员
+Facility_NO				 :STRING;//设备机台号
+Put_Time				 :STRING;//投入时间
+Out_Time				 :STRING;//产出时间
+Cell_number              :STRING;//电芯条码
+Cell_number1             :STRING;//冷压电芯条码
+Cell_cold_result		 :BOOL;//冷压上料MES判断结果
+Cell_cold_result1		 :BOOL;//校对数据MES判断结果
+Cell_cold_result2		 :BOOL;//上传热压数据MES判断结果
+Cell_all_result			 :BOOL;//MES和本地总判定结果
+
+Cell_CCD_No				 :STRING;//CCD电芯编号
+Process_name			 :STRING;//工序名
+Classes					 :STRING;//班次
+Cell_result				 :INT;//综合评定结果;1、OK 2、短路NG 3、测厚NG 4、扫码NG
+An_stuff_No				 :STRING;//正极极卷号，1、同卷，2、异卷
+Ca_stuff_No				 :STRING;//负极极卷号，1、同卷，2、异卷
+Diaphragm_No			 :STRING;//隔膜批次
+QR_code_No				 :STRING;//二维码批次
+Glue_No					 :STRING;//收尾胶批次
+
+An_MQ_Slice				 :ARRAY[1..120]  OF		ST_BeltData;//正极模切极片数据
+Ca_MQ_Slice				 :ARRAY[1..120]  OF		ST_BeltData;//负极模切极片数据
+Overhang_TF 			 :BOOL;//对齐度NG踢废信号
+
+core_final_result                       :  STRING(1024)  ;   // 电芯最终结果  
+DP_PLC_Evaluation_result                :  STRING(1024)  ;   // 叠片PLC评定结果  
+DP_MES_Evaluation_result                :  STRING(1024)  ;   // 叠片MES接口评定结果  
+RY_PLC_Evaluation_result                :  STRING(1024)  ;   // 热压PLC评定结果
+RY_MES_Evaluation_result                :  STRING(1024)  ;   // 热压MES接口评定结果
+DP_NG_particulars                       :  STRING(1024)  ;   // 叠片NG详情    
+RY_NG_particulars                       :  STRING(1024)  ;   //  热压NG详情 
+
+DP_Internal_decision_details            :  STRING(1024)  ;   // 叠片内部判定详情
+DP_External_decision_details            :  STRING(1024)  ;   // 叠片外部判定详情 
+RY_Internal_decision_details            :  STRING(1024)  ;   // 热压内部判定详情 
+RY_External_decision_details            :  STRING(1024)  ;   // 热压外部判定详情
+
+//PC写给PLC的-----先下发给叠台，叠台再和模切做通讯
+PostiveCode			:STRING(49);//正极条码		
+NegativeCode			:STRING(49);//负极条码		
+Station_Code			:STRING(49);//叠台隔膜条码		
+Station_BlueCode		:STRING(49);//叠台蓝胶条码		
+P3CellCode			:STRING(49);//后段二维码胶条码	
+P3BlueCode			:STRING(49);//后段蓝胶条码		
+
+ColdPress_PVTime			 :UINT;//冷压时间实际值
+OvenTemp_NO              :INT;// 预热工位号
+OvenTemp_PVTime			 :UDINT;//预热实际时间
+HotPress_PVTime			 :UINT;//热压时间实际值
+
+DiaphragmUnwindingTension2		:ARRAY[1..240]  OF	REAL	;//	隔膜放卷张力每一片
+DTDebugMode           :BOOL;//叠台调试模式    
+
+//20240417WCZ
+LYDLineinitPos	 : REAL ;// 	左压刀开合初始位
+LYDLineOpenPos 	 : REAL ;// 	左压刀开合张开位
+LYDLinepressL 	 : REAL ;// 	左压刀开合压隔膜长度
+RYDLineinitPos	 : REAL ;// 	右压刀开合初始位
+RYDLineOpenPos 	 : REAL ;// 	右压刀开合张开位
+RYDLinepressL 	 : REAL ;// 	右压刀开合压隔膜长度
+LYDUpDowninitPos	 : REAL ;// 	左压刀升降初始位
+LYDUpDownOpenPos 	 : REAL ;// 	左压刀升降张开位
+LYDUpDownOpenH	 : REAL ;// 	左压刀升降张开高度
+LYDUpDownKnifeH	 : REAL ;// 	左压刀升降抽刀高度
+RYDUpDowninitPos 	 : REAL ;// 	右压刀升降初始位
+RYDUpDownOpenPos 	 : REAL ;// 	右压刀升降张开位
+RYDUpDownOpenH	 : REAL ;// 	右压刀升降张开高度
+RYDUpDownKnifeH	 : REAL ;// 	右压刀升降抽刀高度
+DTandescendh	 : REAL ;// 	叠台正极片下降高度
+DTcadescendh	 : REAL ;// 	叠台负极片下降高度
+Shortpress	 : REAL ;// 	短路测试压力（Kg)
+coldActPos	 : REAL ;// 	冷压板实际位置
+HeatActPos	 : REAL ;// 	热压板实际位置
+Chipdata   :ARRAY[1..240]  OF Mes2 ;//极片数据                               	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,394 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="ProductLocal" Id="{258518b7-40bd-4fde-87f3-ea1cde442674}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK ProductLocal
+VAR_INPUT
+	NGFlag1:BOOL;(*NG1计数标志*)
+	NGFlag2:BOOL;(*NG2计数标志*)
+	NGFlag3:BOOL;(*NG3计数标志*)
+	NGFlag4:BOOL;(*NG4计数标志*)
+	NGFlag5:BOOL;(*NG5计数标志*)
+	NGFlag6:BOOL;(*NG6计数标志*)
+	NGFlag7:BOOL;(*NG7计数标志*)
+	NGFlag8:BOOL;(*NG8计数标志*)
+	NGFlag9:BOOL;(*NG9计数标志*)
+	NGFlag10:BOOL;(*NG10计数标志*)
+	NGFlag11:BOOL;(*NG11计数标志*)
+	NGFlag12:BOOL;(*NG12计数标志*)
+	NGFlag13:BOOL;(*NG13计数标志*)
+	NGFlag14:BOOL;(*NG14计数标志*)
+	NGFlag15:BOOL;(*NG15计数标志*)
+	NGFlag16:BOOL;(*NG16计数标志*)
+	NGFlag17:BOOL;(*NG17计数标志*)
+	NGFlag18:BOOL;(*NG18计数标志*)
+	NGFlag19:BOOL;(*NG19计数标志*)
+	NGFlag20:BOOL;(*NG20计数标志*)
+	NGFlag21:BOOL;(*NG21计数标志*)
+	NGFlag22:BOOL;(*NG22计数标志*)
+	NGFlag23:BOOL;(*NG23计数标志*)
+	NGFlag24:BOOL;(*NG24计数标志*)
+	NGFlag25:BOOL;(*NG25计数标志*)
+	NGFlag26:BOOL;(*NG26计数标志*)
+	NGFlag27:BOOL;(*NG27计数标志*)
+	NGFlag28:BOOL;(*NG28计数标志*)
+	NGFlag29:BOOL;(*NG29计数标志*)
+	NGFlag30:BOOL;(*NG30计数标志*)
+END_VAR
+VAR_IN_OUT
+
+END_VAR
+
+VAR_OUTPUT
+	TodayNGClass_AM		:ARRAY[1..30 ] 	OF REAL;(*当天白班各类NG数量ARRAY[1..30 ]*)
+	TodayNGClass_PM		:ARRAY[1..30 ] 	OF REAL;(*当天夜班各类NG数量ARRAY[1..30 ]*)
+	TodayNG_AM:REAL;(*当天白班生产NG总数*)
+	TodayNG_PM:REAL;(*当天夜班生产NG总数*)
+END_VAR
+
+VAR
+	Data_Step:UINT;
+	i:UINT;
+	TrigNgAdd: ARRAY[1..30 ] OF R_TRIG;(*1-30类ng计数统计*)
+	SaveDataDelay:TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TrigNgAdd[1](CLK:=NGFlag1,Q=> );(*1类ng*)
+TrigNgAdd[2](CLK:=NGFlag2,Q=> );(*2类ng*)
+TrigNgAdd[3](CLK:=NGFlag3,Q=> );(*3类ng*)
+TrigNgAdd[4](CLK:=NGFlag4,Q=> );(*4类ng*)
+TrigNgAdd[5](CLK:=NGFlag5,Q=> );(*5类ng*)
+TrigNgAdd[6](CLK:=NGFlag6,Q=> );(*6类ng*)
+TrigNgAdd[7](CLK:=NGFlag7,Q=> );(*7类ng*)
+TrigNgAdd[8](CLK:=NGFlag8,Q=> );(*8类ng*)
+TrigNgAdd[9](CLK:=NGFlag9,Q=> );(*9类ng*)
+TrigNgAdd[10](CLK:=NGFlag10,Q=> );(*10类ng*)
+TrigNgAdd[11](CLK:=NGFlag11,Q=> );(*11类ng*)
+TrigNgAdd[12](CLK:=NGFlag12,Q=> );(*12类ng*)
+TrigNgAdd[13](CLK:=NGFlag13,Q=> );(*13类ng*)
+TrigNgAdd[14](CLK:=NGFlag14,Q=> );(*14类ng*)
+TrigNgAdd[15](CLK:=NGFlag15,Q=> );(*15类ng*)
+TrigNgAdd[16](CLK:=NGFlag16,Q=> );(*16类ng*)
+TrigNgAdd[17](CLK:=NGFlag17,Q=> );(*17类ng*)
+TrigNgAdd[18](CLK:=NGFlag18,Q=> );(*18类ng*)
+TrigNgAdd[19](CLK:=NGFlag19,Q=> );(*19类ng*)
+TrigNgAdd[20](CLK:=NGFlag20,Q=> );(*20类ng*)
+TrigNgAdd[21](CLK:=NGFlag21,Q=> );(*21类ng*)
+TrigNgAdd[22](CLK:=NGFlag22,Q=> );(*22类ng*)
+TrigNgAdd[23](CLK:=NGFlag23,Q=> );(*23类ng*)
+TrigNgAdd[24](CLK:=NGFlag24,Q=> );(*24类ng*)
+TrigNgAdd[25](CLK:=NGFlag25,Q=> );(*25类ng*)
+TrigNgAdd[26](CLK:=NGFlag26,Q=> );(*26类ng*)
+TrigNgAdd[27](CLK:=NGFlag27,Q=> );(*27类ng*)
+TrigNgAdd[28](CLK:=NGFlag28,Q=> );(*28类ng*)
+TrigNgAdd[29](CLK:=NGFlag29,Q=> );(*29类ng*)
+TrigNgAdd[30](CLK:=NGFlag30,Q=> );(*30类ng*)
+
+(***白班数据统计******)
+//FOR i:=8 TO 19 DO
+	//IF PLC_wHour=i THEN
+		IF PLC_wHour>=8 AND PLC_wHour<=19 THEN
+			(*******白班NG不良分类统计*)
+			IF TrigNgAdd[1].Q THEN
+				TodayNGClass_AM[1]:=TodayNGClass_AM[1]+1;
+			END_IF
+			IF TrigNgAdd[2].Q THEN
+				TodayNGClass_AM[2]:=TodayNGClass_AM[2]+1;
+			END_IF
+			IF TrigNgAdd[3].Q THEN
+				TodayNGClass_AM[3]:=TodayNGClass_AM[3]+1;
+			END_IF
+			IF TrigNgAdd[4].Q THEN
+				TodayNGClass_AM[4]:=TodayNGClass_AM[4]+1;
+			END_IF
+			IF TrigNgAdd[5].Q THEN
+				TodayNGClass_AM[5]:=TodayNGClass_AM[5]+1;
+			END_IF
+			IF TrigNgAdd[6].Q THEN
+				TodayNGClass_AM[6]:=TodayNGClass_AM[6]+1;
+			END_IF
+			IF TrigNgAdd[7].Q THEN
+				TodayNGClass_AM[7]:=TodayNGClass_AM[7]+1;
+			END_IF
+			IF TrigNgAdd[8].Q THEN
+				TodayNGClass_AM[8]:=TodayNGClass_AM[8]+1;
+			END_IF
+			IF TrigNgAdd[9].Q THEN
+				TodayNGClass_AM[9]:=TodayNGClass_AM[9]+1;
+			END_IF
+			IF TrigNgAdd[10].Q THEN
+				TodayNGClass_AM[10]:=TodayNGClass_AM[10]+1;
+			END_IF
+			IF TrigNgAdd[11].Q THEN
+				TodayNGClass_AM[11]:=TodayNGClass_AM[11]+1;
+			END_IF
+			IF TrigNgAdd[12].Q THEN
+				TodayNGClass_AM[12]:=TodayNGClass_AM[12]+1;
+			END_IF
+			IF TrigNgAdd[13].Q THEN
+				TodayNGClass_AM[13]:=TodayNGClass_AM[13]+1;
+			END_IF
+			IF TrigNgAdd[14].Q THEN
+				TodayNGClass_AM[14]:=TodayNGClass_AM[14]+1;
+			END_IF
+			IF TrigNgAdd[15].Q THEN
+				TodayNGClass_AM[15]:=TodayNGClass_AM[15]+1;
+			END_IF
+			IF TrigNgAdd[16].Q THEN
+				TodayNGClass_AM[16]:=TodayNGClass_AM[16]+1;
+			END_IF
+			IF TrigNgAdd[17].Q THEN
+				TodayNGClass_AM[17]:=TodayNGClass_AM[17]+1;
+			END_IF
+			IF TrigNgAdd[18].Q THEN
+				TodayNGClass_AM[18]:=TodayNGClass_AM[18]+1;
+			END_IF
+			IF TrigNgAdd[19].Q THEN
+				TodayNGClass_AM[19]:=TodayNGClass_AM[19]+1;
+			END_IF
+			IF TrigNgAdd[20].Q THEN
+				TodayNGClass_AM[20]:=TodayNGClass_AM[20]+1;
+			END_IF
+			IF TrigNgAdd[21].Q THEN
+				TodayNGClass_AM[21]:=TodayNGClass_AM[21]+1;
+			END_IF
+			IF TrigNgAdd[22].Q THEN
+				TodayNGClass_AM[22]:=TodayNGClass_AM[22]+1;
+			END_IF
+			IF TrigNgAdd[23].Q THEN
+				TodayNGClass_AM[23]:=TodayNGClass_AM[23]+1;
+			END_IF
+			IF TrigNgAdd[24].Q THEN
+				TodayNGClass_AM[24]:=TodayNGClass_AM[24]+1;
+			END_IF
+			IF TrigNgAdd[25].Q THEN
+				TodayNGClass_AM[25]:=TodayNGClass_AM[25]+1;
+			END_IF
+			IF TrigNgAdd[26].Q THEN
+				TodayNGClass_AM[26]:=TodayNGClass_AM[26]+1;
+			END_IF
+			IF TrigNgAdd[27].Q THEN
+				TodayNGClass_AM[27]:=TodayNGClass_AM[27]+1;
+			END_IF
+			IF TrigNgAdd[28].Q THEN
+				TodayNGClass_AM[28]:=TodayNGClass_AM[28]+1;
+			END_IF
+			IF TrigNgAdd[29].Q THEN
+				TodayNGClass_AM[29]:=TodayNGClass_AM[29]+1;
+			END_IF
+			IF TrigNgAdd[30].Q THEN
+				TodayNGClass_AM[30]:=TodayNGClass_AM[30]+1;
+			END_IF
+		END_IF
+	//END_IF
+//END_FOR
+
+(*当天白班生产NG总数*)
+TodayNG_AM:=TodayNGClass_AM[1]+TodayNGClass_AM[2]+TodayNGClass_AM[3]+TodayNGClass_AM[4]+TodayNGClass_AM[5]+
+				TodayNGClass_AM[6]+TodayNGClass_AM[7]+TodayNGClass_AM[8]+TodayNGClass_AM[9]+TodayNGClass_AM[10]+
+				TodayNGClass_AM[11]+TodayNGClass_AM[12]+TodayNGClass_AM[13]+TodayNGClass_AM[14]+TodayNGClass_AM[15]+
+				TodayNGClass_AM[16]+TodayNGClass_AM[17]+TodayNGClass_AM[18]+TodayNGClass_AM[19]+TodayNGClass_AM[20]+
+				TodayNGClass_AM[21]+TodayNGClass_AM[22]+TodayNGClass_AM[23]+TodayNGClass_AM[24]+TodayNGClass_AM[25]+
+				TodayNGClass_AM[26]+TodayNGClass_AM[27]+TodayNGClass_AM[28]+TodayNGClass_AM[29]+TodayNGClass_AM[30];
+
+
+(*******夜班数据统计******)
+//FOR i:=0 TO 23 DO
+	//IF PLC_wHour=i THEN
+		IF PLC_wHour<=7 OR PLC_wHour>=20 THEN
+			(*******白班NG不良分类统计*)
+			IF TrigNgAdd[1].Q THEN
+				TodayNGClass_PM[1]:=TodayNGClass_PM[1]+1;
+			END_IF
+			IF TrigNgAdd[2].Q THEN
+				TodayNGClass_PM[2]:=TodayNGClass_PM[2]+1;
+			END_IF
+			IF TrigNgAdd[3].Q THEN
+				TodayNGClass_PM[3]:=TodayNGClass_PM[3]+1;
+			END_IF
+			IF TrigNgAdd[4].Q THEN
+				TodayNGClass_PM[4]:=TodayNGClass_PM[4]+1;
+			END_IF
+			IF TrigNgAdd[5].Q THEN
+				TodayNGClass_PM[5]:=TodayNGClass_PM[5]+1;
+			END_IF
+			IF TrigNgAdd[6].Q THEN
+				TodayNGClass_PM[6]:=TodayNGClass_PM[6]+1;
+			END_IF
+			IF TrigNgAdd[7].Q THEN
+				TodayNGClass_PM[7]:=TodayNGClass_PM[7]+1;
+			END_IF
+			IF TrigNgAdd[8].Q THEN
+				TodayNGClass_PM[8]:=TodayNGClass_PM[8]+1;
+			END_IF
+			IF TrigNgAdd[9].Q THEN
+				TodayNGClass_PM[9]:=TodayNGClass_PM[9]+1;
+			END_IF
+			IF TrigNgAdd[10].Q THEN
+				TodayNGClass_PM[10]:=TodayNGClass_PM[10]+1;
+			END_IF
+			IF TrigNgAdd[11].Q THEN
+				TodayNGClass_PM[11]:=TodayNGClass_PM[11]+1;
+			END_IF
+			IF TrigNgAdd[12].Q THEN
+				TodayNGClass_PM[12]:=TodayNGClass_PM[12]+1;
+			END_IF
+			IF TrigNgAdd[13].Q THEN
+				TodayNGClass_PM[13]:=TodayNGClass_PM[13]+1;
+			END_IF
+			IF TrigNgAdd[14].Q THEN
+				TodayNGClass_PM[14]:=TodayNGClass_PM[14]+1;
+			END_IF
+			IF TrigNgAdd[15].Q THEN
+				TodayNGClass_PM[15]:=TodayNGClass_PM[15]+1;
+			END_IF
+			IF TrigNgAdd[16].Q THEN
+				TodayNGClass_PM[16]:=TodayNGClass_PM[16]+1;
+			END_IF
+			IF TrigNgAdd[17].Q THEN
+				TodayNGClass_PM[17]:=TodayNGClass_PM[17]+1;
+			END_IF
+			IF TrigNgAdd[18].Q THEN
+				TodayNGClass_PM[18]:=TodayNGClass_PM[18]+1;
+			END_IF
+			IF TrigNgAdd[19].Q THEN
+				TodayNGClass_PM[19]:=TodayNGClass_PM[19]+1;
+			END_IF
+			IF TrigNgAdd[20].Q THEN
+				TodayNGClass_PM[20]:=TodayNGClass_PM[20]+1;
+			END_IF
+			IF TrigNgAdd[21].Q THEN
+				TodayNGClass_PM[21]:=TodayNGClass_PM[21]+1;
+			END_IF
+			IF TrigNgAdd[22].Q THEN
+				TodayNGClass_PM[22]:=TodayNGClass_PM[22]+1;
+			END_IF
+			IF TrigNgAdd[23].Q THEN
+				TodayNGClass_PM[23]:=TodayNGClass_PM[23]+1;
+			END_IF
+			IF TrigNgAdd[24].Q THEN
+				TodayNGClass_PM[24]:=TodayNGClass_PM[24]+1;
+			END_IF
+			IF TrigNgAdd[25].Q THEN
+				TodayNGClass_PM[25]:=TodayNGClass_PM[25]+1;
+			END_IF
+			IF TrigNgAdd[26].Q THEN
+				TodayNGClass_PM[26]:=TodayNGClass_PM[26]+1;
+			END_IF
+			IF TrigNgAdd[27].Q THEN
+				TodayNGClass_PM[27]:=TodayNGClass_PM[27]+1;
+			END_IF
+			IF TrigNgAdd[28].Q THEN
+				TodayNGClass_PM[28]:=TodayNGClass_PM[28]+1;
+			END_IF
+			IF TrigNgAdd[29].Q THEN
+				TodayNGClass_PM[29]:=TodayNGClass_PM[29]+1;
+			END_IF
+			IF TrigNgAdd[30].Q THEN
+				TodayNGClass_PM[30]:=TodayNGClass_PM[30]+1;
+			END_IF
+		END_IF
+//	END_IF
+//END_FOR
+
+(*当天夜班生产NG总数*)
+TodayNG_PM:=TodayNGClass_PM[1]+TodayNGClass_PM[2]+TodayNGClass_PM[3]+TodayNGClass_PM[4]+TodayNGClass_PM[5]+
+				TodayNGClass_PM[6]+TodayNGClass_PM[7]+TodayNGClass_PM[8]+TodayNGClass_PM[9]+TodayNGClass_PM[10]+
+				TodayNGClass_PM[11]+TodayNGClass_PM[12]+TodayNGClass_PM[13]+TodayNGClass_PM[14]+TodayNGClass_PM[15]+
+				TodayNGClass_PM[16]+TodayNGClass_PM[17]+TodayNGClass_PM[18]+TodayNGClass_PM[19]+TodayNGClass_PM[20]+
+				TodayNGClass_PM[21]+TodayNGClass_PM[22]+TodayNGClass_PM[23]+TodayNGClass_PM[24]+TodayNGClass_PM[25]+
+				TodayNGClass_PM[26]+TodayNGClass_PM[27]+TodayNGClass_PM[28]+TodayNGClass_PM[29]+TodayNGClass_PM[30];
+
+
+	
+				
+CASE Data_Step OF 	
+0:	
+(*数据清除*)
+	IF PLC_wHour=8 AND PLC_wMinute=00  AND PLC_wSecond=00 THEN
+		Data_Step:=100;
+	END_IF
+(******清除当天数据，并记录当天日期*******)
+100:
+	FOR i:=1 TO 30 DO
+		TodayNGClass_AM[i]:=0;(*当天白班各类NG数量*)
+		TodayNGClass_PM[i]:=0;(*当天夜班各类NG数量*)
+	END_FOR
+	TodayNG_AM:=0;(*当天白班生产NG总数*)
+	TodayNG_PM:=0;(*当天夜班生产NG总数*)
+	Data_Step:=200;
+200:
+	SaveDataDelay(IN:=TRUE,PT:=t#2s, Q=> , ET=> );
+	IF SaveDataDelay.Q THEN
+		SaveDataDelay(IN:=FALSE);
+		Data_Step:=0;
+	END_IF
+END_CASE
+
+
+
+
+
+		
+PLC_wYear;//PLC时间年
+PLC_wMonth;//PLC时间月
+PLC_wDay;//PLC时间日
+PLC_wHour;//PLC时间时
+PLC_wMinute;//PLC时间分
+PLC_wSecond;//PLC时间秒
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="ProductLocal">
+      <LineId Id="54" Count="28" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="126" Count="3" />
+      <LineId Id="137" Count="89" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="240" Count="5" />
+      <LineId Id="89" Count="2" />
+      <LineId Id="248" Count="3" />
+      <LineId Id="259" Count="89" />
+      <LineId Id="92" Count="1" />
+      <LineId Id="349" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="351" Count="5" />
+      <LineId Id="95" Count="1" />
+      <LineId Id="458" Count="1" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="455" Count="0" />
+      <LineId Id="457" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="406" Count="1" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="422" Count="4" />
+      <LineId Id="524" Count="1" />
+      <LineId Id="446" Count="6" />
+      <LineId Id="102" Count="5" />
+      <LineId Id="466" Count="5" />
+      <LineId Id="108" Count="17" />
+      <LineId Id="83" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

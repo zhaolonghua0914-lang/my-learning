@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="P2_TableNo" Id="{84fa25f3-7396-4ad3-b9c4-d0e2887d6a53}">
+    <Declaration><![CDATA[TYPE P2_TableNo :           //凸轮表
+STRUCT
+	  M_GMDanserMove_L	              :UINT;	//  隔膜摆臂左凸轮
+      M_GMDanserMove_R	              :UINT;	//  隔膜摆臂左凸轮
+	  M_GMWind_L	                          :UINT;	//  隔膜放卷左凸轮
+	  M_GMWind2_L	                          :UINT;	//  隔膜放卷左凸轮
+      M_GMWind_R	                      :UINT;	//  隔膜放卷右凸轮
+	  M_GMWind2_R	                      :UINT;	//  隔膜放卷右凸轮
+	  M_GMBuffer_L	                      :UINT;	//  隔膜缓存左凸轮
+	   M_GMBuffer2_L	                      :UINT;	//  隔膜缓存左凸轮
+      M_GMBuffer_R	                      :UINT;	//  隔膜缓存右凸轮
+	   M_GMBuffer2_R	                      :UINT;	//  隔膜缓存右凸轮
+	  M_GMLengthCalculate_L	           :UINT;	//  隔膜长度计算左凸轮
+	  M_GMLengthCalculate2_L	           :UINT;	//  隔膜长度计算左凸轮
+      M_GMLengthCalculate_R	           :UINT;	//  隔膜长度计算右凸轮
+	   M_GMLengthCalculate2_R	           :UINT;	//  隔膜长度计算右凸轮
+      M_GMVir_L	                               :UINT;	//  隔膜虚轴左凸轮
+
+
+      M_AnCarryingLine                     :UINT; //		正极送片搬运平移
+      M_AnCarryingUpDown               :UINT; //		正极送片搬运升降取片
+	  M_AnCarryingUpDown1               :UINT; //	正极送片搬运升降放片
+	   M_AnCarryingUpDown3               :UINT; //	正极送片搬运升降避让
+      M_AnCarryingWhirling               :UINT; //		正极送片搬运旋转
+      M_AnDTCarryingLine                  :UINT; //		正极叠台搬运平移
+      M_AnDTCarryingUpDown            :UINT; //		正极叠台搬运升降取片
+	  M_AnDTCarryingUpDown1            :UINT; //		正极叠台搬运升降放片	
+	  M_AnDTCarryingUpDown3            :UINT; //		正极叠台搬运升降避让
+	  
+      M_CaCarryingLine1                     :UINT; //		负极送片搬运1平移
+      M_CaCarryingUpDown1               :UINT; //    负极送片搬运1放片升降
+	  M_CaCarryingUpDown1_1               :UINT; //    负极送片搬运1取片升降
+	
+      M_CaCarryingWhirling1               :UINT; //		负极送片搬运1旋转
+      M_CaCarryingLine2                     :UINT; //		负极送片搬运2平移
+      M_CaCarryingUpDown2              :UINT; //		负极送片搬运2升降取片
+	  M_CaCarryingUpDown2_1              :UINT; //		负极送片搬运2升降放片
+	  M_CaCarryingUpDown2_3              :UINT; //		负极送片搬运2升降避让
+      M_CaBelt                                   :UINT; //		负极送片皮带
+      M_CaDTCarryingLine                  :UINT; //		负极叠台搬运平移
+      M_CaDTCarryingUpDown            :UINT; //		负极叠台搬运升降取片
+	  M_CaDTCarryingUpDown1            :UINT; //		负极叠台搬运升降放片
+	  M_CaDTCarryingUpDown3            :UINT; //		负极叠台搬运升降放片
+     M_DTUpDown	                             :UINT;	//	叠台升降
+     M_LeftYDLine                                :UINT;	//	左压刀开合
+     M_LeftYDUpDown                         :UINT;	//	左压刀升降
+     M_RightYDLine	                            :UINT;	//	右压刀开合
+     M_RightYDUpDown                       :UINT;	//	右压刀升降
+
+	 M_TailCurlLine                        	     :UINT;	//	尾卷平移
+	 M_TailCurlUpDown	                     :UINT;	//	尾卷升降
+	 
+     M_LeftYDLine2                           :UINT;	//	左压刀开合2
+     M_LeftYDUpDown2                         :UINT;	//	左压刀升降2
+     M_RightYDLine2	                        :UINT;	//	右压刀开合2
+     M_RightYDUpDown2                       :UINT;	//	右压刀升降2	 
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Axis_Par" Id="{a1de89f9-585b-4ef4-9034-48ad36fb2a30}">
+    <Declaration><![CDATA[TYPE ST_Axis_Par ://轴参数
+STRUCT
+      bLimitSwitchEn          :BOOL;//限位保护开启
+	fVelocity_of_Abs	 :REAL:=5;				
+	fVelocity_of_Mod	 :REAL:=5;				
+	fVelocity_of_Rel	 :REAL:=5;				
+	fVelocity_of_Velo	 :REAL:=5;				
+	fVelocity_of_Jog	 :REAL:=10;			
+	fInchingDistance	 :REAL:=5;				
+
+	arrTargetPoint: ARRAY [0..10] OF REAL;
+	//fMaxVelocity:        REAL:=0;	
+    fTagatTime                                 :REAL:=0.5;//S  运动时间
+    fConVelPercentage                      :REAL:=0.8;//  匀速段占比
+    fMaxAccDec                              :LREAL:=50000;//最大加速度
+    fMaxVel                                   :LREAL:=2000;//最大速度
+
+	fHomePosition                     :REAL:=10 ;	                          
+	fHomeFastSpeed                  :REAL:=20 ;	 
+	fHomeSlowSpeed                 :REAL:=10;	 
+    HomeLimitDis                       :REAL:=5;	 
+
+	
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

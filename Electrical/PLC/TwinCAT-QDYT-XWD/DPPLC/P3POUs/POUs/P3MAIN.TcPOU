@@ -1,0 +1,637 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="P3MAIN" Id="{5e304549-6aa4-4080-bb11-81c1a93bbacb}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P3MAIN
+VAR
+	fbDataXML  :FB_DataXMLP3;  
+	bSave: BOOL;
+	rt10: R_TRIG;
+	bReadDataFirstCyle: BOOL;
+	testii: INT;
+	bSaveDataTest: BOOL;
+	testii2: INT;
+	bReadDataCyle2: BOOL;
+	rtSaveData: R_TRIG;
+
+
+
+	BUSY: BOOL;
+	ERR: BOOL;
+	ERRID: UDINT;
+	CSData:    CS_Data;
+	
+
+	THNN: INT;
+	MA100: BOOL;
+	A1: BOOL;
+	D1: BOOL;
+	A2: BOOL;
+	A3: BOOL;
+	
+	//iShort:        IShortTest;
+	D2: INT;
+	//stTime: TIMESTRUCT;
+	strTime: STRING;
+	BY1:  BYTE;
+	AA1: BOOL;
+	btest: BOOL;
+	iPower: INT;
+	iPowerSetp: INT;
+	bytePower: BYTE:=16#01;
+	boPower2: BOOL;
+	k: INT:=1;
+	PowerOnDone: BOOL;
+   
+	rt:ARRAY[1..5]OF R_TRIG;//上升沿触发
+	tRead			:TON;
+END_VAR
+
+VAR
+	bFirstCycle										        	:BOOL;	(*初始化用的*)
+(*保存掉电保持参数*)
+	//FB_WritePersistentData1								: FB_WritePersistentData;
+	tCycleTimer											: TON;
+	bWrite												: BOOL;    (*定时自动保存*)
+(*系统重启*)
+	tNtDelayReset										:TON;
+	bReboot											: BOOL;	(*重启系统的变量*)
+//	NT_Reboot1											: NT_Reboot;
+(*系统关机*)
+	//NT_Shutdown1										: NT_Shutdown;
+	tNtDelayShutdown									: TON;
+	bShutdown											: BOOL;
+(*远程桌面接管*)
+	OpenRemoteDesktop									: NT_StartProcess;
+	timerHMI											:TON;
+(*系统时间获取*)
+//	NT_GetTime1											: NT_GetTime;
+(*心跳信号*)
+	bHeartBeat											:BOOL;
+	tHeartBeatTime										:TIME:=t#0.5s;
+	TonHeartBeat										:TON;
+
+	TaskInfo											:	TaskInfoCtrl;
+	loadParaStep: UINT;
+	i: UINT;	
+
+    tonPowerOn  :Tc2_Standard.TON;
+    tonPower       :Tc2_Standard.TON;
+
+
+     STR1: STRING:='20200412160000';
+	 STR2: STRING:='12345678ABCDE';
+	 STR3: STRING:='SSDDFF1234  JJJJ';
+	 size:UDINT;
+END_VAR
+
+ VAR
+     REST_TON :ARRAY[1..10] OF Tc2_Standard.TON;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+P3IOLink();
+
+IF tonPowerOn.ET>=T#5S THEN
+    P3Main.RecipeData();
+END_IF
+
+tonPowerOn(IN:=PowerOnDone , PT:=T#15S , Q=> , ET=> );  //上电延时5S
+
+IF tonPowerOn.Q AND fbDataXML.bReadParDone THEN
+  P3MainState();  
+ELSE
+   Power();//接触器上电
+END_IF
+
+
+
+
+ 
+ 
+
+//冷压负极软限位写入
+fADSWrite_Limit[1](
+	IDXGRP_W:= 16#50C0, 
+	IDXOFFS_W:= 16#D, 
+	IDXOFFSLimit_W:= 16#B, 
+	bSetButton:= HMI_SetButton[1], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[1] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[1] , 
+	AxisNo:=165 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[1] ,
+	fSaveBias=>HMI_SaveBias[1]);
+
+//冷压正极软限位写入
+fADSWrite_Limit[2](
+	IDXGRP_W:= 16#50C0, 
+	IDXOFFS_W:= 16#E, 
+	IDXOFFSLimit_W:= 16#C, 
+	bSetButton:= HMI_SetButton[2], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[2] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[2] , 
+	AxisNo:=165 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[2] ,
+	fSaveBias=>HMI_SaveBias[2]);
+	
+//热压负极软限位写入	
+fADSWrite_Limit[3](
+	IDXGRP_W:= 16#50C5, 
+	IDXOFFS_W:= 16#D, 
+	IDXOFFSLimit_W:= 16#B, 
+	bSetButton:= HMI_SetButton[3], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[3] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[3] , 
+	AxisNo:=170 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[3] ,
+	fSaveBias=>HMI_SaveBias[3]);
+
+	
+//热压正极软限位写入
+fADSWrite_Limit[4](
+	IDXGRP_W:= 16#50C5, 
+	IDXOFFS_W:= 16#E, 
+	IDXOFFSLimit_W:= 16#C, 
+	bSetButton:= HMI_SetButton[4], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[4] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[4] , 
+	AxisNo:=170 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[4],
+	fSaveBias=>HMI_SaveBias[4] );
+	
+	
+ 
+ 
+ 	
+//1#贴胶进退负极软限位写入	
+fADSWrite_Limit[5](
+	IDXGRP_W:= 16#505B, 
+	IDXOFFS_W:= 16#D, 
+	IDXOFFSLimit_W:= 16#B, 
+	bSetButton:= HMI_SetButton[5], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[5] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[5] , 
+	AxisNo:=43 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[5] ,
+	fSaveBias=>HMI_SaveBias[5]);
+
+	
+//1#贴胶进退正极软限位写入
+fADSWrite_Limit[6](
+	IDXGRP_W:= 16#505B, 
+	IDXOFFS_W:= 16#E, 
+	IDXOFFSLimit_W:= 16#C, 
+	bSetButton:= HMI_SetButton[6], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[6] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[6] , 
+	AxisNo:=43 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[6],
+	fSaveBias=>HMI_SaveBias[6] );	
+	
+
+//2#贴胶进退负极软限位写入	
+fADSWrite_Limit[7](
+	IDXGRP_W:= 16#5089, 
+	IDXOFFS_W:= 16#D, 
+	IDXOFFSLimit_W:= 16#B, 
+	bSetButton:= HMI_SetButton[7], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[7] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[7] , 
+	AxisNo:=89 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[7] ,
+	fSaveBias=>HMI_SaveBias[7]);
+
+	
+//2#贴胶进退正极软限位写入
+fADSWrite_Limit[8](
+	IDXGRP_W:= 16#5089, 
+	IDXOFFS_W:= 16#E, 
+	IDXOFFSLimit_W:= 16#C, 
+	bSetButton:= HMI_SetButton[8], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[8] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[8] , 
+	AxisNo:=89 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[8],
+	fSaveBias=>HMI_SaveBias[8] );	
+	
+	
+	
+ //3#贴胶进退负极软限位写入	
+fADSWrite_Limit[9](
+	IDXGRP_W:= 16#50B7, 
+	IDXOFFS_W:= 16#D, 
+	IDXOFFSLimit_W:= 16#B, 
+	bSetButton:= HMI_SetButton[9], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[9] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[9] , 
+	AxisNo:=135 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[9] ,
+	fSaveBias=>HMI_SaveBias[9]);
+
+	
+//3#贴胶进退正极软限位写入
+fADSWrite_Limit[10](
+	IDXGRP_W:= 16#50B7, 
+	IDXOFFS_W:= 16#E, 
+	IDXOFFSLimit_W:= 16#C, 
+	bSetButton:= HMI_SetButton[10], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[10] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[10] , 
+	AxisNo:=135 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[10],
+	fSaveBias=>HMI_SaveBias[10] );
+ 
+	
+ 
+ 
+ //后段贴胶进退负极软限位写入	
+fADSWrite_Limit[11](
+	IDXGRP_W:= 16#50CD, 
+	IDXOFFS_W:= 16#D, 
+	IDXOFFSLimit_W:= 16#B, 
+	bSetButton:= HMI_SetButton[11], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[11] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[11] , 
+	AxisNo:=178 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[11] ,
+	fSaveBias=>HMI_SaveBias[11]);
+
+	
+//后段贴胶进退正极软限位写入
+fADSWrite_Limit[12](
+	IDXGRP_W:= 16#50CD, 
+	IDXOFFS_W:= 16#E, 
+	IDXOFFSLimit_W:= 16#C, 
+	bSetButton:= HMI_SetButton[12], 
+	bSetLimitButton:=P3User2_Par.HMI_Button[12] , 
+	fSavePositionBias:=P3User2_Par.fSavePositionBias[12] , 
+	AxisNo:=178 , 
+	ADSMark:=ADSRefMark,
+	bWriteAlarm=>HMI_ADSAlarm[12],
+	fSaveBias=>HMI_SaveBias[12] ); 
+ 
+	 REST_TON[1](IN:=HMI_SetButton[6] , PT:=T#0.5S , Q=> , ET=>);
+	 REST_TON[2](IN:=HMI_SetButton[8] , PT:=T#0.5S , Q=> , ET=>);
+	 REST_TON[3](IN:=HMI_SetButton[10] , PT:=T#0.5S , Q=> , ET=>);
+	 REST_TON[4](IN:=HMI_SetButton[12] , PT:=T#0.5S , Q=> , ET=>);
+
+ IF  REST_TON[1].Q THEN
+	 HMI_SetButton[6]:=FALSE;
+END_IF 
+
+ IF  REST_TON[2].Q THEN
+	 HMI_SetButton[8]:=FALSE;
+END_IF 
+
+ IF  REST_TON[3].Q THEN
+	 HMI_SetButton[10]:=FALSE;
+END_IF 
+
+ IF  REST_TON[4].Q THEN
+	 HMI_SetButton[12]:=FALSE;
+END_IF 
+
+ IF  P2M1_MachCtrl.TJ_b.Stick_Judge THEN
+	 P3User2_Par.fSavePositionBias[6]:= arrAxisPar[P2AxisNo.P2M1_GluingRetracting].arrTargetPoint[2]+2;
+	 HMI_SetButton[6]:=TRUE;
+ELSE 	 
+	 P3User2_Par.fSavePositionBias[6]:= arrAxisPar[P2AxisNo.P2M1_GluingRetracting].arrTargetPoint[4]+2;
+	 HMI_SetButton[6]:=TRUE;	 
+ END_IF
+ 
+ 
+  IF  P2M2_MachCtrl.TJ_b.Stick_Judge THEN
+	 P3User2_Par.fSavePositionBias[8]:= arrAxisPar[P2AxisNo.P2M2_GluingRetracting].arrTargetPoint[2]+2;
+	 HMI_SetButton[8]:=TRUE;
+ELSE 	 
+	 P3User2_Par.fSavePositionBias[8]:= arrAxisPar[P2AxisNo.P2M2_GluingRetracting].arrTargetPoint[4]+2;
+	 HMI_SetButton[8]:=TRUE;	 
+ END_IF
+ 
+ 
+  IF  P2M3_MachCtrl.TJ_b.Stick_Judge THEN
+	 P3User2_Par.fSavePositionBias[10]:= arrAxisPar[P2AxisNo.P2M3_GluingRetracting].arrTargetPoint[2]+2;
+	 HMI_SetButton[10]:=TRUE;
+ELSE 	 
+	 P3User2_Par.fSavePositionBias[10]:= arrAxisPar[P2AxisNo.P2M3_GluingRetracting].arrTargetPoint[4]+2;
+	 HMI_SetButton[10]:=TRUE;	 
+ END_IF
+ 
+ IF Step38=530 THEN
+     P3User2_Par.fSavePositionBias[12]:=arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[3]+2;
+	 HMI_SetButton[12]:=TRUE;
+ ELSIF Step38=535 THEN
+      P3User2_Par.fSavePositionBias[12]:=arrAxisPar[P3AxisNo.P3_TapeAdvance].arrTargetPoint[5]+2;
+	  HMI_SetButton[12]:=TRUE;
+ END_IF
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ]]></ST>
+    </Implementation>
+    <Action Name="Power" Id="{795db4cf-444e-4f8a-ab92-e44b61bb6a59}">
+      <Implementation>
+        <ST><![CDATA[(***系统延时启动***)
+
+tonPower(IN:= , PT:=T#1.5S , Q=> , ET=> );
+
+CASE iPowerSetp OF
+0:
+    tonPower.IN:=TRUE;
+    iPowerSetp:=10;
+10:
+   IF   tonPower.Q  THEN
+      bytePower:=SHL(bytePower,1);
+     
+      tonPower(IN:=FALSE );
+      k:=k+1;
+     iPowerSetp:=20;
+  END_IF
+20:
+    bytePower.0:=1;
+    tonPower.IN:=TRUE;
+    iPowerSetp:=30;
+30:
+   IF  k>=8 THEN
+        iPowerSetp:=666;
+       // bytePower:=16#00;
+        PowerOnDone:=TRUE;
+		ADSRefMark:=TRUE;//ADS写入标志
+   ELSE
+      iPowerSetp:=10;
+   END_IF
+
+END_CASE
+ 
+bytePower.0;
+bytePower.1;
+bytePower.2;
+bytePower.3;
+bytePower.4;
+bytePower.5;
+bytePower.6;
+bytePower.7;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RecipeData" Id="{a95355ad-4d42-460b-a46b-f7b964910ea7}">
+      <Implementation>
+        <ST><![CDATA[IF NOT  bReadDataFirstCyle THEN //testii:=testii+1
+	//fbDataXML.bRead:=NOT bDataValid;
+	bReadDataFirstCyle:=TRUE;
+END_IF
+
+
+IF fbDataXML.bReadParDone AND bReadDataFirstCyle AND NOT  bReadDataCyle2 THEN   //  先备份数据暂时不开放 
+	bReadDataCyle2:=TRUE;
+END_IF
+
+tCycleTimer(IN:=NOT tCycleTimer.Q , PT:=T#5M , Q=> , ET=> );
+rtSaveData(CLK:=stHmiSysCmd.bSaveData , Q=> );
+IF  rtSaveData.Q THEN
+	bSaveDataTest:=TRUE;
+END_IF
+IF  tCycleTimer.Q   OR   bSaveDataTest THEN
+    bSaveDataTest:=FALSE;
+	fbDataXML.bSave:=TRUE;
+	testii2:=testii2+1;
+END_IF
+
+rt[4](CLK:=stHmiSysCmd.bReadData (*AND P3_SystemRUN.iMode=3*) , Q=> );
+rt[5](CLK:=PowerOnDone , Q=> );
+tRead(IN:=PowerOnDone, PT:=T#3S , Q=> , ET=> );
+IF   tRead.Q AND NOT fbDataXML.bReadParDone THEN
+	 P3_Error[90]	:=TRUE;//上电后热压参数读取失败，请手动点读取参数
+END_IF
+
+fbDataXML(bSave:=fbDataXML.bSave AND NOT P3_Error[90] , bRead:=fbDataXML.bRead OR rt[4].Q OR rt[5].Q, bSaveParDone=> , bReadParDone=> );
+
+fbDataXML.bSaveParDone;
+fbDataXML.bReadParDone;
+
+
+
+
+(*
+tCycleTimer(IN:=NOT tCycleTimer.Q , PT:=T#333S , Q=>bSave , ET=> );
+rt10(clk:=bSave);
+IF NOT  bReadDataFirstCyle THEN //testii:=testii+1
+	 fbDataXML.bRead:=TRUE;
+	 testii:=testii+1;
+	 bReadDataFirstCyle:=TRUE;
+END_IF
+
+
+IF fbDataXML.bReadParDone AND bReadDataFirstCyle AND NOT  bReadDataCyle2 THEN   //  先备份数据暂时不开放 
+	
+      fSavePositionBias:=P3User2_Par.fSavePositionBias   ;   
+      HMI_Button:=P3User2_Par.HMI_Button   ;   
+
+      Shield:=P3User2_Par.Shield;   
+      Oven_Shield:=P3User2_Par.Oven_Shield;  
+      LateBlanking_motor:=P3User2_Par.LateBlanking_motor;  
+      Cold_par:=P3User2_Par.Cold_par;  	  
+      Hot_par:=P3User2_Par.Hot_par;  		  
+      Oven_finish:=P3User2_Par.Oven_finish;  
+      Oven_Finish_Time:=P3User2_Par.Oven_Finish_Time;  
+      Oven_cell:=P3User2_Par.Oven_cell;  
+	  
+      V:=P3User2_Par.V;  	  
+      W:=P3User2_Par.W;  	
+      B_OVEN:=P3User2_Par.B_OVEN;  
+      Thick_Par:=P3User2_Par.Thick_Par;  
+      Thick_MN:=P3User2_Par.Thick_MN;  
+      Thick_Cell_Par:=P3User2_Par.Thick_Cell_Par;  	  
+	  
+      Door_Forbidden:=P3User2_Par.Door_Forbidden;  	
+      Scan_IP:=P3User2_Par.Scan_IP;  
+      Cold_Position:=P3User2_Par.Cold_Position;  
+	  
+      Thick_min:=P3User2_Par.Thick_min;  
+      Thick_max:=P3User2_Par.Thick_max;  	  
+      Oven_Time_S:=P3User2_Par.Oven_Time_S;  	
+      Bounce_time:=P3User2_Par.Bounce_time;  
+      Status_switching_time:=P3User2_Par.Status_switching_time;  
+	  Standby_time:=P3User2_Par.Standby_time;    
+	  
+	
+      bReadDataCyle2:=TRUE;
+END_IF
+
+rtSaveData(CLK:=stHmiSysCmd.bSaveData , Q=> );
+IF  rtSaveData.Q THEN
+	bSaveDataTest:=TRUE;
+END_IF
+
+IF  rt10.Q   OR   bSaveDataTest THEN
+     P3User2_Par.fSavePositionBias:=fSavePositionBias; 	
+      P3User2_Par.HMI_Button:=HMI_Button; 	
+
+	P3User2_Par.Shield:=Shield; 	
+	P3User2_Par.Oven_Shield:=Oven_Shield; 	
+	P3User2_Par.LateBlanking_motor:=LateBlanking_motor; 	
+	P3User2_Par.Cold_par:=Cold_par; 	
+	P3User2_Par.Hot_par:=Hot_par; 	
+	P3User2_Par.Oven_finish:=Oven_finish; 	
+	P3User2_Par.Oven_Finish_Time:=Oven_Finish_Time; 	
+	P3User2_Par.Oven_cell:=Oven_cell; 	
+	
+	
+	P3User2_Par.V:=V; 	
+	P3User2_Par.W:=W; 		
+	P3User2_Par.B_OVEN:=B_OVEN; 	
+	P3User2_Par.Thick_Par:=Thick_Par; 	
+	P3User2_Par.Thick_MN:=Thick_MN; 		
+	P3User2_Par.Thick_Cell_Par:=Thick_Cell_Par; 	
+	
+	P3User2_Par.Door_Forbidden:=Door_Forbidden; 	
+	P3User2_Par.Scan_IP:=Scan_IP; 	
+	P3User2_Par.Cold_Position:=Cold_Position; 	
+	
+	P3User2_Par.Thick_min:=Thick_min; 	
+	P3User2_Par.Thick_max:=Thick_max; 		
+	P3User2_Par.Oven_Time_S:=Oven_Time_S; 	
+	P3User2_Par.Bounce_time:=Bounce_time; 	
+	P3User2_Par.Status_switching_time:=Status_switching_time; 		
+	P3User2_Par.Standby_time:=Standby_time; 	
+
+    bSaveDataTest:=FALSE;
+	fbDataXML.bSave:=TRUE;
+	testii2:=testii2+1;
+END_IF
+
+
+fbDataXML(bSave:=fbDataXML.bSave AND P2SaveParDone,
+                      bRead:=fbDataXML.bRead  AND P2ReadParDone, 
+                      bSaveParDone=> , 
+                      bReadParDone=>,
+                      bError  =>                                          );
+
+IF fbDataXML.bError THEN				  
+P3_Error[92]:=TRUE;	
+END_IF				  
+D_Sys.P3SaveParDone:=fbDataXML.bSaveParDone;
+D_Sys.P3ReadParDone:=fbDataXML.bReadParDone;
+*)
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P3MAIN">
+      <LineId Id="147" Count="1" />
+      <LineId Id="416" Count="0" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="414" Count="1" />
+      <LineId Id="150" Count="10" />
+      <LineId Id="181" Count="1" />
+      <LineId Id="287" Count="54" />
+      <LineId Id="183" Count="2" />
+      <LineId Id="501" Count="112" />
+      <LineId Id="186" Count="1" />
+      <LineId Id="638" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="640" Count="1" />
+      <LineId Id="644" Count="1" />
+      <LineId Id="642" Count="0" />
+      <LineId Id="646" Count="0" />
+      <LineId Id="649" Count="2" />
+      <LineId Id="648" Count="0" />
+      <LineId Id="653" Count="2" />
+      <LineId Id="652" Count="0" />
+      <LineId Id="657" Count="2" />
+      <LineId Id="656" Count="0" />
+      <LineId Id="660" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="614" Count="0" />
+      <LineId Id="616" Count="0" />
+      <LineId Id="618" Count="0" />
+      <LineId Id="620" Count="0" />
+      <LineId Id="619" Count="0" />
+      <LineId Id="615" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="633" Count="0" />
+      <LineId Id="621" Count="5" />
+      <LineId Id="191" Count="2" />
+      <LineId Id="627" Count="5" />
+      <LineId Id="194" Count="1" />
+      <LineId Id="634" Count="0" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="635" Count="0" />
+      <LineId Id="197" Count="1" />
+      <LineId Id="636" Count="0" />
+      <LineId Id="199" Count="15" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MAIN.Power">
+      <LineId Id="2" Count="24" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="27" Count="39" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3MAIN.RecipeData">
+      <LineId Id="270" Count="2" />
+      <LineId Id="199" Count="6" />
+      <LineId Id="304" Count="0" />
+      <LineId Id="274" Count="3" />
+      <LineId Id="260" Count="3" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="419" Count="0" />
+      <LineId Id="414" Count="4" />
+      <LineId Id="216" Count="5" />
+      <LineId Id="306" Count="107" />
+      <LineId Id="305" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

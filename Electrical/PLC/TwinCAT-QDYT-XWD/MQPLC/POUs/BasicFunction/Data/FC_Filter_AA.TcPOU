@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FC_Filter_AA" Id="{2d896f1e-11d9-420b-b2e2-e37f60c29bb3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION FC_Filter_AA : REAL
+VAR_INPUT
+	SclIn:REAL;
+	X0:REAL;
+	Y0:REAL;
+	X1:REAL;
+	Y1:REAL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF X1-X0>0 AND Y1-Y0>0 THEN
+	IF SclIn>=X0 AND SclIn<=X1 THEN
+		FC_Filter_AA:=((Y1-Y0)*(SclIn-X0))/(X1-X0)+Y0;
+	ELSIF SclIn<X0 THEN	
+		FC_Filter_AA:=Y0;
+	ELSIF SclIn>X1 THEN
+		FC_Filter_AA:=Y1;
+	END_IF 
+END_IF	]]></ST>
+    </Implementation>
+    <LineIds Name="FC_Filter_AA">
+      <LineId Id="7" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="14" Count="1" />
+      <LineId Id="17" Count="2" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="23" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

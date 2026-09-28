@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="conTailCurl_date" Id="{872969c0-db2d-4873-bf60-421d8e00bbee}">
+    <Declaration><![CDATA[TYPE conTailCurl_date ://尾卷数据包
+STRUCT
+	HotCut:BOOL;//热切丝启动	
+	TailCurlStart:BOOL;//尾卷启动
+	TailCurlDone:BOOL;//尾卷完成	
+	
+	TailCultOffloading:BOOL;//尾卷下电芯请求
+	TailCultOffloadingDone:BOOL;//尾卷下电芯完成
+
+	WZIniti_Done:BOOL;//尾卷初始化完成
+	WZIniti_Hbtn:BOOL;//尾卷初始化，触摸屏按钮
+	
+	CreateCamStart:BOOL;//尾卷凸轮创建启动
+	CreateCamDone:BOOL;//尾卷凸轮创建完成
+	
+	TailCurlStep:ARRAY[0..9] OF UINT;//尾卷贴胶程序步
+	
+	SinStepMode:BOOL;//单步模式
+	
+	Error:ARRAY[0..29] OF BOOL;//报警
+	
+	AxisConditionEN:BOOL;//TRUE:电机运动条件屏蔽
+	
+	WJ_AllCamOut:BOOL;//尾卷一键解耦
+	WJ_Memory   :INT;//尾卷电芯记忆
+	Manual	:BOOL;//尾卷手动
+	
+	b_WJqr :BOOL;//选择是否不尾卷,false:尾卷，true：不尾卷
+	
+	WJ_TIME:REAL;//尾卷计时
+	HotClear:BOOL;//热切切断计数清零	
+	TailCurlSEPTALineSavePos:ARRAY[1..2] OF LREAL;//夹膜平移记录位置
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

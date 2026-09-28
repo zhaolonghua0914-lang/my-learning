@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Gross" Id="{3041d971-245f-4a86-a2c4-ad704378fdcc}">
+    <Declaration><![CDATA[TYPE ST_Gross :
+STRUCT
+	Weight_start :BOOL;//称重开始
+	Weight_finish :BOOL;//称重完成
+	Clear_start :BOOL;//清零开始
+	Clear_finish :BOOL;//清零完成
+	bweight	:REAL;
+	Init	 :BOOL;//初始位
+	error	:ARRAY[1..6] OF BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

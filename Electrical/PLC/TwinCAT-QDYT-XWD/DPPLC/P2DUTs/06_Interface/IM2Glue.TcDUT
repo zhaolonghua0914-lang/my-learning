@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="IM2Glue" Id="{0c561ec4-d945-4946-b0b5-90974fe3e272}">
+    <Declaration><![CDATA[TYPE IM2Glue :  //备胶方法st
+STRUCT
+    Start1:BOOL;   //备胶启动
+	Done1:BOOL;   //备胶完成
+	bActioning:BOOL;//备胶动作中	
+	bAction2ing:BOOL;//贴胶动作中	
+
+	Start2:BOOL;   //贴胶启
+	iTagetPos : INT;  //贴胶位置
+    Done2:BOOL;  //贴胶动作完成
+	
+
+	Reset:BOOL;  //复位
+	AutoRuning:BOOL;  //运行中信号
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

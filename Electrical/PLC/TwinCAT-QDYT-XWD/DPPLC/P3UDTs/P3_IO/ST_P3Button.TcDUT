@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P3Button" Id="{b390c7f1-f143-4f9e-9e42-5da8c8af1f64}">
+    <Declaration><![CDATA[TYPE ST_P3Button :
+STRUCT
+P3_ColdWarning_Buzzer	:BOOL;	//冷压上料搬运电机运行蜂鸣器	
+P3_ColdWarning_Lamp     :BOOL;  //冷压上料搬运电机运行警示灯
+NG_button_1				:BOOL;//NG按钮1
+NG_button_2				:BOOL;//NG按钮2
+LateStop				:BOOL;//尾段急停
+IDStickBtn:BOOL;//二维码备胶按钮
+IDCutbtn:BOOL;//二维码切胶按钮
+IDGluebtn:BOOL;//二维码拉胶按钮
+P3_Startbtn:BOOL;//热压，启动按钮
+P3_Resetebtn:BOOL;//热压台，复位按钮
+P3_Stopbtn:BOOL;//热压台，停止按钮
+P3_Autobtn:BOOL;//热压台，手自动按钮
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="Mes2" Id="{eff091ec-e5a6-4103-8d5b-a748caebc07f}">
+    <Declaration><![CDATA[TYPE Mes2 :
+STRUCT
+	Serialnumber	:INT;//片序号
+	Polarity	:INT;//极性 1负极 2正极
+	Platenumber	:   STRING(49) ;//  模切极片编号
+	AnlapTen	:REAL ;// 正极放卷张力每一片
+	CalapTen	:REAL ;// 负极放卷张力每一片
+	GMlapTen	:REAL ;// 隔膜放卷张力每一片
+	GMlapRectify	:REAL ;// 隔膜放卷纠偏每一片
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

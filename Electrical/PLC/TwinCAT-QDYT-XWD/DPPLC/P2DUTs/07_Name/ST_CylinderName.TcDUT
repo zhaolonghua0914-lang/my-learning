@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CylinderName" Id="{c11f5a5c-305b-4c2a-9020-7fe437f88e2c}">
+    <Declaration><![CDATA[TYPE ST_CylinderName :
+STRUCT
+AnScrapbinCy	:INT;		//		正极片NG收纳盒
+CaScrapbinCy	:INT;		//		负极片NG收纳盒
+CaScrapbinUDCy	:INT;		//		负极片NG收纳盒升降
+PoleInflationCy	:INT;		//		隔膜放卷气胀轴
+PoleTapeSplicerLCy	:INT;		//		隔膜接带左压板气缸
+PoleTapeSplicerRCy	:INT;		//		隔膜接带右压板气缸
+PreDiaph:INT;//叠台压隔膜气缸
+
+PoleTapeCy	:INT;		//		隔膜夹紧气缸
+PoleHotCutterCy	:INT;		//		隔膜热切升降
+PoleSplintCy_U	:INT;		//		夹膜上夹板
+PoleSplintCy_D	:INT;		//		夹膜下夹板
+
+
+TailCurlSplintCy	:INT;		//		尾卷夹爪开合
+CurlingSplintCy_L	:INT;		//		长卷针夹开合
+CurlingSplintCy_S	:INT;		//		短卷针夹开合
+CurlingSplintCy_S_1	:INT;		//		短卷针夹开合_1
+TailCurlLineCy	:INT;		//		尾卷压辊平移缸
+TailCurlUpdownCy	:INT;		//		尾卷压辊升降缸
+
+StandbyGlueCy	:INT;		//		备蓝胶气缸
+CodeStandbyGlueCy	:INT;		//		备二维码胶气缸
+
+GlueClampsCy	:INT;		//		贴胶夹爪气缸
+
+GluePressCy	:INT;		//		压蓝胶气缸
+CodeGluePressCy	:INT;		//		压二维码胶气缸
+
+GlueCutCy	:INT;		//		切蓝胶气缸
+codeGlueCutCy	:INT;		//		切二维码胶气缸
+
+PullGluePoleCy	:INT;		//		拉胶杆抱紧
+PullGlueCy	:INT;		//		拉胶气缸
+GlueNGCy	:INT;		//		踢废胶气缸
+PullGlueModelCy	:INT;		//		贴胶治具托极耳
+
+RollPoleearCy	:INT;		//尾卷托极耳托极耳
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

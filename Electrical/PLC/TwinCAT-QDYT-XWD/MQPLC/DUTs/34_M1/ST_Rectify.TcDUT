@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Rectify" Id="{980b231d-4805-490c-96d2-85645999b3a3}">
+    <Declaration><![CDATA[TYPE ST_Rectify :   //纠偏控制
+STRUCT
+(********参数**************)	
+
+	bReset            :BOOL;     // 纠偏复位  
+	bEnable		:BOOL;	(*开启自动纠偏*)
+	fSensorActValue			:REAL; //实际位置
+	
+	bReady              :BOOL;  //纠偏准备号
+	bAutoRunning		:BOOL;	(*纠偏自动运行中*)
+	Error		:BOOL;            //纠偏错误
+    ErrID:	 STRING;     //纠偏错误代码
+	
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

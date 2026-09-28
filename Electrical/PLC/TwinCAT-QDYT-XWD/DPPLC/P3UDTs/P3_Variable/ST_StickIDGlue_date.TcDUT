@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_StickIDGlue_date" Id="{ade6f06b-b87e-40d7-81dd-cd8af8dd68dd}">
+    <Declaration><![CDATA[TYPE ST_StickIDGlue_date :
+STRUCT
+StandbyCode_Step1			:UINT;//二维码拉胶自动步
+StandbyCode_Step2			:UINT;//二维码取胶自动步	
+PermitFilling				:BOOL;//允许上电芯信号
+PermitMaterial				:BOOL;//允许下电芯信号
+StandbyCode_Start			:BOOL;//备二维码胶开始信号
+StandbyCode_Finish			:BOOL;//二维码取胶完成信号
+StandbyCode_Done			:BOOL;//二维码胶拉胶完成信号
+
+ScanCode_start				:BOOL;//扫码开始(流程)
+ScanCode_AgainStart			:BOOL;//扫码复扫(流程)
+ScanCode_finish				:BOOL;//扫码完成(流程)
+
+StickGluePhoto_start   		:BOOL;//贴胶检测开始
+StickGluePhoto_finish   	:BOOL;//贴胶检测完成
+
+Code_State 					:INT;//扫码	1、OK,	2、NG
+Code_State_1				:INT;//扫码	1、OK,	2、NG(切刀后结果)
+Code_State_2				:INT;//扫码	1、OK,	2、NG(贴胶头结果）
+Scan_IP						:STRING;//二维码扫码枪IP地址
+bTcpOpen 					:BOOL;//扫码Tcp 连接
+bScan_init 					:BOOL;//扫码初始化
+bTcpOpen_OK 				:BOOL;//扫码Tcp 连接OK
+bScan_start 				:BOOL;//扫码启动
+//bCodeConError 				:BOOL;//扫码Tcp报错
+//bCodeError  				:BOOL;//扫码故障
+strCode   					:STRING;//电芯条码
+strCode_1					:STRING;//电芯条码(切刀后记忆)
+strCode_2					:STRING;//电芯条码(贴胶头记忆）
+Scan_bDone 					:BOOL;//扫码完成	
+
+IDGlueNumberOK    :BOOL;   //二维码胶料号OK
+
+StickGluNgSet:INT;//外观检测NG连续计数设定值
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

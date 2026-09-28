@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SetMoter_auto" Id="{c59305cb-d51a-4a5a-a9d8-40b15a777148}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SetMoter_auto
+VAR_INPUT
+Home_done		:BOOL;//排杆电机回零完成	
+biSensor        :BOOL;//对射感应
+P_OT			:BOOL;//上限感应
+N_OT			:BOOL;//下限感应
+bHave			:BOOL;//有料感应
+Box				:BOOL;//有料盒感应
+END_VAR
+VAR_OUTPUT
+Full			:BOOL;//满料信号	
+END_VAR
+VAR_IN_OUT
+bHome      	 	:BOOL;//回零信号
+
+Push_NG     	:BOOL;//放NG料中
+bGoWorkPos		:BOOL;//上升定位
+bLeaveWorkPos	:BOOL;//下降定位
+
+JOG_N			:BOOL;//下降
+JOG_P			:BOOL;//上升	
+END_VAR
+VAR
+UP_ton :Tc2_Standard.TON;
+Down_ton :Tc2_Standard.TON;
+Step_NG         :UINT;
+Step_1			:UINT;
+	home_ton: Ton;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF biSensor AND N_OT THEN
+	//Step_NG:=666;
+	Full:=TRUE;
+ELSIF Full AND NOT bHave THEN
+	Full:=FALSE;	
+END_IF
+
+UP_ton(PT:=T#2S);
+Down_ton(PT:=T#2S);
+home_ton(PT:=T#500MS);
+
+
+	
+CASE Step_NG OF
+
+0:
+IF 	Home_done AND biSensor  AND NOT Full  AND Box AND Step_1=0 AND NOT Push_NG THEN
+	Step_NG:=10;
+END_IF
+
+
+10:
+	JOG_N:=TRUE;
+	JOG_P:=FALSE;
+	IF NOT biSensor THEN
+		JOG_N:=FALSE;
+		JOG_P:=FALSE;
+		Step_NG:=20;
+	END_IF
+
+20:
+	JOG_P:=FALSE;
+	JOG_N:=FALSE;
+	Step_NG:=0;
+
+END_CASE
+
+
+CASE Step_1 OF
+0:
+	IF 	NOT Home_done THEN
+		Step_1:=10;
+		Step_NG:=0;
+		home_ton.IN:=FALSE;
+	END_IF
+
+10:
+	IF Home_done AND biSensor THEN
+		Step_1:=20;
+		
+	END_IF
+
+20:
+	home_ton.IN:=TRUE;
+	IF home_ton.Q THEN
+		Step_1:=0;
+		home_ton.IN:=FALSE;
+	END_IF
+
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SetMoter_auto">
+      <LineId Id="465" Count="58" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

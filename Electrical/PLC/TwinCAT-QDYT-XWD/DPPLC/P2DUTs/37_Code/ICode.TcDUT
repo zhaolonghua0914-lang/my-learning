@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ICode" Id="{753a6ae8-69e3-40e7-abb9-c2f19607a41a}">
+    <Declaration><![CDATA[TYPE ICode : 
+STRUCT
+	bComOpen                  :BOOL;  //扫码Tcp 开
+    bComClose                  :BOOL;  //扫码Tcp 关
+ 	bComOpenDone          :BOOL;  //扫码Tcp 打开OK
+    bCodeConError             :BOOL;//扫码通讯故障
+
+    sRemoteHost                :T_IPv4Addr;  //扫描枪IP地址
+    sRemotePot                  :UINT;  //端口号
+
+	bLON                           :BOOL; //  扫码开
+	bLOFF                          :BOOL; //扫码关
+	bDone                         :BOOL; //扫码完成
+    bCodeError                  :BOOL;//扫码故障	
+    strCode                       :STRING;//条码结果
+
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

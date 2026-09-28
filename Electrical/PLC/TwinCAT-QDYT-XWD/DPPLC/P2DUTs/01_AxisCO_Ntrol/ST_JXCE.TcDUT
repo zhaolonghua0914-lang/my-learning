@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_JXCE" Id="{892f0d3a-c327-4de9-bd96-77fdc2ed9004}">
+    <Declaration><![CDATA[TYPE ST_JXCE :
+STRUCT
+      out_Control             AT  %Q*  :     UINT;  // 电机控制
+      out_Function            AT  %Q*  :    UINT;  // 电机功能
+      out_Start                 AT  %Q*  :   USINT;  // 电机启动定位
+      out_Mode               AT  %Q*  :   USINT;  // 电机定位模式
+      out_Cmd_Vel           AT  %Q*  :    UINT;  // 电机命令速度
+      out_Cmd_Pos           AT  %Q*  :   DINT;  // 电机命令位置
+      out_Cmd_Acc           AT  %Q*  :   UINT;  // 电机命令加速度
+      out_Cmd_Dec          AT  %Q*  :    UINT;  // 电机命令减速度
+
+      in_Status               AT  %I*  :     UINT;  // 电机状态
+      in_Flag                 AT  %I*  :     UINT;  // 电机标志位
+      in_Act_Pos              AT  %I*  :     DINT;  // 电机反馈位置
+      in_Act_Vel             AT  %I*  :     UINT;  // 电机反馈速度
+   
+     in_Latest_Alm          AT  %I*  :     USINT;  // 电机最新报警
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

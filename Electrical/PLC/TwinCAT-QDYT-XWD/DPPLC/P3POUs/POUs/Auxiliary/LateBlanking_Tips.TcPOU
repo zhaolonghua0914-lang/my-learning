@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Tips" Id="{c07807b3-403d-468d-bf02-4e202e3e786c}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Tips
+VAR
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[////////////////////////////提示不停机
+
+//冷压上料提示
+IF  Step30=35 AND (NOT arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Cmd.arrbRealPoint[9] OR NOT arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6]) AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Status.NoMoving 
+	AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Status.Homed AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.NoMoving  AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.Homed THEN
+		tip_1[1]:=TRUE;//一号叠台侧贴胶平移不在下电芯位或者侧贴胶旋转不在下电芯位
+	ELSE
+		tip_1[1]:=FALSE;	
+END_IF
+	
+IF  Step30=1035 AND (NOT arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Cmd.arrbRealPoint[9] OR NOT arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Cmd.arrbRealPoint[6]) AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Status.NoMoving 
+	AND arrAxisCtrl[P2AxisNo.P2M1_GluingLine].Status.Homed AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.NoMoving  AND arrAxisCtrl[P2AxisNo.P2M1_GluingWhirling].Status.Homed THEN
+		tip_1[2]:=TRUE;//二号叠台侧贴胶平移不在下电芯位或者侧贴胶旋转不在下电芯位
+	ELSE
+		tip_1[2]:=FALSE;	
+END_IF	
+
+IF   Step30=2035 AND (NOT arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Cmd.arrbRealPoint[9] OR NOT arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Cmd.arrbRealPoint[6])
+	 AND arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Status.NoMoving AND arrAxisCtrl[P2AxisNo.P2M3_GluingLine].Status.Homed  AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Status.NoMoving  
+	 AND arrAxisCtrl[P2AxisNo.P2M3_GluingWhirling].Status.Homed  THEN
+		tip_1[3]:=TRUE;//三号叠台侧贴胶平移不在下电芯位或者侧贴胶旋转不在下电芯位
+	ELSE
+		tip_1[3]:=FALSE;	
+END_IF	
+
+IF Step30=3035 AND PermitColdPressRack AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving 
+	AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving THEN
+		tip_1[4]:=TRUE;//冷压上料时托板不在初始位
+	ELSE
+		tip_1[4]:=FALSE;	
+END_IF	
+
+IF SingleStep[1] THEN
+		tip_1[5]:=TRUE;//冷压上料单步中
+	ELSE
+		tip_1[5]:=FALSE;
+END_IF
+
+IF (P2Senser.P2M1_Securitydoorswitch3 AND P2Senser.P2M1_Securitydoorswitch4
+	AND P2Senser.P2M2_Securitydoorswitch3 AND P2Senser.P2M2_Securitydoorswitch4
+	AND P2Senser.P2M3_Securitydoorswitch3 AND P2Senser.P2M3_Securitydoorswitch4) THEN
+		tip_1[6]:=FALSE;//叠片冷压上料门禁
+	ELSE
+		tip_1[6]:=TRUE; 
+END_IF
+
+/////冷压提示
+IF   Step31=30 AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)>arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[44]) AND 
+    (arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] OR LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos)>=arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[1]) AND 
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+	 AND Permit_Cold_Press AND NOT b_Press_condition[1] AND CellMemory[CellNo.Coldpress].Cell THEN	
+		tip_2[1]:=TRUE;//冷压未感应到电芯报警
+	ELSE
+		tip_2[1]:=FALSE;
+END_IF
+
+IF SingleStep[2] THEN
+		tip_2[2]:=TRUE;//冷压单步中
+	ELSE
+		tip_2[2]:=FALSE;
+END_IF
+
+/////烤箱上下料提示
+IF  (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>WeighLine_1 OR NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3])
+	AND PermitHotPressRack AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed AND Step32=53 AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving THEN
+		tip_3[1]:=TRUE;//烤箱准备下料时，称重平移不在初始位或者称重旋转不在称重位
+	ELSE
+		tip_3[1]:=FALSE;
+END_IF
+
+IF (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>WeighLine_1 OR NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3]) AND Step32=105 THEN
+		tip_3[1]:=TRUE;//烤箱准备下料时，称重平移不在初始位或者称重旋转不在称重位
+	ELSE
+		tip_3[1]:=FALSE;
+END_IF
+
+IF (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.fActPos)>WeighLine_1 OR NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3]) AND Step32=1115 THEN
+		tip_3[2]:=TRUE;//烤箱上料时，称重平移不在初始位或者称重旋转不在称重位
+	ELSE
+		tip_3[2]:=FALSE;
+END_IF
+
+IF SingleStep[3] THEN
+		tip_3[3]:=TRUE;//烤箱上下料单步中
+	ELSE
+		tip_3[3]:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+/////热压提示
+IF  Step33=30 AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[45]) AND 
+     arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.arrbRealPoint[2] AND arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.NoMoving 
+	AND Permit_Hot_Press  AND NOT b_Press_condition[2] AND CellMemory[CellNo.Hotpress].Cell THEN
+		tip_4[1]:=TRUE;//热压未感应到电芯报警
+	ELSE
+		tip_4[1]:=FALSE;
+END_IF
+
+IF SingleStep[4] THEN
+		tip_4[2]:=TRUE;//热压单步中
+	ELSE
+		tip_4[2]:=FALSE;
+END_IF
+
+
+////称重上料提示
+IF SingleStep[5] THEN
+		tip_5[1]:=TRUE;//称重上料单步中
+	ELSE
+		tip_5[1]:=FALSE;
+END_IF
+
+
+
+
+
+//分选提示
+IF SingleStep[6] THEN
+		tip_6[1]:=TRUE;//分选单步中
+	ELSE
+		tip_6[1]:=FALSE;
+END_IF
+
+
+
+
+
+//下料提示
+IF SingleStep[7] THEN
+		tip_7[1]:=TRUE;//下料单步中
+	ELSE
+		tip_7[1]:=FALSE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="LateBlanking_Tips">
+      <LineId Id="14" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="15" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="26" Count="4" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="54" Count="2" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="42" Count="3" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="60" Count="1" />
+      <LineId Id="117" Count="1" />
+      <LineId Id="115" Count="1" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="176" Count="6" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="64" Count="2" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="119" Count="4" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="89" Count="1" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="99" Count="2" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="91" Count="1" />
+      <LineId Id="104" Count="2" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="107" Count="4" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="124" Count="4" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="165" Count="6" />
+      <LineId Id="75" Count="1" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="79" Count="1" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="82" Count="2" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="129" Count="3" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="147" Count="3" />
+      <LineId Id="134" Count="5" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="152" Count="3" />
+      <LineId Id="141" Count="5" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="157" Count="3" />
+      <LineId Id="156" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

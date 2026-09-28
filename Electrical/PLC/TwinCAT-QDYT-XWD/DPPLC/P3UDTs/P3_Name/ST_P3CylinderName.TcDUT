@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P3CylinderName" Id="{e0f8c918-39af-47c2-b9fc-ee0ca05b8e0a}">
+    <Declaration><![CDATA[TYPE ST_P3CylinderName :
+STRUCT
+P3ColdPressClip	:INT:=230;	//	P3	冷压上料夹气缸
+P3ColdPressTensed	:INT:=231;	//	P3	冷压麦拉张紧气缸
+P3OvenMoveClip	:INT:=232;	//	P3	烤箱上料夹气缸
+P3Oven1	:INT:=233;	//	P3	1_1烤箱托板气缸
+P3Oven2	:INT:=234;	//	P3	1_2烤箱托板气缸
+P3Oven3	:INT:=235;	//	P3	1_3烤箱托板气缸
+P3Oven4	:INT:=236;	//	P3	1_4烤箱托板气缸
+P3Oven5	:INT:=237;	//	P3	1_5烤箱托板气缸
+P3Oven6	:INT:=238;	//	P3	1_6烤箱托板气缸
+P3Oven7	:INT:=239;	//	P3	1_7烤箱托板气缸
+P3Oven8	:INT:=240;	//	P3	2_1烤箱托板气缸
+P3Oven9	:INT:=241;	//	P3	2_2烤箱托板气缸
+P3Oven10	:INT:=242;	//	P3	2_3烤箱托板气缸
+P3Oven11	:INT:=243;	//	P3	2_4烤箱托板气缸
+P3Oven12	:INT:=244;	//	P3	2_5烤箱托板气缸
+P3Oven13	:INT:=245;	//	P3	2_6烤箱托板气缸
+P3Oven14	:INT:=246;	//	P3	2_7烤箱托板气缸
+P3Oven15	:INT:=247;	//	P3	3_1烤箱托板气缸
+P3Oven16	:INT:=248;	//	P3	3_2烤箱托板气缸
+P3Oven17	:INT:=249;	//	P3	3_3烤箱托板气缸
+P3Oven18	:INT:=250;	//	P3	3_4烤箱托板气缸
+P3Oven19	:INT:=251;	//	P3	3_5烤箱托板气缸
+P3Oven20	:INT:=252;	//	P3	3_6烤箱托板气缸
+P3Oven21	:INT:=253;	//	P3	3_7烤箱托板气缸
+P3HotPressTensed	:INT:=254;	//	P3	热压麦拉张紧气缸
+P3ShortTest	:INT:=255;	//	P3	短路测试夹气缸
+P3WeightFeedingClamp	:INT:=256;	//	P3	称重上料夹气缸
+P3ThicknessMeasuringSwitch	:INT:=257;	//	P3	测厚台切换气缸
+P3ThicknessSupport	:INT:=258;	//	P3	测厚台托板气缸
+P3ThicknessPressure	:INT:=259;	//	P3	测厚台压板气缸
+P3SortClamp	:INT:=260;	//	P3	电芯分选夹开合气缸
+P3SortLifting	:INT:=261;	//	P3	电芯分选夹升降气缸
+P3SortRotate	:INT:=262;	//	P3	电芯分选夹旋转气缸
+P3BlankingClamp	:INT:=263;	//	P3	电芯下料夹开合气缸
+P3BlankingLifting	:INT:=264;	//	P3	电芯下料夹升降气缸
+P3BlankingRotate	:INT:=265;	//	P3	电芯下料夹旋转气缸
+P3BoxLock1_NG	:INT:=266;	//	P3	电芯NG1料盒锁定气缸
+P3BoxLock2_NG	:INT:=267;	//	P3	电芯NG2料盒锁定气缸
+P3BoxLock3_NG	:INT:=268;	//	P3	电芯NG3料盒锁定气缸
+(*P3Cold_Clamp	   :INT:=269;  //  P3  冷压辅助上料开合气缸
+P3Cold_Tensed	   :INT:=270;  //  P3  冷压辅助上料夹紧气缸
+P3Cold_Retracting  :INT:=271;  //  P3  冷压辅助上料进退气缸
+P3Cold_Lifting	   :INT:=272;  //  P3  冷压辅助上料升降气缸*)
+
+//新增
+
+//新增
+
+P3CellPush:INT:=269;//电芯压紧气缸
+P3CellAdvance:INT:=270;//电芯平移气缸
+P3TapePush:INT:=271;//贴胶头夹紧气缸
+P3TapePull:INT:=272;//拉带夹紧气缸
+P3TapeLift:INT:=273;//拉带升降气缸
+P3TapeCut:INT:=274;//切胶气缸
+P3GluePush:INT:=275;//压胶气缸
+P3TapeBuffer:INT:=276;//贴胶缓存气缸
+P3TapeSpin:INT:=277;//流水线下料旋转气缸
+P3TapeVacuo:INT:=278;//贴胶头真空
+P3WgightUP:INT:=279;//称重上料夹夹电芯气缸
+P3SortPush:INT:=280;//电芯分选夹夹电芯气缸
+P3ColdBlow:INT:=281;//冷压吹气
+P3HotBlow:INT:=282;//热压吹气
+P3CellPushSpin:INT:=283;//电芯旋转定位气缸
+P3CellSpin:INT:=284;//电芯旋转气缸
+
+
+
+//新增
+P3_GlueExtend:INT:=285;//二维码蹬胶气缸
+P3_GluePress:INT:=286;	//二维码压胶气缸
+P3_GlueCut:INT:=287;	//二维码切胶气缸
+P3_GluePull:INT:=288;	//二维码拉胶气缸
+P3_GlueVacuum:INT:=289;//	二维码贴胶吸盘真空 ON真空 OFF破真空
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

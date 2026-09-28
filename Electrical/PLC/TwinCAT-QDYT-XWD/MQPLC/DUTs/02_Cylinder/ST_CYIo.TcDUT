@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CYIo" Id="{f98d57b2-0c76-44c4-bc0a-fb128e335eb7}">
+    <Declaration><![CDATA[TYPE ST_CYIo ://气缸 I O
+STRUCT
+	DIOnSwitch:		    BOOL;	//开限位
+	DIOFFSwitch:		BOOL;	//关限位
+
+	DOStatus1:          BOOL;//输出状态
+	DOStatus2:          BOOL;//输出状态
+
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

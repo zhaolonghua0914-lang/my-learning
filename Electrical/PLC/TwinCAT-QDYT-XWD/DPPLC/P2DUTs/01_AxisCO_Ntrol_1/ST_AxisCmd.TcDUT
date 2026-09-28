@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AxisCmd" Id="{108c373d-5329-4f64-a51b-50dfcebbce6c}">
+    <Declaration><![CDATA[TYPE ST_AxisCmd :  //轴运动控制相关
+STRUCT
+
+   bDynamitcsParSel      :INT:=1;  // 1:NC          2:UserDefine
+
+
+	bEnable			        :BOOL;				    (*使能*)
+	fOverride			    :REAL:=100;			(*MC_power中实际倍率的设定，默认值为100*)
+	bEnableFw		        :BOOL:=TRUE;		 (*正向使能*)
+	bEnableBw		    :BOOL:=TRUE;	 	(*负向使能*)
+
+	bJog_Fw			    :BOOL;			     	(*正向点动*)
+	bJog_Bw			    :BOOL;			    	(*反向点动*)
+
+	bMoveAbs	 	        :BOOL;				    (*运行绝对位置*)
+	fPositon_of_Abs	 	:REAL;					(*绝对位置位移*)
+
+	bMoveRel		        :BOOL;				   (*运行当对位置*)
+	fPosition_of_Rel	    :REAL;				   (*相对位置位移*)
+
+	bMoveModulo		 :BOOL;				     (*运行模长位置*)
+	fPositon_of_Mod	  :REAL;					  (*模长位置位移*)
+
+	bMoveVelo		    :BOOL;				       (*向一个方向持续运行，方向由前面的正向点动或者反向点动设置*)
+	bMoveVeloDir	:MC_Direction := MC_Positive_Direction ;	(*速度运动的方向,MC_Negative_Direction*)
+
+	bHome			       :BOOL;						(*启动回参*)
+
+	bSetPos			       :BOOL;						 (*设置轴当前的位置为一个绝对位置*)
+    fSetPos				   :REAL:=0;					(*setpos功能块将轴当前的位置设置为这个变量*)
+
+	iGoSetPos              :INT;                     //GO离散点位_INT
+    arrbGoSetPos      :ARRAY[0..15]        OF BOOL;  //GO离散点位_布尔数组
+	iRealPoint              :INT;                     //离散点位指示_INIT
+    arrbRealPoint        :ARRAY[0..15]        OF BOOL;  //离散点位指示_布尔数组
+
+	bHalt			            :BOOL;				(*暂停*)
+	bStop			        :BOOL;				(*停止*)
+	bGearOut			    :BOOL;				(*解耦*)
+	bReset			        :BOOL;				(*复位*)
+
+	hmiJog_Fw			    :BOOL;				//正向点动_BOOL
+	hmibJog_Bw		     :BOOL;				//反向点动_BOOL	
+	hmiGoSetPos          :INT;              //GO离散点位_INT
+
+
+//条件
+     Home_Condition       :BOOL:=TRUE;//回原点条件
+     JogP_Condition       :BOOL:=TRUE;//点动正转条件
+     JogN_Condition       :BOOL:=TRUE;//点动反转条件
+     GoPoint_Condition    :ARRAY[0..15] OF BOOL;//HMI点动定位条件
+
+
+//轴到位判断
+	Axis_R:REAL:=0.13;//轴到位判断
+
+
+
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

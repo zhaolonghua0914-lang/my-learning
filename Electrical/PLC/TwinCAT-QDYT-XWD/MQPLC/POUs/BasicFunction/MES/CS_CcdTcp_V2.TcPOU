@@ -1,0 +1,336 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_CcdTcp_V2" Id="{e5f369cc-a1a9-45ac-9b17-7d6e116d4178}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PUBLIC CS_CcdTcp_V2
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR_IN_OUT
+   iCcd2:ST_CCDCom;
+   Data:STCcdData;
+END_VAR
+
+
+VAR
+	ccdDataSend:STCcdDataSend;
+	ccdDataReceive:STCcdDataSend;
+	fbTcpCon:FB_SocketConnect;
+	fbTcpSend:FB_SocketSend;
+	fbTcpRec:FB_SocketReceive;
+	fbTcpClose: FB_SocketClose;
+	bConnect: BOOL;
+	bClose: BOOL;
+	hTcpSock: T_HSOCKET;
+	//aTcpSend:ARRAY[1..10] OF BYTE;
+	//aTcpReceive:ARRAY[1..10] OF BYTE;	
+	StrSend:STRING;
+	StrReceive:STRING;
+	fbUdpCreate:FB_SocketUdpCreate;
+	hUdp: T_HSOCKET;
+	bCreate: BOOL;
+	port: UDINT:=9004;
+	bSendTcp: BOOL;
+	bReceiveTcp: BOOL;
+	fbSwingHalt2: MC_Halt;
+
+    strReceiveData: STCcdData;
+
+	iorderTemp: DINT;
+	TON100:TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+	Config();
+	
+	M_SendReceive();
+
+
+	
+	
+
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+(*	
+   fbUdpCreate(
+	sSrvNetId:= , 
+	sLocalHost:= , 
+	nLocalPort:= port, 
+	bExecute:=bCreate , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=> hUdp);
+	
+	
+	*)
+	
+	
+	]]></ST>
+    </Implementation>
+    <Action Name="Config" Id="{a44671be-f8c2-40c9-b521-c7dad34170f4}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+  IF iCcd2.bComOpen THEN
+	 bConnect:=TRUE;	
+	 bClose:=FALSE;
+	 iCcd2.bComOpen:=FALSE;
+  END_IF
+  
+   IF iCcd2.bComClose THEN
+	 bConnect:=FALSE;	
+	 bClose:=TRUE;
+	 iCcd2.bComClose:=FALSE;
+  END_IF 
+  
+  
+  
+fbTcpCon(
+	sSrvNetId:= ''   ,          //       (*'169.254.46.193.1.1'*) , 
+	sRemoteHost:='192.168.2.11'     , 
+	nRemotePort:= 2020, 
+	bExecute:=bConnect , 
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=>hTcpSock );
+	
+fbTcpClose(
+	sSrvNetId:= ''   , 
+	hSocket:=hTcpSock , 
+	bExecute:=bClose , 
+	tTimeout:=T#5S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+
+
+IF fbTcpCon.bBusy THEN
+	bConnect:=FALSE;
+END_IF
+
+IF fbTcpClose.bBusy THEN
+   bClose:=FALSE;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="M_SendReceive" Id="{5b08fc76-d42a-45fc-b1bc-1f6249958a05}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+  IF iCcd2.bSend THEN
+	 bSendTcp:=TRUE;
+	 iCcd2.bDone:=FALSE;
+	 iCcd2.bError:=FALSE;
+	 //iCcd2.strReceive:='';
+    MEMSET(ADR(ccdDataSend.strBetryName),0,SIZEOF(ccdDataSend.strBetryName));
+	MEMSET(ADR(ccdDataSend.strCode),0,SIZEOF(ccdDataSend.strCode));
+	MEMSET(ADR(ccdDataSend.strShortData),0,SIZEOF(ccdDataSend.strShortData));
+	MEMSET(ADR(ccdDataSend.strHotPress),0,SIZEOF(ccdDataSend.strHotPress));
+    STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strBetryName) , pSrcSTRING:=ADR(Data.strBetryName) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strBetryName )+1) );
+    STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strCode) , pSrcSTRING:=ADR(Data.strCode) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strCode )+1) ); 
+    STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strShortData) , pSrcSTRING:=ADR(Data.strShortData) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strShortData )+1) );
+	STRING_TO_UTF8(pDstUTF8:=ADR(ccdDataSend.strHotPress) , pSrcSTRING:=ADR(Data.strHotPress) , nDstSize:=INT_TO_UINT( LEN(STR:=Data.strHotPress )+1) );
+    iCcd2.bSend:=FALSE;
+	iorderTemp:=Data.iorder;
+	TON100.IN:=TRUE;
+END_IF
+	 
+fbTcpSend(
+		sSrvNetId:= , 
+		hSocket:=hTcpSock , 
+		cbLen:=SIZEOF(ccdDataSend), 
+		pSrc:= ADR(ccdDataSend), 
+		bExecute:= bSendTcp, 
+		tTimeout:= T#2S , 
+		bBusy=> , 
+		bError=> , 
+		nErrId=> );
+	IF bSendTcp AND fbTcpSend.bBusy THEN
+		bSendTcp:=FALSE;
+	END_IF
+	
+	
+bReceiveTcp:=NOT bReceiveTcp;
+	
+fbTcpRec(
+	sSrvNetId:= , 
+	hSocket:= hTcpSock, 
+	cbLen:=SIZEOF(ccdDataReceive) , 
+	pDest:=ADR(ccdDataReceive) , 
+	bExecute:=bReceiveTcp , 
+	tTimeout:= T#5S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	nRecBytes=> );
+
+	
+TON100(IN:= , PT:= T#3S, Q=> , ET=> );//通讯超时
+	
+ ccdDataReceive.iorder;	//功能码 2     3      4
+ UTF8_TO_STRING (pDstSTRING:= ADR(strReceiveData.strBetryName) , pSrcUTF8:= ADR(ccdDataReceive.strBetryName), nDstSize:=SIZEOF(ccdDataReceive.strBetryName) , nDstLen=> );//文件名
+
+	IF ccdDataReceive.iorder=iorderTemp  AND ccdDataReceive.iorder>0  THEN  //发送对应 返回功能码  
+		
+        IF ccdDataReceive.iorder=2 THEN     //给MES发送数据成功
+		    iCcd2.bDone:=TRUE; 
+		ELSIF ccdDataReceive.iorder=3 THEN   //取料请求文件名成功  有可能文件名是空
+			IF strReceiveData.strBetryName='' THEN //文件名空  给plc自定义文件名   也可以做报警    
+			   iCcd2.bDone:=TRUE; 
+			    iCcd2.strReceive:= MAIN.strTime;
+			ELSE
+			 iCcd2.strReceive:= strReceiveData.strBetryName;
+			  iCcd2.bDone:=TRUE; 
+			END_IF
+		ELSIF ccdDataReceive.iorder=4 THEN   //取料夹爪夹空   不用处理文件名字
+		    iCcd2.bDone:=TRUE; 
+			iCcd2.strReceive:='';
+		END_IF
+	
+	   MEMSET(ADR(ccdDataReceive),0,SIZEOF(ccdDataReceive));
+	   iorderTemp:=0;
+	   TON100.IN:=FALSE;
+	END_IF
+	
+	IF TON100.Q AND iorderTemp<>0 THEN  //通讯超时报警
+		   ;           //报警信号
+		 TON100.IN:=FALSE;
+		  iorderTemp:=0;
+	END_IF
+	
+	
+	
+
+
+ 
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="CS_CcdTcp_V2">
+      <LineId Id="185" Count="1" />
+      <LineId Id="10" Count="3" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="120" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="148" Count="18" />
+      <LineId Id="75" Count="1" />
+      <LineId Id="82" Count="9" />
+      <LineId Id="77" Count="4" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_CcdTcp_V2.Config">
+      <LineId Id="63" Count="1" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="58" Count="2" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="70" Count="3" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="74" Count="1" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="40" Count="17" />
+      <LineId Id="3" Count="2" />
+      <LineId Id="76" Count="5" />
+      <LineId Id="6" Count="12" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_CcdTcp_V2.M_SendReceive">
+      <LineId Id="2" Count="1" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="56" Count="1" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="93" Count="2" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="97" Count="2" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="85" Count="1" />
+      <LineId Id="16" Count="9" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="67" Count="1" />
+      <LineId Id="27" Count="1" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="29" Count="8" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="106" Count="3" />
+      <LineId Id="111" Count="1" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="126" Count="2" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="142" Count="1" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="132" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="121" Count="1" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="113" Count="1" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="147" Count="1" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="115" Count="2" />
+      <LineId Id="11" Count="4" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

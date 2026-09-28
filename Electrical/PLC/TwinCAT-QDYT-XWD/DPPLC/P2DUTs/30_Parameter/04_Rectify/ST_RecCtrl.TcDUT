@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_RecCtrl" Id="{33208703-ac7d-4fa5-bf3d-314d186b201a}">
+    <Declaration><![CDATA[TYPE ST_RecCtrl ://过程纠偏
+STRUCT
+    Cmd        :ST_RecCmd;
+    Io            :ST_RecIo;
+    Status      :ST_RecStatus;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

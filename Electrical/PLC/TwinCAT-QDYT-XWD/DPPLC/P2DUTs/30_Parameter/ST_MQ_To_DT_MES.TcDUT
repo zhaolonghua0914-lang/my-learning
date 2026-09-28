@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_MQ_To_DT_MES" Id="{73b0c96a-25b9-4e3a-809e-67bea80b6f8d}">
+    <Declaration><![CDATA[TYPE ST_MQ_To_DT_MES  :
+STRUCT
+//PC写给PLC的-----先下发给叠台，叠台再和模切做通讯-------需要上料时PLC往该地址写入Error
+PostiveCode1				:STRING(49);//正极左1条码		1
+PostiveCode2				:STRING(49);//正极右2条码		2
+NegativeCode1				:STRING(49);//负极左1条码		3
+NegativeCode2				:STRING(49);//负极右2条码		4
+Station1_Code				:STRING(49);//叠台1隔膜条码		5
+Station2_Code				:STRING(49);//叠台2隔膜条码		6
+Station3_Code				:STRING(49);//叠台3隔膜条码		7
+Station1_BlueCode			:STRING(49);//叠台1l蓝胶条码		8
+Station2_BlueCode			:STRING(49);//叠台2蓝胶条码		9
+Station3_BlueCode			:STRING(49);//叠台3蓝胶条码		10
+CellCode					:STRING(49);//后段二维码胶条码	11
+BlueCode					:STRING(49);//后段蓝胶条码		12
+
+//MES条码校验信号交互----PC_To_PLC
+Mes_PcToPlc1:        BOOL;   //正极左1条码条码校验完成信号
+Mes_PcToPlc2:        BOOL;   //正极右2条码校验完成信号
+Mes_PcToPlc3:        BOOL;   //负极左1条码	校验完成信号
+Mes_PcToPlc4:        BOOL;   //负极右2条码校验完成信号
+Mes_PcToPlc5:        BOOL;   //叠台1隔膜条码校验完成信号
+Mes_PcToPlc6:        BOOL;   //叠台2隔膜条码校验完成信号
+Mes_PcToPlc7:        BOOL;   //叠台3隔膜条码校验完成信号
+Mes_PcToPlc8:        BOOL;   //叠台1l蓝胶条码校验完成信号
+Mes_PcToPlc9:        BOOL;   //叠台2蓝胶条码校验完成信号
+Mes_PcToPlc10:        BOOL;  //叠台3蓝胶条码校验完成信号
+Mes_PcToPlc11:        BOOL;   //后段二维码胶条码校验完成信号
+Mes_PcToPlc12:        BOOL;   //后段蓝胶条码校验完成信号	
+
+//MES条码校验信号交互----PLC_To_PC
+Mes_PlcToPc1:        BOOL;   //正极左1换料信号
+Mes_PlcToPc2:        BOOL;   //正极右2换料信号
+Mes_PlcToPc3:        BOOL;   //负极左1换料信号
+Mes_PlcToPc4:        BOOL;   //负极右2换料信号
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

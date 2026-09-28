@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Ng_classification" Id="{c2a7a68b-a00f-45d2-9e31-5257f146abb3}">
+    <Declaration><![CDATA[TYPE ST_Ng_classification :
+STRUCT
+	X1_NG    :UINT;//X1纠偏不良数
+    X2_NG    :UINT;//X2纠偏不良数
+    Y_NG    :UINT;//Y纠偏不良数
+    R_NG    :UINT;//R角轮廓不良数
+    other_NG    :UINT;//其他类不良数
+	NgClear     :ARRAY [1..6] OF BOOL ;//不良数清零
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

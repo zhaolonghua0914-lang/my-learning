@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_CyCtrl" Id="{ee6b54a4-7ee1-4acb-9f0a-6d94d57a4d5f}">
+    <Declaration><![CDATA[TYPE ST_CyCtrl ://气缸控制UDT  对应单控  双控气缸
+STRUCT
+   Io           : ST_CYIO;    //气缸IO
+   Cmd      :  ST_CyCmd;
+   Status     :ST_CyStatus;
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

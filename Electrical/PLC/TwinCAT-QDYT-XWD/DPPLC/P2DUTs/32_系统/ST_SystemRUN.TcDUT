@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_SystemRUN" Id="{4de6d8b7-ef9a-4e1a-8bc4-70ec446ea81b}">
+    <Declaration><![CDATA[TYPE ST_SystemRUN ://系统功能块UDT
+STRUCT
+(***btn***)
+	 btnStart                      :BOOL;  
+     btnStop                      :BOOL;   
+	 btnReset                     :BOOL;  
+     btnAuto                      :BOOL;
+     btnManul                   :BOOL;	 
+	 btnEstop                    :BOOL;
+	// btnDoor: ARRAY[1..10] OF BOOL;//门禁
+	  bReset                      :BOOL;  
+(***HMI*) 
+	 hmiStart                    :BOOL;  
+     hmiStop                    :BOOL;   
+	 hmiReset                   :BOOL;  
+     hmiAutoSwitch           :BOOL;
+     hmiAuto                    :BOOL;
+     hmiManul                  :BOOL;	 
+	 hmiEstop                   :BOOL;
+     hmiTest                     :BOOL;
+(**Status**)
+	 FlgAuto                     :BOOL;       //自动中标志位 硬件状态
+	 FlgManua                  :BOOL;      //手动状态硬件状态
+     iMode                       :INT;  //运行模式  1:自动中   2:暂停  3:手动   4:急停   
+
+     Autoing                     :BOOL;   //自动运行中
+	 Manuling                   :BOOL;  //手动运行中
+	 Stoping                     :BOOL;   //停止中
+	 Alarming                   :BOOL;   //报警中
+	 bErrorStop                :BOOL;//报警停机
+
+     bAutoCondition         :BOOL;
+     bStopFinished            :BOOL;
+ 
+//凸轮初始化
+   // bP2M1Init                   :BOOL;
+   // bP2M2Init                   :BOOL;
+   // bP2M3Init                  :BOOL;
+    //bP2M1InitDone              :BOOL;
+   // bP2M2InitDone               :BOOL;
+ //   bP2M3InitDone               :BOOL;
+    bInitDone              :BOOL;	
+	TheFirstTimebool     :BOOL;//第一次上电标志
+	bwindow	          :BOOL;  // 弹窗  
+	bccdstate        :BOOL;  //CCD状态
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

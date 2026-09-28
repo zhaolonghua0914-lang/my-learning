@@ -1,0 +1,1372 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="LateBlanking_Alarm" Id="{8f1a1114-ddc6-4ecb-9418-60898cab1e2c}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LateBlanking_Alarm
+VAR
+	Twinkle :ARRAY[1..20] OF FB_Blink;
+	FB_Blink_11: FB_Blink;
+	Alarm_TON :ARRAY[1..100] OF Tc2_Standard.TON;
+	 AxisHandautomatic1: FB_AxisHandautomatic_1;
+	 rAlarm :ARRAY[1..10] OF R_TRIG;
+	 CleanTrig: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[QY_error:=YL_I[1];
+Alarm();
+
+Alarm_TON[1](PT:=T#5S);
+Alarm_TON[2](PT:=T#5S);
+Alarm_TON[3](PT:=T#5S);
+Alarm_TON[4](PT:=T#8S);
+Alarm_TON[5](PT:=T#8S);
+Alarm_TON[6](PT:=T#10MS);
+Alarm_TON[7](PT:=T#10MS);
+Alarm_TON[8](PT:=T#10MS);
+Alarm_TON[9](PT:=T#10MS);
+Alarm_TON[10](PT:=T#10MS);
+Alarm_TON[11](PT:=T#10MS);
+Alarm_TON[12](PT:=T#10MS);
+Alarm_TON[13](PT:=T#10MS);
+Alarm_TON[14](PT:=T#10MS);
+Alarm_TON[15](PT:=T#100MS);
+Alarm_TON[16](PT:=T#100MS);
+Alarm_TON[17](PT:=T#100MS);
+Alarm_TON[18](PT:=T#100MS);
+Alarm_TON[19](PT:=T#20MS);
+Alarm_TON[20](PT:=T#6S);
+Alarm_TON[25](PT:=T#60MS);
+Alarm_TON[26](PT:=T#60MS);
+Alarm_TON[27](PT:=T#200MS);
+Alarm_TON[31](PT:=T#1.1S);
+Alarm_TON[32](PT:=T#1.1S);
+Alarm_TON[33](PT:=T#1.1S);
+Alarm_TON[34](PT:=T#1000MS);
+Alarm_TON[35](PT:=T#2000MS);
+Alarm_TON[36](PT:=T#2S);
+Alarm_TON[37](PT:=T#2S);
+Alarm_TON[38](PT:=T#60MS);
+Alarm_TON[39](PT:=T#60MS);
+Alarm_TON[40](PT:=T#3S);
+//尾段报警总结
+IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Error             OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error           OR
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error           OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error   OR
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error               OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error       OR
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error             OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error       OR
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error               OR arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Error  OR
+	arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Status.Error            OR arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Error   OR
+	arrAxisCtrl[P3AxisNo.P3_M4_OffloadingUpDown].Status.Error           OR arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Error   OR
+	//arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Status.Error           OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error            OR
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error                OR arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error        OR
+	//一号叠台、尾卷、贴胶电机报警
+	
+	(*arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error1                     OR*) (*arrCyCtrl[P3CYNo.P3ColdPressTensed].Status.Error1             OR
+	arrCyCtrl[P3CYNo.P3HotPressTensed].Status.Error1                    OR*arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error1           (  OR
+	arrCyCtrl[P3CYNo.P3ShortTest].Status.Error1                        OR*)  arrCyCtrl[P3CYNo.P3SortClamp].Status.Error1                   OR
+	arrCyCtrl[P3CYNo.P3SortLifting].Status.Error1                       OR arrCyCtrl[P3CYNo.P3SortRotate].Status.Error1                  OR
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error1          OR arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error1           OR
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error1                  OR arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Status.Error1          OR
+	arrCyCtrl[P3CYNo.P3BoxLock1_NG].Status.Error1                       OR arrCyCtrl[P3CYNo.P3BoxLock2_NG].Status.Error1                 OR
+	arrCyCtrl[P3CYNo.P3BoxLock3_NG].Status.Error1                       OR arrCyCtrl[P3CYNo.P3BlankingClamp].Status.Error1               OR
+	arrCyCtrl[P3CYNo.P3BlankingLifting].Status.Error1                   OR arrCyCtrl[P3CYNo.P3Oven1].Status.Error1                       OR
+	arrCyCtrl[P3CYNo.P3Oven2].Status.Error1                             OR arrCyCtrl[P3CYNo.P3Oven3].Status.Error1                       OR
+	arrCyCtrl[P3CYNo.P3Oven4].Status.Error1                             OR arrCyCtrl[P3CYNo.P3Oven5].Status.Error1                       OR
+	arrCyCtrl[P3CYNo.P3Oven6].Status.Error1                             OR arrCyCtrl[P3CYNo.P3Oven7].Status.Error1                       OR
+	arrCyCtrl[P3CYNo.P3Oven8].Status.Error1                             OR arrCyCtrl[P3CYNo.P3Oven9].Status.Error1                       OR
+	arrCyCtrl[P3CYNo.P3Oven10].Status.Error1                            OR arrCyCtrl[P3CYNo.P3Oven11].Status.Error1                      OR
+	arrCyCtrl[P3CYNo.P3Oven12].Status.Error1                            OR arrCyCtrl[P3CYNo.P3Oven13].Status.Error1                      OR
+	arrCyCtrl[P3CYNo.P3Oven14].Status.Error1                            OR arrCyCtrl[P3CYNo.P3Oven15].Status.Error1                      OR
+	arrCyCtrl[P3CYNo.P3Oven16].Status.Error1                            OR arrCyCtrl[P3CYNo.P3Oven17].Status.Error1                      OR
+	arrCyCtrl[P3CYNo.P3Oven18].Status.Error1                            OR arrCyCtrl[P3CYNo.P3Oven19].Status.Error1                      OR
+	arrCyCtrl[P3CYNo.P3Oven20].Status.Error1                            OR arrCyCtrl[P3CYNo.P3Oven21].Status.Error1                      OR
+	arrCyCtrl[P3CYNo.P3CellPush].Status.Error1                          OR arrCyCtrl[P3CYNo.P3CellAdvance].Status.Error1                 OR
+	arrCyCtrl[P3CYNo.P3TapePush].Status.Error1                          OR arrCyCtrl[P3CYNo.P3TapePull].Status.Error1                    OR
+	arrCyCtrl[P3CYNo.P3TapeLift].Status.Error1                          OR arrCyCtrl[P3CYNo.P3TapeCut].Status.Error1                     OR
+	arrCyCtrl[P3CYNo.P3GluePush].Status.Error1                          OR arrCyCtrl[P3CYNo.P3TapeBuffer].Status.Error1                  OR
+	arrCyCtrl[P3CYNo.P3TapeSpin].Status.Error1                          OR arrCyCtrl[P3CYNo.P3WgightUP].Status.Error1                    OR
+	arrCyCtrl[P3CYNo.P3SortPush].Status.Error1                          OR arrCyCtrl[P3CYNo.P3CellPushSpin].Status.Error1                OR
+	arrCyCtrl[P3CYNo.P3CellSpin].Status.Error1                          OR arrCyCtrl[P3CYNo.P3_GlueExtend].Status.Error1                 OR
+	arrCyCtrl[P3CYNo.P3_GluePress].Status.Error1                        OR arrCyCtrl[P3CYNo.P3_GlueCut].Status.Error1                    OR
+	arrCyCtrl[P3CYNo.P3_GluePull].Status.Error1                         OR
+    //尾段气缸ON报警
+	
+	arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error2                     OR (*arrCyCtrl[P3CYNo.P3ColdPressTensed].Status.Error2             OR
+	arrCyCtrl[P3CYNo.P3HotPressTensed].Status.Error2                    OR*) arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2              OR
+	arrCyCtrl[P3CYNo.P3ShortTest].Status.Error2                         OR arrCyCtrl[P3CYNo.P3SortClamp].Status.Error2                   OR
+	(*arrCyCtrl[P3CYNo.P3SortLifting].Status.Error2                       OR *)arrCyCtrl[P3CYNo.P3SortRotate].Status.Error2              OR
+	arrCyCtrl[P3CYNo.P3ThicknessMeasuringSwitch].Status.Error2          OR arrCyCtrl[P3CYNo.P3ThicknessPressure].Status.Error2           OR
+	arrCyCtrl[P3CYNo.P3ThicknessSupport].Status.Error2                  OR(* arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Status.Error2          OR*)
+	arrCyCtrl[P3CYNo.P3BoxLock1_NG].Status.Error2                       OR arrCyCtrl[P3CYNo.P3BoxLock2_NG].Status.Error2                 OR
+	arrCyCtrl[P3CYNo.P3BoxLock3_NG].Status.Error2                       OR arrCyCtrl[P3CYNo.P3BlankingClamp].Status.Error2               OR
+	arrCyCtrl[P3CYNo.P3BlankingLifting].Status.Error2                   OR arrCyCtrl[P3CYNo.P3Oven1].Status.Error2                       OR
+	arrCyCtrl[P3CYNo.P3Oven2].Status.Error2                             OR arrCyCtrl[P3CYNo.P3Oven3].Status.Error2                       OR
+	arrCyCtrl[P3CYNo.P3Oven4].Status.Error2                             OR arrCyCtrl[P3CYNo.P3Oven5].Status.Error2                       OR
+	arrCyCtrl[P3CYNo.P3Oven6].Status.Error2                             OR arrCyCtrl[P3CYNo.P3Oven7].Status.Error2                       OR
+	arrCyCtrl[P3CYNo.P3Oven8].Status.Error2                             OR arrCyCtrl[P3CYNo.P3Oven9].Status.Error2                       OR
+	arrCyCtrl[P3CYNo.P3Oven10].Status.Error2                            OR arrCyCtrl[P3CYNo.P3Oven11].Status.Error2                      OR
+	arrCyCtrl[P3CYNo.P3Oven12].Status.Error2                            OR arrCyCtrl[P3CYNo.P3Oven13].Status.Error2                      OR
+	arrCyCtrl[P3CYNo.P3Oven14].Status.Error2                            OR arrCyCtrl[P3CYNo.P3Oven15].Status.Error2                      OR
+	arrCyCtrl[P3CYNo.P3Oven16].Status.Error2                            OR arrCyCtrl[P3CYNo.P3Oven17].Status.Error2                      OR
+	arrCyCtrl[P3CYNo.P3Oven18].Status.Error2                            OR arrCyCtrl[P3CYNo.P3Oven19].Status.Error2                      OR
+	arrCyCtrl[P3CYNo.P3Oven20].Status.Error2                            OR arrCyCtrl[P3CYNo.P3Oven21].Status.Error2                      OR
+	arrCyCtrl[P3CYNo.P3CellPush].Status.Error2                          OR arrCyCtrl[P3CYNo.P3CellAdvance].Status.Error2                 OR
+	arrCyCtrl[P3CYNo.P3TapePush].Status.Error2                          OR arrCyCtrl[P3CYNo.P3TapePull].Status.Error2                    OR
+	arrCyCtrl[P3CYNo.P3TapeLift].Status.Error2                          OR arrCyCtrl[P3CYNo.P3TapeCut].Status.Error2                     OR
+	arrCyCtrl[P3CYNo.P3GluePush].Status.Error2                          OR arrCyCtrl[P3CYNo.P3TapeBuffer].Status.Error2                  OR
+	arrCyCtrl[P3CYNo.P3TapeSpin].Status.Error2                          OR arrCyCtrl[P3CYNo.P3WgightUP].Status.Error2                    OR
+	arrCyCtrl[P3CYNo.P3SortPush].Status.Error2                          OR arrCyCtrl[P3CYNo.P3CellPushSpin].Status.Error2                OR
+	arrCyCtrl[P3CYNo.P3CellSpin].Status.Error2                         (* OR arrCyCtrl[P3CYNo.P3_GlueExtend].Status.Error2         *)        OR
+	arrCyCtrl[P3CYNo.P3_GluePress].Status.Error2                        OR arrCyCtrl[P3CYNo.P3_GlueCut].Status.Error2                    OR
+	arrCyCtrl[P3CYNo.P3_GluePull].Status.Error2                         OR
+ 
+    //尾段气缸OFF报警
+   
+	arrTempCtrl[1].bSenserError                                         OR arrTempCtrl[1].bTempError_HI                                  OR
+	arrTempCtrl[2].bSenserError                                         OR arrTempCtrl[2].bTempError_HI                                  OR
+	arrTempCtrl[3].bSenserError                                         OR arrTempCtrl[3].bTempError_HI                                  OR
+	arrTempCtrl[4].bSenserError                                         OR arrTempCtrl[4].bTempError_HI                                  OR
+	arrTempCtrl[5].bSenserError                                         OR arrTempCtrl[5].bTempError_HI                                  OR
+	arrTempCtrl[6].bSenserError                                         OR arrTempCtrl[6].bTempError_HI                                  OR
+	arrTempCtrl[7].bSenserError                                         OR arrTempCtrl[7].bTempError_HI                                  OR
+	arrTempCtrl[8].bSenserError                                         OR arrTempCtrl[8].bTempError_HI                                  OR
+	arrTempCtrl[9].bSenserError                                         OR arrTempCtrl[9].bTempError_HI                                  OR
+	arrTempCtrl[10].bSenserError                                        OR arrTempCtrl[10].bTempError_HI                                 OR
+	arrTempCtrl[11].bSenserError                                        OR arrTempCtrl[11].bTempError_HI                                 OR
+	arrTempCtrl[12].bSenserError                                        OR arrTempCtrl[12].bTempError_HI                                 OR
+	arrTempCtrl[13].bSenserError                                        OR arrTempCtrl[13].bTempError_HI                                 OR
+	arrTempCtrl[14].bSenserError                                        OR arrTempCtrl[14].bTempError_HI                                 OR
+	arrTempCtrl[15].bSenserError                                        OR arrTempCtrl[15].bTempError_HI                                 OR
+	arrTempCtrl[16].bSenserError                                        OR arrTempCtrl[16].bTempError_HI                                 OR
+	arrTempCtrl[17].bSenserError                                        OR arrTempCtrl[17].bTempError_HI                                 OR
+	arrTempCtrl[18].bSenserError                                        OR arrTempCtrl[18].bTempError_HI                                 OR
+	arrTempCtrl[19].bSenserError                                        OR arrTempCtrl[19].bTempError_HI                                 OR
+	arrTempCtrl[20].bSenserError                                        OR arrTempCtrl[20].bTempError_HI                                 OR
+	arrTempCtrl[21].bSenserError                                        OR arrTempCtrl[21].bTempError_HI                                 OR
+	arrTempCtrl[22].bSenserError                                        OR arrTempCtrl[22].bTempError_HI                                 OR
+	arrTempCtrl[23].bSenserError                                        OR arrTempCtrl[23].bTempError_HI                                 OR
+	arrTempCtrl[24].bSenserError                                        OR arrTempCtrl[24].bTempError_HI                                 OR
+	arrTempCtrl[25].bSenserError                                        OR arrTempCtrl[25].bTempError_HI                                 OR
+	arrTempCtrl[26].bSenserError                                        OR arrTempCtrl[26].bTempError_HI                                 OR
+	arrTempCtrl[27].bSenserError                                        OR arrTempCtrl[27].bTempError_HI                                 OR
+	arrTempCtrl[28].bSenserError                                        OR arrTempCtrl[28].bTempError_HI                                 OR
+	arrTempCtrl[29].bSenserError                                        (*OR arrTempCtrl[29].bTempError_HI*)                                 OR
+	arrTempCtrl[30].bSenserError                                       (* OR arrTempCtrl[30].bTempError_HI *)                                OR
+	arrTempCtrl[31].bSenserError                                       (* OR arrTempCtrl[31].bTempError_HI*)                                 OR
+	arrTempCtrl[32].bSenserError                                       (* OR arrTempCtrl[32].bTempError_HI*)                                 OR
+	arrTempCtrl[33].bSenserError                                        OR arrTempCtrl[33].bTempError_HI                                 OR
+	arrTempCtrl[34].bSenserError                                        OR arrTempCtrl[34].bTempError_HI                                 OR
+	arrTempCtrl[35].bSenserError                                        OR arrTempCtrl[35].bTempError_HI                                 OR
+	arrTempCtrl[36].bSenserError                                        OR arrTempCtrl[36].bTempError_HI                                 OR
+	arrTempCtrl[37].bSenserError                                        OR arrTempCtrl[37].bTempError_HI                                 OR
+	arrTempCtrl[38].bSenserError                                        OR arrTempCtrl[38].bTempError_HI                                 OR
+	arrTempCtrl[39].bSenserError                                        OR arrTempCtrl[39].bTempError_HI                                 OR
+	arrTempCtrl[40].bSenserError                                        OR arrTempCtrl[40].bTempError_HI                                 OR
+	arrTempCtrl[41].bSenserError                                        OR arrTempCtrl[41].bTempError_HI                                 OR
+	arrTempCtrl[42].bSenserError                                        OR arrTempCtrl[42].bTempError_HI                                 OR
+	arrTempCtrl[43].bSenserError                                        OR arrTempCtrl[43].bTempError_HI                                 OR
+	arrTempCtrl[44].bSenserError                                        OR arrTempCtrl[44].bTempError_HI                                 OR
+	arrTempCtrl[45].bSenserError                                        OR arrTempCtrl[45].bTempError_HI                                 OR
+	arrTempCtrl[46].bSenserError                                        OR arrTempCtrl[46].bTempError_HI                                 OR
+	arrTempCtrl[47].bSenserError                                        OR arrTempCtrl[47].bTempError_HI                                 OR
+	arrTempCtrl[48].bSenserError                                        OR arrTempCtrl[48].bTempError_HI                                 OR
+	arrTempCtrl[49].bSenserError                                        OR arrTempCtrl[49].bTempError_HI                                 OR
+	arrTempCtrl[50].bSenserError                                        OR arrTempCtrl[50].bTempError_HI                                 OR
+	arrTempCtrl[51].bSenserError                                        OR arrTempCtrl[51].bTempError_HI                                 OR
+	arrTempCtrl[52].bSenserError                                        OR arrTempCtrl[52].bTempError_HI                                 OR
+	arrTempCtrl[53].bSenserError                                        OR arrTempCtrl[53].bTempError_HI                                 OR
+	arrTempCtrl[54].bSenserError                                        OR arrTempCtrl[54].bTempError_HI                                 OR
+	arrTempCtrl[55].bSenserError                                        OR arrTempCtrl[55].bTempError_HI                                 OR
+	arrTempCtrl[56].bSenserError                                        OR arrTempCtrl[56].bTempError_HI                                 OR
+	arrTempCtrl[57].bSenserError                                        OR arrTempCtrl[57].bTempError_HI                                 OR
+	arrTempCtrl[58].bSenserError                                        OR arrTempCtrl[58].bTempError_HI                                 OR
+	arrTempCtrl[59].bSenserError                                        OR arrTempCtrl[59].bTempError_HI                                 OR
+	arrTempCtrl[60].bSenserError                                        OR arrTempCtrl[50].bTempError_HI                                 OR
+	arrTempCtrl[61].bSenserError                                        OR arrTempCtrl[51].bTempError_HI                                 OR
+	arrTempCtrl[62].bSenserError                                        OR arrTempCtrl[52].bTempError_HI                                 OR
+	arrTempCtrl[63].bSenserError                                        OR arrTempCtrl[53].bTempError_HI                                 OR
+	arrTempCtrl[64].bSenserError                                        OR arrTempCtrl[54].bTempError_HI                                 OR
+	arrTempCtrl[65].bSenserError                                        OR arrTempCtrl[55].bTempError_HI                                 OR
+	arrTempCtrl[66].bSenserError                                        OR arrTempCtrl[56].bTempError_HI                                 OR
+	arrTempCtrl[67].bSenserError                                        OR arrTempCtrl[57].bTempError_HI                                 OR
+	arrTempCtrl[68].bSenserError                                        OR arrTempCtrl[58].bTempError_HI                                 OR
+	arrTempCtrl[69].bSenserError                                        OR arrTempCtrl[69].bTempError_HI                                 OR
+	arrTempCtrl[70].bSenserError                                        OR arrTempCtrl[70].bTempError_HI                                 OR
+	arrTempCtrl[71].bSenserError                                        OR arrTempCtrl[71].bTempError_HI                                 OR
+	arrTempCtrl[72].bSenserError                                        OR arrTempCtrl[72].bTempError_HI                                 OR
+	arrTempCtrl[73].bSenserError                                        OR arrTempCtrl[73].bTempError_HI                                 OR
+	arrTempCtrl[74].bSenserError                                        OR arrTempCtrl[74].bTempError_HI                                 OR
+	arrTempCtrl[75].bSenserError                                        OR arrTempCtrl[75].bTempError_HI                                 OR
+	arrTempCtrl[76].bSenserError                                        OR arrTempCtrl[76].bTempError_HI                                 OR
+	arrTempCtrl[77].bSenserError                                        OR arrTempCtrl[77].bTempError_HI                                 OR
+	arrTempCtrl[78].bSenserError                                        OR arrTempCtrl[78].bTempError_HI                                 OR
+	arrTempCtrl[79].bSenserError                                        OR arrTempCtrl[79].bTempError_HI                                 OR
+	arrTempCtrl[80].bSenserError                                        OR arrTempCtrl[80].bTempError_HI                                 OR
+	arrTempCtrl[81].bSenserError                                        OR arrTempCtrl[81].bTempError_HI                                 OR
+	arrTempCtrl[82].bSenserError                                        OR arrTempCtrl[82].bTempError_HI                                 OR
+	arrTempCtrl[83].bSenserError                                        OR arrTempCtrl[83].bTempError_HI                                 OR
+	arrTempCtrl[84].bSenserError                                        OR arrTempCtrl[84].bTempError_HI                                 OR
+	arrTempCtrl[85].bSenserError                                        OR arrTempCtrl[85].bTempError_HI                                 OR
+	arrTempCtrl[86].bSenserError                                        OR arrTempCtrl[86].bTempError_HI                                 OR
+	P3_Error[1]															OR P3_Error[2]										     		 OR 
+	P3_Error[3]															OR P3_Error[4]										     		 OR 
+	P3_Error[5]															OR P3_Error[6]										     		 OR 
+  (*P3_Error[7]  														OR P3_Error[8]										     		 OR*)  
+	P3_Error[9]															OR P3_Error[10]										     		 OR 
+	P3_Error[11]														OR P3_Error[12]										     		 OR 
+	(*P3_Error[13]														OR*) P3_Error[14]										     	 OR  
+	P3_Error[15]														OR P3_Error[16]										     		 OR 
+	P3_Error[17]														OR P3_Error[18]										     		 OR
+	P3_Error[19]														OR P3_Error[20]										     		 OR 
+	P3_Error[21]														OR P3_Error[22]										     		 OR  
+	P3_Error[23]														OR P3_Error[24]										     		 OR 
+	P3_Error[25]														(*OR P3_Error[26]										     	*)	 OR   
+	P3_Error[27]														OR P3_Error[28]										     		 OR 
+	P3_Error[29]														OR P3_Error[30]										     		 OR  
+	P3_Error[31]														OR P3_Error[32]										     		 OR 
+	P3_Error[33]														OR P3_Error[34]										     		 OR
+	P3_Error[35]														OR P3_Error[36]										     		 OR 
+	P3_Error[37]														OR P3_Error[38]										     		 OR  
+	P3_Error[39]														OR P3_Error[40]												OR
+ 	P3_Error[42]														OR P3_Error[45]												 OR 
+	P3_Error[46]														OR P3_Error[47]												 OR 
+	P3_Error[48]														OR P3_Error[50]									                 	OR 
+	P3_Error[53]														OR P3_Error[54]												OR
+	P3_Error[57]														OR P3_Error[58]												OR
+	P3_Error[59]														OR P3_Error[60]												OR
+	P3_Error[61]														OR P3_Error[62]												OR
+	P3_Error[63]														OR P3_Error[64]												OR
+	P3_Error[65]														OR P3_Error[66]												OR
+	P3_Error[67]														OR P3_Error[68]												OR	
+	P3_Error[69]														OR P3_Error[70]											OR
+	P3_Error[71]														OR P3_Error[72]											OR	
+	P3_Error[73]														OR P3_Error[74]														OR 
+	P3_Error[75]														OR P3_Error[79]													OR 
+	P3_Error[87]														OR P3_Error[89]											OR 
+	P3_Error[93]                                                        OR
+	P3_Error[120]														OR P3_Error[121]										OR 
+	P3_Error[122]														OR P3_Error[123]										OR 
+	P3_Error[124]														OR P3_Error[125]										OR 
+	P3_Error[126]														OR P3_Error[127]										OR 
+	Door_error[1]   		 											OR Door_error[2]												 OR
+	Door_error[1]   		 											OR Door_error[2]												 OR
+	Door_error[1]   		 											OR Door_error[2]												 OR
+	Door_error[3]   		 											OR Door_error[4]												 OR
+	Door_error[5]   		 											OR Door_error[6]												 OR
+	Door_error[7]   		 											OR Door_error[8]												 OR
+	Door_error[9]   		 											OR Door_error[10]												 OR
+	Door_error[11]   		 											OR Door_error[12]												 OR
+	Door_error[13]   		 											OR Door_error[14]												 OR
+	Door_error[15]   		 											OR Door_error[16]												 OR
+	bCodeConError														OR bCodeError													 OR
+	P3_Tem_Error[1]														OR P3_Tem_Error[2]	                                             OR
+	P3_Tem_Error[3]														OR P3_Tem_Error[4]	                                             OR
+	P3_Tem_Error[5]														OR P3_Tem_Error[6]	                                             OR
+	P3_Tem_Error[7]														OR P3_Tem_Error[8]	                                             OR
+ 	P3_Tem_Error[9]														OR P3_Tem_Error[10]	                                             OR
+	P3_Tem_Error[11]													OR P3_Tem_Error[12]	                                             OR
+	P3_Tem_Error[13]													OR P3_Tem_Error[14]	                                             OR
+	P3_Tem_Error[15]													OR P3_Tem_Error[16]	                                             OR
+	P3_Tem_Error[17]													OR P3_Tem_Error[18]	                                             OR
+	P3_Tem_Error[19]													OR P3_Tem_Error[20]	                                             OR
+	P3_Tem_Error[21]													OR P3_Tem_Error[22]	                                             OR
+	P3_Tem_Error[23]													OR P3_Tem_Error[24]	                                             OR
+	P3_Tem_Error[25]													OR P3_Tem_Error[26]	                                             OR
+	P3_Tem_Error[27]													OR P3_Tem_Error[28]	                                             OR
+	P3_Tem_Error[29]													OR P3_Tem_Error[30]	                                             OR
+	P3_Tem_Error[31]													OR P3_Tem_Error[32]	                                             OR
+	P3_Tem_Error[33]													OR P3_Tem_Error[34]	                                             OR
+	P3_Tem_Error[35]													OR P3_Tem_Error[36]	                                             OR
+	P3_Tem_Error[37]													OR P3_Tem_Error[38]	                                             OR
+	P3_Tem_Error[39]													OR P3_Tem_Error[40]	                                             OR
+	P3_Tem_Error[41]													OR P3_Tem_Error[42]	                                             OR
+	P3_Tem_Error[43]													OR P3_Tem_Error[44]	                                             OR
+	P3_Tem_Error[45]													OR P3_Tem_Error[46]	                                             OR
+	P3_Tem_Error[47]													OR P3_Tem_Error[48]	                                             OR	
+	P3_Tem_Error[49]													OR P3_Tem_Error[50]	                                             OR	
+	P3_Tem_Error[51]													OR P3_Tem_Error[52]	                                             OR	
+	P3_Tem_Error[53]													OR P3_Tem_Error[54]	                                             OR	
+	P3_Tem_Error[55]													OR P3_Tem_Error[56]	                                             OR	
+	P3_Tem_Error[57]													OR P3_Tem_Error[58]	                                             OR	
+	P3_Tem_Error[59]													OR P3_Tem_Error[60]	                                             OR	
+	P3_Tem_Error[61]													OR P3_Tem_Error[62]	                                             OR	
+	P3_Tem_Error[63]													OR P3_Tem_Error[64]	                                             OR	
+	P3_Tem_Error[65]													OR P3_Tem_Error[66]	                                             OR	
+	P3_Tem_Error[67]													OR P3_Tem_Error[68]	                                             OR	
+	P3_Tem_Error[69]													OR P3_Tem_Error[70]	                                             OR	
+	P3_Tem_Error[71]													OR P3_Tem_Error[72]	                                             OR	
+	P3_Tem_Error[73]													OR P3_Tem_Error[74]	                                             OR	
+	P3_Tem_Error[75]													OR P3_Tem_Error[76]	                                             OR	
+	P3_Tem_Error[77]													OR P3_Tem_Error[78]	                                             OR	
+	P3_Tem_Error[79]													OR P3_Tem_Error[80]	                                             OR	
+	P3_Tem_Error[81]													OR P3_Tem_Error[82]	                                             OR	
+	P3_Tem_Error[83]													OR P3_Tem_Error[84]	                                             OR	
+	P3_Tem_Error[85]													OR P3_Tem_Error[86]	                                             OR	
+	P3_Tem_Error[87]													OR P3_Tem_Error[88]	                                             OR
+	P3_Tem_Error[89]													OR P3_Tem_Error[90]	                                             OR
+	P3_Tem_Error[91]													OR P3_Tem_Error[92]	                                             OR
+	P3_Tem_Error[93]													OR P3_Tem_Error[94]	                                             OR
+	P3_Tem_Error[95]													OR P3_Tem_Error[96]	                                             OR
+ 	QY_error 	                                                        OR P3Press.Pressure_Alarm[1]                                     OR						                                         
+	P3Press.Pressure_Alarm[2] 
+//扭矩报警
+	OR HMI_TorAlarm_D[160]//冷呀上料夹平移力矩超限报警					
+	OR HMI_TorAlarm_D[161]//冷压上料夹进退力矩超限报警
+	OR HMI_TorAlarm_D[162]//冷压上料夹旋转力矩超限报警
+	OR HMI_TorAlarm_D[165]//冷压驱动力矩超限报警
+	OR HMI_TorAlarm_D[166]//烤箱上料夹搬运力矩超限报警
+	OR HMI_TorAlarm_D[167]//烤箱上料夹进退力矩超限报警
+	OR HMI_TorAlarm_D[170]//热压驱动力矩超限报警
+	OR HMI_TorAlarm_D[171]//称重上料夹平移力矩超限报警
+	OR HMI_TorAlarm_D[173]//称重上料夹旋转力矩超限报警
+	OR HMI_TorAlarm_D[174]//电芯分选夹搬运力矩超限报警
+	OR HMI_TorAlarm_D[176]//电芯下料夹搬运力矩超限报警
+	OR P3_Error[42]
+	OR AxisHandautomatic1.error
+	OR P3_Error[86]
+	//叠片冷压上料门禁
+	OR NOT P2Senser.P2M1_Securitydoorswitch3 OR NOT P2Senser.P2M1_Securitydoorswitch4
+	OR NOT P2Senser.P2M2_Securitydoorswitch3 OR NOT P2Senser.P2M2_Securitydoorswitch4
+	OR NOT P2Senser.P2M3_Securitydoorswitch3 OR NOT P2Senser.P2M3_Securitydoorswitch4
+	THEN
+	
+//烤箱及热压的温度报警
+	
+    b_Alarm[4]:=TRUE;		
+END_IF
+
+IF  b_Alarm[4] THEN
+	P3_SystemRUN.btnAuto:=FALSE;
+	P3_SystemRUN.hmiAuto:=FALSE;
+END_IF
+
+	IF b_Alarm[4] OR  P3_Error[42] THEN
+		P3Senser.P3_Tricolorlamp_Red:=TRUE;
+		P3Senser.P3_Tricolorlamp_Yellow:=FALSE;
+		P3Senser.P3_Tricolorlamp_Green:=FALSE;
+	ELSIF P3_SystemRUN.iMode=3 THEN
+		P3Senser.P3_Tricolorlamp_Red:=FALSE;
+		P3Senser.P3_Tricolorlamp_Yellow:=TRUE;
+		P3Senser.P3_Tricolorlamp_Green:=FALSE;	
+	ELSIF P3_SystemRUN.iMode=1 THEN
+		P3Senser.P3_Tricolorlamp_Red:=FALSE;
+		P3Senser.P3_Tricolorlamp_Yellow:=FALSE;
+		P3Senser.P3_Tricolorlamp_Green:=TRUE;
+	END_IF
+
+// 热压有功能屏蔽报警
+IF NOT P3User2_Par.Shield[5] AND (Mes1.Error[26] OR Mes1.Error[27] OR Mes1.Error[28] OR Mes1.Error[29] ) THEN	
+	P3_Error[86]:=TRUE ;// 热压有功能屏蔽报警
+END_IF	
+	
+//上位机未连接
+IF NOT PC_heart AND NOT P3User2_Par.Shield[5] THEN
+	IF NOT Alarm_TON[1].Q THEN
+		Alarm_TON[1].IN:=TRUE;
+	ELSE
+			P3_Error[2]:=TRUE;//上位机未连接
+	END_IF
+ELSE
+		Alarm_TON[1].IN:=FALSE;
+END_IF
+
+IF  PC_heart AND NOT P3User2_Par.Shield[5] THEN
+	IF NOT Alarm_TON[2].Q THEN
+		Alarm_TON[2].IN:=TRUE;
+	ELSE
+			P3_Error[2]:=TRUE;//上位机未连接
+	END_IF
+ELSE
+		Alarm_TON[2].IN:=FALSE;
+END_IF	
+
+IF  (Step32=1077 AND NOT PC_finish1) AND NOT P3User2_Par.Shield[5] THEN
+	IF NOT Alarm_TON[3].Q THEN
+		Alarm_TON[3].IN:=TRUE;
+	ELSE
+		Step32:=1076;
+		P3_Error[3]:=TRUE;//上位机上传叠片数据超时报警
+	END_IF
+ELSE
+		Alarm_TON[3].IN:=FALSE;
+END_IF
+
+IF  (Step32=118 AND NOT Cold_finish) AND NOT P3User2_Par.Shield[5]  THEN
+	IF NOT Alarm_TON[4].Q THEN
+		Alarm_TON[4].IN:=TRUE;
+	ELSE
+			P3_Error[4]:=TRUE;//上位机校对数据超时报警
+	END_IF
+ELSE
+		Alarm_TON[4].IN:=FALSE;
+END_IF
+
+IF  (Step35=198 AND NOT PC_finish) AND NOT P3User2_Par.Shield[5] THEN
+	IF NOT Alarm_TON[5].Q THEN
+		Alarm_TON[5].IN:=TRUE;
+	ELSE
+			P3_Error[5]:=TRUE;//上位机上传热压数据超时报警
+	END_IF
+ELSE
+		Alarm_TON[5].IN:=FALSE;
+END_IF
+
+
+IF  PC_alarm[1] AND NOT P3User2_Par.Shield[5] THEN
+	IF NOT Alarm_TON[6].Q THEN
+		Alarm_TON[6].IN:=TRUE;
+	ELSE
+			P3_Error[6]:=TRUE;//物料已经用完,请更换上位机物料批次
+			PC_alarm[1]:=FALSE;
+	END_IF
+ELSE
+		Alarm_TON[6].IN:=FALSE;
+END_IF
+//////////////////////////////////////////////////////不良电芯总结//////////////////////////////////////////////////////////////////////////
+rAlarm[1](CLK:=CellMemory[CellNo.Thickness].ScanCode<>1 AND CellMemory[CellNo.Thickness].Cell  AND Thickness_Finish AND Step35>=3000 AND Step35<3050   AND NOT P3User2_Par.Shield[4]  , Q=> );
+IF rAlarm[1].Q THEN
+	P3_Error[7]:=TRUE;//出料后,该电芯是扫码NG
+END_IF
+
+IF (NOT CellMemory[CellNo.Thickness].Cell_cold_result OR NOT CellMemory[CellNo.Thickness].Cell_cold_result1 OR NOT CellMemory[CellNo.Thickness].Cell_cold_result2)  AND Thickness_Finish  
+AND CellMemory[CellNo.Thickness].Cell AND Step35>=3000 AND Step35<3050 AND CellMemory[CellNo.Thickness].ScanCode=1 
+AND CellMemory[CellNo.Thickness].Hough=1 AND NOT P3User2_Par.Shield[4]  THEN
+	IF NOT Alarm_TON[14].Q THEN
+		Alarm_TON[14].IN:=TRUE;
+	ELSE
+		P3_Error[8]:=TRUE;//出料后,该电芯是MES不良
+	END_IF
+ELSE
+		Alarm_TON[14].IN:=FALSE;
+END_IF
+
+IF  CellMemory[CellNo.Thickness].Hough=2 AND Thickness_Finish  AND CellMemory[CellNo.Thickness].Cell AND Step35>=1000 AND Step35<1050  THEN
+	IF NOT Alarm_TON[19].Q THEN
+		Alarm_TON[19].IN:=TRUE;
+	ELSE
+			P3_Error[13]:=TRUE;//出料后,该电芯是对齐度不良
+	END_IF
+ELSE
+		Alarm_TON[19].IN:=FALSE;
+END_IF
+
+IF  CellMemory[CellNo.Thickness].OvenShift_NG_T  AND Thickness_Finish  AND CellMemory[CellNo.Thickness].Cell AND Step35>=4000 AND Step35<4050  THEN
+	IF NOT Alarm_TON[26].Q THEN
+		Alarm_TON[26].IN:=TRUE;
+	ELSE
+			P3_Error[26]:=TRUE;//出料后,该电芯是预热转移时间超时电芯
+	END_IF
+ELSE
+		Alarm_TON[26].IN:=FALSE;
+END_IF
+
+IF  CellMemory[CellNo.Thickness].Thickness<>1 AND NOT P3User2_Par.Shield[3] AND Thickness_Finish  AND CellMemory[CellNo.Thickness].Cell AND Step35>=4000 AND Step35<4050  THEN
+	IF NOT Alarm_TON[38].Q THEN
+		Alarm_TON[38].IN:=TRUE;
+	ELSE
+			P3_Error[77]:=TRUE;//出料后,该电芯是测厚不良电芯
+	END_IF
+ELSE
+		Alarm_TON[38].IN:=FALSE;
+END_IF
+
+IF  CellMemory[CellNo.Thickness].ShortTest<>1 AND NOT P3User2_Par.Shield[1] AND Thickness_Finish  AND CellMemory[CellNo.Thickness].Cell AND Step35>=1000 AND Step35<1050  THEN
+	IF NOT Alarm_TON[39].Q THEN
+		Alarm_TON[39].IN:=TRUE;
+	ELSE
+			P3_Error[78]:=TRUE;//出料后,该电芯是短路测试不良
+	END_IF
+ELSE
+		Alarm_TON[39].IN:=FALSE;
+END_IF
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+IF Push_NG_Full[1] THEN
+	IF NOT Alarm_TON[15].Q THEN
+		Alarm_TON[15].IN:=TRUE;
+	ELSE
+			P3_Error[9]:=TRUE;//对齐度NG盒满料报警，请人工拿掉料后重新回原
+	END_IF
+ELSE
+		Alarm_TON[15].IN:=FALSE;
+END_IF
+//报警复位后，判断是否还有料，无料则自动复位
+IF P3_Error[9]  AND (P3_SystemRUN.bReset OR stSysState.hmiReset)AND NOT P3Senser.P3_PoleMotor1_bHave THEN
+	P3Motion.stP3NgPushMoter[1].bHome:=TRUE;
+	P3_Error[9]:=FALSE;
+END_IF
+
+IF Push_NG_Full[2] THEN
+	IF NOT Alarm_TON[16].Q THEN
+		Alarm_TON[16].IN:=TRUE;
+	ELSE
+			P3_Error[10]:=TRUE;//短路NG盒满料报警，请人工拿掉料后重新回原
+	END_IF
+ELSE
+		Alarm_TON[16].IN:=FALSE;
+END_IF
+//报警复位后，判断是否还有料，无料则自动复位
+IF P3_Error[10]  AND (P3_SystemRUN.bReset OR stSysState.hmiReset)AND NOT P3Senser.P3_PoleMotor2_bHave THEN
+	P3Motion.stP3NgPushMoter[2].bHome:=TRUE;
+	P3_Error[10]:=FALSE;
+END_IF
+
+IF Push_NG_Full[3] THEN
+	IF NOT Alarm_TON[17].Q THEN
+		Alarm_TON[17].IN:=TRUE;
+	ELSE
+			P3_Error[11]:=TRUE;//测厚NG盒满料报警，请人工拿掉料后重新回原
+	END_IF
+ELSE
+		Alarm_TON[17].IN:=FALSE;
+END_IF
+//报警复位后，判断是否还有料，无料则自动复位
+IF P3_Error[11]  AND (P3_SystemRUN.bReset OR stSysState.hmiReset)AND NOT P3Senser.P3_PoleMotor3_bHave THEN
+	P3Motion.stP3NgPushMoter[3].bHome:=TRUE;
+	P3_Error[11]:=FALSE;
+END_IF
+
+IF Push_NG_Full[4] THEN
+	IF NOT Alarm_TON[18].Q THEN
+		Alarm_TON[18].IN:=TRUE;
+	ELSE
+			P3_Error[12]:=TRUE;//扫码或MES的NG盒满料报警，请人工拿掉料后重新回原
+	END_IF
+ELSE
+		Alarm_TON[18].IN:=FALSE;
+END_IF
+//报警复位后，判断是否还有料，无料则自动复位
+IF P3_Error[12]  AND (P3_SystemRUN.bReset OR stSysState.hmiReset)AND NOT P3Senser.P3_PoleMotor4_bHave THEN
+	P3Motion.stP3NgPushMoter[4].bHome:=TRUE;
+	P3_Error[12]:=FALSE;
+END_IF
+
+
+
+
+IF PC_Error THEN
+	P3_Error[14]:=TRUE;//上位机读取PLC数据异常
+END_IF
+
+IF (Step35=20 AND CellMemory[CellNo.Weight].Cell AND Permit_Weigh AND NOT Weigh_Finish) AND NOT P3User2_Par.Shield[2] THEN
+	IF NOT Alarm_TON[20].Q THEN
+		Alarm_TON[20].IN:=TRUE;
+	ELSE
+		P3_Error[15]:=TRUE;//称重未完成超时报警
+		
+	END_IF
+ELSE
+	    Alarm_TON[20].IN:=FALSE;
+	
+END_IF
+
+
+//P3_Error[16]已用
+//P3_Error[17]已用
+//P3_Error[18]已用
+//P3_Error[19]已用
+ IF NOT  P3Senser.P3_OVenScapegoat1 THEN
+	 P3_Error[20]:=TRUE;//烤箱替罪羊1报警
+ END_IF
+
+IF NOT  P3Senser.P3_OVenScapegoat2 THEN
+	 P3_Error[21]:=TRUE;//烤箱替罪羊2报警
+ END_IF
+ 
+ IF NOT  P3Senser.P3_OVenScapegoat3 THEN
+	 P3_Error[22]:=TRUE;//烤箱替罪羊3报警
+ END_IF
+
+ IF NOT  P3Senser.P3_ColdScapegoat THEN
+	 P3_Error[23]:=TRUE;//冷压替罪羊报警
+ END_IF
+ 
+ IF NOT  P3Senser.P3_HotScapegoat THEN
+	 P3_Error[24]:=TRUE;//热压替罪羊报警
+ END_IF
+	
+ IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Io.biHomeSwitch THEN
+	 IF NOT Alarm_TON[25].Q THEN
+		Alarm_TON[25].IN:=TRUE;
+	ELSE
+		//P3_Error[25]:=TRUE;//烤箱进退在初始位未感应到原点报警
+	END_IF
+ELSE
+	    Alarm_TON[25].IN:=FALSE;
+END_IF
+ 
+
+ 
+(*
+IF (Step34=105 AND CellMemory[CellNo.WeightClip].Cell AND NOT P3_Weight_gross.Clear_finish) AND NOT P3User2_Par.Shield[2] THEN
+	IF NOT Alarm_TON[27].Q THEN
+		Alarm_TON[27].IN:=TRUE;
+	ELSE
+		P3_Error[27]:=TRUE;//称重清零超时报警
+		P3_Weight_gross.Init:=TRUE;
+	END_IF
+ELSE
+	    Alarm_TON[27].IN:=FALSE;
+	
+END_IF
+*)
+IF Init_step[3]>=1 AND Init_step[3]<=160 AND NOT Oven_CYOFF_condition THEN
+	P3_Error[28]:=TRUE;//初始化过程中，烤箱门未完成关闭，请完全关闭再重新启动烤箱初始化
+END_IF
+
+
+//P3_Error[29]已用//冷压条件托板开合不在张开位或者未感应到电芯报警，请复位后确认后再人工启动冷压
+//P3_Error[30]已用//热压条件托板开合不在张开位或者未感应到电芯报警，请复位后确认后再人工启动热压
+//P3_Error[62]:=P3_Error[29];//冷压空压报警
+P3_Error[63]:=P3_Error[30];//热压空压报警
+
+IF  arrCyCtrl[P3CYNo.P3OvenMoveClip].Io.DIOnSwitch THEN//必须把烤箱上料夹感应器，空夹夹紧时的感应器调亮
+	IF NOT Alarm_TON[31].Q THEN
+		Alarm_TON[31].IN:=TRUE;
+	ELSE
+		P3_Error[31]:=TRUE;//烤箱上料夹空夹报警
+	END_IF
+ELSE
+	    Alarm_TON[31].IN:=FALSE;
+END_IF
+
+
+IF  arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Io.DIOFFSwitch THEN
+	IF NOT Alarm_TON[32].Q THEN
+		Alarm_TON[32].IN:=TRUE;
+	ELSE
+		P3_Error[32]:=TRUE;//称重上料夹空夹报警
+	END_IF
+ELSE
+	    Alarm_TON[32].IN:=FALSE;
+END_IF
+
+IF  arrCyCtrl[P3CYNo.P3SortLifting].Io.DIOFFSwitch THEN
+	IF NOT Alarm_TON[33].Q THEN
+		Alarm_TON[33].IN:=TRUE;
+	ELSE
+		P3_Error[33]:=TRUE;//分选夹空夹报警
+	END_IF
+ELSE
+	    Alarm_TON[33].IN:=FALSE;
+END_IF
+
+IF 	 (stSysState.hmiReset OR P3_SystemRUN.bReset) AND P3_Error[15] THEN
+		P3_Weight_gross.Init:=TRUE;
+		weight_step:=0;
+END_IF
+
+
+
+IF arrTempCtrl[1].bSenserError                                        	OR arrTempCtrl[1].bTempError_HI                                  OR
+	arrTempCtrl[2].bSenserError                                         OR arrTempCtrl[2].bTempError_HI                                  OR
+	arrTempCtrl[3].bSenserError                                         OR arrTempCtrl[3].bTempError_HI                                  OR
+	arrTempCtrl[4].bSenserError                                         OR arrTempCtrl[4].bTempError_HI                                  OR
+	arrTempCtrl[5].bSenserError                                         OR arrTempCtrl[5].bTempError_HI                                  OR
+	arrTempCtrl[6].bSenserError                                         OR arrTempCtrl[6].bTempError_HI                                  OR
+	arrTempCtrl[7].bSenserError                                         OR arrTempCtrl[7].bTempError_HI                                  OR
+	arrTempCtrl[8].bSenserError                                         OR arrTempCtrl[8].bTempError_HI                                  OR
+	arrTempCtrl[9].bSenserError                                         OR arrTempCtrl[9].bTempError_HI                                  OR
+	arrTempCtrl[10].bSenserError                                        OR arrTempCtrl[10].bTempError_HI                                 OR
+	arrTempCtrl[11].bSenserError                                        OR arrTempCtrl[11].bTempError_HI                                 OR
+	arrTempCtrl[12].bSenserError                                        OR arrTempCtrl[12].bTempError_HI                                 OR
+	arrTempCtrl[13].bSenserError                                        OR arrTempCtrl[13].bTempError_HI                                 OR
+	arrTempCtrl[14].bSenserError                                        OR arrTempCtrl[14].bTempError_HI                                 OR
+	arrTempCtrl[15].bSenserError                                        OR arrTempCtrl[15].bTempError_HI                                 OR
+	arrTempCtrl[16].bSenserError                                        OR arrTempCtrl[16].bTempError_HI                                 OR
+	arrTempCtrl[17].bSenserError                                        OR arrTempCtrl[17].bTempError_HI                                 OR
+	arrTempCtrl[18].bSenserError                                        OR arrTempCtrl[18].bTempError_HI                                 OR
+	arrTempCtrl[19].bSenserError                                        OR arrTempCtrl[19].bTempError_HI                                 OR
+	arrTempCtrl[20].bSenserError                                        OR arrTempCtrl[20].bTempError_HI                                 OR
+	arrTempCtrl[21].bSenserError                                        OR arrTempCtrl[21].bTempError_HI                                 OR
+	arrTempCtrl[22].bSenserError                                        OR arrTempCtrl[22].bTempError_HI                                 OR
+	arrTempCtrl[23].bSenserError                                        OR arrTempCtrl[23].bTempError_HI                                 OR
+	arrTempCtrl[24].bSenserError                                        OR arrTempCtrl[24].bTempError_HI                                 OR
+	arrTempCtrl[25].bSenserError                                        OR arrTempCtrl[25].bTempError_HI                                 OR
+	arrTempCtrl[26].bSenserError                                        OR arrTempCtrl[26].bTempError_HI                                 OR
+	arrTempCtrl[27].bSenserError                                        OR arrTempCtrl[27].bTempError_HI                                 OR
+	arrTempCtrl[28].bSenserError                                        OR arrTempCtrl[28].bTempError_HI                                 OR
+	arrTempCtrl[29].bSenserError                                       (* OR arrTempCtrl[29].bTempError_HI*)                                 OR
+	arrTempCtrl[30].bSenserError                                       (* OR arrTempCtrl[30].bTempError_HI*)                                 OR
+	arrTempCtrl[31].bSenserError                                        (*OR arrTempCtrl[31].bTempError_HI*)                                 OR
+	arrTempCtrl[32].bSenserError                                       (* OR arrTempCtrl[32].bTempError_HI *)                                THEN
+		P3Senser.P3_Oven_Power1:=FALSE;
+	ELSE
+		P3Senser.P3_Oven_Power1:=TRUE;	
+	END_IF
+	
+IF	arrTempCtrl[33].bSenserError                                        OR arrTempCtrl[33].bTempError_HI                                 OR
+	arrTempCtrl[34].bSenserError                                        OR arrTempCtrl[34].bTempError_HI                                 OR
+	arrTempCtrl[35].bSenserError                                        OR arrTempCtrl[35].bTempError_HI                                 OR
+	arrTempCtrl[36].bSenserError                                        OR arrTempCtrl[36].bTempError_HI                                 OR
+	arrTempCtrl[37].bSenserError                                        OR arrTempCtrl[37].bTempError_HI                                 OR
+	arrTempCtrl[38].bSenserError                                        OR arrTempCtrl[38].bTempError_HI                                 OR
+	arrTempCtrl[39].bSenserError                                        OR arrTempCtrl[39].bTempError_HI                                 OR
+	arrTempCtrl[40].bSenserError                                        OR arrTempCtrl[40].bTempError_HI                                 OR
+	arrTempCtrl[41].bSenserError                                        OR arrTempCtrl[41].bTempError_HI                                 OR
+	arrTempCtrl[42].bSenserError                                        OR arrTempCtrl[42].bTempError_HI                                 OR
+	arrTempCtrl[43].bSenserError                                        OR arrTempCtrl[43].bTempError_HI                                 OR
+	arrTempCtrl[44].bSenserError                                        OR arrTempCtrl[44].bTempError_HI                                 OR
+	arrTempCtrl[45].bSenserError                                        OR arrTempCtrl[45].bTempError_HI                                 OR
+	arrTempCtrl[46].bSenserError                                        OR arrTempCtrl[46].bTempError_HI                                 OR
+	arrTempCtrl[47].bSenserError                                        OR arrTempCtrl[47].bTempError_HI                                 OR
+	arrTempCtrl[48].bSenserError                                        OR arrTempCtrl[48].bTempError_HI                                 OR
+	arrTempCtrl[49].bSenserError                                        OR arrTempCtrl[49].bTempError_HI                                 OR
+	arrTempCtrl[50].bSenserError                                        OR arrTempCtrl[50].bTempError_HI                                 OR
+	arrTempCtrl[51].bSenserError                                        OR arrTempCtrl[51].bTempError_HI                                 OR
+	arrTempCtrl[52].bSenserError                                        OR arrTempCtrl[52].bTempError_HI                                 OR
+	arrTempCtrl[53].bSenserError                                        OR arrTempCtrl[53].bTempError_HI                                 OR
+	arrTempCtrl[54].bSenserError                                        OR arrTempCtrl[54].bTempError_HI                                 OR
+	arrTempCtrl[55].bSenserError                                        OR arrTempCtrl[55].bTempError_HI                                 OR
+	arrTempCtrl[56].bSenserError                                        OR arrTempCtrl[56].bTempError_HI                                 OR
+	arrTempCtrl[57].bSenserError                                        OR arrTempCtrl[57].bTempError_HI                                 OR
+	arrTempCtrl[58].bSenserError                                        OR arrTempCtrl[58].bTempError_HI                                 OR
+	arrTempCtrl[59].bSenserError                                        OR arrTempCtrl[59].bTempError_HI                                 OR
+	arrTempCtrl[60].bSenserError                                        OR arrTempCtrl[50].bTempError_HI                                 OR
+	arrTempCtrl[61].bSenserError                                        OR arrTempCtrl[51].bTempError_HI                                 OR
+	arrTempCtrl[62].bSenserError                                        OR arrTempCtrl[52].bTempError_HI                                 OR
+	arrTempCtrl[63].bSenserError                                        OR arrTempCtrl[53].bTempError_HI                                 OR
+	arrTempCtrl[64].bSenserError                                        OR arrTempCtrl[54].bTempError_HI                                 OR
+	arrTempCtrl[65].bSenserError                                        OR arrTempCtrl[55].bTempError_HI                                 OR
+	arrTempCtrl[66].bSenserError                                        OR arrTempCtrl[56].bTempError_HI                                 OR
+	arrTempCtrl[67].bSenserError                                        OR arrTempCtrl[57].bTempError_HI                                 OR
+	arrTempCtrl[68].bSenserError                                        OR arrTempCtrl[58].bTempError_HI                                 OR
+	arrTempCtrl[69].bSenserError                                        OR arrTempCtrl[69].bTempError_HI                                 OR
+	arrTempCtrl[70].bSenserError                                        OR arrTempCtrl[70].bTempError_HI                                 OR
+	arrTempCtrl[71].bSenserError                                        OR arrTempCtrl[71].bTempError_HI                                 OR
+	arrTempCtrl[72].bSenserError                                        OR arrTempCtrl[72].bTempError_HI                                 OR
+	arrTempCtrl[73].bSenserError                                        OR arrTempCtrl[73].bTempError_HI                                 OR
+	arrTempCtrl[74].bSenserError                                        OR arrTempCtrl[74].bTempError_HI                                 OR
+	arrTempCtrl[75].bSenserError                                        OR arrTempCtrl[75].bTempError_HI                                 OR
+	arrTempCtrl[76].bSenserError                                        OR arrTempCtrl[76].bTempError_HI                                 OR
+	arrTempCtrl[77].bSenserError                                        OR arrTempCtrl[77].bTempError_HI                                 OR
+	arrTempCtrl[78].bSenserError                                        OR arrTempCtrl[78].bTempError_HI                                 OR
+	arrTempCtrl[79].bSenserError                                        OR arrTempCtrl[79].bTempError_HI                                 OR
+	arrTempCtrl[80].bSenserError                                        OR arrTempCtrl[80].bTempError_HI                                 OR
+	arrTempCtrl[81].bSenserError                                        OR arrTempCtrl[81].bTempError_HI                                 OR
+	arrTempCtrl[82].bSenserError                                        OR arrTempCtrl[82].bTempError_HI                                 OR
+	arrTempCtrl[83].bSenserError                                        OR arrTempCtrl[83].bTempError_HI                                 OR
+	arrTempCtrl[84].bSenserError                                        OR arrTempCtrl[84].bTempError_HI                                 OR
+	arrTempCtrl[85].bSenserError                                        OR arrTempCtrl[85].bTempError_HI                                 OR
+	arrTempCtrl[86].bSenserError                                        OR arrTempCtrl[86].bTempError_HI                 				 OR
+	arrTempCtrl[87].bSenserError                                        OR arrTempCtrl[87].bTempError_HI                 				 OR
+	arrTempCtrl[88].bSenserError                                        OR arrTempCtrl[88].bTempError_HI                 				 OR
+	arrTempCtrl[89].bSenserError                                        OR arrTempCtrl[89].bTempError_HI                 				 OR
+	arrTempCtrl[90].bSenserError                                        OR arrTempCtrl[90].bTempError_HI                 				 OR
+	arrTempCtrl[91].bSenserError                                        OR arrTempCtrl[91].bTempError_HI                 				 OR
+	arrTempCtrl[92].bSenserError                                        OR arrTempCtrl[92].bTempError_HI                 				 OR
+	arrTempCtrl[93].bSenserError                                        OR arrTempCtrl[93].bTempError_HI                 				 OR
+	arrTempCtrl[94].bSenserError                                        OR arrTempCtrl[94].bTempError_HI                 	THEN
+		P3Senser.P3_Hotpress_Power:=FALSE;
+	ELSE
+	 	P3Senser.P3_Hotpress_Power:=TRUE;
+	END_IF
+
+
+
+
+
+
+//安全门
+Door_error[1]:=(NOT P3Senser.P3_Securitydoorswitch1 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[2]:=(NOT P3Senser.P3_Securitydoorswitch2 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[3]:=(NOT P3Senser.P3_Securitydoorswitch3 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[4]:=(NOT P3Senser.P3_Securitydoorswitch4 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[5]:=(NOT P3Senser.P3_Securitydoorswitch5 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[6]:=(NOT P3Senser.P3_Securitydoorswitch6 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[7]:=(NOT P3Senser.P3_Securitydoorswitch7 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[8]:=(NOT P3Senser.P3_Securitydoorswitch8 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[9]:=(NOT P3Senser.P3_Securitydoorswitch9 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[10]:=(NOT P3Senser.P3_Securitydoorswitch10 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[11]:=(NOT P3Senser.P3_Securitydoorswitch11 AND NOT P3User2_Par.Door_Forbidden);
+Door_error[12]:=(NOT P3Senser.P3_Securitydoorswitch12 AND NOT P3User2_Par.Door_Forbidden);
+//Door_error[13]:=(NOT P3Senser.P3_Securitydoorswitch13 AND NOT Door_Forbidden);
+//Door_error[14]:=(NOT P3Senser.P3_Securitydoorswitch14 AND NOT Door_Forbidden);
+//Door_error[15]:=(NOT P3Senser.P3_Securitydoorswitch15 AND NOT Door_Forbidden);
+//Door_error[16]:=(NOT P3Senser.P3_Securitydoorswitch16 AND NOT Door_Forbidden);
+
+
+//冷压上料平移电机运动过程安全提示
+P3Button.P3_ColdWarning_Buzzer:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving;
+Twinkle[1].EN:=arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving;
+Twinkle[1].Intervall:=T#200MS;
+P3Button.P3_ColdWarning_Lamp:=Twinkle[1].Blink;
+
+
+//烤箱替罪羊保护
+IF NOT  P3Senser.P3_OVenScapegoat1  OR NOT  P3Senser.P3_OVenScapegoat2  OR NOT  P3Senser.P3_OVenScapegoat3 THEN//替罪羊不在轴停止
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bStop:=TRUE;//烤箱搬运轴停止
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bStop:=TRUE;//烤箱进退轴停止
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bStop:=TRUE;//烤箱升降轴停止	
+END_IF
+
+IF (stSysState.hmiReset OR P3_SystemRUN.bReset) AND  P3Senser.P3_OVenScapegoat1 AND  P3Senser.P3_OVenScapegoat2 AND  P3Senser.P3_OVenScapegoat3 AND NOT P3_SystemRUN.btnEstop   THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bStop:=FALSE;//烤箱搬运轴停止
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bStop:=FALSE;//烤箱进退轴停止
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bStop:=FALSE;//烤箱升降轴停止	
+END_IF
+
+
+//冷压替罪羊保护
+IF NOT P3Senser.P3_ColdScapegoat THEN
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bStop:=TRUE;
+END_IF
+IF (stSysState.hmiReset OR P3_SystemRUN.bReset) AND P3Senser.P3_ColdScapegoat AND NOT P3_SystemRUN.btnEstop   THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bStop:=FALSE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bStop:=FALSE;
+END_IF
+
+//热压替罪羊保护
+IF NOT P3Senser.P3_HotScapegoat THEN
+	arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.bStop:=TRUE;
+END_IF
+IF (stSysState.hmiReset OR P3_SystemRUN.bReset) AND P3Senser.P3_HotScapegoat AND NOT P3_SystemRUN.btnEstop   THEN
+		arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bStop:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M3_HotPressingLine].Cmd.bStop:=FALSE;
+END_IF
+
+//冷压上料轴保护
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error OR 
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error THEN
+ 		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bStop:=TRUE;
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bStop:=TRUE;
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bStop:=TRUE;
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bStop:=TRUE;		 
+END_IF
+IF (stSysState.hmiReset OR P3_SystemRUN.bReset) AND  NOT P3_SystemRUN.btnEstop AND
+NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Error AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Error AND 
+NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Status.Error AND NOT  arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Error   THEN
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bStop:=FALSE;
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bStop:=FALSE;
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreUpDown].Cmd.bStop:=FALSE;
+		 arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bStop:=FALSE;		
+END_IF
+
+//烤箱轴保护
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error THEN
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bStop:=TRUE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bStop:=TRUE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bStop:=TRUE;
+END_IF
+
+IF (stSysState.hmiReset OR P3_SystemRUN.bReset) AND  NOT P3_SystemRUN.btnEstop AND
+	NOT  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND NOT  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error 
+	AND NOT  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error THEN
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bStop:=FALSE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bStop:=FALSE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bStop:=FALSE;
+END_IF
+
+
+
+//称重上料轴保护
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error OR arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error OR 
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error  THEN
+ 		 arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bStop:=TRUE;
+		 arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bStop:=TRUE;
+		 arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bStop:=TRUE;
+END_IF
+
+IF (stSysState.hmiReset OR P3_SystemRUN.bReset) AND  NOT P3_SystemRUN.btnEstop AND
+NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND 
+NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error    THEN
+		 arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bStop:=FALSE;
+		 arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bStop:=FALSE;
+		 arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bStop:=FALSE;		
+END_IF
+
+
+
+
+	
+//力矩报警
+	IF ColdpreLineTorMark THEN//冷呀上料夹平移力矩超限报警标志
+		 IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Moving AND (ABS(Torque_P3.ColdpreLineTor)>=Torque_P3.ColdpreLineTorSet)  THEN
+			HMI_TorAlarm_D[160]:=TRUE;//冷呀上料夹平移力矩超限报警标志
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.bEnable:=FALSE;
+			//ColdpreLineTorMark:=FALSE;
+		END_IF
+	END_IF
+
+	IF ColdpreRetractTorMark THEN//冷压上料夹进退力矩超限报警
+		 IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Status.Moving AND (ABS(Torque_P3.ColdpreRetractTor)>=Torque_P3.ColdpreRetractTorSet)  THEN
+			HMI_TorAlarm_D[161]:=TRUE;//冷压上料夹进退力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.bEnable:=FALSE;
+			//ColdpreRetractTorMark:=FALSE;
+		END_IF
+	END_IF
+	
+	IF ColdpreWhirlTorMark THEN//冷压上料夹旋转力矩超限报警
+		 IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Status.Moving AND (ABS(Torque_P3.ColdpreWhirlTor)>=Torque_P3.ColdpreWhirlTorSet)  THEN
+			HMI_TorAlarm_D[162]:=TRUE;//冷压上料夹旋转力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreWhirling].Cmd.bEnable:=FALSE;
+			//ColdpreWhirlTorMark:=FALSE;
+		END_IF
+	END_IF
+(*
+	IF ColdpreActTorMark THEN//冷压驱动力矩超限报警
+		 IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Moving AND (ABS(Torque_P3.ColdpreActTor)>=Torque_P3.ColdpreActTorSet)  THEN
+			HMI_TorAlarm_D[165]:=TRUE;//冷压驱动力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bEnable:=FALSE;
+			//ColdpreActTorMark:=FALSE;
+		END_IF
+	END_IF
+*)
+	IF OvenCarryTorMark THEN//烤箱上料夹搬运力矩超限报警
+		 IF arrAxisCtrl[P3AxisNo.P3_M2_OvenCarrying].Status.Moving AND (ABS(Torque_P3.OvenCarryTor)>=Torque_P3.OvenCarryTorSet)  THEN
+			HMI_TorAlarm_D[166]:=TRUE;//烤箱上料夹搬运力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3_M2_OvenCarrying].Cmd.bEnable:=FALSE;
+			//OvenCarryTorMark:=FALSE;
+		END_IF
+	END_IF
+	
+	IF OvenRetractTorMark THEN//烤箱上料夹进退力矩超限报警标志
+		 IF arrAxisCtrl[P3AxisNo.P3_M2_OvenRetracting].Status.Moving AND (ABS(Torque_P3.OvenRetractTor)>=Torque_P3.OvenRetractTorSet)  THEN
+			HMI_TorAlarm_D[167]:=TRUE;//烤箱上料夹进退力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3_M2_OvenRetracting].Cmd.bEnable:=FALSE;
+			//OvenRetractTorMark:=FALSE;
+		END_IF
+	END_IF
+(*	
+	IF HotpreActTorMark THEN//热压驱动力矩超限报警
+		 IF arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Status.Moving AND (ABS(Torque_P3.HotpreActTor)>=Torque_P3.HotpreActTorSet)  THEN
+			HMI_TorAlarm_D[170]:=TRUE;//热压驱动力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3_M3_HotPressingActuated].Cmd.bEnable:=FALSE;
+			//HotpreActTorMark:=FALSE;
+		END_IF
+	END_IF
+*)
+	IF WeighLineTorMark THEN//称重上料夹平移力矩超限报警标志
+		 IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Moving AND (ABS(Torque_P3.WeighLineTor)>=Torque_P3.WeighLineTorSet)  THEN
+			HMI_TorAlarm_D[171]:=TRUE;//称重上料夹平移力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bEnable:=FALSE;
+			//WeighLineTorMark:=FALSE;
+		END_IF
+	END_IF
+	
+	IF WeighWhirlTorMark THEN//称重上料夹旋转力矩超限报警标志
+		 IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Moving AND (ABS(Torque_P3.WeighWhirlTor)>=Torque_P3.WeighWhirlTorSet)  THEN
+			HMI_TorAlarm_D[173]:=TRUE;//称重上料夹旋转力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bEnable:=FALSE;
+			//WeighWhirlTorMark:=FALSE;
+		END_IF
+	END_IF
+
+	IF SortingCarryTorMark THEN//电芯分选夹搬运力矩超限报警标志
+		 IF arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Moving AND (ABS(Torque_P3.SortingCarryTor)>=Torque_P3.SortingCarryTorSet)  THEN
+			HMI_TorAlarm_D[174]:=TRUE;//电芯分选夹搬运力矩超限报警
+			arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Cmd.bEnable:=FALSE;
+			//SortingCarryTorMark:=FALSE;
+		END_IF
+	END_IF
+	
+	IF OffloadCarryTorMark THEN//电芯下料夹搬运报警力矩设定
+		 IF arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Status.Moving AND (ABS(Torque_P3.OffloadCarryTor)>=Torque_P3.OffloadCarryTorSet)  THEN
+			HMI_TorAlarm_D[176]:=TRUE;//电芯下料夹搬运报警力矩报警
+			arrAxisCtrl[P3AxisNo.P3_M4_OffloadingCarrying].Cmd.bEnable:=FALSE;
+			//OffloadCarryTorMark:=FALSE;
+		END_IF
+	END_IF
+
+IF NOT arrCyCtrl[P3CYNo.P3TapeVacuo].Io.DIOnSwitch	AND arrCyCtrl[P3CYNo.P3TapeVacuo].Status.ONState  THEN
+	IF NOT Alarm_TON[34].Q THEN
+		Alarm_TON[34].IN:=TRUE;
+	ELSE
+		P3_Error[41]	 :=TRUE;//贴胶头真空报警
+		arrCyCtrl[P3CYNo.P3TapeVacuo].Cmd.bOFF:=TRUE;//吸胶真空关闭
+	END_IF
+ELSE
+		Alarm_TON[34].IN:=FALSE;
+END_IF
+(*
+IF  P3_SystemRUN.iMode=1  AND  (Step35=605 OR (Step35=520 AND Step38=40))  AND P3Senser.P3_CacheSensor AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] THEN
+	IF NOT Alarm_TON[35].Q  THEN
+		Alarm_TON[35].IN:=TRUE;
+	ELSE
+		P3_Error[43]:=TRUE;//热压后贴胶平台电芯检测传感器检测异常 
+	END_IF
+ELSE
+		Alarm_TON[35].IN:=FALSE;
+END_IF
+	*)
+IF arrCyCtrl[P3CYNo.P3CellSpin].Io.DOStatus1 AND arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3CellSpin].Status.ONState THEN
+	IF NOT Alarm_TON[36].Q  THEN
+		Alarm_TON[36].IN:=TRUE;
+	ELSE
+		P3_Error[51]:=TRUE;//热压后贴胶旋转气缸180故障报警
+	END_IF
+ELSE
+		Alarm_TON[36].IN:=FALSE;
+	
+END_IF
+
+IF NOT arrCyCtrl[P3CYNo.P3CellSpin].Io.DOStatus1 AND arrCyCtrl[P3CYNo.P3CellPushSpin].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3CellSpin].Status.OFFState THEN
+	IF NOT Alarm_TON[37].Q  THEN
+		Alarm_TON[37].IN:=TRUE;
+	ELSE
+		P3_Error[52]:=TRUE;//热压后贴胶旋转气缸0故障报警
+	END_IF
+ELSE
+		Alarm_TON[37].IN:=FALSE;
+	
+END_IF
+
+IF arrCyCtrl[P3CYNo.P3CellPush].Status.Error1                OR arrCyCtrl[P3CYNo.P3CellAdvance].Status.Error1         OR
+   arrCyCtrl[P3CYNo.P3TapePush].Status.Error1                OR arrCyCtrl[P3CYNo.P3TapePull].Status.Error1            OR
+   arrCyCtrl[P3CYNo.P3TapeLift].Status.Error1                OR arrCyCtrl[P3CYNo.P3TapeCut].Status.Error1             OR
+  (* arrCyCtrl[P3CYNo.P3GluePush].Status.Error1              OR*) arrCyCtrl[P3CYNo.P3TapeBuffer].Status.Error1        OR
+  arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Error          OR arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Error OR 
+   P3_Error[41]                                              OR P3_Error[43]                                          OR
+   P3_Error[51]                                              OR P3_Error[52]                                        THEN
+   P3_Error[42]	 :=TRUE;//后段贴胶总报警
+ END_IF  
+ 
+ 
+  IF arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Status.Moving AND (ABS(Torque_P3.TapeAdvanceTor)>=Torque_P3.TapeAdvanceTorSet)  THEN
+			Torque_P3.TapeAdvanceTorSetAlarm:=TRUE;
+			arrAxisCtrl[P3AxisNo.P3_TapeTranslation].Cmd.bEnable:=FALSE;
+  END_IF
+  
+  IF arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Status.Moving AND (ABS(Torque_P3.TapeTranslationTor)>=Torque_P3.TapeTranslationTorSet)  THEN
+			Torque_P3.TapeTranslationTorSetAlarm:=TRUE;
+			arrAxisCtrl[P3AxisNo.P3_TapeAdvance].Cmd.bEnable:=FALSE;
+  END_IF
+  
+  IF stSysState.hmiReset OR P3_SystemRUN.hmiReset THEN
+	  Torque_P3.TapeTranslationTorSetAlarm:=FALSE;
+	  Torque_P3.TapeAdvanceTorSetAlarm:=FALSE;
+  END_IF
+  
+//电芯分选夹有料感应器报警
+	IF  (Step35=75  OR Step35=585  OR Step35=1050 OR Step35=2050  OR Step35=3060  OR Step35=4100 )  AND NOT P3Senser.P3_Fxjgy AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] THEN
+	   P3_Error[39]:=TRUE;//电芯分选夹未检测到电芯报警
+	END_IF
+
+	  
+	IF  (Step35=190  OR Step35=515 OR Step35=640 OR Step35=1120 OR Step35=2120 OR Step35=3130 OR Step35=4180 ) AND  P3Senser.P3_Fxjgy AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1] THEN 
+		P3_Error[45]:=TRUE;//电芯分选夹检测到电芯报警
+	END_IF
+	
+//冷压上料夹有料感应器报警
+IF (Step30=100  OR Step30=1100 OR Step30=2100)AND NOT CellMemory[CellNo.ColdpressClip].Overhang_TF AND NOT P3Senser.P3_Lyslgy THEN
+	P3_Error[68]:=TRUE;//冷压上料夹未检测到电芯报警
+END_IF
+IF (Step30=40 OR Step30=1040 OR Step30=2040 OR Step30=3080 OR Step30=4090)AND  P3Senser.P3_Lyslgy THEN
+P3_Error[69]:=TRUE;//冷压上料夹检测到电芯报警
+END_IF
+
+//P3_Error[50]热压位电芯位置偏移报警
+IF P3_Error[50] AND (P3_SystemRUN.bReset OR stSysState.hmiReset) AND P3_SystemRUN.iMode=3 THEN//
+	IF  NOT P3Senser.P3_HotOffset_L THEN
+		P3_Error[50]:=FALSE;
+	ELSE
+		P3_Error[50]:=TRUE;	
+	end_if
+END_IF
+(*
+IF P3_Error[50] AND (P3_SystemRUN.bReset OR stSysState.hmiReset)  THEN//寻找Mark孔异常
+	IF  NOT P3Senser.P3_HotEmptyPress AND NOT P3Senser.P3_HotOffset_L THEN
+		
+		MEMSET(ADR(CellMemory[CellNo.Hotpress]),0,SIZEOF(CellMemory[CellNo.Hotpress]));
+		Step33:=1;
+		Permit_Hot_Press:=FALSE;
+		P3_Error[50]:=FALSE;
+	ELSE
+		P3_Error[50]:=TRUE;	
+	end_if
+END_IF
+*)
+
+IF  CellMemory[CellNo.Weight].Cell  AND NOT P3Senser.P3_WeightSensor AND NOT (Step35>=35 AND Step35<=80)THEN
+	P3_Error[53]:=TRUE;//称重台有记忆无电芯报警
+END_IF
+IF  NOT CellMemory[CellNo.Weight].Cell  AND  P3Senser.P3_WeightSensor AND NOT( Step34>=110 AND Step34<=140) THEN
+	P3_Error[54]:=TRUE;//称重台有电芯无记忆报警
+END_IF
+
+IF  NOT CellMemory[CellNo.Thickness].Cell  AND  P3Senser.P3_ThicknessSensor AND NOT (Step35>=150 AND Step35<=185) THEN
+//	P3_Error[56]:=TRUE;//测厚台有电芯无记忆报警
+;
+END_IF
+
+IF P3_Error[55] AND  (P3_SystemRUN.bReset OR stSysState.hmiReset) THEN//测厚台有记忆无电芯报警
+		P3_Error[55]:=FALSE;
+//		Step35:=1;
+//		MEMSET(ADR(CellMemory[CellNo.SortClip1]),0,SIZEOF(CellMemory[CellNo.SortClip1]));
+END_IF
+
+//Step35=635 记忆传递后检测电芯有无
+//Step38=50 放电芯后检测电芯有无
+IF P3_SystemRUN.iMode=1 AND CellMemory[CellNo.BlankingPlatform].Cell AND NOT P3Senser.P3_CacheSensor  AND( Step35=635 OR Step38=50) THEN
+	 P3_Error[61]:=TRUE;	//后段贴胶有记忆无电芯报警
+END_IF
+//Step35=605 贴胶放料前检测有无电芯
+//Step38=30 流水线取料后检测有无电芯
+//Step38=1040 分选轴下降前检测有无电芯
+IF P3_SystemRUN.iMode=1 AND P3Senser.P3_CacheSensor AND NOT CellMemory[CellNo.BlankingPlatform].Cell AND (Step38=30 OR Step38=1040 OR (Step35=605 AND  arrAxisCtrl[P3AxisNo.P3_M4_SortingoutUpDown].Cmd.arrbRealPoint[1]))THEN
+	  P3_Error[60]:=TRUE;//后段贴胶无记忆有电芯报警
+	
+END_IF
+
+IF arrCyCtrl[P3CYNo.P3BoxLock1_NG].Status.OFFState   THEN
+	tip_6[2]:=TRUE;//电芯NG1料盒锁定气缸未锁定
+ELSE
+	tip_6[2]:=FALSE;
+END_IF
+IF arrCyCtrl[P3CYNo.P3BoxLock2_NG].Status.OFFState  THEN
+	tip_6[3]:=TRUE;//电芯NG2料盒锁定气缸未锁定
+ELSE
+	tip_6[3]:=FALSE;
+END_IF
+IF arrCyCtrl[P3CYNo.P3BoxLock3_NG].Status.OFFState  THEN
+	tip_6[4]:=TRUE;//电芯NG3料盒锁定气缸未锁定
+ELSE
+	tip_6[4]:=FALSE;
+END_IF
+IF arrCyCtrl[P2CYNo.LockonCy].Status.OFFState  THEN
+	tip_6[4]:=TRUE;//电芯对齐度NG料盒锁定气缸未锁定
+ELSE
+	tip_6[4]:=FALSE;
+END_IF
+CleanTrig(CLK:= (P3par.CleanTimeHMIHour1 = System.StTime.wHour AND P3par.CleanTimeHMIMin1 =System.stTime.wMinute)
+OR	(P3par.CleanTimeHMIHour2 = System.StTime.wHour AND P3par.CleanTimeHMIMin2 =System.stTime.wMinute)
+OR	(P3par.CleanTimeHMIHour3 = System.StTime.wHour AND P3par.CleanTimeHMIMin3 =System.stTime.wMinute)
+OR	(P3par.CleanTimeHMIHour4 = System.StTime.wHour AND P3par.CleanTimeHMIMin4 =System.stTime.wMinute));
+
+IF	CleanTrig.Q THEN
+	P3_Error[59]:=TRUE;//请清洁机台
+END_IF
+
+IF NOT P2Senser.P2M1_Coldpressingesensor AND Step30=30 THEN
+P3_Error[70]:=TRUE;//冷压上料夹平移到一号叠台贴胶位未到位报警	
+END_IF
+IF NOT P2Senser.P2M2_Coldpressingesensor AND Step30=1030 THEN
+P3_Error[71]:=TRUE;//冷压上料夹平移到二号叠台贴胶位未到位报警	
+END_IF
+IF NOT P2Senser.P2M3_Coldpressingesensor AND Step30=2030 THEN
+P3_Error[72]:=TRUE;//冷压上料夹平移到三号叠台贴胶位未到位报警	
+END_IF
+IF (P2Senser.P2M1_Coldpressingesensor OR P2Senser.P2M2_Coldpressingesensor OR P2Senser.P2M3_Coldpressingesensor)AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Cmd.arrbRealPoint[1] THEN
+P3_Error[73]:=TRUE;//冷压上料平移一，二，三号叠台处感应器常亮异常报警
+END_IF
+Alarm_TON[40].IN:=(((NOT CellMemory[CellNo.Gluing1].Overhang_TF AND Step30=60) 
+	OR (NOT CellMemory[CellNo.Gluing2].Overhang_TF AND Step30=1060)
+	OR (NOT CellMemory[CellNo.Gluing3].Overhang_TF AND Step30=2060))
+	AND NOT arrCyCtrl[P3CYNo.P3ColdPressClip].Status.ONState
+	AND  arrCyCtrl[P3CYNo.P3ColdPressClip].Status.Error1);
+IF Alarm_TON[40].Q THEN
+	P3_Error[76]:=TRUE;//冷压上料夹夹正常电芯闭合感应器异常
+END_IF
+
+
+
+(*  //轴手动对比报警
+AxisHandautomatic1(
+				Notmoing:=arrAxis[160].Status.NotMoving AND arrAxis[161].Status.NotMoving AND arrAxis[162].Status.NotMoving AND arrAxis[163].Status.NotMoving AND
+						  arrAxis[164].Status.NotMoving AND arrAxis[165].Status.NotMoving AND arrAxis[166].Status.NotMoving AND arrAxis[167].Status.NotMoving AND 
+						  arrAxis[168].Status.NotMoving AND arrAxis[169].Status.NotMoving AND arrAxis[170].Status.NotMoving AND arrAxis[171].Status.NotMoving AND 
+						  arrAxis[172].Status.NotMoving AND arrAxis[173].Status.NotMoving AND arrAxis[174].Status.NotMoving AND arrAxis[175].Status.NotMoving AND 
+						  arrAxis[176].Status.NotMoving AND arrAxis[177].Status.NotMoving AND arrAxis[178].Status.NotMoving AND arrAxis[179].Status.NotMoving  AND
+                         NOT Coldbusy AND NOT Hotbusy	 , 	
+                  Run:= P3_SystemRUN.hmiAuto ,
+                  i:=160 , 
+                  j:=20,
+				  Reset:=LateBlanking_init_start[1] OR  LateBlanking_init_start[2] OR  LateBlanking_init_start[3] OR  LateBlanking_init_start[4] OR  LateBlanking_init_start[5] 
+                                 OR  LateBlanking_init_start[6] OR  LateBlanking_init_start[7]  OR  LateBlanking_init_start[8]  , 
+                  error=> );
+	*)
+IF stSysState.hmiReset OR P3_SystemRUN.bReset AND  NOT (P3_Error[107] OR P3_Error[101] OR P3_Error[102] ) THEN
+	b_Alarm[4]:=FALSE;
+	PC_Error:=FALSE;
+	bCodeConError:=FALSE;
+	bCodeError:=FALSE;
+	MEMSET(ADR(P3_Error),0,SIZEOF(P3_Error));
+	MEMSET(ADR(tip_10),0,SIZEOF(tip_10));
+	MEMSET(ADR(Door_error),0,SIZEOF(Door_error)); 
+	MEMSET(ADR(P3_Tem_Error),0,SIZEOF(P3_Tem_Error)); 
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="Alarm" Id="{a1bfcba5-170a-4009-abea-ad2dea600133}">
+      <Implementation>
+        <NWL>
+          <XmlArchive>
+            <Data>
+              <o xml:space="preserve" t="NWLImplementationObject">
+                <v n="NetworkListComment">""</v>
+                <v n="DefaultViewMode">"Fbd"</v>
+                <l2 n="NetworkList" cet="Network">
+                  <o>
+                    <v n="ILActive">false</v>
+                    <v n="FBDValid">false</v>
+                    <v n="ILValid">false</v>
+                    <l2 n="ILLines" />
+                    <v n="Comment">""</v>
+                    <v n="Title">""</v>
+                    <v n="Label">""</v>
+                    <v n="OutCommented">false</v>
+                    <l2 n="NetworkItems" cet="BoxTreeAssign">
+                      <o>
+                        <o n="OutputItems" t="OutputItemList">
+                          <l2 n="OutputItems" cet="Operand">
+                            <o>
+                              <v n="Operand">"PLC_heart"</v>
+                              <v n="Type">"BOOL"</v>
+                              <v n="Comment">""</v>
+                              <v n="SymbolComment">""</v>
+                              <v n="Address">""</v>
+                              <o n="Flags" t="Flags">
+                                <v n="Flags">0</v>
+                                <v n="Fixed">false</v>
+                                <v n="Extensible">false</v>
+                              </o>
+                              <v n="LValue">true</v>
+                              <v n="Boolean">false</v>
+                              <v n="IsInstance">false</v>
+                              <v n="Id">8L</v>
+                            </o>
+                          </l2>
+                        </o>
+                        <o n="Flags" t="Flags">
+                          <v n="Flags">0</v>
+                          <v n="Fixed">false</v>
+                          <v n="Extensible">false</v>
+                        </o>
+                        <o n="RValue" t="BoxTreeBox">
+                          <v n="BoxType">"FB_Blink"</v>
+                          <o n="Instance" t="Operand">
+                            <v n="Operand">"FB_Blink_11"</v>
+                            <v n="Type">"FB_Blink"</v>
+                            <v n="Comment">""</v>
+                            <v n="SymbolComment">""</v>
+                            <v n="Address">""</v>
+                            <o n="Flags" t="Flags">
+                              <v n="Flags">0</v>
+                              <v n="Fixed">false</v>
+                              <v n="Extensible">false</v>
+                            </o>
+                            <v n="LValue">false</v>
+                            <v n="Boolean">false</v>
+                            <v n="IsInstance">true</v>
+                            <v n="Id">2L</v>
+                          </o>
+                          <o n="OutputItems" t="OutputItemList">
+                            <l2 n="OutputItems">
+                              <n />
+                            </l2>
+                          </o>
+                          <o n="Flags" t="Flags">
+                            <v n="Flags">0</v>
+                            <v n="Fixed">false</v>
+                            <v n="Extensible">false</v>
+                          </o>
+                          <n n="InputFlags" />
+                          <l2 n="InputItems" cet="BoxTreeOperand">
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"TRUE"</v>
+                                <v n="Type">"BOOL"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">5L</v>
+                              </o>
+                              <v n="Id">4L</v>
+                            </o>
+                            <o>
+                              <o n="Operand" t="Operand">
+                                <v n="Operand">"T#500ms"</v>
+                                <v n="Type">"TIME"</v>
+                                <v n="Comment">""</v>
+                                <v n="SymbolComment">""</v>
+                                <v n="Address">""</v>
+                                <o n="Flags" t="Flags">
+                                  <v n="Flags">0</v>
+                                  <v n="Fixed">false</v>
+                                  <v n="Extensible">false</v>
+                                </o>
+                                <v n="LValue">false</v>
+                                <v n="Boolean">false</v>
+                                <v n="IsInstance">false</v>
+                                <v n="Id">7L</v>
+                              </o>
+                              <v n="Id">6L</v>
+                            </o>
+                          </l2>
+                          <o n="InputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>EN</v>
+                              <v>Intervall</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                              <v>TIME</v>
+                            </l2>
+                          </o>
+                          <o n="OutputParam" t="ParamList">
+                            <l2 n="Names" cet="String">
+                              <v>Blink</v>
+                            </l2>
+                            <l2 n="Types" cet="String">
+                              <v>BOOL</v>
+                            </l2>
+                          </o>
+                          <v n="CallType" t="Operator">FunctionBlock</v>
+                          <v n="EN">false</v>
+                          <v n="ENO">false</v>
+                          <n n="STSnippet" />
+                          <v n="ContainsExtensibleInputs">false</v>
+                          <v n="ProvidesSTSnippet">false</v>
+                          <v n="Id">3L</v>
+                        </o>
+                        <v n="Id">9L</v>
+                      </o>
+                    </l2>
+                    <l2 n="Connectors" />
+                    <v n="Id">1L</v>
+                  </o>
+                </l2>
+                <v n="BranchCounter">0</v>
+                <v n="ValidIds">true</v>
+              </o>
+            </Data>
+            <TypeList>
+              <Type n="Boolean">System.Boolean</Type>
+              <Type n="BoxTreeAssign">{9873c309-1f09-4ebf-9078-42d8057ef11b}</Type>
+              <Type n="BoxTreeBox">{acfc6f68-8e3a-4af5-bf81-3dd512095a46}</Type>
+              <Type n="BoxTreeOperand">{9de7f100-1b87-424c-a62e-45b0cfc85ed2}</Type>
+              <Type n="Flags">{668066f2-6069-46b3-8962-8db8d13d7db2}</Type>
+              <Type n="Int32">System.Int32</Type>
+              <Type n="Int64">System.Int64</Type>
+              <Type n="Network">{d9a99d73-b633-47db-b876-a752acb25871}</Type>
+              <Type n="NWLImplementationObject">{25e509de-33d4-4447-93f8-c9e4ea381c8b}</Type>
+              <Type n="Operand">{c9b2f165-48a2-4a45-8326-3952d8a3d708}</Type>
+              <Type n="Operator">{bffb3c53-f105-4e85-aba2-e30df579d75f}</Type>
+              <Type n="OutputItemList">{f40d3e09-c02c-4522-a88c-dac23558cfc4}</Type>
+              <Type n="ParamList">{71496971-9e0c-4677-a832-b9583b571130}</Type>
+              <Type n="String">System.String</Type>
+            </TypeList>
+          </XmlArchive>
+        </NWL>
+      </Implementation>
+    </Action>
+    <LineIds Name="LateBlanking_Alarm">
+      <LineId Id="18986" Count="229" />
+      <LineId Id="20162" Count="0" />
+      <LineId Id="19216" Count="945" />
+      <LineId Id="6205" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

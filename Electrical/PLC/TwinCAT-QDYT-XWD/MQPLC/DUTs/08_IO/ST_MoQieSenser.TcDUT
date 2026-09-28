@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_MoQieSenser" Id="{8be39699-1883-40eb-8757-39d6fe8278dd}">
+    <Declaration><![CDATA[TYPE ST_MoQieSenser ://传感器
+STRUCT
+	biFlgBlue              :BOOL;       (***极片接带检测1***)
+	biCuterStopUp                :BOOL;       (***裁切切刀堵料检测***)
+	biSafetyCurtain_M                :BOOL;       (***模具安全光幕**)
+	biSafetyCurtain_C                :BOOL;       (***裁切安全光幕**)
+	biWasteBox               :BOOL;       (***废料收集箱高度感应**)
+	biTabHave               :BOOL;       (***极耳有无感应**)
+	
+	biSubBelt1Have                    :BOOL;       (***分段皮带1有料感应**)
+	biSubBelt2Have                    :BOOL;       (***分段皮带2有料感应**)
+	biSubBelt3Have                    :BOOL;       (***分段皮带3有料感应**)   
+	
+	biDoor                       :ARRAY [1..5] OF BOOL;  (***门禁**)		
+	
+	aiPoleTensionFr               :REAL;       (***辅驱前极片张力检测***)
+	aiPoleTensionBe               :REAL;       (***辅驱后极片张力检测***)	
+	
+	aiMouldRectifyFr              :REAL;       (***倒角深度前纠偏检测**)
+	aiMouldRectifyBe               :REAL;      (***倒角深度后纠偏检测**)	
+	
+	biCutPoleHave					:BOOL;//裁切后极片有无检测
+	bKick:BOOL;//踢废工位是否有料检测；
+	bYellowCheck_C:BOOL;//踢废前黄标检测感应器
+	bYellowCheck_R1:BOOL;//倒角前黄标检测感应器上
+	bYellowCheck_R2:BOOL;//倒角前黄标检测感应器下
+	bPoleCheck_R:BOOL;//倒角前极耳检测感应器
+	aThrow:BOOL;  
+	NGBoxFull:BOOL;//NG料盒料满信号
+	
+(***************************************************线扫20240219***********************************************************************)
+	bLineScanResult1_UP:BOOL;//上线扫结果NG
+	bLineScanResult2_UP:BOOL;//上线扫结果OK
+	bLineScanResult1_Down: BOOL;//下线扫结果NG
+	bLineScanResult2_Down:BOOL;//下线扫结果OK
+	
+	NGboxsensor 	:BOOL;		//模切NG料盒抛料对射感应		
+    MouldInsensor       :BOOL;		//R角模具到位感应
+    CuterInsensor       :BOOL;		//裁切切刀到位感应
+	bFourYellowUP		:BOOL;		//四连标上
+	bFourYellowDown:BOOL;		//四连标下
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

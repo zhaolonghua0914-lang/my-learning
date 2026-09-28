@@ -1,0 +1,286 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="CS_FsyTcp" Id="{485967bf-b51c-447e-b68f-f971929d6a27}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK PUBLIC CS_FsyTcp
+VAR_INPUT
+	bLON                           :BOOL; 	//  扫码开
+	sRemoteHost: T_IPv4Addr; 			//扫码枪IP地址;
+	bComOpen                  :BOOL; 	 //扫码Tcp 开
+	binit_tcp:BOOL;							//功能块初始化，所有状态全部清零；
+END_VAR
+
+VAR_OUTPUT
+	bComOpenDone          :BOOL;  //扫码Tcp 打开OK
+    bCodeConError             :BOOL;//扫码通讯故障
+	bDone                         :BOOL; //扫码完成
+    bCodeError                  :BOOL;//扫码故障	
+    strCode                       :STRING;//条码结果
+	Code_State						:INT;//扫码结果 1：OK  2：NG
+END_VAR
+
+VAR_IN_OUT
+
+END_VAR
+
+VAR
+	bLOFF                          :BOOL; 	//扫码关	
+	bComClose                  :BOOL;  	//扫码Tcp 关
+	fbTcpCon:FB_SocketConnect;
+	fbTcpSend:FB_SocketSend;
+	fbTcpRec:FB_SocketReceive;
+	fbTcpClose: FB_SocketClose;
+	bConnect: BOOL;//打开TCP连接;
+	bClose: BOOL;		//关闭TCP连接;
+	hTcpSock: T_HSOCKET;
+	StrSend: STRING;
+	StrReceive: ARRAY[0..255]OF BYTE; 
+	StrReceive2:STRING:='';//clean;
+	fbUdpCreate:FB_SocketUdpCreate;
+	hUdp: T_HSOCKET;
+	bCreate: BOOL;
+	port: UDINT:=23;
+	bSendTcp: BOOL;
+	bReceiveTcp: BOOL;
+	bAcceptTcp: BOOL;
+	fbSwingHalt2: MC_Halt;
+    TON01:TON;
+	Lenth: UINT;
+	StrSend2: STRING;
+	bSendTcp2: BOOL;
+	iComSetp: INT;
+	bRectiveEN: BOOL;
+	TON_3: Ton;
+	TON_4: TON;
+	tTon5: BOOL;
+	TON_5: TON;
+	TON_6: TON;
+	TCP_IP_Lis: FB_SocketListen;
+	TCP_IP_SocketAccept: FB_SocketAccept;
+	Listener: T_HSOCKET;
+	blisten: BOOL;
+	closeall_do: BOOL;
+	LocalPort: UDINT;
+	 closeall:FB_SocketCloseAll;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+	Config();
+	
+	M_SendReceive();
+]]></ST>
+    </Implementation>
+    <Action Name="Config" Id="{363f40b6-b1c8-403f-acaa-cf089596886f}">
+      <Implementation>
+        <ST><![CDATA[TON_3(IN:=binit_tcp , PT:=T#2MS , Q=> , ET=> ); 
+IF binit_tcp THEN
+	iComSetp:=0;
+	bComOpenDone:=FALSE;
+    bCodeConError:=FALSE;
+	bCodeError:=FALSE;
+	bConnect:=FALSE;
+	bClose :=TRUE;
+	bDone:=FALSE;
+    strCode:=StrReceive2;	 
+//	StrReceive:=StrReceive2;	 
+	Code_State:=0;
+	bRectiveEN:=FALSE;
+	bSendTcp:=FALSE;
+END_IF
+IF TON_3.Q THEN
+	binit_tcp:=FALSE;
+	bClose :=FALSE;
+END_IF
+fbTcpClose(
+	sSrvNetId:= ''   , 
+	hSocket:=hTcpSock , 
+	bExecute:=bClose , 
+	tTimeout:=T#2S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );	
+fbTcpClose(
+	sSrvNetId:= ''   , 
+	hSocket:=Listener , 
+	bExecute:=bClose , 
+	tTimeout:=T#2S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );	
+TCP_IP_Lis(
+	sSrvNetId:= , 
+	sLocalHost:='192.168.10.10', 
+	nLocalPort:=LocalPort, 
+	bExecute:=bConnect, 
+	tTimeout:=T#2S , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hListener=>Listener );
+///////////////////////////////////
+Listener.handle;
+Listener.localAddr;
+Listener.remoteAddr; 
+///////////////////////////////////
+TCP_IP_SocketAccept(
+	sSrvNetId:= , 
+	hListener:=Listener , 
+	bExecute:=bAcceptTcp , 
+	tTimeout:=T#2S , 
+	bAccepted=> , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	hSocket=>hTcpSock );	
+
+hTcpSock.handle;
+hTcpSock.localAddr;
+hTcpSock.remoteAddr;
+IF bComOpen THEN
+    bComOpenDone:=FALSE;
+    bCodeConError:=FALSE;
+    iComSetp:=100;
+END_IF
+ IF bComClose THEN
+    bComOpenDone:=FALSE;
+    bCodeConError:=FALSE;
+     iComSetp:=200;
+END_IF 
+
+ CASE iComSetp OF 
+   100:
+	   bConnect:=TRUE;	
+	   bClose:=FALSE;
+	   bComOpen:=FALSE;
+	   iComSetp:=110;
+  110:
+	  IF bConnect  THEN
+		  bConnect:=FALSE;	
+		   iComSetp:=120;
+	  ELSIF fbTcpCon.bError THEN
+		  iComSetp:=999;
+	 END_IF
+  120:
+	 IF TCP_IP_Lis.hListener.handle>0  THEN
+		bComOpenDone:=TRUE;//扫码枪连接成功；
+		 iComSetp:=666;
+	 ELSIF  NOT fbTcpCon.bBusy AND fbTcpCon.hSocket.handle=0  THEN
+		iComSetp:=999;
+	 END_IF
+
+  200:
+	   bConnect:=FALSE;	
+	   bClose:=TRUE;
+	   bComClose:=FALSE;
+       iComSetp:=210;
+  210:
+	  IF fbTcpClose.bBusy THEN
+		  bConnect:=FALSE;	
+		   iComSetp:=666;
+	 END_IF
+  
+  999:
+	   bCodeConError:=TRUE;
+	   iComSetp:=0;
+END_CASE
+
+
+
+
+ //发送； 
+fbTcpSend(
+		sSrvNetId:= , 
+		hSocket:=hTcpSock , 
+		cbLen:=SIZEOF(StrSend), 
+		pSrc:= ADR(StrSend), 
+		bExecute:= bSendTcp, 
+		tTimeout:= T#5S , 
+		bBusy=> , 
+		bError=> , 
+		nErrId=> );
+
+//接收
+	TON_6(IN:=NOT TON_6.Q AND fbTcpCon.hSocket.handle>0, PT:=T#3S , Q=> , ET=> );
+	IF TON_6.Q THEN
+		bReceiveTcp := NOT bReceiveTcp;
+	END_IF
+fbTcpRec(
+	sSrvNetId:= , 
+	hSocket:= hTcpSock, 
+	cbLen:=SIZEOF(StrReceive) , 
+	pDest:=ADR(StrReceive) , 
+	bExecute:=bReceiveTcp , 
+	tTimeout:= T#5S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> , 
+	nRecBytes=> );	
+	
+CloseAll(
+	sSrvNetId:= ,
+	bExecute:=closeall_do ,
+	tTimeout:= , 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+	
+
+	
+	
+	
+	
+	
+	]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="M_SendReceive" Id="{d465c50c-caf8-4fd0-b702-a5314c7222fa}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="CS_FsyTcp">
+      <LineId Id="62" Count="5" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="CS_FsyTcp.Config">
+      <LineId Id="250" Count="17" />
+      <LineId Id="248" Count="0" />
+      <LineId Id="286" Count="6" />
+      <LineId Id="249" Count="0" />
+      <LineId Id="294" Count="6" />
+      <LineId Id="293" Count="0" />
+      <LineId Id="107" Count="8" />
+      <LineId Id="1" Count="0" />
+      <LineId Id="282" Count="0" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="283" Count="1" />
+      <LineId Id="281" Count="0" />
+      <LineId Id="268" Count="12" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="189" Count="4" />
+      <LineId Id="195" Count="4" />
+      <LineId Id="201" Count="35" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="237" Count="0" />
+      <LineId Id="244" Count="0" />
+      <LineId Id="246" Count="0" />
+      <LineId Id="174" Count="9" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="247" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="308" Count="2" />
+      <LineId Id="307" Count="0" />
+      <LineId Id="162" Count="9" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="301" Count="5" />
+      <LineId Id="119" Count="8" />
+    </LineIds>
+    <LineIds Name="CS_FsyTcp.M_SendReceive">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

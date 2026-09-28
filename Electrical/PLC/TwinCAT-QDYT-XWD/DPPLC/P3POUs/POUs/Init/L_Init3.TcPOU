@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="L_Init3" Id="{223f3a4f-a08a-4ad4-bcd2-0dd48f11411b}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM L_Init3
+VAR
+	INIT_TON  :ARRAY[1..20] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[INIT_TON[1](PT:=T#2S);
+INIT_TON[2](PT:=T#2S);
+INIT_TON[3](PT:=T#2S);
+INIT_TON[4](PT:=T#2S);
+INIT_TON[5](PT:=T#2S);
+INIT_TON[6](PT:=T#2S);
+INIT_TON[7](PT:=T#2S);
+INIT_TON[8](PT:=T#2S);
+INIT_TON[9](PT:=T#2S);
+INIT_TON[10](PT:=T#3S);
+INIT_TON[20](PT:=T#90S);//烤箱上料回原超时计时
+
+IF INIT_TON[20].Q THEN
+	Init_step[3]:=0;
+	P3_Error[122]:=TRUE;//烤箱上料回原超时报警
+	INIT_TON[20].IN:=FALSE;
+END_IF
+//烤箱上料夹搬运回原条件
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_CYOFF_condition THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+//烤箱上料夹进退回原条件
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND P3_SystemRUN.iMode=3  THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+//烤箱上料夹升降回原条件
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND P3_SystemRUN.iMode=3  
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND Oven_CYOFF_condition THEN
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+
+
+
+
+//烤箱上下料初始化
+IF P3_SystemRUN.iMode=3 THEN
+IF LateBlanking_init_start[3] AND Oven_CYOFF_condition THEN
+	Init_step[3]:=1;
+	LateBlanking_init_OK[3]:=FALSE;
+	LateBlanking_init_start[3]:=FALSE;
+	ELSIF LateBlanking_init_start[3] AND NOT Oven_CYOFF_condition THEN
+		Init_step[3]:=0;
+		LateBlanking_init_OK[3]:=FALSE;
+		LateBlanking_init_start[3]:=FALSE;
+		P3_Error[28]:=TRUE;//初始化过程中，烤箱门未完成关闭，请完全关闭再重新启动烤箱初始化
+END_IF
+END_IF
+
+
+
+IF P3_SystemRUN.iMode=3 THEN
+CASE Init_step[3] OF
+
+1:	//冷压下料到烤箱及烤箱下料到热压时电芯记忆清除
+	INIT_TON[20].IN:=TRUE;
+	Step32:=0;	
+	INIT_TON[10].IN:=FALSE;
+	MEMSET(ADR(CellMemory[CellNo.OvenMoveClip1]),0,SIZEOF(CellMemory[CellNo.OvenMoveClip1]));
+	MEMSET(ADR(CellMemory[CellNo.OvenMoveClip2]),0,SIZEOF(CellMemory[CellNo.OvenMoveClip2]));
+	Init_step[3]:=10;//信号复位
+	
+10://烤箱上料夹气缸关闭
+arrCyCtrl[P3CYNo.P3OvenMoveClip].Cmd.bOFF:=TRUE;
+IF  arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.OFFState AND NOT arrCyCtrl[P3CYNo.P3OvenMoveClip].Status.Error2  THEN
+	Init_step[3]:=20;
+END_IF//
+
+
+
+20://烤箱上料夹各轴停止信号复位
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bStop:=TRUE;       arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bStop:=TRUE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bStop:=TRUE;     //轴停止
+	INIT_TON[1].IN:=TRUE;
+	IF INIT_TON[1].Q THEN
+		Init_step[3]:=30;
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bStop:=FALSE;       arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bStop:=FALSE;
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bStop:=FALSE;    
+		INIT_TON[1].IN:=FALSE;	
+	END_IF
+
+30://烤箱上料夹各轴复位
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bReset:=TRUE;       arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bReset:=TRUE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bReset:=TRUE;     //轴复位
+	INIT_TON[2].IN:=TRUE;
+	
+	IF INIT_TON[2].Q THEN
+		Init_step[3]:=40;
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bReset:=FALSE;       arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bReset:=FALSE;
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bReset:=FALSE;     
+		INIT_TON[2].IN:=FALSE;
+	END_IF
+
+40://烤箱上料夹各轴上使能
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bEnable:=TRUE;       arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bEnable:=TRUE;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bEnable:=TRUE;     //轴上使能
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled  THEN
+		Init_step[3]:=50;
+	END_IF
+
+50://烤箱上料夹进退开始回零
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bHome:=TRUE;//烤箱上料进退回零
+Init_step[3]:=60;
+
+60://烤箱上料夹进退回零完成
+INIT_TON[4].IN:=TRUE;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Moving AND  INIT_TON[4].Q  THEN
+	Init_step[3]:=70;
+    arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.bHome:=FALSE;
+	INIT_TON[4].IN:=FALSE;
+END_IF
+
+70://烤箱上料夹进退到初始位
+IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Homed 
+	AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.NoMoving THEN
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.iGoSetPos:=43;
+	OvenRetractTorMark:=TRUE;//烤箱上料夹进退力矩超限报警标志
+END_IF 
+
+IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43]  AND Oven_POS1  AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Moving THEN
+	OvenRetractTorMark:=FALSE;//烤箱上料夹进退力矩超限报警标志
+	Init_step[3]:=90;
+	
+END_IF
+
+
+
+90://没有烤箱气缸报警或轴急停且烤箱全部关闭，则烤箱上料夹升降开始回零
+	IF  NOT Oven_CY_STOP AND Oven_CYOFF_condition THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bHome:=TRUE;//烤箱上料升降回零
+		Init_step[3]:=100;
+	END_IF
+	
+
+100://烤箱上料夹升降回零完成
+INIT_TON[9].IN:=TRUE;
+	IF  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Moving AND  INIT_TON[9].Q  THEN
+		Init_step[3]:=110;
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.bHome:=FALSE;
+		INIT_TON[9].IN:=FALSE;
+	END_IF
+
+110://烤箱上料升降到初始位
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.NoMoving AND NOT Oven_CY_STOP AND Oven_CYOFF_condition THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.iGoSetPos:=43;	//烤箱上料升降回初始位
+	END_IF
+	
+	IF   arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Moving THEN
+		Init_step[3]:=120;
+	END_IF
+
+	
+120://没有烤箱气缸报警或轴急停且烤箱全部关闭，则烤箱上料夹搬运开始回零
+IF NOT Oven_CY_STOP AND Oven_CYOFF_condition THEN
+arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bHome:=TRUE;//烤箱上料搬运回零
+Init_step[3]:=130;
+END_IF
+
+130://烤箱上料夹搬运回零完成
+INIT_TON[5].IN:=TRUE;
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Moving AND INIT_TON[5].Q THEN
+	Init_step[3]:=140;
+	arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.bHome:=FALSE;
+	INIT_TON[5].IN:=FALSE;
+END_IF
+
+140://烤箱上料夹搬运到初始位
+	IF  NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+		AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Enabled AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.NoMoving AND Oven_CYOFF_condition AND NOT Oven_CY_STOP THEN
+		arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.iGoSetPos:=43;//箱上料平移回初始位
+		OvenCarryTorMark:=TRUE;//烤箱上料夹搬运力矩超限报警标志
+	END_IF 
+	IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Cmd.arrbRealPoint[43] AND NOT arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Moving THEN
+		OvenCarryTorMark:=FALSE;//烤箱上料夹搬运力矩超限报警标志
+		Init_step[3]:=150;
+	END_IF
+	
+	
+
+	
+
+150://烤箱门全部关闭
+	arrCyCtrl[P3_Oven[1]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[2]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[3]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[4]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[5]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[6]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[7]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[8]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[9]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[10]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[11]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[12]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[13]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[14]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[15]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[16]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[17]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[18]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[19]].Cmd.bOFF:=TRUE;
+	arrCyCtrl[P3_Oven[20]].Cmd.bOFF:=TRUE;	
+	arrCyCtrl[P3_Oven[21]].Cmd.bOFF:=TRUE;
+	IF Oven_CYOFF_condition THEN
+		Init_step[3]:=160; 	
+	END_IF	
+	
+160:
+Step32:=1;
+Init_step[3]:=999;
+
+999://烤箱上下料初始位完成
+IF Init_step[3]=999 THEN
+LateBlanking_init_OK[3]:=TRUE;
+INIT_TON[20].IN:=FALSE;
+END_IF
+
+END_CASE
+END_IF
+
+IF arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Error OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Status.Error OR arrAxisCtrlV2[P3AxisNo.P3_M2_OvenUpDown].Status.Error THEN
+	Init_step[3]:=0;
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="L_Init3">
+      <LineId Id="760" Count="233" />
+      <LineId Id="517" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

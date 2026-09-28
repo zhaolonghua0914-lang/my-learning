@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CCDComRectify_O" Id="{9025408d-dc58-4d23-8656-33341cd6cd76}">
+    <Declaration><![CDATA[TYPE ST_CCDComRectify_O :
+STRUCT
+	iPhotoDo:INT;//拍照软触发,1=正常纠偏拍照，2=复检，3=有无片拍照（全视野）     4.有无片报警拍照（检测四角)
+	PhotoFinish:INT;//叠台电芯最后一片标记
+	stPoleNo:STRING(256);  //极片编号
+
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

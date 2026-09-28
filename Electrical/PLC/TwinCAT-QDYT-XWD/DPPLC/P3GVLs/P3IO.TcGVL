@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="P3IO" Id="{10b42f91-346b-4d8c-928f-26a07dac53f4}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+	
+//P3 输入、输出信号
+    I601 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I602 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I603 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I604 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I605 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I606 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I607 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I608 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I609 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I701 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I702 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	I703 AT %I* :ARRAY [1..16] OF BOOL; //输入信号
+	
+	Q601 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q602 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q603 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q604 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q605 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q606 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q607 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q608 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q609 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q701 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	Q702 AT %Q* :ARRAY [1..16] OF BOOL; //输出信号
+	AI60 AT %I* :ARRAY [0..3] OF INT; //模拟量输入信号
+	AO60 AT %Q* :ARRAY [0..3] OF INT; //模拟量输出信号	
+	chengzhong		AT %I*  : 	USINT;//称重临时用
+	ThicknessPar	AT %I*	:	DINT;//测厚参数(转化前)
+	
+	MTD_Mes1	AT%I* :MTD_Mes1;	//接收模切优报表数据XFP20240318
+	DTM_Mes1	AT%Q* :DTM_Mes1;	//发送叠台信号至模切XFP20240318
+
+    P3Senser :ST_P3Senser;//传感器信号
+	P3Button :ST_P3Button;//按钮
+	
+	
+	
+	P3WeightRec:     ST_ReceiveData;  //
+	P3WeightSend:    ST_SendData;  //
+	
+
+	P3ShortTestRec: 	ShortTestReceiveData;  //短路测试返回数据
+	P3ShortTestSend  : 	ShortTestSendData;  //短路测试发送数据
+	
+	P3ShortSendCrtl AT  %Q*:    ST_SendTestStatus;//发送控制字
+	P3ShortReCrtl   AT  %I*: 	ST_ReceiveTestStatus;//接收控制字
+	
+	Pass1:BOOL;//强制下料到1#；
+	Pass2:BOOL;//强制下料到2#；
+	
+	Mes1	:Mes1;	//XFP20240315
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

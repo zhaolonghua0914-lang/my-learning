@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="MToD_Process" Id="{ba70574e-ff62-4301-b165-59f0a58dcf49}">
+    <Declaration><![CDATA[TYPE MToD_Process ://模切→叠片  生产过程数据
+STRUCT
+	bAn_M1Allow:BOOL;//允许1号叠台正极取料
+	bAn_M2Allow:BOOL;//允许2号叠台正极取料
+	bAn_M3Allow:BOOL;//允许3号叠台正极取料
+
+	bAn_M1Allow2:BOOL;//允许1号叠台正极取料
+	bAn_M2Allow2:BOOL;//允许2号叠台正极取料
+	bAn_M3Allow2:BOOL;//允许3号叠台正极取料
+	
+	bCa_M1Allow:BOOL;//允许1号叠台负极取料
+	bCa_M2Allow:BOOL;//允许2号叠台负极取料
+	bCa_M3Allow:BOOL;//允许3号叠台负极取料	
+	
+	bCa_M1Allow2:BOOL;//允许1号叠台负极取料
+	bCa_M2Allow2:BOOL;//允许2号叠台负极取料
+	bCa_M3Allow2:BOOL;//允许3号叠台负极取料		
+	
+	bAn_M1Locking:BOOL;//叠台1锁定中
+	bAn_M2Locking:BOOL;//叠台2锁定中
+	bAn_M3Locking:BOOL;//叠台3锁定中
+	
+	bCa_M1Locking:BOOL;//叠台1锁定中
+	bCa_M2Locking:BOOL;//叠台2锁定中
+	bCa_M3Locking:BOOL;//叠台3锁定中
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

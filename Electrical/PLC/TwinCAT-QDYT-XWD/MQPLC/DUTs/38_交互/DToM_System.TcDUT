@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="DToM_System" Id="{49dd97d2-2d96-41ac-b301-977eec8360c7}">
+    <Declaration><![CDATA[TYPE DToM_System ://叠片→模切  系统数据
+STRUCT
+	bP2M1Enable:BOOL;//TRUE 1号叠片启用
+	bP2M2Enable:BOOL;//TRUE 2号叠片启用
+	bP2M3Enable:BOOL;//TRUE 3号叠片启用
+	
+	bP2Estop:BOOL;//TRUE 叠片急停
+	bP2Start:BOOL;//TRUE 叠片启动
+	bP2Runing:BOOL;//TRUE 叠片自动中
+	
+//清尾料
+	bP2ClearDo:BOOL;//叠片开始清尾料   注：先发需求量，再发清尾料开始信号
+	iAn1Ask:INT:=0;// 1号正极极片需求量
+	iAn2Ask:INT:=0;// 2号正极极片需求量
+	iAn3Ask:INT:=0;// 3号正极极片需求量
+	iCa1Ask:INT:=0;// 1号负极极片需求量
+	iCa2Ask:INT:=0;// 2号负极极片需求量
+	iCa3Ask:INT:=0;// 3号负极极片需求量
+	bP2ClearDone:BOOL;//叠片清尾料完成	
+
+//光电信号传递
+	bAnBelt1Have:BOOL;//正极分段皮带1有料感应
+	bAnBelt2Have:BOOL;//正极分段皮带2有料感应
+	bAnBelt3Have:BOOL;//正极分段皮带3有料感应
+	bCaBelt1Have:BOOL;//负极分段皮带1有料感应
+	bCaBelt2Have:BOOL;//负极分段皮带2有料感应
+	bCaBelt3Have:BOOL;//负极分段皮带3有料感应
+
+
+	P3SaveParDone      :BOOL;//p3保存参数完成
+	P3ReadParDone     :BOOL;//p3读取参数完成
+	
+	fM1MainSetPos:REAL;//叠片1主轴指令位置
+	fM2MainSetPos:REAL;//叠片2主轴指令位置
+	fM3MainSetPos:REAL;//叠片3主轴指令位置
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

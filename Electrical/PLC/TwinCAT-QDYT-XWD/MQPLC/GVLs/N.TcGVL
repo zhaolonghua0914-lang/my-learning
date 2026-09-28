@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="N" Id="{91d420d6-f9a5-41be-937c-83f0a9edab9a}">
+    <Declaration><![CDATA[VAR_GLOBAL  PERSISTENT//断电保持
+(*(**轴**)
+	AnAxisNo:      ST_AxisName;  //正极
+	CaAxisNo:      ST_AxisName;//负极
+	
+    AnVirAxisNo:      ST_VirAxisName;//正极
+	CaVirAxisNo:      ST_VirAxisName;//负极
+	VirTimeWind:INT;//模切虚拟摆杆放卷轴 
+(**气缸**)
+	AnCYNo:        ST_CylinderName;//正极
+	CaCYNo:        ST_CylinderName;//负极
+
+(**电磁阀**)
+	AnEVNo:        ST_ElectValveName;//正极
+	CaEVNo:        ST_ElectValveName;//负极
+
+(***纠偏**)
+    AnRecNo:         ST_RecName;//正极
+	CaRecNo:         ST_RecName;//负极
+
+(***凸轮表号**)
+	 AnTableNo:  ST_TableNo;// 正极
+	 CaTableNo:  ST_TableNo;// 负极
+	 
+(***除尘电机号**)
+	 AnMotorNo:  ST_MotorName;// 正极
+	 CaMotorNo:  ST_MotorName;// 负极
+	 *)
+	NameNo:ST_Name;
+END_VAR
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

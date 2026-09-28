@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_P2ElectValveName" Id="{75e30196-6b4a-4071-a418-8567b327ac4b}">
+    <Declaration><![CDATA[TYPE ST_P2ElectValveName :   //2#部分气缸
+STRUCT
+P2M1_AnBeltVacuum	:INT:=110;	//1号叠台		正极模切送料分段皮带1取料处真空
+P2M1_AnBeltVacuumBark	:INT:=111;	//1号叠台		正极模切送料分段皮带1取料处破真空
+P2M1_CaMQBeltVacuum	:INT:=112;	//1号叠台		负极模切送料分段皮带1取料处真空
+P2M1_CaMQBeltVacuumBark	:INT:=113;	//1号叠台		负极模切送料分段皮带1取料处破真空
+P2M1_AnCarryingVacuum	:INT:=114;	//1号叠台		正极送片搬运升降真空
+P2M1_AnCarryingVacuumBark	:INT:=115;	//1号叠台		正极送片搬运升降破真空
+P2M1_AndeviationVacuum	:INT:=116;	//1号叠台		正极纠偏平台真空
+P2M1_AndeviationIonizedWind	:INT:=117;	//1号叠台		正极纠偏平台除尘风刀
+P2M1_AndeviationVacuumBark	:INT:=118;	//1号叠台		正极纠偏平台破真空
+P2M1_AnDTCarryingVacuum	:INT:=119;	//1号叠台		正极叠片搬运升降真空
+P2M1_AnDTCarryingVacuumBark	:INT:=120;	//1号叠台		正极叠片搬运升降破真空
+P2M1_CaCarryingVacuum1	:INT:=121;	//1号叠台		负极送片搬运升降1真空
+P2M1_CaCarryingVacuumBark1	:INT:=122;	//1号叠台		负极送片搬运升降1破真空
+P2M1_CaLoadUpBeltVacuum	:INT:=123;	//1号叠台		负极送片皮带末端真空
+P2M1_CaLoadUpBeltVacuumBark	:INT:=124;	//1号叠台		负极送片皮带末端破真空
+P2M1_CaCarryingVacuum2	:INT:=125;	//1号叠台		负极送片搬运升降2真空
+P2M1_CaCarryingVacuumBark2	:INT:=126;	//1号叠台		负极送片搬运升降2破真空
+P2M1_CadeviationVacuum	:INT:=127;	//1号叠台		负极纠偏平台真空
+P2M1_CadeviationVacuumBark	:INT:=128;	//1号叠台		负极纠偏平台破真空
+P2M1_CadeviationIonizedWind	:INT:=129;	//1号叠台		负极纠偏平台除尘风刀
+P2M1_CaDTCarryingVacuum	:INT:=130;	//1号叠台		负极叠片搬运升降真空
+P2M1_CaDTCarryingVacuumBark	:INT:=131;	//1号叠台		负极叠片搬运升降破真空
+P2M1_PoleTapeDustRemoval	:INT:=132;	//1号叠台		隔膜接带平台除尘
+P2M1_PoleTapeVacuum	:INT:=133;	//1号叠台		隔膜接带平台真空
+P2M1_BlueGlueVacuum1	:INT:=134;	//1号叠台		备胶组件蓝胶真空1
+P2M1_BlueGlueVacuum2	:INT:=135;	//1号叠台		备胶组件蓝胶真空2
+P2M1_codeGlueVacuum1	:INT:=136;	//1号叠台		备胶组件二维码胶真空1
+P2M1_codeGlueVacuum2	:INT:=137;	//1号叠台		备胶组件二维码胶真空2
+P2M1_PastesGlueVacuum	:INT:=138;	//1号叠台		备胶组件贴胶头真空
+P2M1_DTVacuum	:INT:=139;	//1号叠台		叠片台真空
+P2M1_PoleSplintVacuum_D	:INT:=140;	//1号叠台		夹膜下夹板真空
+P2M2_AnBeltVacuum	:INT:=141;	//2号叠台		正极模切送料分段皮带1取料处真空
+P2M2_AnBeltVacuumBark	:INT:=142;	//2号叠台		正极模切送料分段皮带1取料处破真空
+P2M2_CaMQBeltVacuum	:INT:=143;	//2号叠台		负极模切送料分段皮带1取料处真空
+P2M2_CaMQBeltVacuumBark	:INT:=144;	//2号叠台		负极模切送料分段皮带1取料处破真空
+P2M2_AnCarryingVacuum	:INT:=145;	//2号叠台		正极送片搬运升降真空
+P2M2_AnCarryingVacuumBark	:INT:=146;	//2号叠台		正极送片搬运升降破真空
+P2M2_AndeviationVacuum	:INT:=147;	//2号叠台		正极纠偏平台真空
+P2M2_AndeviationIonizedWind	:INT:=148;	//2号叠台		正极纠偏平台除尘风刀
+P2M2_AndeviationVacuumBark	:INT:=149;	//2号叠台		正极纠偏平台破真空
+P2M2_AnDTCarryingVacuum	:INT:=150;	//2号叠台		正极叠片搬运升降真空
+P2M2_AnDTCarryingVacuumBark	:INT:=151;	//2号叠台		正极叠片搬运升降破真空
+P2M2_CaCarryingVacuum1	:INT:=152;	//2号叠台		负极送片搬运升降1真空
+P2M2_CaCarryingVacuumBark1	:INT:=153;	//2号叠台		负极送片搬运升降1破真空
+P2M2_CaLoadUpBeltVacuum	:INT:=154;	//2号叠台		负极送片皮带末端真空
+P2M2_CaLoadUpBeltVacuumBark	:INT:=155;	//2号叠台		负极送片皮带末端破真空
+P2M2_CaCarryingVacuum2	:INT:=156;	//2号叠台		负极送片搬运升降2真空
+P2M2_CaCarryingVacuumBark2	:INT:=157;	//2号叠台		负极送片搬运升降2破真空
+P2M2_CadeviationVacuum	:INT:=158;	//2号叠台		负极纠偏平台真空
+P2M2_CadeviationVacuumBark	:INT:=159;	//2号叠台		负极纠偏平台破真空
+P2M2_CadeviationIonizedWind	:INT:=160;	//2号叠台		负极纠偏平台除尘风刀
+P2M2_CaDTCarryingVacuum	:INT:=161;	//2号叠台		负极叠片搬运升降真空
+P2M2_CaDTCarryingVacuumBark	:INT:=162;	//2号叠台		负极叠片搬运升降破真空
+P2M2_PoleTapeDustRemoval	:INT:=163;	//2号叠台		隔膜接带平台除尘
+P2M2_PoleTapeVacuum	:INT:=164;	//2号叠台		隔膜接带平台真空
+P2M2_BlueGlueVacuum1	:INT:=165;	//2号叠台		备胶组件蓝胶真空1
+P2M2_BlueGlueVacuum2	:INT:=166;	//2号叠台		备胶组件蓝胶真空2
+P2M2_codeGlueVacuum1	:INT:=167;	//2号叠台		备胶组件二维码胶真空1
+P2M2_codeGlueVacuum2	:INT:=168;	//2号叠台		备胶组件二维码胶真空2
+P2M2_PastesGlueVacuum	:INT:=169;	//2号叠台		备胶组件贴胶头真空
+P2M2_DTVacuum	:INT:=170;	//2号叠台		叠片台真空
+P2M2_PoleSplintVacuum_D	:INT:=171;	//2号叠台		夹膜下夹板真空
+P2M3_AnBeltVacuum	:INT:=172;	//3号叠台		正极模切送料分段皮带1取料处真空
+P2M3_AnBeltVacuumBark	:INT:=173;	//3号叠台		正极模切送料分段皮带1取料处破真空
+P2M3_CaMQBeltVacuum	:INT:=174;	//3号叠台		负极模切送料分段皮带1取料处真空
+P2M3_CaMQBeltVacuumBark	:INT:=175;	//3号叠台		负极模切送料分段皮带1取料处破真空
+P2M3_AnCarryingVacuum	:INT:=176;	//3号叠台		正极送片搬运升降真空
+P2M3_AnCarryingVacuumBark	:INT:=177;	//3号叠台		正极送片搬运升降破真空
+P2M3_AndeviationVacuum	:INT:=178;	//3号叠台		正极纠偏平台真空
+P2M3_AndeviationIonizedWind	:INT:=179;	//3号叠台		正极纠偏平台除尘风刀
+P2M3_AndeviationVacuumBark	:INT:=180;	//3号叠台		正极纠偏平台破真空
+P2M3_AnDTCarryingVacuum	:INT:=181;	//3号叠台		正极叠片搬运升降真空
+P2M3_AnDTCarryingVacuumBark	:INT:=182;	//3号叠台		正极叠片搬运升降破真空
+P2M3_CaCarryingVacuum1	:INT:=183;	//3号叠台		负极送片搬运升降1真空
+P2M3_CaCarryingVacuumBark1	:INT:=184;	//3号叠台		负极送片搬运升降1破真空
+P2M3_CaLoadUpBeltVacuum	:INT:=185;	//3号叠台		负极送片皮带末端真空
+P2M3_CaLoadUpBeltVacuumBark	:INT:=186;	//3号叠台		负极送片皮带末端破真空
+P2M3_CaCarryingVacuum2	:INT:=187;	//3号叠台		负极送片搬运升降2真空
+P2M3_CaCarryingVacuumBark2	:INT:=188;	//3号叠台		负极送片搬运升降2破真空
+P2M3_CadeviationVacuum	:INT:=189;	//3号叠台		负极纠偏平台真空
+P2M3_CadeviationVacuumBark	:INT:=190;	//3号叠台		负极纠偏平台破真空
+P2M3_CadeviationIonizedWind	:INT:=191;	//3号叠台		负极纠偏平台除尘风刀
+P2M3_CaDTCarryingVacuum	:INT:=192;	//3号叠台		负极叠片搬运升降真空
+P2M3_CaDTCarryingVacuumBark	:INT:=193;	//3号叠台		负极叠片搬运升降破真空
+P2M3_PoleTapeDustRemoval	:INT:=194;	//3号叠台		隔膜接带平台除尘
+P2M3_PoleTapeVacuum	:INT:=195;	//3号叠台		隔膜接带平台真空
+P2M3_BlueGlueVacuum1	:INT:=196;	//3号叠台		备胶组件蓝胶真空1
+P2M3_BlueGlueVacuum2	:INT:=197;	//3号叠台		备胶组件蓝胶真空2
+P2M3_codeGlueVacuum1	:INT:=198;	//3号叠台		备胶组件二维码胶真空1
+P2M3_codeGlueVacuum2	:INT:=199;	//3号叠台		备胶组件二维码胶真空2
+P2M3_PastesGlueVacuum	:INT:=200;	//3号叠台		备胶组件贴胶头真空
+P2M3_DTVacuum	:INT:=201;	//3号叠台		叠片台真空
+P2M3_PoleSplintVacuum_D	:INT:=202;	//3号叠台		夹膜下夹板真空
+
+P2M1_WJ_blow:INT:=203;//1号叠台 尾卷夹电芯吹气
+P2M2_WJ_blow:INT:=204;//2号叠台 尾卷夹电芯吹气
+P2M3_WJ_blow:INT:=205;//3号叠台 尾卷夹电芯吹气
+
+P2M1_AnDTCarryingJRVacuum:INT:=206;//1号叠台 正极叠片搬运升降极耳真空
+P2M2_AnDTCarryingJRVacuum:INT:=207;//2号叠台 正极叠片搬运升降极耳真空
+P2M3_AnDTCarryingJRVacuum:INT:=208;//3号叠台 正极叠片搬运升降极耳真空
+
+P2M1_CaDTCarryingJRVacuum:INT:=209;//1号叠台 负极叠片搬运升降极耳真空
+P2M2_CaDTCarryingJRVacuum:INT:=210;//2号叠台 负极叠片搬运升降极耳真空
+P2M3_CaDTCarryingJRVacuum:INT:=211;//3号叠台 负极叠片搬运升降极耳真空
+
+P2M1_WJShortvacuum:INT:=212;//1短卷针张开真空
+P2M2_WJShortvacuum:INT:=213;//2短卷针张开真空
+P2M3_WJShortvacuum:INT:=214;//3短卷针张开真空
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

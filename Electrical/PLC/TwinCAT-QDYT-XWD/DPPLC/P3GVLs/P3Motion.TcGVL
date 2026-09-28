@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="P3Motion" Id="{36200cd0-0244-4d50-afa3-6b03d1b4b3b0}">
+    <Declaration><![CDATA[
+VAR_GLOBAL
+	stP3NgPushMoter                       :ARRAY[1..4] OF ST_SetpMotor;
+
+
+   	arrAxisCtrlV2                         :ARRAY[166..168] OF ST_AxisCtrlV2;
+
+
+	ADSRefMark:BOOL;//ADS写入标志
+	fADSWrite_Limit:ARRAY[1..12]OF ADSWrite_Limit;
+	HMI_SetButton:ARRAY[1..12]OF  BOOL;//ADS软限位值写入
+	HMI_ADSAlarm:ARRAY[1..12]OF  BOOL;//ADS软限位写入失败报警
+	HMI_SaveBias:ARRAY[1..12] OF LREAL;//软限位读出数据
+END_VAR
+
+
+
+VAR_GLOBAL PERSISTENT
+	
+	arrAxisParV2        :ARRAY[166..168] OF ST_Axis_parV2;
+	//	fSavePositionBias:ARRAY[1..4] OF LREAL;(*写入软限位的值*)
+	//HMI_Button:ARRAY[1..4]OF  BOOL;//ADS软限位开关
+END_VAR
+VAR_GLOBAL CONSTANT
+    MaxP3Axes		    :UINT:=185;	
+
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

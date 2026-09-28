@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="L_Init2" Id="{a34b6e5b-2c38-4713-a278-b55f521129a3}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM L_Init2
+VAR
+	INIT_TON  :ARRAY[1..20] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[INIT_TON[1](PT:=T#2S);
+INIT_TON[2](PT:=T#2S);
+INIT_TON[3](PT:=T#2S);
+INIT_TON[4](PT:=T#2S);
+INIT_TON[5](PT:=T#2S);
+INIT_TON[6](PT:=T#2S);
+INIT_TON[7](PT:=T#2S);
+INIT_TON[8](PT:=T#2S);
+INIT_TON[9](PT:=T#2S);
+INIT_TON[10](PT:=T#3S);
+INIT_TON[20](PT:=T#60S);//冷压驱动回原超时计时
+
+IF INIT_TON[20].Q THEN
+	Init_step[2]:=0;
+	P3_Error[121]:=TRUE;//冷压驱动回原超时报警
+	INIT_TON[20].IN:=FALSE;
+END_IF
+//冷压托板开合回原条件
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND (arrAxisCtrlV2[P3AxisNo.P3_M2_OvenRetracting].Cmd.arrbRealPoint[43] OR (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)>=(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[1]-5)
+AND  arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed)) 
+AND (arrAxisCtrl[P3AxisNo.P3M1_ColdpreRetracting].Cmd.arrbRealPoint[1] OR (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.fActPos)<=(arrAxisPar[P3AxisNo.P3M1_ColdpreLine].arrTargetPoint[2]+5)
+AND  arrAxisCtrl[P3AxisNo.P3M1_ColdpreLine].Status.Homed))
+AND  arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1]  THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+//冷压驱动回原条件
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Error AND P3_SystemRUN.iMode=3 THEN
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+
+
+
+
+
+
+
+
+
+///////////////////////冷压初始化
+IF P3_SystemRUN.iMode=3  THEN
+IF LateBlanking_init_start[2]  THEN
+	Init_step[2]:=1;
+	LateBlanking_init_OK[2]:=FALSE;
+	LateBlanking_init_start[2]:=FALSE;
+END_IF
+END_IF
+
+
+IF P3_SystemRUN.iMode=3 AND LateBlanking_init_OK[1] AND  LateBlanking_init_OK[3] THEN
+CASE Init_step[2] OF
+1://冷压电芯记忆清除
+	INIT_TON[20].IN:=TRUE;
+	Permit_Cold_Press:=FALSE;	
+	Cold_Press_Finish:=FALSE;	
+	Step31:=0;
+	INIT_TON[10].IN:=FALSE;
+	ColdPress_start:=FALSE;
+	MEMSET(ADR(CellMemory[CellNo.Coldpress]),0,SIZEOF(CellMemory[CellNo.Coldpress]));
+	Init_step[2]:=10;//信号复位
+	
+10://冷压麦拉张紧气缸打开
+arrCyCtrl[P3CYNo.P3ColdPressTensed].Cmd.bON:=TRUE;
+Init_step[2]:=20;//气缸打开
+
+20://冷压驱动停止信号复位
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bStop:=TRUE;//轴停止
+	INIT_TON[1].IN:=TRUE;
+	IF INIT_TON[1].Q THEN
+		Init_step[2]:=30;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bStop:=FALSE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bStop:=FALSE;
+	INIT_TON[1].IN:=FALSE;	
+	END_IF
+
+30://冷压驱动轴复位
+    arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bReset:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bReset:=TRUE;//轴复位
+	INIT_TON[2].IN:=TRUE;
+	
+	IF INIT_TON[2].Q THEN
+		Init_step[2]:=40;
+	    arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bReset:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bReset:=FALSE;
+		INIT_TON[2].IN:=FALSE;
+	END_IF
+
+40://冷压驱动、冷压托板开合轴上使能
+    arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bEnable:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bEnable:=TRUE;//轴上使能
+	IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Enabled THEN
+		Init_step[2]:=50;
+	END_IF
+
+50://冷压驱动开始回零
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bHome:=TRUE;
+Init_step[2]:=60;
+
+60://冷压驱动回零完成
+INIT_TON[3].IN:=TRUE;
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Homed AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Moving AND INIT_TON[3].Q THEN
+	Init_step[2]:=70;
+    arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.bHome:=FALSE;
+	INIT_TON[3].IN:=FALSE;
+END_IF
+
+70://冷压驱动到初始位
+IF NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Error AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.iGoSetPos:=1;//冷压驱动回初始位	
+END_IF
+
+IF 	arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Cmd.arrbRealPoint[1]  AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Moving THEN
+	Init_step[2]:=80;
+END_IF
+
+
+80://冷压托板开合开始回零
+arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bHome:=TRUE;
+Init_step[2]:=90;
+	
+90://冷压托板开合回零完成，冷压麦拉张紧气缸打开
+INIT_TON[8].IN:=TRUE;
+	IF 	arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving AND  INIT_TON[8].Q THEN
+		Init_step[2]:=100;
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.bHome:=FALSE;
+		arrCyCtrl[P3CYNo.P3ColdPressTensed].Cmd.bON:=TRUE;//冷压麦拉膜气缸张紧
+		INIT_TON[8].IN:=FALSE;
+		END_IF
+100://冷压托板开合到张开位检查有无电芯
+    IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.iGoSetPos:=2;//冷压托板开合去张开位
+	END_IF 
+    IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+	AND NOT P3Senser.P3_ColdEmptyPress THEN
+		Init_step[2]:=110;	
+	ELSIF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[2] 
+	AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving 
+	AND  P3Senser.P3_ColdEmptyPress THEN
+		Init_step[2]:=888;	
+		P3_Error[74]:=TRUE;//冷压初始化时，电芯未取走报警！
+	END_IF
+	
+110://冷压托板开合到初始位
+	IF  NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1] AND NOT arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Homed 
+		AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Enabled AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving THEN
+		arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.iGoSetPos:=1;//冷压托板开合回初始位	
+	END_IF
+    IF  arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.NoMoving THEN
+		Init_step[2]:=120;
+		
+	END_IF
+
+	
+120:
+Step31:=1;
+Init_step[2]:=999;
+
+999://冷压回零完成
+IF Init_step[2]=999 THEN
+INIT_TON[20].IN:=FALSE;
+LateBlanking_init_OK[2]:=TRUE;
+END_IF
+
+END_CASE
+END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3M1_ColdpreSupPlateLine].Status.Error OR arrAxisCtrl[P3AxisNo.P3M1_ColdpreActuated].Status.Error THEN
+	Init_step[2]:=0;
+END_IF
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="L_Init2">
+      <LineId Id="1535" Count="180" />
+      <LineId Id="734" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

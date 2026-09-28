@@ -1,0 +1,539 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="Dp_Roll_V2" Id="{568b5dc6-465e-4a2d-a1a9-50d717cc2b99}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Dp_Roll_V2
+VAR_IN_OUT
+   	Enable:BOOL;
+   
+END_VAR
+
+VAR_INPUT
+    fAngleRel:LREAL;//电芯旋转角度
+	Width:REAL;//电芯宽度
+	Thick:REAL;//电芯厚度
+	 r0:    REAL;//   隔膜夹板初始位置到电芯 初始位置A点距离
+	
+	
+	//r1:REAL;//电芯转角-圆角半径
+END_VAR
+VAR_OUTPUT
+
+END_VAR
+
+VAR_IN_OUT
+	iMode: INT;
+END_VAR
+VAR
+	Enable_R: R_TRIG;
+	Enable_F: F_TRIG;
+	TON1: TON;
+	P_Off: BOOL;
+	// 初始倒角圆心坐标X0
+	Circle_X0: LREAL;
+	// 初始倒角圆心坐标Y0
+	Circle_Y0: LREAL;
+	// 初始切点坐标X0
+	QieDian_X0: LREAL;
+	// 初始切点坐标Y0
+	QieDian_Y0: LREAL;
+	// 初始倒角圆心负角度
+	Circle_Angle0: LREAL;
+	// 初始倒角圆心负角度的右侧角度
+	MidAngle: LREAL;
+	// 90度左侧倒角圆切点到中心的角度
+	QieDian_Angle0: LREAL;
+	// 初始切点到中心的上角度
+	QieDian_AngleUp: LREAL;
+	// 初始切点到中心的下角度
+	QieDian_AngleDn: LREAL;
+	// 初始圆角切点至中心距离
+	Circle_Line0: LREAL;
+	// 初始圆角切点至中心距离
+	QieDian_Line0: LREAL;
+	i: INT;
+	// 实时倒角圆心坐标x1
+	C_X: LREAL;
+	// 实时倒角圆心坐标y1
+	C_Y: LREAL;
+	// 实时倒角圆心坐标x2
+	Q_X: LREAL;
+	// 实时切点圆心坐标x
+	Q_Y: LREAL;
+	// 圆弧对应的角度
+	Arc_Angle: LREAL;
+	// 圆弧对应的弧长
+	Arc_Len: LREAL;
+	//New3_Scale_FB: ARRAY[1..4] OF New3_Scale;
+	// 升降轴运动长度/mm
+	AxisYmm: LREAL;
+	// 平移轴运动长度/mm
+	AxisXmm: LREAL;
+	OUT1: LREAL;
+	// 90度后切点的角度
+	QieDian_Angle: LREAL;
+	MA1: BOOL;
+	Circle_X1: LREAL;
+	Circle_Y1: LREAL;
+	QieDian_X1: LREAL;
+	QieDian_Y1: REAL;
+	Circle_Angle1: LREAL;
+	QieDian_Angle1: LREAL;
+	Circle_Line1: LREAL;
+	QieDian_Line1: LREAL;
+	
+	
+	JiaoDianA_X0:LREAL;
+	JiaoDianA_Y0:LREAL;	
+	JiaoDian_Angle0: LREAL; //
+	JiaoDian_Line0: LREAL; //
+	
+  	 GMBoard_X0:LREAL;  
+	 GMBoard_Y0:LREAL;  
+	 
+	r1: REAL;	 
+	r2: REAL;
+	r3: REAL;
+	
+	 JDA_X: LREAL;
+	 JDA_Y: LREAL;
+	 JDB_X: LREAL;
+	 JDB_Y: LREAL;	
+	 JDC_X: LREAL;
+	 JDC_Y: LREAL;		 
+	 JDD_X: LREAL;
+	 JDD_Y: LREAL;		 
+	 
+	 
+	
+	a: LREAL;
+	b: REAL;
+	JDX: LREAL;
+	c: LREAL;
+	JDY: LREAL;
+	RJD: LREAL;
+	fResult: LREAL;
+	fResult1: LREAL;
+	fDelta: LREAL;
+	fResult2: LREAL;
+	bError: BOOL;
+	bCacleOnce: BOOL;
+	bError2: BOOL;
+	bMA1: BOOL;
+
+	k: REAL;
+	fAngleRelTemp1: LREAL;
+	fAngleRelTemp2: LREAL;
+	fAngleRelTemp3: LREAL;
+	bTest: BOOL;
+	iFLG1: INT;
+END_VAR
+VAR CONSTANT
+	MaxNo: INT := 360;//凸轮数据索引常量
+	Pai: LREAL := 3.1415926535;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+Enable_R(CLK:=Enable);Enable_F(CLK:=Enable);
+
+IF Enable_F.Q THEN
+	TON1(IN:=P_Off,PT:=T#100MS);
+END_IF;
+
+IF Enable   THEN		
+		IF Thick*0.5<0 THEN
+	
+			RETURN;
+		 END_IF;
+	
+			  AxisXmm:=0;
+			  AxisYmm:=0;
+			  Arc_Angle:=0;		    
+			  Arc_Len:=0;			
+	///SJ
+	  JiaoDianA_X0:=-Width*0.5;
+	  JiaoDianA_Y0:= Thick*0.5;
+	  JiaoDian_Angle0:=ABS( (180*ATAN(JiaoDianA_Y0/JiaoDianA_X0))/Pai )  ;  (*初始圆心角度*)
+	 // Circle_Line0:=SQRT(Circle_X0*Circle_X0+Circle_Y0*Circle_Y0);
+	  JiaoDian_Line0:=SQRT(JiaoDianA_X0*JiaoDianA_X0+JiaoDianA_Y0*JiaoDianA_Y0);
+	  
+	  GMBoard_X0:=-Width*0.5-r0;
+	  GMBoard_Y0:=  Thick*0.5;
+	  
+	  r1:=r0-Width;
+	  r2:=r0-Width-Thick;
+	  r3:=r0-Width-Thick-Width;
+
+  
+
+	//A点到F点 距离=ro     (JDA_X-x )* (JDA_X-x )+(JDA_Y-GMBoard_Y0)*(JDA_Y-GMBoard_Y0)=r0*r0
+	
+	  IF   JiaoDian_Angle0 -fAngleRel>=0 THEN    //A  点在第一象限    A点半径  r0
+			   JDA_X:=-JiaoDian_Line0*COS((JiaoDian_Angle0 -fAngleRel)*Pai/180);	//A
+			   JDA_Y:=JiaoDian_Line0*SIN((JiaoDian_Angle0 -fAngleRel)*Pai/180);		
+			   //解方程
+			   JDX:=JDA_X;
+			   JDY:=JDA_Y;
+			   RJD:=r0;
+			   bCacleOnce:=TRUE;	   
+	 ELSIF   fAngleRel -JiaoDian_Angle0>0		AND    fAngleRel -JiaoDian_Angle0<=90 THEN    //A  点在第e二象限    A点半径  r0 
+				JDA_X:=-JiaoDian_Line0*COS((fAngleRel -JiaoDian_Angle0)*Pai/180);
+				JDA_Y:=-JiaoDian_Line0*SIN((fAngleRel -JiaoDian_Angle0)*Pai/180);		
+			   //解方程
+			   JDX:=JDA_X;
+			   JDY:=JDA_Y;
+			   RJD:=r0;
+			   bCacleOnce:=TRUE;	   	   
+				   
+	 ELSIF  180+JiaoDian_Angle0-fAngleRel >=0     AND     180+JiaoDian_Angle0-fAngleRel <90 THEN    //A  点在第三象限   判断D点的位置  如果                                  A点半径  r0 		   
+				JDA_X:=JiaoDian_Line0*COS((180+JiaoDian_Angle0-fAngleRel)*Pai/180);
+				JDA_Y:=-JiaoDian_Line0*SIN((180+JiaoDian_Angle0-fAngleRel)*Pai/180);	
+			   
+			   //判断D点是在第一象限还是在二象限
+			   IF 180-JiaoDian_Angle0-fAngleRel<=90 AND   180-JiaoDian_Angle0-fAngleRel>=0    THEN   //一象限
+					 JDD_X:=-JiaoDian_Line0*COS((180-JiaoDian_Angle0-fAngleRel)*Pai/180);
+					 JDD_Y:= JiaoDian_Line0*SIN((180-JiaoDian_Angle0-fAngleRel)*Pai/180);	
+					 
+			   ELSIF  fAngleRel-(180- JiaoDian_Angle0 ) >0 AND  fAngleRel-(180- JiaoDian_Angle0 ) <=90 THEN     //二象限
+					 JDD_X:=-JiaoDian_Line0*COS((  fAngleRel-(180- JiaoDian_Angle0 ) )*Pai/180);
+					 JDD_Y:=-JiaoDian_Line0*SIN((  fAngleRel-(180- JiaoDian_Angle0 )   )*Pai/180);		
+	    		   
+			   END_IF
+			   
+	   
+			   //判断D点是在直线AF 上方还是直线下方 
+			   IF   iMode=1 THEN   // 先计算一次
+					 JDX:=JDA_X;
+					 JDY:=JDA_Y;
+					 RJD:=r0;
+					 bCacleOnce:=TRUE;	
+					// iMode:=1;   	   
+			   END_IF
+			   
+			   IF     iMode=2  THEN   //        
+					 JDX:=JDD_X;
+					 JDY:=JDD_Y;
+					 RJD:=r1;
+					 bCacleOnce:=TRUE;	
+			   END_IF		   
+	
+	ELSIF     fAngleRel -JiaoDian_Angle0-180>0  AND     fAngleRel -JiaoDian_Angle0-180<=90  THEN                                                   //A  点在第四象限   
+			   //判断D点是在第二象限还是在三象限
+			   IF  fAngleRel-(180- JiaoDian_Angle0 ) >=0 AND  fAngleRel-(180- JiaoDian_Angle0 ) <=90 THEN     //二象限
+					 JDD_X:=-JiaoDian_Line0*COS((  fAngleRel-(180- JiaoDian_Angle0 ) )*Pai/180);
+					 JDD_Y:=-JiaoDian_Line0*SIN((  fAngleRel-(180- JiaoDian_Angle0 )   )*Pai/180);		
+			   ELSIF  360-fAngleRel-JiaoDian_Angle0 >=0    AND  360-fAngleRel-JiaoDian_Angle0 <90   THEN     //三象限
+					 JDD_X:=JiaoDian_Line0*COS(( 360-fAngleRel-JiaoDian_Angle0  )*Pai/180);
+					 JDD_Y:=-JiaoDian_Line0*SIN((  360-fAngleRel-JiaoDian_Angle0   )*Pai/180);			    		   
+			   END_IF
+			   
+			   //判断C点是在第一象限还是在二象限(   C点只能在第2象限     )
+					 JDC_X:=-JiaoDian_Line0*COS((  fAngleRel -JiaoDian_Angle0-180)*Pai/180);
+					 JDC_Y:=-JiaoDian_Line0*SIN((  fAngleRel -JiaoDian_Angle0-180)*Pai/180);			   
+	
+				   //判断C点是在直线DF 上方还是直线下方 
+			   IF    iMode=2 THEN   // 先计算一次
+					 JDX:=JDD_X;
+					 JDY:=JDD_Y;
+					 RJD:=r1;
+					 bCacleOnce:=TRUE;	
+					// iMode:=3;   	   
+			   END_IF
+			   
+			   IF    iMode=4  THEN   //        
+					 JDX:=JDC_X;
+					 JDY:=JDC_Y;
+					 RJD:=r2;
+					 bCacleOnce:=TRUE;	
+			   END_IF		   	   
+			
+	ELSIF  360- fAngleRel + JiaoDian_Angle0 >=0   AND 360- fAngleRel + JiaoDian_Angle0 <90 THEN           //A  点在第1象限   
+			   //判断C点是在第一象限还是在二象限(   C点只能在第3象限     )
+				 JDC_X:=JiaoDian_Line0*COS((  360-fAngleRel+JiaoDian_Angle0)*Pai/180);
+				 JDC_Y:=-JiaoDian_Line0*SIN((  360-fAngleRel+JiaoDian_Angle0)*Pai/180);	
+	
+			   //判断B点是在第1象限还是在2象限
+			   IF   360-fAngleRel-JiaoDian_Angle0 >=0 AND   360-fAngleRel-JiaoDian_Angle0 <=90 THEN     //1象限
+					 JDB_X:=-JiaoDian_Line0*COS((  360-fAngleRel-JiaoDian_Angle0 )*Pai/180);
+					 JDB_Y:= JiaoDian_Line0*SIN((   360-fAngleRel-JiaoDian_Angle0  )*Pai/180);		
+					 iFLG1:=1;
+			   ELSIF  JiaoDian_Angle0-( 360- fAngleRel ) >0    AND  JiaoDian_Angle0-( 360- fAngleRel )<=90   THEN     //2象限
+					 JDB_X:= -JiaoDian_Line0*COS(( JiaoDian_Angle0-( 360- fAngleRel )  )*Pai/180);
+					 JDB_Y:= - JiaoDian_Line0*SIN((  JiaoDian_Angle0-( 360- fAngleRel )    )*Pai/180);			 
+   		              iFLG1:=2;
+			   END_IF
+		   
+				   //判断C点是在直线DF 上方还是直线下方 
+			   IF    iMode=4 THEN   // 先计算一次
+					 JDX:=JDC_X;
+					 JDY:=JDC_Y;
+					 RJD:=r2;
+					 bCacleOnce:=TRUE;	
+				//	 iMode:=5;   	   
+			   END_IF
+			   
+			   IF    iMode=6  THEN   //        
+					 JDX:=JDB_X;
+					 JDY:=JDB_Y;
+					 RJD:=r3;
+					 bCacleOnce:=TRUE;	
+			   END_IF		 
+	
+	 END_IF
+  
+  
+  
+	  //解一元二次方程   JDX : 当前圆心X      JDY:当前圆心Y     RJD: 当前圆心半径
+	  //    (JDX-x )* (X-x )+(JDY-GMBoard_Y0)*(JDY-GMBoard_Y0)=RJD*RJD 
+	IF bCacleOnce  THEN  
+			  a:=1;
+			  b:=-2*JDX;
+			  c:=JDX*JDX+(JDY-GMBoard_Y0)*(JDY-GMBoard_Y0)-RJD*RJD;
+			  
+			  fDelta:=b*b-4*a*c;
+			  
+			  IF  fDelta>=0 THEN
+				  fResult1:= (-b+SQRT(fDelta) )/ (2*a);
+				  fResult2:= (-b-SQRT(fDelta) )/ (2*a);
+			ELSE	  
+				  ;
+			 END_IF
+			  
+			IF fDelta>=0 THEN  
+				  IF fResult1<fResult2 THEN
+					  fResult:=fResult1;
+				  ELSE 
+					  fResult:=fResult2;  
+				  END_IF
+			ELSE
+			  // fResult:=0;  
+			   bError:=TRUE;
+			END_IF  
+		 bCacleOnce:=FALSE;
+		
+	END_IF 
+  
+//  IF NOT  bCacleOnce AND   Enable AND  NOT  bError     THEN 
+ IF NOT  bCacleOnce AND   Enable      THEN
+		 AxisXmm:=fResult-GMBoard_X0;  //X位移变化
+		 
+		 IF iMode=1  AND  180+JiaoDian_Angle0-fAngleRel >=0  AND     180+JiaoDian_Angle0-fAngleRel <90    THEN   //判断点D  相对与直线AF 的位置
+			 k:= (JDA_Y-GMBoard_Y0)/( JDA_X- fResult );
+		     b:= JDA_Y-k*JDA_X;
+		    //将 D点代入  直线AF   
+		    IF k*JDD_X+b <JDD_Y THEN  //D点在直线 AF上方
+				 bMA1:=FALSE;
+			ELSIF  k*JDD_X+b =JDD_Y THEN ////D点在直线 AF上
+			     bMA1:=FALSE;
+			ELSIF  k*JDD_X+b >JDD_Y THEN
+			     bMA1:=TRUE;
+				  fAngleRelTemp1:= fAngleRel;
+				  iMode:=2;
+			END_IF
+		 END_IF
+		 
+		 IF iMode=2 AND  fAngleRel -JiaoDian_Angle0-180>0  AND     fAngleRel -JiaoDian_Angle0-180<=90   THEN   //判断点C  相对与直线DF 的位置
+			 k:= (JDD_Y-GMBoard_Y0)/( JDD_X- fResult );
+		     b:= JDD_Y-k*JDD_X;
+		    //将 C点代入  直线AF   
+		    IF k*JDC_X+b <JDC_Y THEN  //D点在直线 AF上方
+				 bMA1:=FALSE;
+			ELSIF  k*JDC_X+b =JDC_Y THEN ////D点在直线 AF上
+			     bMA1:=FALSE;
+			ELSIF  k*JDC_X+b >JDC_Y THEN
+			     bMA1:=TRUE;
+				  fAngleRelTemp2:= fAngleRel;
+				  iMode:=4;
+			END_IF
+		 END_IF		 
+		 
+		 IF iMode=4 AND   360- fAngleRel + JiaoDian_Angle0 >=0   AND 360- fAngleRel + JiaoDian_Angle0 <90   THEN   //判断点B  相对与直线CF 的位置
+			 k:= (JDC_Y-GMBoard_Y0)/( JDC_X- fResult );
+		     b:= JDC_Y-k*JDC_X;
+		    //将 B点代入  直线CF  
+		    IF k*JDB_X+b <JDB_Y THEN  //D点在直线 AF上方
+				 bMA1:=FALSE;
+			ELSIF k*JDB_X+b =JDB_Y THEN ////D点在直线 AF上
+			     bMA1:=FALSE;
+			ELSIF  k*JDB_X+b >JDB_Y THEN
+			     bMA1:=TRUE;
+				   fAngleRelTemp3:= fAngleRel;
+				  iMode:=6;
+			END_IF
+		 END_IF		 
+		
+	    Enable:=FALSE;	 
+ELSE
+	 bError2:=TRUE;	  //无触发计算
+END_IF
+  
+  
+
+END_IF
+
+
+
+
+
+
+	IF bTest        THEN  
+			  a:=1;
+			  b:=-2*JDX;
+			  c:=JDX*JDX+(JDY-GMBoard_Y0)*(JDY-GMBoard_Y0)-RJD*RJD;
+			  
+			  fDelta:=b*b-4*a*c;
+			  
+			  fResult1:= (-b+SQRT(fDelta) )/ (2*a);
+			  fResult2:= (-b-SQRT(fDelta) )/ (2*a);
+			  
+			IF fDelta>0 THEN  
+				  IF fResult1<fResult2 THEN
+					  fResult:=fResult1;
+				  ELSE 
+					  fResult:=fResult2;  
+				  END_IF
+			ELSE
+			   fResult:=0;  
+			   bError:=TRUE;
+			END_IF  
+		 bTest:=FALSE;
+		
+	END_IF 
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="Dp_Roll_V2">
+      <LineId Id="844" Count="0" />
+      <LineId Id="456" Count="0" />
+      <LineId Id="460" Count="2" />
+      <LineId Id="465" Count="0" />
+      <LineId Id="471" Count="4" />
+      <LineId Id="824" Count="0" />
+      <LineId Id="827" Count="0" />
+      <LineId Id="832" Count="0" />
+      <LineId Id="828" Count="0" />
+      <LineId Id="856" Count="0" />
+      <LineId Id="853" Count="0" />
+      <LineId Id="1016" Count="5" />
+      <LineId Id="1095" Count="1" />
+      <LineId Id="1109" Count="0" />
+      <LineId Id="1134" Count="0" />
+      <LineId Id="1097" Count="1" />
+      <LineId Id="1102" Count="0" />
+      <LineId Id="1104" Count="0" />
+      <LineId Id="1022" Count="1" />
+      <LineId Id="1133" Count="0" />
+      <LineId Id="1137" Count="0" />
+      <LineId Id="1034" Count="0" />
+      <LineId Id="1111" Count="0" />
+      <LineId Id="1118" Count="0" />
+      <LineId Id="1113" Count="4" />
+      <LineId Id="1186" Count="0" />
+      <LineId Id="1192" Count="5" />
+      <LineId Id="1187" Count="0" />
+      <LineId Id="1383" Count="0" />
+      <LineId Id="1190" Count="1" />
+      <LineId Id="1211" Count="0" />
+      <LineId Id="1204" Count="3" />
+      <LineId Id="1220" Count="0" />
+      <LineId Id="1459" Count="0" />
+      <LineId Id="1210" Count="0" />
+      <LineId Id="1228" Count="0" />
+      <LineId Id="1212" Count="0" />
+      <LineId Id="1460" Count="0" />
+      <LineId Id="1217" Count="0" />
+      <LineId Id="1229" Count="0" />
+      <LineId Id="1432" Count="0" />
+      <LineId Id="1230" Count="1" />
+      <LineId Id="1240" Count="2" />
+      <LineId Id="1233" Count="0" />
+      <LineId Id="1244" Count="0" />
+      <LineId Id="1234" Count="1" />
+      <LineId Id="1272" Count="4" />
+      <LineId Id="1243" Count="0" />
+      <LineId Id="1278" Count="0" />
+      <LineId Id="1236" Count="0" />
+      <LineId Id="1320" Count="2" />
+      <LineId Id="1334" Count="0" />
+      <LineId Id="1324" Count="2" />
+      <LineId Id="1315" Count="0" />
+      <LineId Id="1281" Count="0" />
+      <LineId Id="1285" Count="0" />
+      <LineId Id="1381" Count="1" />
+      <LineId Id="1280" Count="0" />
+      <LineId Id="1300" Count="13" />
+      <LineId Id="1232" Count="0" />
+      <LineId Id="1214" Count="0" />
+      <LineId Id="1354" Count="0" />
+      <LineId Id="1367" Count="0" />
+      <LineId Id="1384" Count="0" />
+      <LineId Id="1359" Count="1" />
+      <LineId Id="1385" Count="3" />
+      <LineId Id="1456" Count="0" />
+      <LineId Id="1389" Count="2" />
+      <LineId Id="1457" Count="0" />
+      <LineId Id="1353" Count="0" />
+      <LineId Id="1362" Count="0" />
+      <LineId Id="1392" Count="13" />
+      <LineId Id="1363" Count="0" />
+      <LineId Id="1361" Count="0" />
+      <LineId Id="1112" Count="0" />
+      <LineId Id="656" Count="0" />
+      <LineId Id="1035" Count="0" />
+      <LineId Id="1185" Count="0" />
+      <LineId Id="489" Count="0" />
+      <LineId Id="1075" Count="0" />
+      <LineId Id="1159" Count="0" />
+      <LineId Id="1076" Count="3" />
+      <LineId Id="1146" Count="1" />
+      <LineId Id="1461" Count="0" />
+      <LineId Id="1080" Count="1" />
+      <LineId Id="1463" Count="1" />
+      <LineId Id="1082" Count="0" />
+      <LineId Id="1462" Count="0" />
+      <LineId Id="1154" Count="0" />
+      <LineId Id="1083" Count="0" />
+      <LineId Id="1150" Count="0" />
+      <LineId Id="1152" Count="1" />
+      <LineId Id="1151" Count="0" />
+      <LineId Id="1084" Count="0" />
+      <LineId Id="1161" Count="0" />
+      <LineId Id="1155" Count="1" />
+      <LineId Id="1085" Count="0" />
+      <LineId Id="1169" Count="0" />
+      <LineId Id="1086" Count="2" />
+      <LineId Id="1167" Count="1" />
+      <LineId Id="1336" Count="0" />
+      <LineId Id="1245" Count="0" />
+      <LineId Id="1250" Count="0" />
+      <LineId Id="1254" Count="2" />
+      <LineId Id="1261" Count="0" />
+      <LineId Id="1263" Count="3" />
+      <LineId Id="1418" Count="0" />
+      <LineId Id="1271" Count="0" />
+      <LineId Id="1262" Count="0" />
+      <LineId Id="1251" Count="0" />
+      <LineId Id="1246" Count="0" />
+      <LineId Id="1337" Count="9" />
+      <LineId Id="1420" Count="0" />
+      <LineId Id="1347" Count="1" />
+      <LineId Id="1247" Count="0" />
+      <LineId Id="1349" Count="0" />
+      <LineId Id="1406" Count="9" />
+      <LineId Id="1422" Count="0" />
+      <LineId Id="1416" Count="1" />
+      <LineId Id="1350" Count="1" />
+      <LineId Id="1248" Count="0" />
+      <LineId Id="1170" Count="1" />
+      <LineId Id="1089" Count="3" />
+      <LineId Id="530" Count="3" />
+      <LineId Id="567" Count="0" />
+      <LineId Id="569" Count="1" />
+      <LineId Id="1433" Count="21" />
+      <LineId Id="571" Count="4" />
+      <LineId Id="302" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

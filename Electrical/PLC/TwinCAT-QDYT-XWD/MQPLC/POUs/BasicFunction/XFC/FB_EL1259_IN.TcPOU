@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_EL1259_IN" Id="{e5846423-102a-4da6-8da4-0a8e830ecb77}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EL1259_IN  //单次触发
+
+(*本FB适用于EL1258和EL1259的输入通道*)
+
+VAR
+	aIE_Time  AT%I* :   UDINT;
+  	aIE_State AT%I*:  BOOL;
+	nEventsInInputBuffer AT%I*: USINT;
+	nNoOfInputEvents AT %I*:USINT;
+	bInputState AT%I* :  BOOL ;
+	bInputBufferReset AT %Q*:BOOL;
+
+
+END_VAR
+VAR_INPUT
+	cmdInputBufferReset: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+bInputBufferReset:=cmdInputBufferReset;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_EL1259_IN">
+      <LineId Id="26" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="45" Count="21" />
+      <LineId Id="44" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_Dust" Id="{67dbb449-84ac-473e-87f0-747e61dd9daf}">
+    <Declaration><![CDATA[TYPE ST_Dust :
+STRUCT
+FeedbeltDust1 :INT:=1;//负极送料皮带毛刷1
+FeedbeltDust2 :INT:=2;//负极送料皮带毛刷2
+FeedbeltDust3 :INT:=3;//负极送料皮带毛刷3
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

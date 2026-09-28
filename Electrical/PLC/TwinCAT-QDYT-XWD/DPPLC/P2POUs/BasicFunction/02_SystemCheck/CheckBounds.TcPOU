@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CheckBounds" Id="{efa3c195-6f86-4648-9277-b45deaa8d126}" SpecialFunc="CheckBounds">
+    <Declaration><![CDATA[// 隐含生成代码：不要编辑
+FUNCTION CheckBounds : DINT
+VAR_INPUT
+	index, lower, upper: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 隐含生成代码：这里只是对代码实现的建议
+{noflow}
+IF  index < lower THEN
+	CheckBounds := lower;
+ELSIF  index > upper THEN
+	CheckBounds := upper;
+ELSE  
+	CheckBounds := index;
+END_IF
+{flow}]]></ST>
+    </Implementation>
+    <LineIds Name="CheckBounds">
+      <LineId Id="8" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

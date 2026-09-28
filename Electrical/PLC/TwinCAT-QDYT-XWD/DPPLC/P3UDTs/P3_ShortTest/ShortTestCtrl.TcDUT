@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ShortTestCtrl" Id="{62503770-2e94-4f4c-8f4e-d0b11df8b25e}">
+    <Declaration><![CDATA[TYPE ShortTestCtrl : 
+STRUCT
+	bStart :BOOL; //数据读取开始
+	bDone  :BOOL; //数据读取完成
+	Init:BOOL;//测试仪初始化开始
+	InitFinish:BOOL;//测试仪初始化完成
+   	iResult:INT; // 1 OK  2 NG
+	
+	ErrorID1 :BOOL;
+	ErrorID2 :BOOL;
+
+	Measure	:REAL;//电阻值
+	Voltage	:REAL;//电压值
+	TestTime:REAL;//测试时间
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

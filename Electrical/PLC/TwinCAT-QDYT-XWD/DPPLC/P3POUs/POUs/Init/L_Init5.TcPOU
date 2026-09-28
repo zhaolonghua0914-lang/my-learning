@@ -1,0 +1,286 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="L_Init5" Id="{85ad4d13-bb65-4218-aa8f-ab16540ba714}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM L_Init5
+VAR
+	INIT_TON2  :ARRAY[1..20] OF Tc2_Standard.TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[INIT_TON2[1](PT:=T#2S);
+INIT_TON2[2](PT:=T#2S);
+INIT_TON2[3](PT:=T#2S);
+INIT_TON2[4](PT:=T#2S);
+INIT_TON2[5](PT:=T#2S);
+INIT_TON2[6](PT:=T#2S);
+INIT_TON2[7](PT:=T#2S);
+INIT_TON2[8](PT:=T#2S);
+INIT_TON2[9](PT:=T#2S);
+INIT_TON2[10](PT:=T#2S);
+INIT_TON2[20](PT:=T#90S);//称重上料夹回原超时计时
+
+IF INIT_TON2[20].Q THEN
+	Init_step[5]:=0;
+	P3_Error[124]:=TRUE;//称重上料夹回原超时报警
+	INIT_TON2[20].IN:=FALSE;
+END_IF
+//称重上料夹平移回原条件
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error AND P3_SystemRUN.iMode=3 
+AND  (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[5]+5))
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed 
+AND (LREAL_TO_REAL(arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.fActPos)<=(arrAxisPar[P3AxisNo.P3_M4_SortingoutCarrying].arrTargetPoint[3]+5))
+AND arrAxisCtrl[P3AxisNo.P3_M4_SortingoutCarrying].Status.Homed 
+AND( arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[2] 
+OR arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3]
+OR P3_SystemRUN.TheFirstTimebool) THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+ //称重上料夹升降回原条件
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error AND P3_SystemRUN.iMode=3 
+AND (arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1]  OR arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] ) THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+//称重上料夹旋转回原条件
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Enabled AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error AND P3_SystemRUN.iMode=3 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] AND (LREAL_TO_REAL(arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.fActPos)<=(arrAxisParV2[P3AxisNo.P3_M2_OvenCarrying].arrTargetPoint[5]+5))//安全条件
+AND arrAxisCtrlV2[P3AxisNo.P3_M2_OvenCarrying].Status.Homed THEN
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.Home_Condition:=TRUE;
+   ELSE 
+   arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.Home_Condition:=FALSE;
+ END_IF
+
+
+
+
+
+
+
+//称重上料初始化
+IF P3_SystemRUN.iMode=3 THEN
+IF LateBlanking_init_start[5]  THEN
+	Init_step[5]:=1;
+	LateBlanking_init_OK[5]:=FALSE;
+	LateBlanking_init_start[5]:=FALSE;
+END_IF
+END_IF
+
+
+IF P3_SystemRUN.iMode=3 AND LateBlanking_init_OK[3] AND LateBlanking_init_OK[6] THEN
+CASE Init_step[5] OF
+1://称重归正气缸张开,称重上料夹电芯记忆清除
+	INIT_TON2[20].IN:=TRUE;
+	Step34:=0;
+	P3_Weight_gross.Init:=TRUE;
+	arrCyCtrl[P3CYNo.P3WgightUP].Cmd.bOFF:=TRUE;
+	MEMSET(ADR(CellMemory[CellNo.WeightClip]),0,SIZEOF(CellMemory[CellNo.WeightClip]));
+	Init_step[5]:=10;//信号复位	
+	
+10://称重上料夹气缸打开
+	arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Cmd.bON:=TRUE;
+	IF arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Status.ONState AND NOT arrCyCtrl[P3CYNo.P3WeightFeedingClamp].Status.Error1  THEN
+	   Init_step[5]:=20;
+	END_IF
+
+
+20:
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bStop:=TRUE;         arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bStop:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bStop:=TRUE;     //轴停止
+	INIT_TON2[1].IN:=TRUE;
+	IF INIT_TON2[1].Q THEN
+		Init_step[5]:=30;
+		INIT_TON2[1].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bStop:=FALSE;         arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bStop:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bStop:=FALSE;     
+	END_IF
+
+30://称重上料夹各轴复位
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bReset:=TRUE;         arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bReset:=TRUE;
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bReset:=TRUE;     //轴复位
+	INIT_TON2[2].IN:=TRUE;
+	IF INIT_TON2[2].Q THEN
+		Init_step[5]:=40;
+		INIT_TON2[2].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bReset:=FALSE;         arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bReset:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bReset:=FALSE;   
+	END_IF	
+
+40://称重上料夹各轴上使能
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bEnable:=TRUE;         arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bEnable:=TRUE;
+arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bEnable:=TRUE;     //轴上使能
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled  AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Enabled THEN
+	Init_step[5]:=50;
+END_IF
+
+
+50://称重上料夹平移开始回零
+IF  arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.Home_Condition THEN
+arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bHome:=TRUE;
+IF NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed THEN
+	Init_step[5]:=60;	
+END_IF
+ELSE
+	P3_Error[128]:=TRUE;//称重上料夹平移回原安全条件不满足，请查看烤箱上料平移，分选夹平移，称重上料旋转是否在初始位
+	Init_step[5]:=0;	
+END_IF
+
+
+60://称重上料夹平移回零完成
+	INIT_TON2[6].IN:=TRUE;
+	IF INIT_TON2[6].Q AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving 	THEN
+		Init_step[5]:=70;
+		INIT_TON2[6].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.bHome:=FALSE;
+		P3_SystemRUN.TheFirstTimebool:=FALSE;
+	END_IF
+
+	
+70://称重上料夹平移到初始位
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving 
+//AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Io.biHomeSwitch 
+THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.iGoSetPos:=1;
+	WeighLineTorMark:=TRUE;//称重上料夹平移力矩超限报警标志
+END_IF 
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving  THEN
+	WeighLineTorMark:=FALSE;//称重上料夹平移力矩超限报警标志
+	Init_step[5]:=80;
+END_IF	
+	
+	
+	
+
+80://称重上料夹升降开始回零
+arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bHome:=TRUE;
+Init_step[5]:=90;
+
+90://称重上料夹升降回零完成
+	INIT_TON2[8].IN:=TRUE;
+	IF INIT_TON2[8].Q AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving 	THEN
+		Init_step[5]:=100;
+		INIT_TON2[8].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.bHome:=FALSE;
+	END_IF
+
+		
+100://称重上料夹平移到避让位(旋转位）
+
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] 
+	AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled 
+	AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.iGoSetPos:=4;
+	WeighLineTorMark:=TRUE;//称重上料夹平移力矩超限报警标志
+END_IF 
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving  THEN
+	WeighLineTorMark:=FALSE;//称重上料夹平移力矩超限报警标志
+	Init_step[5]:=110;
+END_IF
+
+110://称重上料夹旋转开始回零
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[4] AND  arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.Home_Condition THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bHome:=TRUE;
+IF NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed THEN
+	Init_step[5]:=120;	
+END_IF
+ELSE
+	P3_Error[129]:=TRUE;//称重上料旋转回原安全条件不满足，请查看称重上料平移是否在旋转位或烤箱上料夹平移是否在初始位
+	Init_step[5]:=0;
+END_IF
+120://称重上料夹旋转回零完成
+	INIT_TON2[7].IN:=TRUE;
+	IF INIT_TON2[7].Q AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving 	THEN
+		Init_step[5]:=130;
+		INIT_TON2[7].IN:=FALSE;
+		arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.bHome:=FALSE;
+	END_IF
+
+
+130://称重上料夹旋转到热压位
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.iGoSetPos:=3;
+	WeighWhirlTorMark:=TRUE;//称重上料夹旋转力矩超限报警标志
+END_IF 
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Cmd.arrbRealPoint[3] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.NoMoving  THEN
+	WeighWhirlTorMark:=FALSE;//称重上料夹旋转力矩超限报警标志
+	Init_step[5]:=140;
+END_IF
+
+
+
+
+140://称重上料夹升降到初始位
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.iGoSetPos:=1;
+END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.NoMoving THEN
+	Init_step[5]:=150;
+END_IF
+
+150://称重上料夹平移到初始位
+IF  NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] 
+AND NOT arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Homed 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Enabled 
+AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving THEN
+	arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.iGoSetPos:=1;//称重平移电机去初始位
+	WeighLineTorMark:=TRUE;//称重上料夹平移力矩超限报警标志
+END_IF 
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Cmd.arrbRealPoint[1] AND arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.NoMoving  THEN
+	WeighLineTorMark:=FALSE;//称重上料夹平移力矩超限报警标志
+	Init_step[5]:=160;
+END_IF
+
+
+
+160:
+    Step34:=1;
+	Init_step[5]:=999;
+	
+999://称重回零完成
+IF Init_step[5]=999 THEN
+LateBlanking_init_OK[5]:=TRUE;
+INIT_TON2[20].IN:=FALSE;
+END_IF
+
+END_CASE
+END_IF
+
+IF arrAxisCtrl[P3AxisNo.P3_M4_WeighLine].Status.Error OR arrAxisCtrl[P3AxisNo.P3_M4_WeighUpDown].Status.Error OR arrAxisCtrl[P3AxisNo.P3_M4_WeighWhirling].Status.Error THEN
+	Init_step[5]:=0;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="L_Init5">
+      <LineId Id="1209" Count="24" />
+      <LineId Id="1476" Count="0" />
+      <LineId Id="1234" Count="103" />
+      <LineId Id="1477" Count="0" />
+      <LineId Id="1338" Count="133" />
+      <LineId Id="420" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

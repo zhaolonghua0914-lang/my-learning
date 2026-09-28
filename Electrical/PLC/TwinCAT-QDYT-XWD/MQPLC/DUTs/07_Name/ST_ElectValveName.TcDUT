@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ElectValveName" Id="{bc703d4c-2d5b-4751-ad24-85504c74eeb0}">
+    <Declaration><![CDATA[TYPE ST_ElectValveName :   //阀名称
+STRUCT
+ConnectDustVacuo	:INT;	//	极片接带平台除尘真空
+LineSceneDustBlow	:INT;	//	线扫相机镜头除尘吹气
+LineSceneDustVacuo	:INT;	//	线扫相机镜头除尘真空
+AreaArrayDustBlow	:INT;	//	模切面阵相机镜头除尘吹气
+MouldUpBlow	:INT;	//	模具上模吹气
+MouldDownVacuo	:INT;	//	模具下模真空
+MouldDownAir	:INT;	//	模具下模破真空
+NGPushInsideAir	:INT;	//	NG踢废腔室破真空
+NGPushInsideVacuo	:INT;	//	NG踢废腔室真空
+BrushDustVacuo_U	:INT;	//	上表面毛刷除尘真空
+WindDustBlow_U	:INT;	//	上表面风刀除尘吹气
+WindDustVacuo_U	:INT;	//	上表面风刀除尘真空
+BrushDustVacuo_D	:INT;	//	下表面毛刷除尘真空
+WindDustBlow_D	:INT;	//	下表面风刀除尘吹气
+WindDustVacuo_D	:INT;	//	下表面风刀除尘真空
+RJ_Blow			:INT;//R角吹气
+RJDustBlow  :INT;//R角风刀吹气
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

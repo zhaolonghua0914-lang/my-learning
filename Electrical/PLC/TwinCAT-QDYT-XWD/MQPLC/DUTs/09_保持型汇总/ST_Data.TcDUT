@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_Data" Id="{872c2603-cc80-48b1-9cf3-59e9a002e7df}">
+    <Declaration><![CDATA[TYPE ST_Data :
+STRUCT
+	 AnBeltData:ARRAY[1..40]   OF  ST_BeltData;//正极皮带数据
+	 CaBeltData:ARRAY[1..40]   OF  ST_BeltData;//负极皮带数据
+	AnTabData:ARRAY[1..20]   OF  ST_TabData;//正极极耳数据
+	CaTabData:ARRAY[1..20]   OF  ST_TabData;//负极极耳数据
+	AnIntervalData:ARRAY[1..20]   OF  ST_IntervalData;//正极极耳间距数据
+	CaIntervalData:ARRAY[1..20]   OF  ST_IntervalData;//负极极耳间距数据
+	AnOffsetData:ARRAY[1..50]   OF  REAL;//正极主驱补偿数据
+	CaOffsetData:ARRAY[1..50]   OF  REAL;//负极主驱补偿数据
+	
+	AnYellowPos:ARRAY [1..100] OF REAL;//正极黄标位置
+	CaYellowPos:ARRAY [1..100] OF REAL;//负极黄标位置
+	AnYellowMark:ARRAY [1..100] OF BOOL;//正极黄标标志--给到极片
+	CaYellowMark:ARRAY [1..100] OF BOOL;//负极黄标标志--给到极片
+	
+	AnTapePos:ARRAY [1..100] OF REAL;//正极接带位置
+	CaTapePos:ARRAY [1..100] OF REAL;//负极接带位置
+	AnTapeMark:ARRAY [1..100] OF BOOL;//正极接带标志--给到极片
+	CaTapeMark:ARRAY [1..100] OF BOOL;//负极接带标志--给到极片
+	
+	
+	AnYellowJump_R:ARRAY [1..100] OF BOOL;//极片黄标R角跳切标志
+	AnYellowJump_C:ARRAY [1..100] OF BOOL;//极片黄标裁切跳切标志
+	AnTapeJump_R:ARRAY [1..100] OF BOOL;//极片接带R角跳切标志
+	AnTapeJump_C:ARRAY [1..100] OF BOOL;//极片接带裁切跳切标志
+	
+	CaYellowJump_R:ARRAY [1..100] OF BOOL;//极片黄标R角跳切标志
+	CaYellowJump_C:ARRAY [1..100] OF BOOL;//极片黄标裁切跳切标志
+	CaTapeJump_R:ARRAY [1..100] OF BOOL;//极片接带R角跳切标志
+	CaTapeJump_C:ARRAY [1..100] OF BOOL;//极片接带裁切跳切标志
+			
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

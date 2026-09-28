@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="P2_AxiseNo" Id="{b53fb129-6338-41ce-b7af-11cd0629994b}">
+    <Declaration><![CDATA[TYPE P2_AxiseNo ://伺服轴号、虚轴号
+STRUCT
+	AxisName:ST_AxisName;//伺服轴号
+	VirAxisName:ST_VirAxisName;//虚轴号
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

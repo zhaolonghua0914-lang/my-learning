@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TabData" Id="{6555728f-8425-43ab-bf18-a77ae598df41}">
+    <Declaration><![CDATA[TYPE ST_TabData ://极耳数据（裁断前）
+STRUCT
+	fTab_OffsetM:					REAL;//倒角极片偏移量
+	//fTabC_OffsetM:					REAL;//倒角前极耳中心偏移量
+	//fTabR_OffsetM:					REAL;//倒角前极耳右侧偏移量
+	fPhotoPosM:                 REAL;//倒角前拍照位置
+	fTab_OffsetC:					REAL;//裁切前极片偏移量
+	//fTabC_OffsetD:					REAL;//裁切前极耳中心偏移量
+	//fTabR_OffsetD:					REAL;//裁切前极耳右侧偏移量
+	fPhotoPosC:                 REAL;//裁切前拍照位置
+	bCCDed_M:                  BOOL;//true:经过倒角CCD拍照标志
+	bCCDed_C:                  BOOL;//true:经过裁切CCD拍照标志
+	bTabOffsetNG_M:                  BOOL;//true:倒角CCD纠偏量超差标志
+	bTabOffsetNG_C:                  BOOL;//true:裁切CCD纠偏量超差标志
+	
+	//bYellowMark:BOOL;//黄标标志--TRUE为黄标
+	//bBlueMark:BOOL;//接带标志--TRUE为接带
+	fTab_OffsetY   :REAL;//倒角极片偏移量Y  
+	
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

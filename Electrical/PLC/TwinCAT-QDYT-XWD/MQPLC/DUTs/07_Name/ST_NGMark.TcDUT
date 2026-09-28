@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_NGMark" Id="{40140166-fedf-4b91-9677-fc935d77dfba}">
+    <Declaration><![CDATA[TYPE ST_NGMark :   //模切段NG标志位
+STRUCT
+	NGMark:ARRAY[1..30]	OF	BOOL	;	//[1]极片长度不良计数标志位,[2]极片宽度不良计数标志位,[3]R角不良计数标志位,[4]极耳不良计数标志位,[5]CIL宽不良计数标志位,[6]极片角度、边缘角度不良计数标志位,[7]尺寸其他不良,[8]接带不良计数标志位,[9]极片破损不良计数标志位,[10]划痕不良计数标志位,[11]亮斑不良计数标志位,[12]黑点不良计数标志位,[13]脏污不良计数标志位,[14]脱碳不良计数标志位,
+
+
+	//NGMark[1]	:	BOOL	;	//	极片长度不良计数标志位
+	//NGMark[2]	:	BOOL	;	//	极片宽度不良计数标志位
+	//NGMark[3]	:	BOOL	;	//	R角不良计数标志位
+	//NGMark[4]	:	BOOL	;	//	极耳不良计数标志位
+	//NGMark[5]	:	BOOL	;	//	CIL宽不良计数标志位
+	//NGMark[6]	:	BOOL	;	//	极片角度、边缘角度不良计数标志位
+	//NGMark[7]	:	BOOL	;	//	尺寸其他不良
+	//NGMark[8]	:	BOOL	;	//	接带不良计数标志位
+	//NGMark[9]	:	BOOL	;	//	极片破损不良计数标志位
+	//NGMark[10]	:	BOOL	;	//	划痕不良计数标志位
+	//NGMark[11]	:	BOOL	;	//	亮斑不良计数标志位
+	//NGMark[12]	:	BOOL	;	//	黑点不良计数标志位
+	//NGMark[13]	:	BOOL	;	//	脏污不良计数标志位
+	//NGMark[14]	:	BOOL	;	//	脱碳不良计数标志位
+
+
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

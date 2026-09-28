@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="CMD_1" Id="{54c0f5e5-31cf-4362-aec6-bff11affb433}">
+    <Declaration><![CDATA[TYPE CMD_1 :
+STRUCT
+	RST :                   STRING:='*RST';     // 1 仪器初始化
+    Start :                 STRING:=':STARt';// 2 测试开始
+    Stop :                  STRING:=':STOP';// 3  测试停止
+    State_Check :           STRING:=':STATe?';// 4 测试状态查询 0：停止中  1：测试中   2：放电中
+	
+    Measure_Check :         STRING:=':MEASure?';// 5  测量值查询
+    Measure_Check2 :        STRING:=':MEASure:RESult?';// 6  测量值，判定结果查询  //1:OFF 2:NOcomp 3:DELAY 4:PASS 5:UFAIL 6:LFAIL 7:ULFA
+    Measure_Clear :         STRING:=':MEASure:CLEar';// 7  测量值，判定结果清除
+	
+    Voltage :               STRING:=':VOLTage';// 8  测试电压设置
+    Voltage_Check :         STRING:=':VOLTage?';// 9  测试电压查询 
+    Voltage_Monitor :       STRING:=':MEASure:MONItor?';// 10  电压值监视
+	
+    Mohm_Range :            STRING:=':MOHM:RANGe';// 11  电阻量程设置(2M/20M/200M/2000M/4000M/AUTO)  
+    Mohm_Range_Check :      STRING:=':MOHM:RANGe?';// 12  电阻量程查询
+	
+    Speed :                 STRING:=':SPEed';// 13 测量速度设置(FAST/SLOW)
+    Speed_Check :           STRING:=':SPEed?';// 14 测量速度查询
+	
+    Timer :                 STRING:=':TIMer';// 15  测试时间设置
+    Timer_Check :           STRING:=':TIMer?';// 16  测试时间查询
+    Delay :                 STRING:=':DELay';// 17  响应时间设置(0为自动)
+    Delay_Check :           STRING:=':DELay?';// 18  响应时间查询(0为自动)
+	
+    ComparatorLimit :       STRING:=':COMParator:LIMit';// 19  比较器上下限值设置（上限,下限）
+    ComparatorLimit_Check : STRING:=':COMParator:LIMit?';// 20  比较器上下限值查询
+    ComparatorMode :        STRING:=':COMParator:MODE';// 21  测试模式设置（CONTinue/PASSstop/FAILstop/SEQuence）  
+    ComparatorMode_Check :  STRING:=':COMParator:MODE?';// 22 测试模式查询（CONTINUE/PASSSTOP/FAILSTOP/SEQUENCE）
+    ComparatorBeeper :      STRING:=':COMParator:BEEPer';// 23  判定蜂鸣器设置(PASS/FAIL/OFF/END)
+    ComparatorBeeper_Check :STRING:=':COMParator:BEEPer?';// 24  判定蜂鸣器查询(PASS/FAIL/OFF/END)
+	
+    Contact :               STRING:=':CONTactcheck';//  25  接触检查功能设置(ON/OFF)	
+	Contact_Check :         STRING:=':CONTactcheck?';// 26  接触检查功能查询(ON/OFF)
+    Contact_Result :        STRING:=':CONTactcheck:RESult?';// 27  接触检查结果查询(NOCHK/PASS/HFAIL/LFAIL/HLFAIL)
+	
+    Short :                 STRING:=':SHORtcheck';// 28  短路检查功能设置(ON/OFF)	
+    Short_Check :           STRING:=':SHORtcheck?';// 29  短路检查功能查询 
+    ShortTime :             STRING:=':SHORtcheck:TIME';// 30 短路检查时间设置(0:自动)
+    ShortTime_Check :       STRING:=':SHORtcheck:TIME?';// 31  短路检查时间查询
+    Short_Result :          STRING:=':SHORtcheck:RESult?';// 32  短路检查结果查询（NOCHK/PASS/FAIL）
+	
+    KeyBeeper :             STRING:=':KEY:BEEPer';// 33  按键输入蜂鸣器音设置(ON/OFF)	
+    KeyBeeper_Check :       STRING:=':KEY:BEEPer?';// 34  按键输入蜂鸣器音查询
+   
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

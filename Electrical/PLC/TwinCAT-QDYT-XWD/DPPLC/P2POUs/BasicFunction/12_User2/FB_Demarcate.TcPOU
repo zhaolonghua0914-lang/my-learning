@@ -1,0 +1,729 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Demarcate" Id="{c551e839-9915-4045-a832-d8c254136c19}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Demarcate//CCD标定自动程序
+VAR_INPUT
+	AxisX1_NO : INT; //X1轴号
+	AxisX2_NO : INT;//X2轴号
+	AxisY_NO  : INT;//Y轴号	
+END_VAR
+VAR_OUTPUT
+	
+END_VAR
+VAR
+	
+	i: INT;
+	// 拍照延时复位
+	TON1: TON;
+	TON2: TON;
+	// CCD标定上升沿
+	rCCD_Demarcate: R_TRIG;
+	singeMode: BOOL;
+	singeStep0: BOOL;
+	fCCD_Demarcate: F_TRIG;
+	bTest1: BOOL;
+	iTest: INT;
+END_VAR
+
+VAR_IN_OUT
+	Step0: INT;//程序步
+	DemarcateStart:BOOL;//CCD标定启动	
+	CCDStart: BOOL;// CCD拍照启动
+	CCDNo:INT;//ccd拍照次数记数
+	DemarcateResult:INT;//标定结果
+	DemarcateDone: BOOL;	// CCD标定完成
+	Demarcateing: BOOL;	// CCD标定中
+	// CCD标定NG报警
+	Error: BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TON1(IN:= , PT:=T#2S , Q=> , ET=> );//拍照延时复位
+TON2(IN:= , PT:=T#0.2S , Q=> , ET=> );//拍照延时
+rCCD_Demarcate(CLK:=DemarcateStart , Q=> );//CCD标定启动上升沿
+fCCD_Demarcate(CLK:=DemarcateStart , Q=> );//CCD标定启动上升沿
+IF rCCD_Demarcate.Q THEN
+	Error:=FALSE;//CCD标定NG报警
+	TON1.IN:=FALSE;
+	Step0:=0;
+END_IF
+
+
+
+CASE Step0 OF
+		0://等待CCD标定启动信号
+			IF fCCD_Demarcate.Q THEN
+						i:=0;//标定点位记数
+						TON1.IN:=FALSE;
+						DemarcateStart:=FALSE;//复位标定启动
+						DemarcateDone:=FALSE;//CCD标定完成
+						Demarcateing:=TRUE;//CCD标定中
+						IF singeMode THEN
+							singeStep0:=TRUE;
+						ELSE
+							singeStep0:=FALSE;
+						END_IF
+						Step0:=10;
+			END_IF
+	10://X1、X2先回初始位
+				IF  NOT singeStep0 THEN
+							TON1.IN:=FALSE;
+							IF arrAxisCtrl[AxisX1_NO].Status.Homed AND arrAxisCtrl[AxisX1_NO].Status.NoMoving THEN
+										IF arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[1] THEN
+											arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=0;
+										ELSE
+											arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=1;
+										END_IF
+							END_IF
+							IF arrAxisCtrl[AxisX2_NO].Status.Homed AND arrAxisCtrl[AxisX2_NO].Status.NoMoving  THEN
+										IF arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[1] THEN
+											arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=0;
+										ELSE
+											arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=1;
+										END_IF
+							END_IF	
+							IF  arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[1]  AND 	arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[1]THEN
+								IF singeMode THEN
+									singeStep0:=TRUE;
+								ELSE
+									singeStep0:=FALSE;
+								END_IF
+								Step0:=11;
+							END_IF	
+				END_IF		
+	11://Y回初始位
+				IF NOT singeStep0 THEN
+									IF arrAxisCtrl[AxisY_NO].Status.Homed AND arrAxisCtrl[AxisY_NO].Status.NoMoving  THEN
+											IF arrAxisCtrl[AxisY_NO].Cmd.arrbRealPoint[1] THEN
+												arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=0;
+													IF singeMode THEN
+														singeStep0:=TRUE;
+													ELSE
+														singeStep0:=FALSE;
+													END_IF
+													Step0:=12;									
+											ELSE
+												arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=1;
+											END_IF
+								END_IF
+				END_IF			
+		12://判断CCD标定走到第几个点位
+						IF NOT  singeStep0 THEN
+											DemarcateResult:=0;
+											IF  i=0    THEN//(-4,-4)
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;
+											ELSIF i=1 THEN//(0,-4)
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;
+											ELSIF i=2 THEN//(4,-4)
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;									
+											ELSIF i=3 THEN//(4,0)
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=4 THEN//(0,0)
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														Step0:=20;		
+											ELSIF i=5 THEN//(-4,0)
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=6 THEN//(-4,4)
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;		
+											ELSIF i=7 THEN//(0,4)
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;		
+											ELSIF i=8 THEN//(4,4)
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=9 THEN//(0,0,-2)
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+135))-103.94*COS(DEG_TO_RAD(135)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-2+315))-103.94*SIN(DEG_TO_RAD(315)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=10 THEN//(0,0)
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(2+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(2+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(2+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=11  THEN//(0,0,2)
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(2+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(2+135))-103.94*COS(DEG_TO_RAD(135)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(2+315))-103.94*SIN(DEG_TO_RAD(315)));
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;		
+											ELSIF i=130 THEN
+															arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+															arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+															arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+															i:=i+1;
+															IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+															Step0:=20;		
+											ELSIF i=140 THEN
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-1+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-1+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-1+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=150 THEN
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-2+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+135))-103.94*COS(DEG_TO_RAD(135)));	
+														i:=i+1;
+														IF singeMode THEN
+																singeStep0:=TRUE;
+															ELSE
+																singeStep0:=FALSE;
+															END_IF
+														Step0:=20;		
+											ELSIF i=160 THEN
+														arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+														arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+														arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));		
+														i:=i+1;
+														Step0:=20;													
+											END_IF
+						END_IF	
+	20://先移动X1,X2
+				IF  NOT singeStep0 THEN
+					IF NOT TON1.Q THEN
+										TON1.IN:=TRUE;
+					ELSE
+										IF arrAxisCtrl[AxisX1_NO].Status.Homed AND arrAxisCtrl[AxisX1_NO].Status.NoMoving THEN
+													IF arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[3] THEN
+														arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=0;
+													ELSE
+														arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=3;
+													END_IF
+										END_IF
+										IF arrAxisCtrl[AxisX2_NO].Status.Homed AND arrAxisCtrl[AxisX2_NO].Status.NoMoving  THEN
+													IF arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[3] THEN
+														arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=0;
+													ELSE
+														arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=3;
+													END_IF
+										END_IF	
+										IF  arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[3]  AND arrAxisCtrl[AxisX1_NO].Status.NoMoving AND 
+							 				arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[3] AND arrAxisCtrl[AxisX2_NO].Status.NoMoving THEN
+													IF singeMode THEN
+														singeStep0:=TRUE;
+													ELSE
+														singeStep0:=FALSE;
+													END_IF
+													TON1.IN:=FALSE;
+													Step0:=30;
+										ELSIF arrAxisCtrl[AxisX1_NO].Status.Error OR arrAxisCtrl[AxisX2_NO].Status.Error THEN
+													TON1.IN:=FALSE;
+													Step0:=0;											
+										END_IF	
+						END_IF
+				END_IF	
+	30://再移动Y
+				IF NOT singeStep0 THEN
+							IF NOT TON1.Q THEN
+										TON1.IN:=TRUE;
+							ELSE
+									IF arrAxisCtrl[AxisY_NO].Status.Homed AND arrAxisCtrl[AxisY_NO].Status.NoMoving  THEN
+												IF arrAxisCtrl[AxisY_NO].Cmd.arrbRealPoint[3] THEN
+													arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=0;
+														IF singeMode THEN
+															singeStep0:=TRUE;
+														ELSE
+															singeStep0:=FALSE;
+														END_IF
+														TON1.IN:=FALSE;
+														 TON2.IN:=FALSE;
+														Step0:=31;									
+												ELSE
+													arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=3;
+												END_IF
+								ELSIF   arrAxisCtrl[AxisY_NO].Status.Error THEN
+														TON1.IN:=FALSE;
+														Step0:=0;										
+								END_IF
+							END_IF
+				END_IF
+				
+	31:
+	    TON2.IN:=TRUE;
+		IF TON2.Q THEN
+				CCDNo:=i;
+				CCDStart:=TRUE;
+				DemarcateResult:=0;	
+				Step0:=40;	
+				 TON2.IN:=FALSE;
+		END_IF		 
+	40://启动拍照
+			IF NOT TON1.Q THEN
+				TON1.IN:=TRUE;
+			ELSE
+				TON1.IN:=FALSE;	
+				CCDStart:=FALSE;
+				Step0:=50;
+			END_IF
+	50://等待标定结果
+			IF DemarcateResult=1 THEN
+				DemarcateResult:=0; 
+				 Step0:=60;
+			ELSE
+				Error:=TRUE;//CCD标定NG报警
+				Step0:=9999;
+			END_IF
+	60://判断标定次数
+			IF i>=12 THEN
+				Step0:=0;
+				Demarcateing:=FALSE;
+			ELSE
+				Step0:=10;
+			END_IF				
+END_CASE
+
+
+
+
+
+
+
+IF bTest1 THEN
+	
+   CASE iTest OF
+	 0://(-4,-4)
+				arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+				arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+				arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+				iTest:=50;
+											
+	 1://(0,-4)
+			arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+		    arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));
+				iTest:=50;											
+	2://(4,-4)
+			arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+				iTest:=50;															
+	3://(4,0)
+			arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+			iTest:=50;								
+  4://(0,0)
+		arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+		arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+			iTest:=50;
+5://(-4,0)
+			arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+		arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+		iTest:=50;
+6://(-4,4)
+			arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]-4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]-4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));
+			iTest:=50;										
+7://(0,4)
+		arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+		arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+		arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+			iTest:=50;									
+8://(4,4)
+		arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+4;//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+		arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+4;//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));	
+		iTest:=50;
+9://(0,0,-2)
+			arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+225))-103.94*COS(DEG_TO_RAD(225))); 
+				arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+135))-103.94*COS(DEG_TO_RAD(135)));
+		arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-2+315))-103.94*SIN(DEG_TO_RAD(315)));	
+		iTest:=50;
+11://(0,0,2)
+				arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(2+225))-103.94*COS(DEG_TO_RAD(225))); 
+	arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(2+135))-103.94*COS(DEG_TO_RAD(135)));
+		arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(2+315))-103.94*SIN(DEG_TO_RAD(315)));
+		iTest:=50;
+12:
+		arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-1+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-1+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-1+135))-103.94*COS(DEG_TO_RAD(135)));	
+		iTest:=50;											
+13:
+		arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1]+(103.94*SIN(DEG_TO_RAD(-2+315))-103.94*COS(DEG_TO_RAD(315)));
+			arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1]+(103.94*COS(DEG_TO_RAD(-2+135))-103.94*COS(DEG_TO_RAD(135)));	
+		iTest:=50;							
+14:
+		arrAxisPar[AxisX1_NO].arrTargetPoint[3]:=arrAxisPar[AxisX1_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+225))-103.94*COS(DEG_TO_RAD(225))); 
+			arrAxisPar[AxisX2_NO].arrTargetPoint[3]:=arrAxisPar[AxisX2_NO].arrTargetPoint[1];//+(103.94*SIN(DEG_TO_RAD(CCD_W+315))-103.94*COS(DEG_TO_RAD(315)));
+		arrAxisPar[AxisY_NO].arrTargetPoint[3]:=arrAxisPar[AxisY_NO].arrTargetPoint[1];//+(103.94*COS(DEG_TO_RAD(CCD_W+135))-103.94*COS(DEG_TO_RAD(135)));		
+		iTest:=50;			
+   
+  50:  //先移动X1,X2
+		
+									  IF arrAxisCtrl[AxisX1_NO].Status.Homed AND arrAxisCtrl[AxisX1_NO].Status.NoMoving THEN
+													IF arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[3] THEN
+														arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=0;
+													ELSE
+														arrAxisCtrl[AxisX1_NO].Cmd.iGoSetPos:=3;
+													END_IF
+										END_IF
+										IF arrAxisCtrl[AxisX2_NO].Status.Homed AND arrAxisCtrl[AxisX2_NO].Status.NoMoving  THEN
+													IF arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[3] THEN
+														arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=0;
+													ELSE
+														arrAxisCtrl[AxisX2_NO].Cmd.iGoSetPos:=3;
+													END_IF
+										END_IF	
+										IF  arrAxisCtrl[AxisX1_NO].Cmd.arrbRealPoint[3]  AND arrAxisCtrl[AxisX1_NO].Status.NoMoving AND 
+							 				arrAxisCtrl[AxisX2_NO].Cmd.arrbRealPoint[3] AND arrAxisCtrl[AxisX2_NO].Status.NoMoving THEN
+											iTest:=60;		
+										END_IF	
+				
+	60://再移动Y
+		
+									IF arrAxisCtrl[AxisY_NO].Status.Homed AND arrAxisCtrl[AxisY_NO].Status.NoMoving  THEN
+												IF arrAxisCtrl[AxisY_NO].Cmd.arrbRealPoint[3] THEN
+													arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=0;
+									                  bTest1:=FALSE;
+														iTest:=66;									
+												ELSE
+													arrAxisCtrl[AxisY_NO].Cmd.iGoSetPos:=3;
+												END_IF
+									
+								END_IF
+	
+		
+END_CASE
+
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Demarcate">
+      <LineId Id="15" Count="0" />
+      <LineId Id="1159" Count="0" />
+      <LineId Id="313" Count="0" />
+      <LineId Id="608" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="607" Count="0" />
+      <LineId Id="684" Count="0" />
+      <LineId Id="316" Count="1" />
+      <LineId Id="330" Count="1" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="734" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="282" Count="0" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="483" Count="3" />
+      <LineId Id="482" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="567" Count="1" />
+      <LineId Id="735" Count="0" />
+      <LineId Id="569" Count="37" />
+      <LineId Id="566" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="487" Count="0" />
+      <LineId Id="333" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="366" Count="1" />
+      <LineId Id="370" Count="1" />
+      <LineId Id="368" Count="0" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="53" Count="2" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="375" Count="3" />
+      <LineId Id="374" Count="0" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="57" Count="3" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="380" Count="3" />
+      <LineId Id="379" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="61" Count="3" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="385" Count="3" />
+      <LineId Id="384" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="65" Count="3" />
+      <LineId Id="204" Count="1" />
+      <LineId Id="69" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="390" Count="3" />
+      <LineId Id="389" Count="0" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="73" Count="3" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="395" Count="3" />
+      <LineId Id="394" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="77" Count="3" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="400" Count="3" />
+      <LineId Id="399" Count="0" />
+      <LineId Id="211" Count="0" />
+      <LineId Id="81" Count="3" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="405" Count="3" />
+      <LineId Id="404" Count="0" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="85" Count="3" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="410" Count="3" />
+      <LineId Id="409" Count="0" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="89" Count="2" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="216" Count="0" />
+      <LineId Id="415" Count="3" />
+      <LineId Id="414" Count="0" />
+      <LineId Id="217" Count="0" />
+      <LineId Id="93" Count="3" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="420" Count="3" />
+      <LineId Id="419" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="97" Count="3" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="425" Count="3" />
+      <LineId Id="424" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="101" Count="3" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="430" Count="3" />
+      <LineId Id="429" Count="0" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="105" Count="3" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="435" Count="3" />
+      <LineId Id="434" Count="0" />
+      <LineId Id="225" Count="0" />
+      <LineId Id="109" Count="2" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="489" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="439" Count="0" />
+      <LineId Id="685" Count="0" />
+      <LineId Id="688" Count="0" />
+      <LineId Id="767" Count="0" />
+      <LineId Id="122" Count="13" />
+      <LineId Id="143" Count="0" />
+      <LineId Id="691" Count="0" />
+      <LineId Id="491" Count="3" />
+      <LineId Id="145" Count="0" />
+      <LineId Id="690" Count="0" />
+      <LineId Id="490" Count="0" />
+      <LineId Id="799" Count="0" />
+      <LineId Id="801" Count="0" />
+      <LineId Id="800" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="687" Count="0" />
+      <LineId Id="441" Count="0" />
+      <LineId Id="472" Count="0" />
+      <LineId Id="495" Count="0" />
+      <LineId Id="692" Count="2" />
+      <LineId Id="474" Count="2" />
+      <LineId Id="498" Count="3" />
+      <LineId Id="497" Count="0" />
+      <LineId Id="696" Count="0" />
+      <LineId Id="1161" Count="0" />
+      <LineId Id="481" Count="0" />
+      <LineId Id="477" Count="2" />
+      <LineId Id="802" Count="0" />
+      <LineId Id="804" Count="0" />
+      <LineId Id="803" Count="0" />
+      <LineId Id="473" Count="0" />
+      <LineId Id="695" Count="0" />
+      <LineId Id="496" Count="0" />
+      <LineId Id="728" Count="1" />
+      <LineId Id="1160" Count="0" />
+      <LineId Id="1163" Count="0" />
+      <LineId Id="731" Count="2" />
+      <LineId Id="730" Count="0" />
+      <LineId Id="1162" Count="0" />
+      <LineId Id="1164" Count="0" />
+      <LineId Id="146" Count="0" />
+      <LineId Id="228" Count="0" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="234" Count="0" />
+      <LineId Id="257" Count="1" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="318" Count="0" />
+      <LineId Id="324" Count="0" />
+      <LineId Id="329" Count="0" />
+      <LineId Id="325" Count="0" />
+      <LineId Id="327" Count="0" />
+      <LineId Id="336" Count="0" />
+      <LineId Id="328" Count="0" />
+      <LineId Id="326" Count="0" />
+      <LineId Id="503" Count="0" />
+      <LineId Id="147" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="836" Count="0" />
+      <LineId Id="175" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="180" Count="1" />
+      <LineId Id="868" Count="5" />
+      <LineId Id="894" Count="0" />
+      <LineId Id="874" Count="0" />
+      <LineId Id="898" Count="3" />
+      <LineId Id="1064" Count="0" />
+      <LineId Id="908" Count="4" />
+      <LineId Id="919" Count="4" />
+      <LineId Id="930" Count="4" />
+      <LineId Id="941" Count="4" />
+      <LineId Id="1154" Count="0" />
+      <LineId Id="946" Count="0" />
+      <LineId Id="949" Count="2" />
+      <LineId Id="1155" Count="0" />
+      <LineId Id="958" Count="0" />
+      <LineId Id="960" Count="2" />
+      <LineId Id="969" Count="4" />
+      <LineId Id="980" Count="4" />
+      <LineId Id="1156" Count="0" />
+      <LineId Id="991" Count="0" />
+      <LineId Id="993" Count="2" />
+      <LineId Id="1157" Count="0" />
+      <LineId Id="1002" Count="0" />
+      <LineId Id="1015" Count="2" />
+      <LineId Id="1035" Count="4" />
+      <LineId Id="1046" Count="4" />
+      <LineId Id="1057" Count="4" />
+      <LineId Id="895" Count="0" />
+      <LineId Id="1073" Count="0" />
+      <LineId Id="1085" Count="0" />
+      <LineId Id="1089" Count="16" />
+      <LineId Id="1149" Count="0" />
+      <LineId Id="1116" Count="1" />
+      <LineId Id="1119" Count="0" />
+      <LineId Id="1123" Count="3" />
+      <LineId Id="1132" Count="4" />
+      <LineId Id="1139" Count="2" />
+      <LineId Id="1072" Count="0" />
+      <LineId Id="878" Count="0" />
+      <LineId Id="1153" Count="0" />
+      <LineId Id="879" Count="10" />
+      <LineId Id="182" Count="1" />
+      <LineId Id="179" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

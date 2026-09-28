@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="parMechanical" Id="{e96c6a33-f251-4484-a959-3349ccc1d47e}">
+    <Declaration><![CDATA[TYPE parMechanical :// 关于叠台设定断电保持的参数
+STRUCT
+
+   //隔膜机械参数
+    fGMRollDiameter     :  REAL:=24;    //隔膜辊直径 
+
+   	y_C1          : REAL:=22.25;     //C1辊中心Y坐标
+
+   	x_D1          : REAL:=-112.5; //左压针外边X坐标
+   	x_D2          : REAL:=112.5;//右压针外边X坐标
+
+    y_B1         : REAL:=102.25;//下上辊Y坐标
+   	y_A5         : REAL:=368.25;//上辊中心Y坐标
+
+
+   //尾卷机械参数
+	fCellWidth     :REAL :=  81.92 ;   //电芯宽
+	fCellThick      :REAL :=  23.4;     //电芯厚度
+	fCellRadii       :REAL :=   2 ;       //电芯厚度
+
+
+
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

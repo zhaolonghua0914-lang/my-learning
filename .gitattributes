@@ -4,3 +4,11 @@
 *.pptx filter=lfs diff=lfs merge=lfs -text
 *.xlsx filter=lfs diff=lfs merge=lfs -text
 *.xls filter=lfs diff=lfs merge=lfs -text
+*.tpzip filter=lfs diff=lfs merge=lfs -text
+*.tszip filter=lfs diff=lfs merge=lfs -text
+*.tizip filter=lfs diff=lfs merge=lfs -text
+*.compileinfo filter=lfs diff=lfs merge=lfs -text
+*.compiled-library filter=lfs diff=lfs merge=lfs -text
+*.tmc filter=lfs diff=lfs merge=lfs -text
+*.tpy filter=lfs diff=lfs merge=lfs -text
+*.app filter=lfs diff=lfs merge=lfs -text

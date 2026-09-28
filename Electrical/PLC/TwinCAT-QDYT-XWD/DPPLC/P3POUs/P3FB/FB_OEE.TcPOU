@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_OEE" Id="{6d19f8be-e655-4ecb-86a3-680284f95dcc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_OEE
+VAR_INPUT
+	
+    Alm :    BOOL ;//报警
+	Wait :BOOL ;//待机
+	Run :BOOL ;//运行
+
+	
+
+END_VAR
+VAR_OUTPUT
+		OEE:REAL;//稼动率
+       
+END_VAR
+VAR
+	 STTimedata:ST_Timedata_1;
+	rRun : R_TRIG;
+	rAlm : R_TRIG;
+	rWait : R_TRIG;
+	rXL_Wait : R_TRIG;
+	
+	fRun: F_TRIG;
+	fAlm: F_TRIG;
+	fWait: F_TRIG;
+    delay:BOOL ;//延时
+	TON_1: TON;
+	i:INT;
+	K: INT;
+	J: BOOL;
+	MalfunctionTime:REAL;//报警时间
+	RunTime1:REAL;//运行时间
+
+END_VAR
+
+VAR_IN_OUT
+   
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[K:=K+1;
+	IF K>499THEN
+		J:=TRUE;
+		K:=0;
+	ELSE
+		J:=FALSE;
+	END_IF
+
+
+
+
+///////////////运行时间/////////////////
+rRun(CLK:= J , Q=> );
+
+IF rRun.Q  AND  Run THEN
+	STTimedata.RunTime[HMI_Hour]:=STTimedata.RunTime[HMI_Hour]+1;
+END_IF
+
+IF STTimedata.RunTime[HMI_Hour]> 3600 THEN
+	STTimedata.RunTime[HMI_Hour]:= 3600 ;
+END_IF
+
+
+
+
+///////////////待机时间///////////////
+rWait(CLK:=J , Q=> );
+
+IF rWait.Q  AND Wait THEN
+	STTimedata.WaitTime[HMI_Hour]:=STTimedata.WaitTime[HMI_Hour]+1;
+END_IF
+
+IF STTimedata.WaitTime[HMI_Hour]> 3600 THEN
+	STTimedata.WaitTime[HMI_Hour]:= 3600 ;
+END_IF
+
+IF STTimedata.RunTime[HMI_Hour]= 0 AND STTimedata.AlmTime[HMI_Hour]= 0  AND 
+     (STTimedata.RunTime[HMI_Hour]= 3585  OR  STTimedata.RunTime[HMI_Hour]= 3586 )  THEN
+//	STTimedata[HMI_day].WaitTime[HMI_Hour]:= 3600 ;
+END_IF
+
+
+////////////////报警时间///////////////
+rAlm(CLK:=J , Q=> );
+
+IF rAlm.Q AND Alm THEN
+	STTimedata.AlmTime[HMI_Hour]:=STTimedata.AlmTime[HMI_Hour]+1;
+END_IF
+
+IF STTimedata.AlmTime[HMI_Hour]> 3600 THEN
+	STTimedata.AlmTime[HMI_Hour]:= 3600 ;
+END_IF
+
+IF STTimedata.RunTime[HMI_Hour]= 0 AND STTimedata.WaitTime[HMI_Hour]= 0  AND
+    (STTimedata.RunTime[HMI_Hour]= 3585  OR  STTimedata.RunTime[HMI_Hour]= 3586 ) THEN
+//	STTimedata[HMI_day].AlmTime[HMI_Hour]:= 3600 ;
+END_IF
+
+IF   HMI_Hour=23 AND  HMI_Minute=59 AND  HMI_Second=59 THEN
+	FOR i:=0 TO 23  DO
+   STTimedata.RunTime[i]:=0	;
+   STTimedata.AlmTime[i]:=0	;
+   STTimedata.WaitTime[i]:=0;
+	END_FOR
+END_IF
+
+//稼动率
+RunTime1:=STTimedata.RunTime[0]+STTimedata.RunTime[1]+STTimedata.RunTime[2]+STTimedata.RunTime[3]+STTimedata.RunTime[4]+
+                      STTimedata.RunTime[5]+STTimedata.RunTime[6]+STTimedata.RunTime[7]+STTimedata.RunTime[8]+STTimedata.RunTime[9]+
+                      STTimedata.RunTime[10]+STTimedata.RunTime[11]+STTimedata.RunTime[12]+STTimedata.RunTime[13]+STTimedata.RunTime[14]+
+                      STTimedata.RunTime[15]+STTimedata.RunTime[16]+STTimedata.RunTime[17]+STTimedata.RunTime[18]+STTimedata.RunTime[19]+
+					  STTimedata.RunTime[20]+STTimedata.RunTime[21]+STTimedata.RunTime[22]+STTimedata.RunTime[23];
+					  
+MalfunctionTime:=STTimedata.AlmTime[0]+STTimedata.AlmTime[1]+STTimedata.AlmTime[2]+STTimedata.AlmTime[3]+	STTimedata.AlmTime[4]+				  
+					              STTimedata.AlmTime[5]+STTimedata.AlmTime[6]+STTimedata.AlmTime[7]+STTimedata.AlmTime[8]+	STTimedata.AlmTime[9]+		
+					              STTimedata.AlmTime[10]+STTimedata.AlmTime[11]+STTimedata.AlmTime[12]+STTimedata.AlmTime[13]+	STTimedata.AlmTime[14]+		
+					              STTimedata.AlmTime[15]+STTimedata.AlmTime[16]+STTimedata.AlmTime[17]+STTimedata.AlmTime[18]+	STTimedata.AlmTime[19]+		
+								  STTimedata.AlmTime[20]+STTimedata.AlmTime[21]+STTimedata.AlmTime[22]+STTimedata.AlmTime[23];
+IF RunTime1>0 THEN								  
+OEE:=	(RunTime1/(RunTime1+	MalfunctionTime	))*100	;			 
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_OEE">
+      <LineId Id="282" Count="6" />
+      <LineId Id="278" Count="3" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="82" Count="3" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="185" Count="3" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="169" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="114" Count="3" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="192" Count="3" />
+      <LineId Id="360" Count="2" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="119" Count="3" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="198" Count="3" />
+      <LineId Id="357" Count="2" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="365" Count="3" />
+      <LineId Id="363" Count="1" />
+      <LineId Id="373" Count="14" />
+      <LineId Id="372" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

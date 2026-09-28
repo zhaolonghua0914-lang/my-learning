@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="IModeEN" Id="{f73fdb51-99ad-41f9-ba5c-43b91419e107}">
+    <Declaration><![CDATA[TYPE IModeEN ://功能屏蔽
+STRUCT
+	bFounctionClose:ARRAY[1..20] OF BOOL;//1: 门襟屏蔽 2:风机报警屏蔽
+	bDoorEN:BOOL:=TRUE;//TRUE  门襟屏蔽
+	bBuzzerEN:BOOL:=TRUE;//TRUE 蜂鸣器屏蔽
+    //bShortTestEN:BOOL;//TRUE 短路测试屏蔽
+    //bCodeEN:BOOL;//TRUE 扫码屏蔽
+    bCcdTcpEN:BOOL:=TRUE;  //TRUE ccd通讯屏蔽
+	iModeRun:INT;//运行模式  1:仅正运行   2:仅负运行  0:正负运行   
+	bNG2PushEN:BOOL:=TRUE;//TRUE NG踢单张料屏蔽
+	iNGPole:INT:=10;//NG多少片后，料盒下降→上升一次
+	iNGcyCout:INT:=3;//NG打料多少片后，归正气缸动作一次
+	iCarryPoleMode:INT:=3;//极片流至1.2.3号工位。
+	
+	iNgSizeEN:INT:=3;//尺寸检测连续NG多少片后，报警
+	iNgScaneEN:INT:=3;//线扫检测连续NG多少片后，报警
+	
+	
+	bCuterOffsetEN:BOOL;//TRUE  裁切补偿（行进方向）屏蔽
+	bMouldXOffsetEN:BOOL;//TRUE  模具X方向补偿（行进方向）屏蔽
+	bMouldYRecEN:BOOL;//TRUE  模具Y方向纠偏（非行进方向）屏蔽
+	bDegreeRecEN:BOOL;//TRUE  裁切角度纠偏屏蔽
+	bNG1PushEN:BOOL;//TRUE NG踢连续料屏蔽
+
+	bP2PartEN:BOOL:=TRUE;//TRUE 与叠片部分屏蔽
+	bLineScanCCDEN:BOOL;//TRUE  线扫CCD屏蔽	
+	bChamferCCDEN:BOOL;//TRUE  冲R角定位CCD屏蔽	
+	bCuterCCDEN:BOOL;//TRUE  裁切定位CCD屏蔽
+	bSizeCCDEN:BOOL;//TRUE  尺寸检测CCD屏蔽
+	bFlgBlueEN:BOOL;//TRUE  蓝胶检测屏蔽
+	bEmptyRunEN:BOOL;//TRUE 空跑模式
+	bDedustEN:BOOL;//TRUE 除尘屏蔽
+	bPoleCheckEN:BOOL;//堵料感应器屏蔽
+	PartNumberOff    				: BOOL;   //物料校验功能屏蔽
+	bTabWidtNGoff:BOOL;//连续极耳NG来料不良功能屏蔽
+	bMouldXclosureEN:BOOL;//TRUE  模具X方向闭环（行进方向）屏蔽
+	bMouldYclosureEN:BOOL;//TRUE  模具Y方向闭环（行进方向）屏蔽
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

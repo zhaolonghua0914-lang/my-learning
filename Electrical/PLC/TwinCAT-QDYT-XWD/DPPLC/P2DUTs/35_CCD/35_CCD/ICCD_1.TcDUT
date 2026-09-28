@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ICCD_1" Id="{0990f338-756e-4192-ac22-6aea5db63d17}">
+    <Declaration><![CDATA[TYPE ICCD_1 : 
+STRUCT
+	bComOpen:BOOL;  //扫码Tcp 开
+    bComClose:BOOL;  //扫码Tcp 关
+
+	bSend :BOOL; //  扫码开
+	//bLOFF :BOOL; //扫码关
+	bDone  :BOOL; //扫码完成
+    bError :BOOL;//扫码故障	
+    strReceive:STRING;//
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

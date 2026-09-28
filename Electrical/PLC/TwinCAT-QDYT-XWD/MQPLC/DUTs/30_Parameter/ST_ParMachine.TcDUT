@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ST_ParMachine" Id="{37f20d5a-64a0-4799-88a2-bbfa16c907bb}">
+    <Declaration><![CDATA[TYPE ST_ParMachine ://机械参数
+STRUCT
+       fMQDriverDiameter            :REAL:=71.62   ;//模切主驱辊直径
+       fCuterDegDiameter				:REAL:=281.5   ;//裁切角度纠偏旋转半径
+       fAuxDriverInDiameter         :REAL:=80   ;  //辅驱辊直径
+	   fBelt1Scaling                      :REAL:=1   ;  //裁切皮带定长比例系数
+	   fBelt2Scaling                      :REAL:=1   ;  //踢废倒装皮带定长比例系数
+	   fBelt3Scaling                      :REAL:=1   ;  //上表面除尘皮带定长比例系数
+	   fBelt4Scaling                      :REAL:=1   ;  //下表面除尘倒装皮带定长比例系数
+	   fBelt5Scaling                      :REAL:=1   ;  //送料分段皮带1定长比例系数	   
+	   fBelt6Scaling                      :REAL:=1   ;  //送料分段皮带2定长比例系数	   
+	   fBelt7Scaling                      :REAL:=1   ;  //送料分段皮带3定长比例系数	  	   
+//叠片主驱动  70
+//叠片辅驱动  30
+//NG皮带 46
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

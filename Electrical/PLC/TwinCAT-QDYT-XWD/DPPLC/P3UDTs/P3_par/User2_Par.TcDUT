@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="User2_Par" Id="{bc3ba3bd-3b2b-49ab-a83b-750027a0dcdc}">
+    <Declaration><![CDATA[TYPE User2_Par :
+STRUCT
+
+
+
+
+     iTest                                   :INT;
+///////////////////////////////////////////////////////中转变量/////////////////////////////////////////////////////////////////////////////////////////////////
+	fSavePositionBias:ARRAY[1..12] OF LREAL;(*写入软限位的值*)
+	HMI_Button:ARRAY[1..12]OF  BOOL;//ADS软限位开关
+	Shield          :ARRAY[1..99] OF BOOL;//屏蔽功能按钮，1、屏蔽短路测试 2、屏蔽称重测试 3、屏蔽测厚测试  4、扫码屏蔽 5、上位机屏蔽 6、短路测试复测  7、冷压正常流程 20,分选夹旋转选择按钮，true不旋转，false旋转；OK  8：MES条码校验 9：二维码胶条码重新校验 10：蓝胶条码重新校验 11:1号叠台首检模式 12:2号叠台首检模式 13:3号叠台首检模式
+	Oven_Shield          :ARRAY[1..21] OF BOOL;//烤箱屏蔽OK
+	LateBlanking_motor :BOOL;//后段电机条件屏蔽OK
+	Cold_par                :ST_TorqueMotion;//OK
+	Hot_par                :ST_TorqueMotion;//OK
+	Oven_finish: ARRAY [1..42] OF BOOL;// 烤箱烘烤时间完成信号  //
+	Oven_Finish_Time :ARRAY[1..42] OF UDINT;//烤箱烘烤完成后计数时间//OK
+	Oven_cell: ARRAY [1..42] OF BOOL;//烤箱电芯记忆
+	V: INT ;// 烤箱上料记忆辅助计数
+	W: INT;// 烤箱下料记忆辅助计数
+	B_OVEN :BOOL;//屏蔽烤箱
+	Thick_Par :REAL;//测厚基准
+	Thick_MN	:REAL;//测厚误差范围
+ 	Thick_Cell_Par :REAL;//测厚电芯厚度
+
+	Door_Forbidden :BOOL;//热压段门禁禁用
+	Scan_IP :T_IPv4Addr;//扫码IP
+	MQ_CaFSY_IP :T_IPv4Addr;//模切负极风速仪IP
+	MQ_AnFSY_IP :T_IPv4Addr;//模切正极风速仪IP
+	Cold_Position :REAL;//冷压上料辅助位
+
+	Thick_min :REAL:=21.65;//测厚厚度最小值(标准)
+	Thick_max :REAL:=22.65;//测厚厚度最大值(标准)
+	Oven_Time_S :UDINT:=200;//预热转移时间超时NG限定时间
+	
+    Bounce_time :UDINT ;//弹窗时间
+    Status_switching_time :UDINT ;//状态切换时间
+    Standby_time :UDINT;//待料时间
+	Oven_cell_Shield     :ARRAY[1..42] OF BOOL;//烤箱电芯屏蔽
+	
+
+		
+		
+		
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="GMotion" Id="{0db9743b-f5ee-4f6a-9835-0166fd728613}">
+    <Declaration><![CDATA[	
+VAR_GLOBAL
+	arrAxis			                      :ARRAY[1..MaxAxes] OF  axis_ref;		(*PTP轴*)
+	arrAxisCtrl			                  :ARRAY[1..MaxAxes] OF ST_AxisCtrl;	(*轴的PTP控制接口*)
+    AnSetpMotor               : ST_SetpMotor;//正极NG收料排杆电机
+    CaSetpMotor              : ST_SetpMotor;//负极NG收料排杆电机
+	arrDustMotor			                      :ARRAY[1..MaxDust] OF  ST_DustMotor;		(*毛刷电机*)
+    AxisCtrlTest                           AT%Q*:  ST_AxisCtrl;
+
+	 DrivesOP 		                       AT %I*		:ARRAY[1..NumOfDrives	]OF UINT ;		                                 (*实际驱动器作为EtherCAT伺服的个数  ETHERCAT状态*)
+
+	iActDriveMode	                   AT%I*	    	:ARRAY[1..2]OF SINT;			                                 (*驱动器返回的控制模式*)
+	iActDriveTorque	                   AT%I*	    	:ARRAY[1..2]OF INT;			                                 (*驱动器返回的l力矩*)
+
+    iSetDriveMode 	                  AT %Q*    	:ARRAY [1..2] OF SINT := [10,10] ;         // (*驱动器的模式输出，8为位置模式*)
+
+	iMaxProfileVelo                   AT%Q* 	   :ARRAY[1..2]OF UDINT:=[139810133,139810133];    //   (*单位为0.1rpm  500*2(23)   *)\
+	iPostiveTorqueLimits            AT%Q* 	  :ARRAY[1..2]OF UINT:=[2000,2000];
+    iNegtiveTorqueLimits           AT%Q*     :ARRAY[1..2]OF UINT:=[2000,2000];
+	
+	iActTorque_M				AT%I*	    	:ARRAY[1..MaxAxes]OF INT;	//模切轴反馈力矩值
+	HMI_TorAlarm_M				:ARRAY[1..MaxAxes]OF BOOL ;	//模切轴反馈力矩过大报警(防止撞机)
+	HMI_MS_Speed				:ARRAY[1..20]OF REAL ;	//毛刷转速
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	MaxAxes				:UINT:=60;		(*NC轴数，不同于实轴数*)
+    NumOfDrives			:UINT:=48;		(*实轴数*)
+	iEcatOp			     	:UINT:=8;
+	CSP					    :USINT:=8;
+	CSV					    :USINT:=9;
+	CST					    :USINT:=10;
+	MaxDust               	:UINT:=20;
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+//VAR_GLOBAL
+	arrAxisPar		   	:ARRAY[1..MaxAxes] OF ST_Axis_Par;	(*轴的PTP控制接口*)
+    iTargetTorque	                  AT%Q*    	:ARRAY[1..2]OF INT:= [10,10];			                     (*单位为0.1%*) //最大为100
+	HMI_TorErrLimt_M				:ARRAY[1..MaxAxes]OF INT:=[MaxAxes(2000)]  ;	//模切轴反馈力矩报警上限值设定,初始设定值2000
+END_VAR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//aAxis_NcParam			:ARRAY[1..MaxAxes] OF ST_AxisParameterSet;	(*system manager中的NC参数读取*)
+	//aReadNcParam			:ARRAY[1..MaxAxes] OF MC_ReadParameterSet; //FB
+	//aWriteNcParam	        :ARRAY[1..MaxAxes] OF MC_WriteParameter;  //system manager中的NC参数写入
+    //  mc_AxisParameter2       :E_AxisWritePar;
+
+
+
+
+(************************************************************************************)
+	(*欧姆龙驱动器力矩模式
+	输出：
+		6071 目标扭矩  INT16    0.1%  -5000~5000   （建议设置为PDO
+		6072 最大扭矩 UINT16    0.1%  0~5000		（建议在驱动器中设置好
+		3031 -01  力矩模式下的速度限制 单位rpm ，0-20000  INT32   出厂20000
+	输入：当前力矩 6072
+	*)
+	(*
+(*0821增加张力伺服参数*)
+	iTartgetTorque	AT%Q*:ARRAY[2..2]OF INT:=[-80,80];		(*单位为0.1%*)
+	iMaxVelo		AT%Q*:ARRAY[2..2]OF UDINT:=NumOfDancers[8000];	(*单位为0.1rpm*)
+	iActualTorque	AT%I* :ARRAY[2..2]OF  INT;							(*单位为0.1%*)
+	iSetDriveMode 	AT %Q*		:ARRAY [1..NumOfDrives] OF SINT := NumOfDrives[CSP];	(*驱动器的模式输出，8为位置模式*)
+*)
+
+
+
+
+
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

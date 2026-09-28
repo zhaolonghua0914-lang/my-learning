@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="STCcdDataSend" Id="{23b54558-7415-45be-90af-34911d3df3bd}">
+    <Declaration><![CDATA[TYPE STCcdDataSend :
+STRUCT
+	iHead :DINT:=32767;
+	iorder:DINT:=2;
+	strCode:ARRAY[0..63] OF   BYTE    ;//二维码
+	strShortData: ARRAY[0..127] OF BYTE; //短路测试数据 128
+	strBetryName: ARRAY[0..31] OF BYTE;//文件名
+	strHotPress: ARRAY[0..63] OF BYTE;//热压参数
+    iEnd :DINT:=65535;
+END_STRUCT
+END_TYPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

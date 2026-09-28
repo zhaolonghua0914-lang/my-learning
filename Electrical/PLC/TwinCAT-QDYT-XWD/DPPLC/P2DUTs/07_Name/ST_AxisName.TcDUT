@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AxisName" Id="{1da462da-a3bb-4de2-98de-75863277dd83}">
+    <Declaration><![CDATA[TYPE ST_AxisName :
+STRUCT
+	AnCarryingLine	:INT;	//	正极送片搬运平移  1：取片位    2：放片位
+	AnCarryingUpDown	:INT;	//	正极送片搬运升降 1：安全高度  2：取片高度	3：放片高度		4：等待高度
+	AnCarryingWhirling	:INT;	//	正极送片搬运旋转	1：取片角度		2：放片角度
+	AnDTCarryingLine	:INT;	//	正极叠台搬运平移1	1：取片位	2：放片位
+	AnDTCarryingUpDown	:INT;	//	正极叠台搬运升降	1：安全高度		2：取片高度		3：放片高度		4：等待高度
+	AndeviationX1	:INT;	//	正极纠偏平台X1持	1：初始位	2：纠偏位	3：标定位
+	AndeviationX2	:INT;	//	正极纠偏平台X2	1：初始位	2：纠偏位	3：标定位
+	AndeviationY	:INT;	//	正极纠偏平台Y		1：初始位	2：纠偏位	3：标定位
+	CaCarryingLine1	:INT;	//	负极送片搬运1平移 		1：取片位	2：放片位
+	CaCarryingUpDown1	:INT;	//	负极送片搬运1升降	1：安全高度		2：取片高度		3：放片高度		
+	CaCarryingWhirling1	:INT;	//	负极送片搬运1旋转 	1：取片角度		2：放片角度
+	CaCarryingLine2	:INT;	//	负极送片搬运2平移		1：取片位	2：放片位
+	CaCarryingUpDown2	:INT;	//	负极送片搬运2升降	1：安全高度		2：取片高度		3：放片高度		4：等待高度
+	CaBelt	:INT;	//	负极送片皮带
+	CaDTCarryingLine	:INT;	//	负极叠台搬运平移	1：取片位  	2：放片位
+	CaDTCarryingUpDown	:INT;	//	负极叠台搬运升降 	1：安全高度		2：取片高度		3：放片高度		4：等待高度 	5:避让高度
+	CadeviationX1	:INT;	//	负极纠偏平台X1	1：初始位	2：纠偏位	3：标定位
+	CadeviationX2	:INT;	//	负极纠偏平台X2 	1：初始位	2：纠偏位	3：标定位
+	CadeviationY	:INT;	//	负极纠偏平台Y		1：初始位	2：纠偏位	3：标定位
+	SEPTAunwinding	:INT;	//	隔膜放卷
+	SEPTAdeviation1	:INT;	//	隔膜放卷纠偏	1：初始位
+	SEPTAdeviation2	:INT;	//	隔膜尾部纠偏	1：初始位
+	SEPTATension	:INT;	//	隔膜摆杆张力
+	SEPTATCache	:INT;	//	隔膜缓存	1：初始位
+	SEPTATLine	:INT;	//	隔膜平移	1：正极片位		2：负极片位
+	DTUpDown	:INT;	//	叠台升降
+	LeftYDLine	:INT;	//	左压刀开合	1：压紧位		2：张开位
+	LeftYDUpDown	:INT;	//	左压刀升降 	1：初始位 11:张开高度 12：抽刀高度 13：过压高度 14：张开高度-过压高度 15：抽刀高度-过压高度 4:下料抽刀位 5：下料张开位
+	RightYDLine	:INT;	//	右压刀开合 	1：压紧位		2：张开位
+	RightYDUpDown	:INT;	//	右压刀升降 1：初始位 11:张开高度 12：抽刀高度 13：过压高度 14：张开高度-过压高度 15：抽刀高度-过压高度 4:下料抽刀位 5：下料张开位
+	TailCurlLine	:INT;	//	尾卷夹电芯平移  	1：初始位（在初始位可旋转）	2：取电芯位 3：拉膜位	 4：尾卷位  5：尾卷避让位	6：下电芯位  7:回拉膜位 8:纠偏安全位 9：不尾卷切膜位 10:尾卷下料避让位 11:取电芯等待位
+	TailCurlUpDown	:INT;	//	尾卷夹电芯升降   1：取电芯高度		2：夹膜高度		3：下电芯高度  4、放电芯下降位 5、尾卷高度 6、取对齐度NG料高度（变化要计算）7:尾卷完取料高度
+	TailCurlRetracting	:INT;	//	尾卷夹电芯伸缩  1：初始位		2：取电芯位 		3：下电芯位
+	TailCurlWhirling	:INT;	//	尾卷夹电芯旋转	1：取电芯位 	2：下电芯位	3:取电芯补偿位	4：取NG电芯补偿位
+	TailCurlSEPTALine	:INT;	//	夹膜平移  1：初始位	 2:取电芯位	 3:夹膜平移原点到夹电芯平移原点距离 4:尾卷正常解耦位
+	TailCurlSEPTAUpDown	:INT;	//	夹膜升降 1：取电芯高度 	2：夹膜高度 3:取对齐度NG料高度（变化要计算）
+	LCurlingneedleLine	:INT;	//	长卷针平移	1：初始位	2：夹电芯位	3:尾卷补偿位1	4：尾卷补偿位2
+	SCurlingneedleLine	:INT;	//	短卷针平移 	1：初始位	2：夹电芯位	
+	LCurlingneedleWhirling	:INT;	//	长卷针旋转 1：初始位
+	SCurlingneedleWhirling	:INT;	//	短卷针旋转	1：初始位
+	
+	GluingLine	:INT;	//	侧贴夹平移	1：左短边贴胶位1  2：左短边贴胶位2  3：右短边贴胶位1   4： 右短边贴胶位2  5:非极耳侧长边贴胶位 6:极耳侧长边贴胶位 8:上电芯位  9：下电芯位 10:尾卷安全旋转位
+	GluingWhirling	:INT;	//	侧贴夹旋转   1：左短边贴胶位 2：右短边贴胶位  3：非极耳长边贴胶位  4：极耳长边贴胶位5:上电芯位   6:下电芯位
+	GluingRetracting	:INT;	//	贴胶头进退  1:初始位   2：左短边贴胶位  3：右短边贴胶位   4：非极耳侧长边贴胶位  5：极耳侧长边贴胶位 6：踢NG胶位
+	GluingUpDown	:INT;	//	拉胶升降 1： 拉二维胶初始位  2：拉二维胶切断位	3:二维胶取胶滚胶位 4：二维胶切胶滚胶位 5：拉蓝胶初始位 6：拉蓝胶切断位 7:蓝胶取胶滚胶位 8：蓝胶切胶滚胶位 9：踢废胶避让位
+	
+	Standby1	:INT;	//	备用
+	Standby2	:INT;	//	备用		
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

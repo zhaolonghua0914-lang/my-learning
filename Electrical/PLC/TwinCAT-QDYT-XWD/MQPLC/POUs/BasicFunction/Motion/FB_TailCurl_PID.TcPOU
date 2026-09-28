@@ -1,0 +1,396 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_TailCurl_PID" Id="{9bee3d50-90ed-460e-8f41-48d9b0e1b708}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TailCurl_PID
+VAR_INPUT
+	ModuloActPos:REAL;//主轴位置；
+	sStar:R_TRIG;//固定2个感应器基准值;
+	Enable:BOOL;//启动条件
+	RestHMI:BOOL;//报警复位
+	MasterNo:INT;//主轴号
+	SlaveNo:INT;//从轴号
+	MasterValue:REAL;//主轴匀速运行时的速度
+	//RecDevagree:BOOL;//纠偏许可
+	RecDevEqupos1:REAL;//纠偏平传感器1基准值
+	RecDevEqupos2:REAL;//纠偏平传感器2基准值
+	RecDevValueSet:REAL;//纠偏设定
+	RecDevPV1:REAL;//纠偏传感器1实时值
+	RecDevPV2:REAL;//纠偏传感器2实时值
+	RecDevSpeedCoe:REAL;//纠偏带速度系数
+	CWW:BOOL;//纠偏方向选择
+	AxisintiPos:REAL;//轴的初始位置
+	AxisPos_H:REAL;//轴的纠偏行程上限
+	AxisPos_L:REAL;//轴的纠偏行程下限
+	bMode:INT;//1=单边纠偏     2=双边纠偏
+	iMainVel: UINT;
+END_VAR
+VAR_OUTPUT
+	//RecDevSpeed:REAL;//纠偏速度
+	bError:BOOL;
+	JZError:ARRAY [0..10] OF BOOL;//双纠偏传感器错误；
+	bRecOK: BOOL;
+	bReady: BOOL;
+END_VAR
+VAR
+	// 执行延时2S
+	TON1: TON;
+	// 轴纠偏上限
+	AxisRecDevPos_H: REAL;
+	// 轴的纠偏下限
+	AxisRecDevPos_L: REAL;
+	// 从轴的当前位置
+	AxisRecDevActPos: LREAL;
+	// 纠偏超限
+	PosOverLimit: BOOL;
+	// 纠偏传感器上限值
+	RecDevSensors_H: REAL;
+	// 纠偏传感器下限值
+	RecDevSensors_L: REAL;
+	// 纠偏轴的速度
+	MC_RecDevvelocity: REAL;
+	// 纠偏轴的中间速度
+	MC_RecDevvelocity_M: REAL;
+	// 轴纠偏允许
+	MC_RecDevagree: BOOL;
+	RecDev_GearInDyn: MC_GearInDyn;
+	// 主轴解除耦合
+
+	// 主轴停止
+	Master_Stop: MC_Stop;
+	// 从轴解除耦合
+	SlaveCamOut: MC_CamOut;
+	// 主轴匀速运动
+	MasterMoveVelocity: MC_MoveVelocity;
+	sR_TRIG: R_TRIG;
+	sF_TRIG: F_TRIG;
+	Slave_Halt: MC_Halt;
+	Step0: INT;
+	Step3: INT;//双感应器纠偏流程；
+	// 主、从轴停止
+	AxisStop: BOOL;
+	GearInMultiMaster: MC_GearInMultiMaster;
+	TON2: TON;
+	fRecVlue:REAL;//纠偏值
+	fRecAuxVlue:ARRAY [1..10] OF REAL;//纠偏值_辅助
+	Error:ARRAY[0..3] OF BOOL;//报警
+	bAxisError:BOOL;//
+	bFunBlokError:BOOL;//
+	
+	Riao_K: LREAL;
+	step1: INT;
+	farrayVlue: ARRAY[0..31] OF REAL;
+	i: INT;
+	i1: INT;
+	i2: INT;
+	temp0: REAL;
+	cCriterion1: REAL;	// 采集固定的基准值（传感器1）
+	cCriterion2: REAL;	// 采集固定的基准值（传感器2）
+	// 纠偏传感器1差值；
+	sSub1: REAL;
+	// 纠偏传感器2差值；
+	sSub2: REAL;
+	// 双传感器基准偏差值；
+	JZData2: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TON1(IN:= , PT:=T#2S , Q=> , ET=> );//执行延时2S
+TON2(IN:=Enable , PT:=T#10S , Q=> , ET=> );//纠偏凸轮耦合超时
+sR_TRIG(CLK:=Enable , Q=> );
+sF_TRIG(CLK:=Enable , Q=> );
+
+(**************************纠偏传感器的纠偏范围,大于最大值，小于最小值开始纠偏 *****************************)
+RecDevSensors_H:=RecDevEqupos1+RecDevValueSet;//纠偏传感器上限值(如果，纠偏传感器的当前值在上、下限这里，就不纠)
+RecDevSensors_L:=RecDevEqupos1-RecDevValueSet;//纠偏传感器下限值
+
+(***************************判断纠偏从轴是否超限********************************)	
+AxisRecDevPos_H:=AxisintiPos+AxisPos_H;//轴纠偏上限
+AxisRecDevPos_L:=AxisintiPos-AxisPos_L;//轴纠偏下限
+AxisRecDevActPos:=REAL_TO_LREAL(arrAxisCtrl[SlaveNo].Status.fActPos);
+
+IF bMode=1   THEN
+	IF RecDevEqupos1>0 THEN
+		IF ABS(RecDevPV1-RecDevEqupos1)>0.2 THEN
+			IF RecDevPV1-RecDevEqupos1>0 THEN
+				fRecAuxVlue[2]:=0.2;
+			ELSE
+				fRecAuxVlue[2]:=-0.2;
+			END_IF
+		ELSE
+			fRecAuxVlue[2]:=RecDevPV1-RecDevEqupos1;		
+		END_IF
+	ELSE
+		fRecAuxVlue[2]:=0;
+	END_IF
+	IF ABS(fRecAuxVlue[2])>recDevValueSet THEN
+		fRecVlue:=	fRecAuxVlue[2];
+	ELSE
+		fRecVlue:=	0;
+	END_IF
+(*	
+//////////////////////////////////////////	
+ELSIF bMode=2 THEN
+	IF RecDevEqupos1>0 AND RecDevEqupos2>0 THEN
+		fRecAuxVlue[1]:=((RecDevPV1-RecDevEqupos1)+(RecDevPV2-RecDevEqupos2))/2 ;
+	ELSE
+		fRecAuxVlue[1]:=0;
+	END_IF
+	IF ABS(fRecAuxVlue[1])>recDevValueSet THEN
+		fRecVlue:=	fRecAuxVlue[1];
+	ELSE
+		fRecVlue:=	0;
+	END_IF*)
+END_IF
+
+IF sStar.Q  THEN
+	IF bMode=2 AND cCriterion1>0 AND cCriterion2>0 AND cCriterion1<=9 AND cCriterion2<=9 THEN
+			cCriterion1:=RecDevPV1;//固定感应器基准；
+			cCriterion2:=RecDevPV2;
+	ELSIF bMode=2  AND cCriterion1<=0 OR cCriterion2<=0 OR cCriterion2>9 OR cCriterion2>9 THEN
+			JZError[1]:=TRUE;//纠偏传感器位置错误；
+	END_IF
+END_IF
+
+CASE Step3 OF
+10:
+IF ModuloActPos >240 AND ModuloActPos <250 THEN
+	Step3:=20;
+END_IF
+
+20://计算
+JZData2:=((cCriterion1-RecDevPV1)+(cCriterion2-RecDevPV2))/2;
+	Step3:=23;
+	
+23://判断极片是否超过93+-0.5范围，超过则不更新基准;
+IF JZData2<=0.5 AND JZData2>=-0.5 THEN
+	Step3:=25;
+ELSE 
+	JZError[2]:=TRUE;//感应器测量出误差超限；
+	Step3:=27;
+END_IF
+
+25://更新最新基准值；这里还是只使用纠偏传感器1的基准来进行调整；
+RecDevEqupos1:=(RecDevEqupos1+JZData2)*0.9;//这个需要乘一个系数转移到R角上；系数可以是1，具体看调试的参数是多少合适；
+	Step3:=27;
+	
+27:
+	JZData2:=0;
+	Step3:=10;
+END_CASE
+/////////////////////
+////////////////////
+///////////////////
+
+
+
+
+
+bReady:= NOT bAxisError  AND NOT bError AND  Step0=0 AND NOT bFunBlokError 
+               AND arrAxis[MasterNo].Status.Moving  AND NOT arrAxis[SlaveNo].Status.Coupled  AND arrAxis[SlaveNo].Status.NotMoving
+               AND arrAxis[MasterNo].Status.ControlLoopClosed AND arrAxis[SlaveNo].Status.ControlLoopClosed AND
+               arrAxis[MasterNo].Status.ConstantVelocity;
+			   
+CASE Step0 OF
+	0://判断使能信号
+		IF Enable AND bReady THEN
+			Step0:=10;
+			TON2.IN:=FALSE;
+		END_IF
+		IF sF_TRIG.Q THEN
+			Step0:=630;
+		END_IF
+	10://
+		IF NOT TON2.Q THEN
+			TON2.IN:=TRUE;
+			IF arrAxis[SlaveNo].Status.ControlLoopClosed THEN
+				TON2.IN:=FALSE;
+				Step0:=20;					
+			END_IF
+		ELSE
+				TON2.IN:=FALSE;
+				Error[0]:=TRUE;//纠偏凸轮耦合失败
+				Step0:=630;	//解耦	
+		END_IF
+	20://判断从轴是是否耦合，没耦合则启动耦合
+			IF GearInMultiMaster.InGear THEN
+				Step0:=600;
+				bRecOK:=TRUE;
+				TON1.IN:=FALSE;	
+			ELSE
+				GearInMultiMaster.Enable:=TRUE;
+			END_IF
+	600://从轴纠偏速度计算
+			TON1.IN:=TRUE;		
+			//IF  TON1.Q THEN //纠偏传感器的当前值 大于 纠偏上限 
+				IF NOT PosOverLimit AND  NOT arrAxisCtrl[SlaveNo].Io.biNegLimit AND  NOT arrAxisCtrl[SlaveNo].Io.biPosLimit THEN//判断纠偏是否超限
+					MC_RecDevvelocity_M:=fRecVlue*RecDevSpeedCoe;
+					IF NOT CWW THEN
+						MC_RecDevvelocity:=ScaleTrans(EN:=TRUE , Scalln:=MC_RecDevvelocity_M , X0:=0 , Y0:=0 , X1:=400 , Y1:=10 , Sclofs:=0 );//ScaleTrans的作用是将X0至X1范围之间的输入值，转换为Y0至Y1范围之间的输出值
+					ELSE
+						MC_RecDevvelocity:=-ScaleTrans(EN:=TRUE , Scalln:=MC_RecDevvelocity_M , X0:=0 , Y0:=0 , X1:=400 , Y1:=10 , Sclofs:=0 );
+					END_IF
+				ELSIF arrAxisCtrl[SlaveNo].Io.biNegLimit THEN
+					Error[1]:=TRUE;//纠偏负限位报警
+				ELSIF arrAxisCtrl[SlaveNo].Io.biPosLimit THEN	
+					Error[2]:=TRUE;//纠偏正限位报警
+				ELSIF PosOverLimit THEN
+					Error[3]:=TRUE;//纠偏电机超出设置的纠偏范围	
+				END_IF
+				IF (Error[1] OR Error[2] OR Error[3] OR bAxisError OR bFunBlokError) OR NOT Enable THEN
+					MC_RecDevvelocity:=0;
+					Step0:=630;	//解耦	
+				END_IF
+			//END_IF	
+	(******************************  解耦*************************************)
+	630:
+		 GearInMultiMaster.Enable:=FALSE;    //解除耦合
+		 Step0:=640;	
+	640:
+		 IF   NOT  GearInMultiMaster.InGear  THEN
+			 Step0:=650;	
+		 END_IF
+	650:
+		IF arrAxisCtrl[SlaveNo].Status.Coupled THEN
+			SlaveCamOut.Execute:=TRUE;
+			Step0:=700;
+		ELSE
+			Step0:=700;	
+		END_IF
+	700:
+		IF NOT arrAxisCtrl[SlaveNo].Status.Coupled   THEN
+			SlaveCamOut.Execute:=FALSE;
+			bRecOK:=FALSE;
+			Slave_Halt.Execute:=TRUE;   
+			Step0:=750;	
+		END_IF
+	750:
+		IF arrAxis[SlaveNo].Status.NotMoving  THEN  
+			Slave_Halt.Execute:=FALSE;   
+		   Step0:=0;  
+		END_IF		
+END_CASE
+	
+	
+IF RestHMI THEN
+	Error[0]:=FALSE;//纠偏凸轮耦合失败
+	Error[1]:=FALSE;//纠偏电机负限位报警
+	Error[2]:=FALSE;//纠偏电机正限位报警
+	Error[3]:=FALSE;//纠偏电机超出设置的纠偏范围
+END_IF
+
+bAxisError:=arrAxis[MasterNo].Status.Error OR  arrAxis[SlaveNo].Status.Error ;
+bFunBlokError:=GearInMultiMaster.Error OR SlaveCamOut.Error OR Slave_Halt.Error  ;
+
+IF Error[0] OR Error[1] OR Error[2] OR Error[3] OR bAxisError OR bFunBlokError THEN
+	bError:=TRUE;
+ELSE
+	bError:=FALSE;	
+END_IF
+//纠偏齿轮耦合
+IF iMainVel<=60 THEN
+	Riao_K:=2;
+ELSIF iMainVel>60 AND iMainVel<100 THEN
+	Riao_K:=5;
+ELSIF iMainVel>=100 AND iMainVel<=120  THEN
+	Riao_K:=10;
+ELSIF iMainVel>=120 AND iMainVel<=180  THEN
+	Riao_K:=15;	
+END_IF
+IF MasterValue<>0 THEN
+	GearInMultiMaster.GearRatio1:=MC_RecDevvelocity/MasterValue*Riao_K;
+ELSE
+	GearInMultiMaster.GearRatio1:=0;
+END_IF
+//多主轴耦合，不管主轴的停止还是运行中，都可以耦合从轴
+GearInMultiMaster(
+	Master1:=arrAxis[MasterNo] , 
+	Master2:=arrAxis[SlaveNo] , 
+	Master3:=arrAxis[SlaveNo] , 
+	Master4:=arrAxis[SlaveNo] , 
+	Slave:=arrAxis[SlaveNo]  , 
+	Enable:= , 
+	GearRatio1:= , 
+	GearRatio2:=0 , 
+	GearRatio3:=0 , 
+	GearRatio4:=0 , 
+	Acceleration:= , 
+	Deceleration:= , 
+	Jerk:= , 
+	BufferMode:= , 
+	Options:= , 
+	InGear=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+//纠偏从轴解耦
+SlaveCamOut(
+	Slave:=arrAxis[SlaveNo] , 
+	Execute:=, 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Error=> , 
+	ErrorID=> );
+//从轴停止
+Slave_Halt(
+	Axis:=arrAxis[SlaveNo] , 
+	Execute:= , 
+	Deceleration:= , 
+	Jerk:= , 
+	BufferMode:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_TailCurl_PID">
+      <LineId Id="1097" Count="12" />
+      <LineId Id="1116" Count="19" />
+      <LineId Id="1467" Count="1" />
+      <LineId Id="1136" Count="11" />
+      <LineId Id="1505" Count="0" />
+      <LineId Id="1455" Count="0" />
+      <LineId Id="1470" Count="0" />
+      <LineId Id="1497" Count="1" />
+      <LineId Id="1474" Count="1" />
+      <LineId Id="1479" Count="0" />
+      <LineId Id="1471" Count="0" />
+      <LineId Id="1630" Count="1" />
+      <LineId Id="1634" Count="0" />
+      <LineId Id="1636" Count="2" />
+      <LineId Id="1499" Count="1" />
+      <LineId Id="1523" Count="0" />
+      <LineId Id="1526" Count="0" />
+      <LineId Id="1632" Count="0" />
+      <LineId Id="1527" Count="0" />
+      <LineId Id="1529" Count="1" />
+      <LineId Id="1532" Count="1" />
+      <LineId Id="1535" Count="0" />
+      <LineId Id="1531" Count="0" />
+      <LineId Id="1502" Count="0" />
+      <LineId Id="1507" Count="0" />
+      <LineId Id="1516" Count="0" />
+      <LineId Id="1510" Count="0" />
+      <LineId Id="1537" Count="0" />
+      <LineId Id="1511" Count="0" />
+      <LineId Id="1629" Count="0" />
+      <LineId Id="1508" Count="0" />
+      <LineId Id="1495" Count="0" />
+      <LineId Id="1458" Count="0" />
+      <LineId Id="1493" Count="1" />
+      <LineId Id="1149" Count="0" />
+      <LineId Id="1454" Count="0" />
+      <LineId Id="1207" Count="167" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

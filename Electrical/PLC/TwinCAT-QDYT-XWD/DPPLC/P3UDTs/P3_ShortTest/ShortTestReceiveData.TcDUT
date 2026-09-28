@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="ShortTestReceiveData" Id="{a54be926-5753-40b6-8ab3-493d731d347f}">
+    <Declaration><![CDATA[TYPE ShortTestReceiveData :
+UNION
+	sData 		: STRING(32);//CMD
+	arrData 	 AT  %I*  :ARRAY [1..32] OF USINT;//ASCLL
+END_UNION
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

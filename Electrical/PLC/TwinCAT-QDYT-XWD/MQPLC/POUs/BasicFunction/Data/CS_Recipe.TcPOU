@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="CS_Recipe" Id="{f09a939e-249f-4a1d-a28a-04ecbef11aba}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CS_Recipe
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	
+
+
+ //recipeManCommands: RecipeManCommands;
+	result: DWORD;
+END_VAR
+
+VAR_IN_OUT
+  iRecipe2:    IRecipe;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+
+(*
+
+IF iRecipe2.bCreate THEN
+   result:= recipeManCommands.CreateRecipe(RecipeDefinitionName:='Recipes' , RecipeName:='SJ_Rec' );
+   iRecipe2.bCreate:=FALSE;
+END_IF
+
+IF iRecipe2.bSave THEN
+    result:= recipeManCommands.ReadAndSaveRecipeAs(RecipeDefinitionName:='Recipes' , RecipeName:='SJ_Rec' , FileName:='C:\P2Data\P2Par');
+    iRecipe2.bSave:=FALSE;
+END_IF
+
+IF iRecipe2.bLoad THEN
+	result:= RecipeManCommands.LoadFromAndWriteRecipe(RecipeDefinitionName:='Recipes' , RecipeName:='SJ_Rec' , FileName:='C:\P2Data\P2Par');
+    iRecipe2.bLoad:=FALSE;
+END_IF
+
+*)
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="CS_Recipe">
+      <LineId Id="66" Count="2" />
+      <LineId Id="10" Count="7" />
+      <LineId Id="43" Count="2" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="20" Count="11" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

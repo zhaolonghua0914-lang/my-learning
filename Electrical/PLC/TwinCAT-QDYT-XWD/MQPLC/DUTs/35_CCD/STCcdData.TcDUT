@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <DUT Name="STCcdData" Id="{771f947a-7e43-469b-9aff-1cb9e6ed77a7}">
+    <Declaration><![CDATA[TYPE STCcdData :
+STRUCT
+	iorder:DINT;  //功能码  2  3   4    
+	strCode:STRING   ;//二维码
+	strShortData: STRING; //短路测试数据 128
+	strBetryName: STRING;//文件名
+	strHotPress: STRING;//热压参数
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

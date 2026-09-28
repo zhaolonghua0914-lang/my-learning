@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_BlueFlag" Id="{f6ad9ecd-ec40-48a0-ada6-07b4ae66e860}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_BlueFlag
+VAR_INPUT
+	Bnt_Blueflag: BOOL;	// 接带输入信号
+	FlagDone: BOOL;// 电芯下料完成信号
+	AixsoActPos: LREAL;//放卷轴当前角度
+	Diameter: REAL;//放卷轴当前卷径
+	SetLenght: REAL;//接带点到叠台的距离
+	fYDLength: LREAL;
+	rBnt_BlueflagCaNum: UINT;
+END_VAR
+VAR_OUTPUT
+		FlagPoisn: ARRAY[0..20]OF BOOL;
+END_VAR
+VAR
+	rBnt_Blueflag: R_TRIG;
+	rFlagDone: R_TRIG;
+	i: INT;
+	RemberPos: ARRAY[0..20] OF LREAL;
+	RemberPos1: ARRAY[0..20] OF LREAL;
+	RemberPos2: ARRAY[0..20] OF LREAL;
+END_VAR
+
+VAR_IN_OUT
+	rBnt_BlueflagNum: UINT;
+	rBnt_Blueflaging: BOOL;	
+	NumberPos: ARRAY[0..20] OF LREAL;//接带点记录数据
+	NumberPos1: ARRAY[0..20] OF LREAL;//接带点记录数据
+	NumberPos2: ARRAY[0..20] OF LREAL;//接带点记录数据
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rBnt_Blueflag(CLK:=Bnt_Blueflag , Q=> );	// 接带输入信号
+rFlagDone(CLK:=FlagDone , Q=> );	// 电芯下料完成信号
+//根据接带信号记录放卷轴当前的角度
+IF rBnt_Blueflag.Q THEN
+		rBnt_Blueflaging:=TRUE;//接带信号
+		rBnt_BlueflagNum:=rBnt_BlueflagCaNum;
+		FOR i:=0 TO 20 BY 1 DO
+							IF i<20 THEN
+									NumberPos[20-i]:=	NumberPos[19-i];
+							ELSE
+									NumberPos[0]:=AixsoActPos;
+							END_IF;
+							
+							IF i<20 THEN
+									NumberPos1[20-i]:=	NumberPos1[19-i];
+							ELSE
+									NumberPos1[0]:=AixsoActPos+fYDLength;
+							END_IF;
+							
+							IF i<20 THEN
+									NumberPos2[20-i]:=	NumberPos2[19-i];
+							ELSE
+									NumberPos2[0]:=AixsoActPos+fYDLength*2;
+							END_IF;
+		END_FOR
+END_IF
+//根据当前的角度
+FOR i:=0 TO 20 BY 1 DO
+		IF NumberPos[i]<>0 THEN
+			RemberPos[i]:= FC_AngleToLength(ABS(AixsoActPos-NumberPos[i]),Diameter);			
+		END_IF
+		
+		IF NumberPos1[i]<>0 THEN
+			RemberPos1[i]:= FC_AngleToLength(ABS(AixsoActPos-NumberPos1[i]),Diameter);
+		END_IF
+		
+		IF NumberPos2[i]<>0 THEN
+			RemberPos2[i]:= FC_AngleToLength(ABS(AixsoActPos-NumberPos2[i]),Diameter);
+		END_IF
+
+		IF (RemberPos[i] >= SetLenght AND NumberPos[i]<>0) OR (RemberPos1[i] >= SetLenght AND NumberPos1[i]<>0)OR (RemberPos2[i] >= SetLenght AND NumberPos2[i]<>0)   THEN
+			FlagPoisn[i]:=TRUE;
+		END_IF
+		
+		IF (RemberPos[i] >= SetLenght AND NumberPos[i]<>0) AND rFlagDone.Q THEN
+			FlagPoisn[i] :=FALSE;
+			NumberPos[i]:=0;
+		END_IF
+	
+		IF (RemberPos1[i] >= SetLenght AND NumberPos1[i]<>0) AND rFlagDone.Q THEN
+			FlagPoisn[i] :=FALSE;
+			NumberPos1[i]:=0;
+		END_IF	
+
+		IF (RemberPos2[i] >= SetLenght AND NumberPos2[i]<>0) AND rFlagDone.Q THEN
+			FlagPoisn[i] :=FALSE;
+			NumberPos2[i]:=0;
+		END_IF		
+END_FOR]]></ST>
+    </Implementation>
+    <LineIds Name="FB_BlueFlag">
+      <LineId Id="11" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="241" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="43" Count="3" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="166" Count="3" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="172" Count="0" />
+      <LineId Id="174" Count="3" />
+      <LineId Id="173" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="88" Count="1" />
+      <LineId Id="192" Count="0" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="186" Count="5" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="197" Count="1" />
+      <LineId Id="194" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="135" Count="1" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="202" Count="1" />
+      <LineId Id="205" Count="0" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="207" Count="2" />
+      <LineId Id="212" Count="0" />
+      <LineId Id="200" Count="0" />
+      <LineId Id="80" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
